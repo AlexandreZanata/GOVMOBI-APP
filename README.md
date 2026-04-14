@@ -449,20 +449,20 @@ POC: Create src/App.test.tsx that renders the full App component tree and verifi
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | React Native 0.73+ |
-| Language | TypeScript (strict) |
-| Navigation | React Navigation 6 |
-| State | Redux Toolkit + Redux Persist |
-| i18n | i18next + react-i18next |
-| API | Axios + RTK Query |
-| Real-time | WebSocket (native) |
-| Storage | React Native MMKV |
-| Secure Storage | Expo SecureStore / RN Keychain |
-| Testing | Jest + React Native Testing Library |
-| Linting | ESLint + Prettier |
-| Design Pattern | Atomic Design + Facade |
+| Layer          | Technology                          |
+|----------------|-------------------------------------|
+| Framework      | React Native 0.73+                  |
+| Language       | TypeScript (strict)                 |
+| Navigation     | React Navigation 6                  |
+| State          | Redux Toolkit + Redux Persist       |
+| i18n           | i18next + react-i18next             |
+| API            | Axios + RTK Query                   |
+| Real-time      | WebSocket (native)                  |
+| Storage        | React Native MMKV                   |
+| Secure Storage | Expo SecureStore / RN Keychain      |
+| Testing        | Jest + React Native Testing Library |
+| Linting        | ESLint + Prettier                   |
+| Design Pattern | Atomic Design + Facade              |
 
 ---
 
