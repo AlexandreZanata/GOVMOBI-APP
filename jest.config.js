@@ -6,7 +6,14 @@ module.exports = {
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
+    '!src/config/**',
   ],
+  coverageThreshold: {
+    global: {
+      lines: 70,
+    },
+  },
+  coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
     '^@components/(.*)$': '<rootDir>/src/components/$1',
     '^@screens/(.*)$': '<rootDir>/src/screens/$1',
@@ -20,6 +27,6 @@ module.exports = {
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-vector-icons|@expo/vector-icons|react-native-safe-area-context|react-native-screens|react-native-gesture-handler)/)',
+    'node_modules/(?!(react-native|@react-native|react-native-vector-icons|@expo/vector-icons|react-native-safe-area-context|react-native-screens|react-native-gesture-handler|@reduxjs/toolkit|immer)/)',
   ],
 };
