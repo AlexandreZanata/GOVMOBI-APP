@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   extends: [
-    '@react-native',
+    'eslint:recommended',
     'prettier',
   ],
   plugins: [
@@ -18,6 +18,17 @@ module.exports = {
     ecmaVersion: 2020,
     sourceType: 'module',
   },
+  env: {
+    browser: true,
+    es2020: true,
+    node: true,
+  },
+  ignorePatterns: [
+    'node_modules/**',
+    'dist/**',
+    'build/**',
+    '.expo/**',
+  ],
   rules: {
     'react-hooks/exhaustive-deps': 'warn',
     'react-hooks/rules-of-hooks': 'error',
@@ -29,11 +40,5 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
-    'prettier/prettier': 'error',
-  },
-  settings: {
-    'import/resolver': {
-      typescript: {},
-    },
   },
 };
