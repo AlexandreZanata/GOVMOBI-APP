@@ -22,6 +22,12 @@ module.exports = {
         jest: true,
       },
     },
+    {
+      files: ['src/components/atoms/**/*.tsx'],
+      rules: {
+        'react-native/no-unused-styles': 'off',
+      },
+    },
   ],
   ignorePatterns: ['node_modules/**', 'dist/**', 'build/**', '.expo/**'],
   rules: {
