@@ -1,15 +1,13 @@
+/**
+ * @fileoverview Module implementation for navigation/MainTabNavigator.
+ */
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {type MainTabParamList} from './types';
-import {TabBar} from './TabBar';
-import {AppHeader} from './AppHeader';
+import {BottomTabBar, AppHeader} from '../components/organisms';
 import {ChatNavigator} from './ChatNavigator';
 import {CallsNavigator} from './CallsNavigator';
-import {
-  HomeScreen,
-  NotificationsScreen,
-  ProfileScreen,
-} from './placeholders';
+import {HomeScreen, NotificationsScreen, ProfileScreen} from './placeholders';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -22,12 +20,12 @@ export const MainTabNavigator = (): React.JSX.Element => {
   return (
     <Tab.Navigator
       screenOptions={{headerShown: false}}
-      tabBar={props => <TabBar {...props} />}>
+      tabBar={props => <BottomTabBar {...props} />}>
       <Tab.Screen
         component={HomeScreen}
         name="HomeTab"
         options={{
-          header: () => <AppHeader title="GovMobile" />,
+          header: () => <AppHeader />,
           headerShown: true,
         }}
       />
@@ -45,7 +43,7 @@ export const MainTabNavigator = (): React.JSX.Element => {
         component={NotificationsScreen}
         name="NotificationsTab"
         options={{
-          header: () => <AppHeader title="Notifications" />,
+          header: () => <AppHeader />,
           headerShown: true,
         }}
       />
@@ -53,7 +51,7 @@ export const MainTabNavigator = (): React.JSX.Element => {
         component={ProfileScreen}
         name="ProfileTab"
         options={{
-          header: () => <AppHeader title="Profile" />,
+          header: () => <AppHeader />,
           headerShown: true,
         }}
       />

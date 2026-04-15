@@ -105,5 +105,36 @@
     "networkError": "Error de red",
     "sessionExpired": "Sesion expirada",
     "unknownError": "Error desconocido"
+  },
+  "navigation": {
+    "tabs": {
+      "home": "Inicio",
+      "messages": "Mensajes",
+      "calls": "Llamadas",
+      "alerts": "Alertas",
+      "profile": "Perfil"
+    },
+    "titles": {
+      "home": "GovMobile",
+      "messages": "Mensajes",
+      "calls": "Llamadas",
+      "notifications": "Notificaciones",
+      "profile": "Perfil",
+      "login": "Iniciar sesion",
+      "forgotPassword": "Olvide mi contrasena",
+      "chatRoom": "Conversacion",
+      "newMessage": "Nuevo mensaje",
+      "activeCall": "Llamada activa",
+      "incomingCall": "Llamada entrante",
+      "settings": "Configuracion"
+    }
+  },
+  "ui": {
+    "toast": {
+      "dismiss": "Descartar notificacion"
+    },
+    "network": {
+      "offline": "No tienes conexion"
+    }
   }
 }

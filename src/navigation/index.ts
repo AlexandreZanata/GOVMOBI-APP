@@ -6,8 +6,7 @@ export {AuthNavigator} from './AuthNavigator';
 export {MainTabNavigator} from './MainTabNavigator';
 export {ChatNavigator} from './ChatNavigator';
 export {CallsNavigator} from './CallsNavigator';
-export {AppHeader} from './AppHeader';
-export {TabBar} from './TabBar';
+export {AppHeader, BottomTabBar} from '../components/organisms';
 export {useAppNavigation} from './useAppNavigation';
 export type {
   RootStackParamList,

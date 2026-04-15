@@ -1,7 +1,10 @@
+/**
+ * @fileoverview Module implementation for navigation/CallsNavigator.
+ */
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {type CallsStackParamList} from './types';
-import {AppHeader} from './AppHeader';
+import {AppHeader} from '../components/organisms';
 import {
   CallHistoryScreen,
   ActiveCallScreen,
@@ -27,7 +30,7 @@ export const CallsNavigator = (): React.JSX.Element => {
         component={CallHistoryScreen}
         name="CallHistory"
         options={{
-          header: () => <AppHeader showBack title="Calls" />,
+          header: () => <AppHeader showBack />,
         }}
       />
       <Stack.Screen

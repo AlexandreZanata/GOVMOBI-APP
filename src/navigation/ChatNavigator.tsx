@@ -1,7 +1,10 @@
+/**
+ * @fileoverview Module implementation for navigation/ChatNavigator.
+ */
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {type ChatStackParamList} from './types';
-import {AppHeader} from './AppHeader';
+import {AppHeader} from '../components/organisms';
 import {
   ConversationListScreen,
   ChatRoomScreen,
@@ -31,7 +34,7 @@ export const ChatNavigator = (): React.JSX.Element => {
       <Stack.Screen
         component={ConversationListScreen}
         name="ConversationList"
-        options={{title: 'Messages'}}
+        options={{title: undefined}}
       />
       <Stack.Screen
         component={ChatRoomScreen}
@@ -41,7 +44,7 @@ export const ChatNavigator = (): React.JSX.Element => {
       <Stack.Screen
         component={NewConversationScreen}
         name="NewConversation"
-        options={{title: 'New Message'}}
+        options={{title: undefined}}
       />
     </Stack.Navigator>
   );

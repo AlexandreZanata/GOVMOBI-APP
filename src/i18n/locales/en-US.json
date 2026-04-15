@@ -105,5 +105,36 @@
     "networkError": "Network error",
     "sessionExpired": "Session expired",
     "unknownError": "Unknown error"
+  },
+  "navigation": {
+    "tabs": {
+      "home": "Home",
+      "messages": "Messages",
+      "calls": "Calls",
+      "alerts": "Alerts",
+      "profile": "Profile"
+    },
+    "titles": {
+      "home": "GovMobile",
+      "messages": "Messages",
+      "calls": "Calls",
+      "notifications": "Notifications",
+      "profile": "Profile",
+      "login": "Login",
+      "forgotPassword": "Forgot password",
+      "chatRoom": "Conversation",
+      "newMessage": "New message",
+      "activeCall": "Active call",
+      "incomingCall": "Incoming call",
+      "settings": "Settings"
+    }
+  },
+  "ui": {
+    "toast": {
+      "dismiss": "Dismiss notification"
+    },
+    "network": {
+      "offline": "You are offline"
+    }
   }
 }
