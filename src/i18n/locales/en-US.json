@@ -8,7 +8,22 @@
     "save": "Save",
     "back": "Back",
     "search": "Search",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "clear": "Clear",
+    "delete": "Delete",
+    "unknownUser": "Unknown user",
+    "role": {
+      "ADMIN": "Admin",
+      "MANAGER": "Manager",
+      "OFFICER": "Officer",
+      "CITIZEN": "Citizen"
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "SUSPENDED": "Suspended",
+      "PENDING": "Pending"
+    }
   },
   "home": {
     "greeting": "Hello, {{name}}",
@@ -22,7 +37,17 @@
     "online": "Online",
     "offline": "Offline",
     "send": "Send",
-    "attach": "Attach"
+    "attach": "Attach",
+    "you": "You",
+    "imageAttachment": "Image",
+    "fileAttachment": "File",
+    "audioAttachment": "Audio",
+    "systemMessage": "System message",
+    "sending": "Sending",
+    "sent": "Sent",
+    "delivered": "Delivered",
+    "read": "Read",
+    "failed": "Failed"
   },
   "calls": {
     "incomingCall": "Incoming call",
@@ -31,7 +56,43 @@
     "duration": "Duration",
     "answer": "Answer",
     "decline": "Decline",
-    "endCall": "End call"
+    "endCall": "End call",
+    "active": "Active",
+    "ended": "Ended",
+    "callBack": "Call back"
+  },
+  "notificationsList": {
+    "system": "System",
+    "message": "Message",
+    "call": "Call",
+    "announcement": "Announcement",
+    "task": "Task"
+  },
+  "homeActions": {
+    "newMessage": {
+      "label": "New message",
+      "description": "Start a direct conversation"
+    },
+    "callDirectory": {
+      "label": "Call directory",
+      "description": "Find officers and departments"
+    },
+    "announcements": {
+      "label": "Announcements",
+      "description": "Read latest government updates"
+    },
+    "reports": {
+      "label": "Reports",
+      "description": "Review operational reports"
+    },
+    "schedule": {
+      "label": "Schedule",
+      "description": "View calendar and meetings"
+    },
+    "documents": {
+      "label": "Documents",
+      "description": "Access official documents"
+    }
   },
   "auth": {
     "login": "Login",

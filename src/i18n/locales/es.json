@@ -8,7 +8,22 @@
     "save": "Guardar",
     "back": "Volver",
     "search": "Buscar",
-    "notifications": "Notificaciones"
+    "notifications": "Notificaciones",
+    "clear": "Limpiar",
+    "delete": "Eliminar",
+    "unknownUser": "Usuario desconocido",
+    "role": {
+      "ADMIN": "Administrador",
+      "MANAGER": "Gerente",
+      "OFFICER": "Oficial",
+      "CITIZEN": "Ciudadano"
+    },
+    "status": {
+      "ACTIVE": "Activo",
+      "INACTIVE": "Inactivo",
+      "SUSPENDED": "Suspendido",
+      "PENDING": "Pendiente"
+    }
   },
   "home": {
     "greeting": "Hola, {{name}}",
@@ -22,7 +37,17 @@
     "online": "En linea",
     "offline": "Desconectado",
     "send": "Enviar",
-    "attach": "Adjuntar"
+    "attach": "Adjuntar",
+    "you": "Tu",
+    "imageAttachment": "Imagen",
+    "fileAttachment": "Archivo",
+    "audioAttachment": "Audio",
+    "systemMessage": "Mensaje del sistema",
+    "sending": "Enviando",
+    "sent": "Enviado",
+    "delivered": "Entregado",
+    "read": "Leido",
+    "failed": "Fallido"
   },
   "calls": {
     "incomingCall": "Llamada entrante",
@@ -31,7 +56,43 @@
     "duration": "Duracion",
     "answer": "Responder",
     "decline": "Rechazar",
-    "endCall": "Finalizar llamada"
+    "endCall": "Finalizar llamada",
+    "active": "Activa",
+    "ended": "Finalizada",
+    "callBack": "Devolver llamada"
+  },
+  "notificationsList": {
+    "system": "Sistema",
+    "message": "Mensaje",
+    "call": "Llamada",
+    "announcement": "Anuncio",
+    "task": "Tarea"
+  },
+  "homeActions": {
+    "newMessage": {
+      "label": "Nuevo mensaje",
+      "description": "Iniciar conversacion directa"
+    },
+    "callDirectory": {
+      "label": "Directorio de llamadas",
+      "description": "Buscar oficiales y departamentos"
+    },
+    "announcements": {
+      "label": "Anuncios",
+      "description": "Leer actualizaciones gubernamentales"
+    },
+    "reports": {
+      "label": "Informes",
+      "description": "Revisar informes operativos"
+    },
+    "schedule": {
+      "label": "Agenda",
+      "description": "Ver calendario y reuniones"
+    },
+    "documents": {
+      "label": "Documentos",
+      "description": "Acceder a documentos oficiales"
+    }
   },
   "auth": {
     "login": "Iniciar sesion",

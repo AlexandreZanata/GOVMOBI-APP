@@ -8,7 +8,22 @@
     "save": "Salvar",
     "back": "Voltar",
     "search": "Pesquisar",
-    "notifications": "Notificacoes"
+    "notifications": "Notificacoes",
+    "clear": "Limpar",
+    "delete": "Excluir",
+    "unknownUser": "Usuario desconhecido",
+    "role": {
+      "ADMIN": "Administrador",
+      "MANAGER": "Gerente",
+      "OFFICER": "Oficial",
+      "CITIZEN": "Cidadao"
+    },
+    "status": {
+      "ACTIVE": "Ativo",
+      "INACTIVE": "Inativo",
+      "SUSPENDED": "Suspenso",
+      "PENDING": "Pendente"
+    }
   },
   "home": {
     "greeting": "Ola, {{name}}",
@@ -22,7 +37,17 @@
     "online": "Online",
     "offline": "Offline",
     "send": "Enviar",
-    "attach": "Anexar"
+    "attach": "Anexar",
+    "you": "Voce",
+    "imageAttachment": "Imagem",
+    "fileAttachment": "Arquivo",
+    "audioAttachment": "Audio",
+    "systemMessage": "Mensagem do sistema",
+    "sending": "Enviando",
+    "sent": "Enviada",
+    "delivered": "Entregue",
+    "read": "Lida",
+    "failed": "Falhou"
   },
   "calls": {
     "incomingCall": "Chamada recebida",
@@ -31,7 +56,43 @@
     "duration": "Duracao",
     "answer": "Atender",
     "decline": "Recusar",
-    "endCall": "Encerrar chamada"
+    "endCall": "Encerrar chamada",
+    "active": "Ativa",
+    "ended": "Encerrada",
+    "callBack": "Retornar"
+  },
+  "notificationsList": {
+    "system": "Sistema",
+    "message": "Mensagem",
+    "call": "Chamada",
+    "announcement": "Comunicado",
+    "task": "Tarefa"
+  },
+  "homeActions": {
+    "newMessage": {
+      "label": "Nova mensagem",
+      "description": "Iniciar conversa direta"
+    },
+    "callDirectory": {
+      "label": "Diretorio de chamadas",
+      "description": "Buscar oficiais e departamentos"
+    },
+    "announcements": {
+      "label": "Comunicados",
+      "description": "Ler atualizacoes governamentais"
+    },
+    "reports": {
+      "label": "Relatorios",
+      "description": "Revisar relatorios operacionais"
+    },
+    "schedule": {
+      "label": "Agenda",
+      "description": "Ver calendario e reunioes"
+    },
+    "documents": {
+      "label": "Documentos",
+      "description": "Acessar documentos oficiais"
+    }
   },
   "auth": {
     "login": "Entrar",
