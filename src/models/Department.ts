@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Module implementation for models/Department.
+ */
+/**
  * Service grouping used by departments for catalog organization.
  */
 export interface ServiceCategory {

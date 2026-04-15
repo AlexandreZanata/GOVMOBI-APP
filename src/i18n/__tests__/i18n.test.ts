@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Test suite for the i18n module.
+ */
 import enUS from '../locales/en-US.json';
 import es from '../locales/es.json';
 import ptBR from '../locales/pt-BR.json';

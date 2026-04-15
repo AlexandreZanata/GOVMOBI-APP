@@ -14,8 +14,8 @@ import chatReducer from '../../../store/slices/chatSlice';
 import callsReducer from '../../../store/slices/callsSlice';
 import notificationsReducer from '../../../store/slices/notificationsSlice';
 import uiReducer from '../../../store/slices/uiSlice';
-import {UserRole, UserStatus} from '../../../models';
-import {type ChatStackParamList} from '../../../navigation/types';
+import {UserRole, UserStatus} from '@models/User';
+import {type ChatStackParamList} from '@navigation/types';
 
 // ---------------------------------------------------------------------------
 // Mocks

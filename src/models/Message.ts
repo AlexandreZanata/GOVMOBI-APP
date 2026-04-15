@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Module implementation for models/Message.
+ */
+/**
  * Supported content types for a conversation message.
  */
 export enum MessageType {

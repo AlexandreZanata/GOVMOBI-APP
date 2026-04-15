@@ -9,8 +9,7 @@ import {useTheme} from '@theme/index';
 import {Text} from '@components/atoms';
 import {MessageBubble} from '@components/molecules';
 import {useAppSelector} from '@store/index';
-import {type MessageListItem} from '../useChatRoom';
-import {formatTimeLabel} from '../useChatRoom';
+import {type MessageListItem, formatTimeLabel} from '@screens/Chat/useChatRoom';
 import {createChatStyles} from '../ChatScreens.styles';
 
 // ---------------------------------------------------------------------------

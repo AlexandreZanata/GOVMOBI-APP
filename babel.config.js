@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Babel configuration for the project build pipeline.
+ */
 module.exports = function (api) {
   api.cache(true);
 

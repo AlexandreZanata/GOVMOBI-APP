@@ -13,9 +13,9 @@ import {useNavigation} from '@react-navigation/native';
 import {type NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
-import {Avatar, Badge, Skeleton, Text} from '../../components/atoms';
-import {SearchBar} from '../../components/molecules';
-import {type ChatStackParamList} from '../../navigation/types';
+import {Avatar, Badge, Skeleton, Text} from '@components/atoms';
+import {SearchBar} from '@components/molecules';
+import {type ChatStackParamList} from '@navigation/types';
 import {useConversationList, type ConversationRow} from './useConversationList';
 import {createChatStyles} from './ChatScreens.styles';
 

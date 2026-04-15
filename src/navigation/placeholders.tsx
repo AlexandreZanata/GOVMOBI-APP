@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Module implementation for navigation/placeholders.
+ */
+/**
  * Minimal placeholder screens used by navigators until real screen
  * implementations are built in Steps 9–11.
  * These will be replaced by imports from src/screens/ as each step is completed.

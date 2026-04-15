@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for Button.
+ */
 import React from 'react';
 import {
   ActivityIndicator,
@@ -34,6 +37,12 @@ type VariantStyle = {
   borderWidth: number;
 };
 
+/**
+ * Maps a button variant to themed color and border tokens.
+ *
+ * @param variant Button visual variant.
+ * @returns Resolved style tokens for the variant.
+ */
 const getVariantStyle = (variant: ButtonVariant): VariantStyle => {
   const styles: Record<ButtonVariant, VariantStyle> = {
     primary: {
@@ -65,6 +74,13 @@ const getVariantStyle = (variant: ButtonVariant): VariantStyle => {
   return styles[variant];
 };
 
+/**
+ * Resolves vertical padding from semantic button size.
+ *
+ * @param theme Active theme tokens.
+ * @param size Button size variant.
+ * @returns Vertical padding in pixels.
+ */
 const getVerticalPadding = (theme: Theme, size: ButtonSize): number => {
   const sizes: Record<ButtonSize, number> = {
     sm: theme.spacing.sm,
@@ -74,6 +90,13 @@ const getVerticalPadding = (theme: Theme, size: ButtonSize): number => {
   return sizes[size];
 };
 
+/**
+ * Resolves minimum button height from semantic size.
+ *
+ * @param theme Active theme tokens.
+ * @param size Button size variant.
+ * @returns Minimum height in pixels.
+ */
 const getMinHeight = (theme: Theme, size: ButtonSize): number => {
   const heights: Record<ButtonSize, number> = {
     sm: theme.spacing['6xl'],
@@ -84,6 +107,12 @@ const getMinHeight = (theme: Theme, size: ButtonSize): number => {
   return heights[size];
 };
 
+/**
+ * Renders a themed pressable button with loading and icon slots.
+ *
+ * @param props Button behavior and presentation props.
+ * @returns Button component tree.
+ */
 export const Button = ({
   label,
   onPress,
@@ -128,6 +157,15 @@ export const Button = ({
 
 Button.displayName = 'Button';
 
+/**
+ * Creates Button stylesheet values from theme and resolved tokens.
+ *
+ * @param theme Active theme object.
+ * @param variantStyle Variant style token bundle.
+ * @param size Button size variant.
+ * @param isDisabled Indicates disabled or loading state.
+ * @returns React Native stylesheet for Button.
+ */
 const createStyles = (
   theme: Theme,
   variantStyle: VariantStyle,

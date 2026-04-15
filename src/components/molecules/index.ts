@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Public exports for the Components/Molecules module.
+ */
 export * from './SearchBar';
 export * from './MessageBubble';
 export * from './CallCard';

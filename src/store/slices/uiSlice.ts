@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for store/slices/uiSlice.
+ */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {type ThemeMode} from '../../theme';
 import {type AppLanguage} from '../../i18n';

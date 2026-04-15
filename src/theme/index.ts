@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Public module exports for theme/index.
+ */
 import React, {createContext, useContext, useMemo} from 'react';
 import {Platform} from 'react-native';
 

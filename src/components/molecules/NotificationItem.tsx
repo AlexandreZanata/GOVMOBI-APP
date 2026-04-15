@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for NotificationItem.
+ */
 import React, {useMemo, useRef} from 'react';
 import {
   Animated,
@@ -29,6 +32,12 @@ export interface NotificationItemProps {
   testID?: string;
 }
 
+/**
+ * Resolves icon name for a notification type.
+ *
+ * @param type Notification type enum value.
+ * @returns Icon name compatible with the Icon component.
+ */
 const getTypeIcon = (
   type: NotificationType,
 ): React.ComponentProps<typeof Icon>['name'] => {
@@ -47,6 +56,12 @@ const getTypeIcon = (
   return 'notifications';
 };
 
+/**
+ * Maps notification priority to theme color tokens.
+ *
+ * @param priority Notification priority enum value.
+ * @returns Theme color token key.
+ */
 const getPriorityColor = (
   priority: NotificationPriority,
 ): keyof Theme['colors'] => {
@@ -62,6 +77,13 @@ const getPriorityColor = (
   return 'border';
 };
 
+/**
+ * Resolves localized label for a notification type.
+ *
+ * @param type Notification type enum value.
+ * @param t Translation function.
+ * @returns Localized notification type label.
+ */
 const getTypeLabel = (
   type: NotificationType,
   t: (key: string) => string,
@@ -81,6 +103,12 @@ const getTypeLabel = (
   return t('notificationsList.system');
 };
 
+/**
+ * Renders a swipeable notification list item with dismiss behavior.
+ *
+ * @param props Notification data and interaction handlers.
+ * @returns NotificationItem component tree.
+ */
 export const NotificationItem = ({
   notification,
   timeLabel,
@@ -180,6 +208,13 @@ export const NotificationItem = ({
 
 NotificationItem.displayName = 'NotificationItem';
 
+/**
+ * Creates NotificationItem stylesheet values from theme and item state.
+ *
+ * @param theme Active theme object.
+ * @param notification Notification entity used for style decisions.
+ * @returns React Native stylesheet for NotificationItem.
+ */
 const createStyles = (theme: Theme, notification: Notification) =>
   StyleSheet.create({
     wrapper: {

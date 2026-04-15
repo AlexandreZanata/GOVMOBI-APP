@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Public module exports for i18n/index.
+ */
 import i18n, {type Resource, type i18n as I18nInstance} from 'i18next';
 import {initReactI18next} from 'react-i18next';
 import ptBR from './locales/pt-BR.json';

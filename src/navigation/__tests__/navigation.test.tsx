@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Test module for navigation/__tests__/navigation.test.
+ */
 import React from 'react';
 import {render, screen} from '@testing-library/react-native';
 import {NavigationContainer} from '@react-navigation/native';

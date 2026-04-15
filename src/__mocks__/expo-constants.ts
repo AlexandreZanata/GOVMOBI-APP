@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Mock module for __mocks__/expo-constants.
+ */
 const Constants = {
   expoConfig: {
     extra: {

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for QuickActionCard.
+ */
 import React, {useMemo, useRef} from 'react';
 import {
   Animated,
@@ -20,6 +23,12 @@ export interface QuickActionCardProps {
   testID?: string;
 }
 
+/**
+ * Renders a compact card for dashboard quick actions.
+ *
+ * @param props Quick action metadata and interaction handlers.
+ * @returns QuickActionCard component tree.
+ */
 export const QuickActionCard = ({
   iconName,
   label,
@@ -77,6 +86,12 @@ export const QuickActionCard = ({
 
 QuickActionCard.displayName = 'QuickActionCard';
 
+/**
+ * Creates QuickActionCard stylesheet values from theme tokens.
+ *
+ * @param theme Active theme object.
+ * @returns React Native stylesheet for QuickActionCard.
+ */
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for SearchBar.
+ */
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Animated,
@@ -22,6 +25,12 @@ export interface SearchBarProps {
   testID?: string;
 }
 
+/**
+ * Renders an expandable search input with debounced callbacks.
+ *
+ * @param props Search value, debounce, and interaction props.
+ * @returns SearchBar component tree.
+ */
 export const SearchBar = ({
   value,
   onChangeText,
@@ -127,6 +136,12 @@ export const SearchBar = ({
 
 SearchBar.displayName = 'SearchBar';
 
+/**
+ * Creates SearchBar stylesheet values from theme tokens.
+ *
+ * @param theme Active theme object.
+ * @returns React Native stylesheet for SearchBar.
+ */
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {

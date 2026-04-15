@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for CallCard.
+ */
 import React, {useMemo, useRef} from 'react';
 import {
   Animated,
@@ -24,6 +27,12 @@ export interface CallCardProps {
   testID?: string;
 }
 
+/**
+ * Formats call duration in mm:ss format.
+ *
+ * @param totalSeconds Total duration in seconds.
+ * @returns Formatted duration label, or empty string when unavailable.
+ */
 const formatDuration = (totalSeconds?: number): string => {
   if (typeof totalSeconds !== 'number') {
     return '';
@@ -38,6 +47,12 @@ const formatDuration = (totalSeconds?: number): string => {
   return `${minutes}:${seconds}`;
 };
 
+/**
+ * Maps a call status to badge variant semantics.
+ *
+ * @param status Call status enum value.
+ * @returns Badge variant matching the status severity.
+ */
 const getStatusVariant = (
   status: CallStatus,
 ): 'default' | 'primary' | 'success' | 'warning' | 'error' => {
@@ -53,6 +68,13 @@ const getStatusVariant = (
   return 'default';
 };
 
+/**
+ * Resolves a localized status label for a call.
+ *
+ * @param status Call status enum value.
+ * @param t Translation function.
+ * @returns Localized status label.
+ */
 const getStatusLabel = (
   status: CallStatus,
   t: (key: string) => string,
@@ -72,6 +94,12 @@ const getStatusLabel = (
   return t('calls.ended');
 };
 
+/**
+ * Renders a call summary card with quick callback and delete actions.
+ *
+ * @param props Call data and interaction handlers.
+ * @returns CallCard component tree.
+ */
 export const CallCard = ({
   call,
   displayName,
@@ -181,6 +209,12 @@ export const CallCard = ({
 
 CallCard.displayName = 'CallCard';
 
+/**
+ * Creates CallCard stylesheet values from theme tokens.
+ *
+ * @param theme Active theme object.
+ * @returns React Native stylesheet for CallCard.
+ */
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {

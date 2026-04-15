@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for i18n/useLanguage.
+ */
 import {useCallback} from 'react';
 import {
   availableLanguages,

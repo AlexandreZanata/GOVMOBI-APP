@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for screens/Home/HomeScreen.
+ */
 import React, {useCallback, useMemo} from 'react';
 import {
   Animated,
@@ -13,10 +16,10 @@ import {useNavigation} from '@react-navigation/native';
 import {type BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
-import {Text} from '../../components/atoms';
-import {CallCard, MessageBubble, QuickActionCard} from '../../components/molecules';
+import {Text} from '@components/atoms';
+import {CallCard, MessageBubble, QuickActionCard} from '@components/molecules';
 import {useAppSelector} from '../../store';
-import {type MainTabParamList} from '../../navigation/types';
+import {type MainTabParamList} from '@navigation/types';
 import {
   useHomeScreen,
   type ActivityItem,

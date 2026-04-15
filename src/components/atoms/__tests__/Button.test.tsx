@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Test suite for Components/Atoms/Button.
+ */
 import React from 'react';
 import {fireEvent, render} from '@testing-library/react-native';
 import {ThemeProvider} from '@theme/index';

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for navigation/AppHeader.
+ */
 /* eslint-disable react-native/no-unused-styles */
 import React from 'react';
 import {

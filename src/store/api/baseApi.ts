@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for store/api/baseApi.
+ */
 import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
 import {ENV} from '../../config/env';
 

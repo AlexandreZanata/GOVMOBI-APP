@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for store/slices/notificationsSlice.
+ */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {type Notification} from '../../models';
 

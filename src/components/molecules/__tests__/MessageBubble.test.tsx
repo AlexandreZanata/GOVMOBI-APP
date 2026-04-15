@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Test suite for Components/Molecules/MessageBubble.
+ */
 import React from 'react';
 import {render} from '@testing-library/react-native';
 import '../../../i18n';

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Public exports for the Components/Atoms module.
+ */
 export * from './Avatar';
 export * from './Badge';
 export * from './Button';

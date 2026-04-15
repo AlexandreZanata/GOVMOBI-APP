@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for Input.
+ */
 import React, {useMemo, useState} from 'react';
 import {
   Pressable,
@@ -23,6 +26,12 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   testID?: string;
 }
 
+/**
+ * Renders a themed text input with helper/error feedback and secure toggle.
+ *
+ * @param props Input behavior, value, and decoration props.
+ * @returns Input component tree.
+ */
 export const Input = ({
   label,
   error,
@@ -111,6 +120,14 @@ export const Input = ({
 
 Input.displayName = 'Input';
 
+/**
+ * Creates Input stylesheet values from theme and UI state.
+ *
+ * @param theme Active theme object.
+ * @param isFocused Indicates focus state.
+ * @param hasError Indicates error state.
+ * @returns React Native stylesheet for Input.
+ */
 const createStyles = (theme: Theme, isFocused: boolean, hasError: boolean) => {
   const borderColor = hasError
     ? theme.colors.error

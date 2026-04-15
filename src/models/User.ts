@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Module implementation for models/User.
+ */
+/**
  * Supported GovMobile roles used for access control.
  */
 export enum UserRole {

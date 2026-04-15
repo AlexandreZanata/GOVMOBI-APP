@@ -6,8 +6,8 @@ import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native'
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
-import {Avatar, Skeleton, Text} from '../../components/atoms';
-import {type ChatStackParamList} from '../../navigation/types';
+import {Avatar, Skeleton, Text} from '@components/atoms';
+import {type ChatStackParamList} from '@navigation/types';
 import {useChatRoom} from './useChatRoom';
 import {MessageList} from './components/MessageList';
 import {MessageInput} from './components/MessageInput';

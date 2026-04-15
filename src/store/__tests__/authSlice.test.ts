@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Test suite for the authSlice module.
+ */
 import authReducer, {
   setUser,
   setToken,

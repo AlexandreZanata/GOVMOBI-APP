@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for store/slices/callsSlice.
+ */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {type Call, CallStatus} from '../../models';
 

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Test suite for the AuthFacade module.
+ */
 import {AuthFacadeImpl, type LoginCredentials} from '../AuthFacade';
 
 const mockSecureStore = new Map<string, string>();

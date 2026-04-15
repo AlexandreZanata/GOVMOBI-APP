@@ -1,3 +1,6 @@
+/**
+ * @fileoverview JavaScript entry module for application startup.
+ */
 import { registerRootComponent } from 'expo';
 import App from './src/App';
 

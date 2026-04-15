@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for screens/Home/components/HomeStatusBar.
+ */
 import React from 'react';
 import {View} from 'react-native';
 import {useTranslation} from 'react-i18next';

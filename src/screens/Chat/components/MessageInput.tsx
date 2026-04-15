@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
-import {useTheme} from '../../../theme';
+import {useTheme} from '@theme/index';
 import {createChatStyles} from '../ChatScreens.styles';
 
 export interface MessageInputProps {

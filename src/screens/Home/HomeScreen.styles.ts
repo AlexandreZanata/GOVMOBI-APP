@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for screens/Home/HomeScreen.styles.
+ */
 import {StyleSheet} from 'react-native';
 import {type Theme} from '../../theme';
 

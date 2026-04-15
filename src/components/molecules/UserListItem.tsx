@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for UserListItem.
+ */
 import React, {useMemo, useRef} from 'react';
 import {
   Animated,
@@ -20,6 +23,12 @@ export interface UserListItemProps {
   testID?: string;
 }
 
+/**
+ * Renders a user row with avatar, metadata, and navigation affordance.
+ *
+ * @param props User entity and interaction handlers.
+ * @returns UserListItem component tree.
+ */
 export const UserListItem = ({
   user,
   onPress,
@@ -85,6 +94,12 @@ export const UserListItem = ({
 
 UserListItem.displayName = 'UserListItem';
 
+/**
+ * Creates UserListItem stylesheet values from theme tokens.
+ *
+ * @param theme Active theme object.
+ * @returns React Native stylesheet for UserListItem.
+ */
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {

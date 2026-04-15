@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for store/slices/authSlice.
+ */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {type User} from '../../models';
 

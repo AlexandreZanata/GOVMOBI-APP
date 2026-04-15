@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for store/slices/chatSlice.
+ */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {type Conversation, type Message} from '../../models';
 

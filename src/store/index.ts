@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Public module exports for store/index.
+ */
 import {combineReducers, configureStore} from '@reduxjs/toolkit';
 import {
   persistStore,

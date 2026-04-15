@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Module implementation for models/Notification.
+ */
+/**
  * Supported categories for in-app and push notifications.
  */
 export enum NotificationType {

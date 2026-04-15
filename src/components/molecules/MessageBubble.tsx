@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for MessageBubble.
+ */
 import React, {useMemo, useRef} from 'react';
 import {
   Animated,
@@ -22,6 +25,13 @@ export interface MessageBubbleProps {
   testID?: string;
 }
 
+/**
+ * Resolves message preview content based on message type.
+ *
+ * @param message Message entity.
+ * @param t Translation function.
+ * @returns Localized message content preview.
+ */
 const getContentByType = (
   message: Message,
   t: (key: string) => string,
@@ -45,6 +55,13 @@ const getContentByType = (
   return t('chat.systemMessage');
 };
 
+/**
+ * Resolves localized label for a message delivery status.
+ *
+ * @param status Message status enum value.
+ * @param t Translation function.
+ * @returns Localized status label.
+ */
 const getStatusLabel = (
   status: MessageStatus,
   t: (key: string) => string,
@@ -60,6 +77,12 @@ const getStatusLabel = (
   return map[status];
 };
 
+/**
+ * Renders a chat bubble with timestamp and optional delivery status.
+ *
+ * @param props Message content, ownership, and interaction props.
+ * @returns MessageBubble component tree.
+ */
 export const MessageBubble = ({
   message,
   isSentByCurrentUser,
@@ -141,6 +164,13 @@ export const MessageBubble = ({
 
 MessageBubble.displayName = 'MessageBubble';
 
+/**
+ * Creates MessageBubble stylesheet values from theme and ownership state.
+ *
+ * @param theme Active theme object.
+ * @param isSentByCurrentUser Indicates whether message is outgoing.
+ * @returns React Native stylesheet for MessageBubble.
+ */
 const createStyles = (theme: Theme, isSentByCurrentUser: boolean) =>
   StyleSheet.create({
     row: {

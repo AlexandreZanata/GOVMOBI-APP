@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for screens/Home/components/HomeHeader.
+ */
 import React from 'react';
 import {Pressable, View} from 'react-native';
 import {useTranslation} from 'react-i18next';

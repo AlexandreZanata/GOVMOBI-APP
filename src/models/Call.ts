@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Module implementation for models/Call.
+ */
+/**
  * Communication mode for a call session.
  */
 export enum CallType {

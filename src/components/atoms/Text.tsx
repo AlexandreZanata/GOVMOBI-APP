@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for Text.
+ */
 import React from 'react';
 import {
   Text as RNText,
@@ -23,6 +26,13 @@ export interface TextProps extends RNTextProps {
   testID?: string;
 }
 
+/**
+ * Resolves typography tokens for a text variant.
+ *
+ * @param theme Active theme tokens.
+ * @param variant Text style variant.
+ * @returns Font size, line height, and weight tuple.
+ */
 const getVariantStyle = (
   theme: Theme,
   variant: TextVariant,
@@ -61,6 +71,12 @@ const getVariantStyle = (
   return map[variant];
 };
 
+/**
+ * Renders themed text using semantic typography variants.
+ *
+ * @param props Text content and style props.
+ * @returns Text component tree.
+ */
 export const Text = ({
   variant = 'body',
   color = 'text',
@@ -81,6 +97,14 @@ export const Text = ({
 
 Text.displayName = 'Text';
 
+/**
+ * Creates Text stylesheet values from theme and variant tokens.
+ *
+ * @param theme Active theme object.
+ * @param variant Text style variant.
+ * @param color Theme color token key.
+ * @returns React Native stylesheet for Text.
+ */
 const createStyles = (
   theme: Theme,
   variant: TextVariant,

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Test suite for the theme module.
+ */
 import React from 'react';
 import {Text} from 'react-native';
 import {render} from '@testing-library/react-native';

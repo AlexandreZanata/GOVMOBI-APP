@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for navigation/TabBar.
+ */
 /* eslint-disable react-native/no-unused-styles */
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';

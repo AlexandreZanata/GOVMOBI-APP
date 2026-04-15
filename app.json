@@ -37,6 +37,12 @@
       "expo-av",
       "expo-font"
     ],
-    "scheme": "govmobile"
+    "scheme": "govmobile",
+    "extra": {
+      "apiUrl": "https://api.govmobile.dev",
+      "wsUrl": "wss://ws.govmobile.dev",
+      "appEnv": "development",
+      "mockMode": true
+    }
   }
 }

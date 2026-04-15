@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Test module for screens/Home/__tests__/HomeScreen.test.
+ */
 import React from 'react';
 import {act, render, screen, waitFor} from '@testing-library/react-native';
 import {NavigationContainer} from '@react-navigation/native';

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for Skeleton.
+ */
 import React, {useEffect, useMemo, useRef} from 'react';
 import {
   Animated,
@@ -16,6 +19,12 @@ export interface SkeletonProps {
   testID?: string;
 }
 
+/**
+ * Renders an animated skeleton placeholder for loading states.
+ *
+ * @param props Skeleton sizing and style props.
+ * @returns Skeleton component tree.
+ */
 export const Skeleton = ({
   width = '100%',
   height,
@@ -66,6 +75,14 @@ export const Skeleton = ({
 
 Skeleton.displayName = 'Skeleton';
 
+/**
+ * Creates Skeleton stylesheet values from theme tokens.
+ *
+ * @param theme Active theme object.
+ * @param height Placeholder height in pixels.
+ * @param borderRadius Optional corner radius override.
+ * @returns React Native stylesheet for Skeleton.
+ */
 const createStyles = (theme: Theme, height: number, borderRadius?: number) =>
   StyleSheet.create({
     base: {

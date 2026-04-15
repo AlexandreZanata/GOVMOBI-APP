@@ -9,7 +9,7 @@ import {
   setMessages,
   setTyping,
   updateMessage,
-} from '../../store/slices/chatSlice';
+} from '@store/slices/chatSlice';
 
 export type MessageListItem =
   | {kind: 'message'; data: Message}

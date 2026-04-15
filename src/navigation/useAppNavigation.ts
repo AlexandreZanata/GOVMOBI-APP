@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for navigation/useAppNavigation.
+ */
 import {
   useNavigation,
   type NavigationProp,

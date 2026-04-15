@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for screens/Home/useHomeScreen.
+ */
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Animated} from 'react-native';
 import {

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview UI component module for Divider.
+ */
 import React from 'react';
 import {StyleSheet, View, type StyleProp, type ViewStyle} from 'react-native';
 import {useTheme, type Theme} from '../../theme';
@@ -12,6 +15,12 @@ export interface DividerProps {
   testID?: string;
 }
 
+/**
+ * Renders a horizontal or vertical separator with optional label.
+ *
+ * @param props Divider layout and label props.
+ * @returns Divider component tree.
+ */
 export const Divider = ({
   orientation = 'horizontal',
   label,
@@ -42,12 +51,19 @@ export const Divider = ({
 
 Divider.displayName = 'Divider';
 
+/**
+ * Creates Divider stylesheet values from theme tokens.
+ *
+ * @param theme Active theme object.
+ * @param orientation Divider orientation variant.
+ * @returns React Native stylesheet for Divider.
+ */
 const createStyles = (theme: Theme, orientation: DividerOrientation) =>
   StyleSheet.create({
-      horizontalLine: {
-          borderBottomWidth: StyleSheet.hairlineWidth,
-          borderBottomColor: theme.colors.border,
-      },
+    horizontalLine: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.colors.border,
+    },
     verticalLine: {
       alignSelf: 'stretch',
       backgroundColor: theme.colors.border,
