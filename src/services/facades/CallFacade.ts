@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for services/facades/CallFacade.
+ */
 import {CallStatus, type Call, type CallType} from '../../models';
 import {
   type FacadeConfig,
@@ -5,6 +8,7 @@ import {
   type Result,
   type ApiEnvelope,
 } from './types';
+import {delay, shouldFail} from '../mock/data/simulation';
 
 /**
  * Call facade contract for call signaling and history operations.
@@ -78,6 +82,11 @@ export class CallFacadeImpl implements ICallFacade {
     page: number,
   ): Promise<Result<Call[], FacadeError>> {
     if (this.mockMode) {
+      await delay(170);
+      if (shouldFail('calls.history')) {
+        return fail(toFacadeError('Mock call history failed', 'NETWORK_ERROR'));
+      }
+
       return ok([]);
     }
 
@@ -107,6 +116,13 @@ export class CallFacadeImpl implements ICallFacade {
     type: CallType,
   ): Promise<Result<Call, FacadeError>> {
     if (this.mockMode) {
+      await delay(220);
+      if (shouldFail('calls.initiate')) {
+        return fail(
+          toFacadeError('Mock initiate call failed', 'NETWORK_ERROR'),
+        );
+      }
+
       const mockCall: Call = {
         id: '123e4567-e89b-12d3-a456-426614174320',
         type,
@@ -210,6 +226,11 @@ export class CallFacadeImpl implements ICallFacade {
    */
   public async endCall(callId: string): Promise<Result<boolean, FacadeError>> {
     if (this.mockMode) {
+      await delay(180);
+      if (shouldFail('calls.end')) {
+        return fail(toFacadeError('Mock end call failed', 'NETWORK_ERROR'));
+      }
+
       this.activeCall = null;
       return ok(true);
     }

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for services/facades/AuthFacade.
+ */
 import * as SecureStore from 'expo-secure-store';
 import {UserRole, UserStatus, type User} from '../../models';
 import {
@@ -6,6 +9,7 @@ import {
   type Result,
   type ApiEnvelope,
 } from './types';
+import {delay, shouldFail} from '../mock/data/simulation';
 
 const ACCESS_TOKEN_KEY = 'govmobile_access_token';
 const REFRESH_TOKEN_KEY = 'govmobile_refresh_token';
@@ -99,6 +103,11 @@ export class AuthFacadeImpl implements IAuthFacade {
     credentials: LoginCredentials,
   ): Promise<Result<AuthSession, FacadeError>> {
     if (this.mockMode) {
+      await delay(280);
+      if (shouldFail('auth.login')) {
+        return fail(toFacadeError('Mock login failed', 'NETWORK_ERROR'));
+      }
+
       const session: AuthSession = {
         accessToken: 'mock-access-token',
         refreshToken: 'mock-refresh-token',
@@ -171,12 +180,17 @@ export class AuthFacadeImpl implements IAuthFacade {
   public async refreshToken(): Promise<
     Result<Omit<AuthSession, 'user'>, FacadeError>
   > {
+    await delay(220);
     const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
     if (!refreshToken) {
       return fail(toFacadeError('Missing refresh token', 'UNAUTHORIZED'));
     }
 
     if (this.mockMode) {
+      if (shouldFail('auth.refresh')) {
+        return fail(toFacadeError('Mock refresh failed', 'NETWORK_ERROR'));
+      }
+
       const refreshed = {
         accessToken: 'mock-access-token-refreshed',
         refreshToken: 'mock-refresh-token-refreshed',

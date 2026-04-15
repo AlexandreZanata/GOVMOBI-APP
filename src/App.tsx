@@ -15,6 +15,7 @@ import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
 import {GlobalToast, NetworkBanner} from './components/organisms';
 import {useAuthSession, useNetworkStatus, useNotifications} from './hooks';
+import {FacadeProvider} from './services/facades';
 
 /**
  * App tree rendered after all global providers are mounted.
@@ -56,9 +57,11 @@ const App = (): React.JSX.Element => {
       <SafeAreaProvider>
         <I18nextProvider i18n={i18n}>
           <Provider store={store}>
-            <PersistGate loading={loadingFallback} persistor={persistor}>
-              <AppShell />
-            </PersistGate>
+            <FacadeProvider>
+              <PersistGate loading={loadingFallback} persistor={persistor}>
+                <AppShell />
+              </PersistGate>
+            </FacadeProvider>
           </Provider>
         </I18nextProvider>
       </SafeAreaProvider>

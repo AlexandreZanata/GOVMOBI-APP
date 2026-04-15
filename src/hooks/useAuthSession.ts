@@ -1,9 +1,8 @@
 /**
  * @fileoverview Hook module for useAuthSession.
  */
-import {useEffect, useMemo, useRef} from 'react';
-import {AuthFacadeImpl} from '@services/facades';
-import {ENV} from '../config/env';
+import {useEffect, useRef} from 'react';
+import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
 import {logout, setToken} from '@store/slices/authSlice';
 import {addToast} from '@store/slices/uiSlice';
@@ -49,19 +48,11 @@ const getTokenExpiry = (token: string): number | null => {
  */
 export const useAuthSession = (): void => {
   const dispatch = useAppDispatch();
+  const {authFacade} = useFacades();
   const {t} = useTranslation();
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
   const token = useAppSelector(state => state.auth.token);
   const isRefreshing = useRef<boolean>(false);
-
-  const authFacade = useMemo(
-    () =>
-      new AuthFacadeImpl({
-        apiBaseUrl: ENV.apiUrl,
-        mockMode: ENV.mockMode,
-      }),
-    [],
-  );
 
   useEffect(() => {
     if (!isAuthenticated) {

@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Module implementation for services/facades/NotificationFacade.
+ */
 import {type Notification} from '../../models';
 import {
   type FacadeConfig,
@@ -5,6 +8,7 @@ import {
   type Result,
   type ApiEnvelope,
 } from './types';
+import {delay, shouldFail} from '../mock/data/simulation';
 
 /**
  * Notification facade contract for inbox and permissions.
@@ -69,6 +73,13 @@ export class NotificationFacadeImpl implements INotificationFacade {
     page: number,
   ): Promise<Result<Notification[], FacadeError>> {
     if (this.mockMode) {
+      await delay(140);
+      if (shouldFail('notifications.list')) {
+        return fail(
+          toFacadeError('Mock notifications fetch failed', 'NETWORK_ERROR'),
+        );
+      }
+
       return ok([]);
     }
 
@@ -184,6 +195,13 @@ export class NotificationFacadeImpl implements INotificationFacade {
    * Requests push notification permission.
    */
   public async requestPermission(): Promise<Result<boolean, FacadeError>> {
+    await delay(180);
+    if (shouldFail('notifications.permission')) {
+      return fail(
+        toFacadeError('Mock permission request failed', 'NETWORK_ERROR'),
+      );
+    }
+
     return ok(true);
   }
 }

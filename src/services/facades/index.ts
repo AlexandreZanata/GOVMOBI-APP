@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Public module exports for services/facades/index.
+ */
 import React, {createContext, useContext, useMemo} from 'react';
 import {AuthFacadeImpl, type IAuthFacade} from './AuthFacade';
 import {CallFacadeImpl, type ICallFacade} from './CallFacade';
@@ -6,13 +9,21 @@ import {
   NotificationFacadeImpl,
   type INotificationFacade,
 } from './NotificationFacade';
+import {RunFacadeImpl, type IRunFacade} from './RunFacade';
 import {type FacadeConfig} from './types';
+import {ENV} from '../../config/env';
+import {AuthFacadeMock} from './mock/AuthFacadeMock';
+import {ChatFacadeMock} from './mock/ChatFacadeMock';
+import {CallFacadeMock} from './mock/CallFacadeMock';
+import {NotificationFacadeMock} from './mock/NotificationFacadeMock';
+import {RunFacadeMock} from './mock/RunFacadeMock';
 
 export interface Facades {
   authFacade: IAuthFacade;
   chatFacade: IChatFacade;
   callFacade: ICallFacade;
   notificationFacade: INotificationFacade;
+  runFacade: IRunFacade;
 }
 
 export interface FacadeProviderProps {
@@ -21,12 +32,31 @@ export interface FacadeProviderProps {
   facades?: Partial<Facades>;
 }
 
-const createDefaultFacades = (config?: FacadeConfig): Facades => ({
-  authFacade: new AuthFacadeImpl(config),
-  chatFacade: new ChatFacadeImpl(config),
-  callFacade: new CallFacadeImpl(config),
-  notificationFacade: new NotificationFacadeImpl(config),
-});
+const createDefaultFacades = (config?: FacadeConfig): Facades => {
+  const resolvedConfig: FacadeConfig = {
+    ...config,
+    mockMode: config?.mockMode ?? ENV.mockMode,
+    apiBaseUrl: config?.apiBaseUrl ?? ENV.apiUrl,
+  };
+
+  if (resolvedConfig.mockMode) {
+    return {
+      authFacade: new AuthFacadeMock(),
+      chatFacade: new ChatFacadeMock(),
+      callFacade: new CallFacadeMock(),
+      notificationFacade: new NotificationFacadeMock(),
+      runFacade: new RunFacadeMock(),
+    };
+  }
+
+  return {
+    authFacade: new AuthFacadeImpl(resolvedConfig),
+    chatFacade: new ChatFacadeImpl(resolvedConfig),
+    callFacade: new CallFacadeImpl(resolvedConfig),
+    notificationFacade: new NotificationFacadeImpl(resolvedConfig),
+    runFacade: new RunFacadeImpl(resolvedConfig),
+  };
+};
 
 const FacadeContext = createContext<Facades | null>(null);
 
@@ -71,3 +101,9 @@ export * from './AuthFacade';
 export * from './ChatFacade';
 export * from './CallFacade';
 export * from './NotificationFacade';
+export * from './RunFacade';
+export * from './mock/AuthFacadeMock';
+export * from './mock/ChatFacadeMock';
+export * from './mock/CallFacadeMock';
+export * from './mock/NotificationFacadeMock';
+export * from './mock/RunFacadeMock';

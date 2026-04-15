@@ -1,11 +1,10 @@
 /**
  * @fileoverview Hook module for useNotifications.
  */
-import {useEffect, useMemo, useState} from 'react';
-import {NotificationFacadeImpl} from '@services/facades';
+import {useEffect, useState} from 'react';
+import {useFacades} from '@services/facades';
 import {setPermissionStatus} from '@store/slices/notificationsSlice';
 import {useAppDispatch} from '../store';
-import {ENV} from '../config/env';
 import {logger} from '@utils/logger';
 
 export interface UseNotificationsResult {
@@ -55,23 +54,14 @@ const resolveFcmToken = async (): Promise<string | null> => {
  */
 export const useNotifications = (): UseNotificationsResult => {
   const dispatch = useAppDispatch();
+  const {notificationFacade} = useFacades();
   const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
-
-  const notificationFacade = useMemo(
-    () =>
-      new NotificationFacadeImpl({
-        apiBaseUrl: ENV.apiUrl,
-        mockMode: ENV.mockMode,
-      }),
-    [],
-  );
 
   useEffect(() => {
     const setupNotifications = async (): Promise<void> => {
       const permissionResult = await notificationFacade.requestPermission();
-      const granted =
-        permissionResult.error === null && permissionResult.data;
+      const granted = permissionResult.error === null && permissionResult.data;
 
       setPermissionGranted(granted);
       dispatch(setPermissionStatus(granted ? 'granted' : 'denied'));
