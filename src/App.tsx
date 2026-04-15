@@ -1,19 +1,16 @@
 import React from 'react';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import { View, Text } from 'react-native';
 
 /**
  * GovMobile - Public Administration Mobile App
  * 
- * Main application entry point with all providers
+ * Main application entry point
  */
-const App: React.FC = () => {
+const App = () => {
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
-      <SafeAreaProvider>
-        {/* App content will be added here */}
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>GovMobile App</Text>
+    </View>
   );
 };
 
