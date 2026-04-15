@@ -1,15 +1,7 @@
 module.exports = {
   root: true,
-  extends: [
-    'eslint:recommended',
-    'prettier',
-  ],
-  plugins: [
-    'react',
-    'react-hooks',
-    'react-native',
-    '@typescript-eslint',
-  ],
+  extends: ['eslint:recommended', 'prettier'],
+  plugins: ['react', 'react-hooks', 'react-native', '@typescript-eslint'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaFeatures: {
@@ -23,12 +15,15 @@ module.exports = {
     es2020: true,
     node: true,
   },
-  ignorePatterns: [
-    'node_modules/**',
-    'dist/**',
-    'build/**',
-    '.expo/**',
+  overrides: [
+    {
+      files: ['**/*.test.ts', '**/*.test.tsx', '**/__tests__/**/*.{ts,tsx}'],
+      env: {
+        jest: true,
+      },
+    },
   ],
+  ignorePatterns: ['node_modules/**', 'dist/**', 'build/**', '.expo/**'],
   rules: {
     'react-hooks/exhaustive-deps': 'warn',
     'react-hooks/rules-of-hooks': 'error',

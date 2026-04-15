@@ -1,0 +1,48 @@
+{
+  "common": {
+    "appName": "GovMobile",
+    "loading": "Carregando",
+    "retry": "Tentar novamente",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Salvar",
+    "back": "Voltar",
+    "search": "Pesquisar",
+    "notifications": "Notificacoes"
+  },
+  "home": {
+    "greeting": "Ola, {{name}}",
+    "services": "Servicos",
+    "recentActivity": "Atividade recente",
+    "announcements": "Comunicados"
+  },
+  "chat": {
+    "newMessage": "Nova mensagem",
+    "typing": "Digitando",
+    "online": "Online",
+    "offline": "Offline",
+    "send": "Enviar",
+    "attach": "Anexar"
+  },
+  "calls": {
+    "incomingCall": "Chamada recebida",
+    "outgoingCall": "Chamada realizada",
+    "missedCall": "Chamada perdida",
+    "duration": "Duracao",
+    "answer": "Atender",
+    "decline": "Recusar",
+    "endCall": "Encerrar chamada"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "username": "Usuario",
+    "password": "Senha",
+    "forgotPassword": "Esqueci minha senha"
+  },
+  "errors": {
+    "networkError": "Erro de rede",
+    "sessionExpired": "Sessao expirada",
+    "unknownError": "Erro desconhecido"
+  }
+}
