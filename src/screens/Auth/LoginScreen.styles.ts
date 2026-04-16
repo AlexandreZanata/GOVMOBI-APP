@@ -1,5 +1,13 @@
 /**
  * @fileoverview Styles for the LoginScreen.
+ *
+ * Safe-area strategy:
+ * - The root `SafeAreaView` (edges: top, bottom) handles notch/home-indicator
+ *   on both iOS and Android — no manual inset arithmetic needed.
+ * - `KeyboardAvoidingView` sits inside SafeAreaView so the keyboard offset is
+ *   calculated relative to the already-inset area, preventing the white gap
+ *   that appears on Android when behavior="height" is used outside SafeAreaView.
+ *
  * All values sourced from theme tokens — no hardcoded colors or sizes.
  */
 import {StyleSheet} from 'react-native';
@@ -9,27 +17,36 @@ import {type Theme} from '../../theme';
  * Creates the StyleSheet for LoginScreen.
  *
  * @param theme - The current GovMobile theme object.
- * @param topInset - Safe-area top inset in pixels.
  * @returns A StyleSheet object scoped to the Login screen.
  */
 // eslint-disable-next-line react-native/no-unused-styles
-export const createLoginStyles = (theme: Theme, topInset: number) =>
+export const createLoginStyles = (theme: Theme) =>
   StyleSheet.create({
-    root: {
+    /** Fills the safe area; primary brand colour shows behind the scroll. */
+    safeArea: {
       backgroundColor: theme.colors.primary,
       flex: 1,
     },
+    /** Expands to fill the safe area so keyboard avoidance works correctly. */
+    keyboardView: {
+      flex: 1,
+    },
+    /**
+     * ScrollView content container.
+     * `flexGrow: 1` + `justifyContent: 'center'` keeps the card centred on
+     * tall screens while still scrolling on short ones (e.g. SE / small Android).
+     */
     scroll: {
       flexGrow: 1,
       justifyContent: 'center',
       paddingHorizontal: theme.spacing.lg,
-      paddingTop: topInset + theme.spacing['3xl'],
-      paddingBottom: theme.spacing['3xl'],
+      paddingVertical: theme.spacing['3xl'],
     },
+    /** Brand header above the card. */
     header: {
       alignItems: 'center',
-      marginBottom: theme.spacing['3xl'],
       gap: theme.spacing.sm,
+      marginBottom: theme.spacing['2xl'],
     },
     appName: {
       fontSize: theme.typography.fontSize['3xl'],
@@ -37,6 +54,7 @@ export const createLoginStyles = (theme: Theme, topInset: number) =>
     subtitle: {
       opacity: 0.75,
     },
+    /** White card that contains the form. */
     card: {
       backgroundColor: theme.colors.surface,
       borderRadius: theme.borderRadius.lg,
@@ -45,7 +63,7 @@ export const createLoginStyles = (theme: Theme, topInset: number) =>
       ...theme.shadows.md,
     },
     cardTitle: {
-      marginBottom: theme.spacing.sm,
+      marginBottom: theme.spacing.xs,
       textAlign: 'center',
     },
     hint: {
@@ -55,7 +73,7 @@ export const createLoginStyles = (theme: Theme, topInset: number) =>
       alignItems: 'center',
       backgroundColor: theme.colors.primary,
       borderRadius: theme.borderRadius.md,
-      marginTop: theme.spacing.sm,
+      marginTop: theme.spacing.xs,
       paddingVertical: theme.spacing.md,
     },
     buttonDisabled: {

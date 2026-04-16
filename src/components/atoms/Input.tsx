@@ -152,7 +152,7 @@ const createStyles = (theme: Theme, isFocused: boolean, hasError: boolean) => {
       borderRadius: theme.borderRadius.sm,
       borderWidth,
       flexDirection: 'row',
-      minHeight: theme.spacing['6xl'] + theme.spacing.sm,
+      minHeight: theme.spacing['4xl'],
       paddingHorizontal: theme.spacing.md,
     },
     input: {
@@ -161,7 +161,6 @@ const createStyles = (theme: Theme, isFocused: boolean, hasError: boolean) => {
       fontFamily: theme.typography.fontFamily.regular,
       fontSize: theme.typography.fontSize.md,
       lineHeight: theme.typography.lineHeight.md,
-      minHeight: theme.spacing['6xl'],
       paddingVertical: theme.spacing.sm,
     },
     iconSlot: {
@@ -172,8 +171,8 @@ const createStyles = (theme: Theme, isFocused: boolean, hasError: boolean) => {
     iconButton: {
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: theme.spacing['6xl'],
-      minWidth: theme.spacing['6xl'],
+      minHeight: theme.spacing['4xl'],
+      minWidth: theme.spacing['4xl'],
     },
     feedbackText: {
       marginTop: theme.spacing.xs,
