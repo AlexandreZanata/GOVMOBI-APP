@@ -122,6 +122,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [ctaPressed, setCtaPressed] = useState(false);
   const [isMapboxTokenApplied, setIsMapboxTokenApplied] = useState(false);
+  // Gate map render until the container has laid out — prevents the
+  // Mapbox ViewTagResolver "view is null" race condition on first mount.
+  const [isContainerReady, setIsContainerReady] = useState(false);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const overlayTranslate = useRef(new Animated.Value(8)).current;
@@ -274,9 +277,10 @@ export const PassageiroScreen = (): React.JSX.Element => {
   // ── Map layer ──────────────────────────────────────────────────────────────
   // MapboxGL === null                        → native module unavailable (Expo Go)
   // isMapboxTokenApplied === false           → waiting for a valid token
-  // isMapboxTokenApplied === true            → render map (Phase-1 or Phase-2 token active)
+  // isContainerReady === false               → container not yet laid out (prevents ViewTagResolver race)
+  // all true                                 → render map
   const mapContent =
-    MapboxGL && isMapboxTokenApplied ? (
+    MapboxGL && isMapboxTokenApplied && isContainerReady ? (
       <MapboxGL.MapView
         accessibilityLabel={t('passageiro.map.label')}
         logoEnabled={false}
@@ -348,7 +352,8 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const sheetPaddingBottom = 14;
 
   return (
-    <View style={styles.container} testID="passageiro-screen">
+    <View style={styles.container} testID="passageiro-screen"
+      onLayout={() => setIsContainerReady(true)}>
       {/* Status bar — light-content so time/battery/signal show white on dark navy */}
       <StatusBar
         barStyle="light-content"

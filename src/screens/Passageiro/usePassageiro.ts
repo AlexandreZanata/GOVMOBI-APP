@@ -116,11 +116,21 @@ export const usePassageiro = (): PassageiroState => {
   }, [userLocation]);
 
   // ---------------------------------------------------------------------------
-  // Map config — fetch Mapbox public token from the backend on mount
+  // Map config — fetch Mapbox public token from the backend.
+  // Retries automatically when the auth token becomes available after
+  // Redux Persist rehydration (token starts as null, then resolves).
   // ---------------------------------------------------------------------------
+
+  const authToken = useAppSelector(state => state.auth.token);
 
   useEffect(() => {
     let cancelled = false;
+
+    // Don't attempt the fetch until we have an auth token — the endpoint
+    // requires Bearer auth and will return 401 otherwise.
+    if (!authToken) {
+      return;
+    }
 
     const fetchMapConfig = async (): Promise<void> => {
       const result = await pesquisaFacade.getPesquisaConfig();
@@ -129,7 +139,8 @@ export const usePassageiro = (): PassageiroState => {
       if (result.data?.mapboxPublicToken) {
         setMapboxToken(result.data.mapboxPublicToken);
       } else {
-        // Signal failure with empty string so the screen can show the fallback
+        // Signal failure with empty string so the screen falls back to
+        // the Phase-1 build-time token already applied at module load.
         setMapboxToken('');
       }
     };
@@ -139,7 +150,7 @@ export const usePassageiro = (): PassageiroState => {
     return () => {
       cancelled = true;
     };
-  }, [pesquisaFacade]);
+  }, [pesquisaFacade, authToken]);
 
   // ---------------------------------------------------------------------------
   // Location

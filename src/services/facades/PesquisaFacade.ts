@@ -177,11 +177,20 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
     }
 
     try {
+      const headers = this.authHeaders();
+      console.info('[PesquisaFacade] GET /pesquisa/config', {
+        url: `${this.apiBaseUrl}/pesquisa/config`,
+        hasAuth: 'Authorization' in headers,
+      });
       const res = await fetch(`${this.apiBaseUrl}/pesquisa/config`, {
-        headers: this.authHeaders(),
+        headers,
       });
 
+      console.info('[PesquisaFacade] /pesquisa/config status:', res.status);
+
       if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        console.error('[PesquisaFacade] /pesquisa/config error body:', body);
         return fail({
           code: 'NETWORK_ERROR',
           message: 'Failed to load pesquisa config',
@@ -190,9 +199,11 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
       }
 
       const payload = (await res.json()) as unknown;
+      console.info('[PesquisaFacade] /pesquisa/config raw payload:', JSON.stringify(payload));
       const data = toPesquisaConfig(payload);
 
       if (!data) {
+        console.error('[PesquisaFacade] toPesquisaConfig returned null for payload:', JSON.stringify(payload));
         return fail({
           code: 'PARSE_ERROR',
           message: 'Invalid pesquisa config payload',
@@ -200,7 +211,8 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
       }
 
       return ok(data);
-    } catch {
+    } catch (err) {
+      console.error('[PesquisaFacade] /pesquisa/config network exception:', err);
       return fail({
         code: 'NETWORK_ERROR',
         message: 'Network error loading pesquisa config',
