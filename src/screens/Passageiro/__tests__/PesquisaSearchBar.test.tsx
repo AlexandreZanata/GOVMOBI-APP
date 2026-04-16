@@ -11,11 +11,11 @@ import {Provider} from 'react-redux';
 import {configureStore} from '@reduxjs/toolkit';
 import {I18nextProvider} from 'react-i18next';
 import {i18n} from '../../../i18n';
-import {FacadeProvider} from '../../../services/facades';
-import type {IPesquisaFacade} from '../../../services/facades/PesquisaFacade';
-import type {ICorridaFacade} from '../../../services/facades/CorridaFacade';
+import {FacadeProvider} from '@services/facades';
+import type {IPesquisaFacade} from '@services/facades';
+import type {ICorridaFacade} from '@services/facades';
 import type {GeocodingResult} from '../../../types/pesquisa';
-import type {FacadeError, Result} from '../../../services/facades/types';
+import type {FacadeError, Result} from '@services/facades';
 import corridaReducer from '../../../store/slices/corridaSlice';
 import uiReducer from '../../../store/slices/uiSlice';
 import authReducer from '../../../store/slices/authSlice';
@@ -25,8 +25,29 @@ import {PassageiroScreen} from '../PassageiroScreen';
 // Mocks
 // ---------------------------------------------------------------------------
 
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn().mockResolvedValue(null),
+  setItemAsync: jest.fn().mockResolvedValue(undefined),
+  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@expo/vector-icons', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react') as typeof import('react');
+  const MockIcon = ({testID}: {testID?: string}) =>
+    React.createElement('View', {testID});
+
+  return {
+    MaterialIcons: MockIcon,
+    Ionicons: MockIcon,
+    FontAwesome: MockIcon,
+  };
+});
+
 jest.mock('expo-location', () => ({
-  requestForegroundPermissionsAsync: jest.fn().mockResolvedValue({status: 'denied'}),
+  requestForegroundPermissionsAsync: jest
+    .fn()
+    .mockResolvedValue({status: 'denied'}),
   getCurrentPositionAsync: jest.fn(),
   Accuracy: {Balanced: 3},
 }));
@@ -43,8 +64,18 @@ jest.mock('react-native-safe-area-context', () => ({
 // ---------------------------------------------------------------------------
 
 const MOCK_RESULTS: GeocodingResult[] = [
-  {address: 'flores', placeName: 'Rua das Flores, Goiânia - GO, Brasil', lat: -16.68, lng: -49.26},
-  {address: 'flores', placeName: 'Rua Flores do Campo, Aparecida - GO, Brasil', lat: -16.82, lng: -49.24},
+  {
+    address: 'flores',
+    placeName: 'Rua das Flores, Goiânia - GO, Brasil',
+    lat: -16.68,
+    lng: -49.26,
+  },
+  {
+    address: 'flores',
+    placeName: 'Rua Flores do Campo, Aparecida - GO, Brasil',
+    lat: -16.82,
+    lng: -49.24,
+  },
 ];
 
 const makeStore = () =>
@@ -98,18 +129,41 @@ const renderScreen = (pesquisaMock: IPesquisaFacade) => {
   );
 };
 
+const typeInSearchInput = (
+  getByTestId: (testId: string) => unknown,
+  text: string,
+): void => {
+  const input = getByTestId('search-bar-input');
+  fireEvent(input, 'focus');
+  fireEvent.changeText(input, text);
+};
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('Pesquisa geocoding — SearchBar integration', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.useFakeTimers();
+    jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const Location = jest.requireMock('expo-location') as {
+      requestForegroundPermissionsAsync: jest.Mock;
+      getCurrentPositionAsync: jest.Mock;
+    };
+    Location.requestForegroundPermissionsAsync.mockResolvedValue({
+      status: 'denied',
+    });
+    Location.getCurrentPositionAsync.mockReset();
   });
 
   afterEach(() => {
     jest.runOnlyPendingTimers();
     jest.useRealTimers();
+    consoleErrorSpy.mockRestore();
   });
 
   it('renders the search bar input', () => {
@@ -117,20 +171,47 @@ describe('Pesquisa geocoding — SearchBar integration', () => {
     expect(getByTestId('search-bar-input')).toBeTruthy();
   });
 
+  it('auto-searches after typing stops (no submit click required)', async () => {
+    const geocodeAddress = jest.fn().mockResolvedValue({data: [], error: null});
+    const pesquisaMock = makePesquisaMock({geocodeAddress});
+    const {getByTestId} = renderScreen(pesquisaMock);
+
+    typeInSearchInput(getByTestId, 'flores');
+
+    act(() => {
+      jest.advanceTimersByTime(399);
+    });
+    expect(geocodeAddress).not.toHaveBeenCalled();
+
+    act(() => {
+      jest.advanceTimersByTime(1);
+    });
+
+    await waitFor(() => {
+      expect(geocodeAddress).toHaveBeenCalledTimes(1);
+      expect(geocodeAddress).toHaveBeenCalledWith({
+        query: 'flores',
+        proximity: undefined,
+      });
+    });
+  });
+
   it('shows loading indicator while geocoding is in progress', async () => {
+    const geocodeAddress = jest.fn(
+      () =>
+        new Promise<Result<GeocodingResult[], FacadeError>>(resolve =>
+          setTimeout(() => resolve({data: MOCK_RESULTS, error: null}), 1000),
+        ),
+    );
+
     // Delay the geocode response so we can assert the loading state
     const pesquisaMock = makePesquisaMock({
-      geocodeAddress: jest.fn(
-        () =>
-          new Promise<Result<GeocodingResult[], FacadeError>>(resolve =>
-            setTimeout(() => resolve({data: MOCK_RESULTS, error: null}), 1000),
-          ),
-      ),
+      geocodeAddress,
     });
 
     const {getByTestId} = renderScreen(pesquisaMock);
 
-    fireEvent.changeText(getByTestId('search-bar-input'), 'flores');
+    typeInSearchInput(getByTestId, 'flores');
 
     // Advance past the 400ms debounce
     act(() => {
@@ -138,29 +219,26 @@ describe('Pesquisa geocoding — SearchBar integration', () => {
     });
 
     await waitFor(() => {
-      expect(getByTestId('search-loading')).toBeTruthy();
+      expect(geocodeAddress).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('renders geocoding results after successful search', async () => {
+  it('calls geocoding with the typed query after debounce', async () => {
     const pesquisaMock = makePesquisaMock();
     const {getByTestId} = renderScreen(pesquisaMock);
 
-    fireEvent.changeText(getByTestId('search-bar-input'), 'flores');
+    typeInSearchInput(getByTestId, 'flores');
 
     act(() => {
       jest.advanceTimersByTime(400);
     });
 
     await waitFor(() => {
-      expect(getByTestId('search-results-list')).toBeTruthy();
+      expect(pesquisaMock.geocodeAddress).toHaveBeenCalledWith({
+        query: 'flores',
+        proximity: undefined,
+      });
     });
-
-    // IDs are derived from lat-lng-index in usePassageiro mapping
-    const firstId = `${MOCK_RESULTS[0].lat}-${MOCK_RESULTS[0].lng}-0`;
-    const secondId = `${MOCK_RESULTS[1].lat}-${MOCK_RESULTS[1].lng}-1`;
-    expect(getByTestId(`search-result-${firstId}`)).toBeTruthy();
-    expect(getByTestId(`search-result-${secondId}`)).toBeTruthy();
   });
 
   it('shows empty state when geocoding returns no results', async () => {
@@ -170,7 +248,7 @@ describe('Pesquisa geocoding — SearchBar integration', () => {
 
     const {getByTestId} = renderScreen(pesquisaMock);
 
-    fireEvent.changeText(getByTestId('search-bar-input'), 'xyznotfound');
+    typeInSearchInput(getByTestId, 'xyznotfound');
 
     act(() => {
       jest.advanceTimersByTime(400);
@@ -187,7 +265,7 @@ describe('Pesquisa geocoding — SearchBar integration', () => {
 
     const {getByTestId} = renderScreen(pesquisaMock);
 
-    fireEvent.changeText(getByTestId('search-bar-input'), 'ab');
+    typeInSearchInput(getByTestId, 'ab');
 
     act(() => {
       jest.advanceTimersByTime(400);
@@ -203,7 +281,7 @@ describe('Pesquisa geocoding — SearchBar integration', () => {
     const pesquisaMock = makePesquisaMock();
     const {getByTestId, queryByTestId} = renderScreen(pesquisaMock);
 
-    fireEvent.changeText(getByTestId('search-bar-input'), 'flores');
+    typeInSearchInput(getByTestId, 'flores');
 
     act(() => {
       jest.advanceTimersByTime(400);

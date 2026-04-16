@@ -26,6 +26,10 @@ import {FacadeProvider} from './services/facades';
  */
 const AppShell = (): React.JSX.Element => {
   const themeMode = useAppSelector(state => state.ui.themeMode);
+  const token = useAppSelector(state => state.auth.token);
+
+  // Token getter for facades that need authenticated requests
+  const getToken = useMemo(() => () => token, [token]);
 
   useNetworkStatus();
   useNotifications();
@@ -33,26 +37,28 @@ const AppShell = (): React.JSX.Element => {
 
   return (
     <ThemeProvider mode={themeMode}>
-      {/*
-        * Sets the Android system navigation bar (bottom) to navy800 — matching
-        * the top status bar color seen in the design. On iOS this has no effect
-        * (iOS doesn't expose navigation bar color control).
-        * style="light" keeps the status bar icons white on the dark background.
-        */}
-      <StatusBar
-        style="light"
-        backgroundColor={designColors.navy800}
-        translucent={false}
-        navigationBarColor={designColors.navy800}
-        navigationBarHidden={false}
-      />
-      <View style={styles.container}>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-        <NetworkBanner />
-        <GlobalToast />
-      </View>
+      <FacadeProvider getToken={getToken}>
+        {/*
+          * Sets the Android system navigation bar (bottom) to navy800 — matching
+          * the top status bar color seen in the design. On iOS this has no effect
+          * (iOS doesn't expose navigation bar color control).
+          * style="light" keeps the status bar icons white on the dark background.
+          */}
+        <StatusBar
+          style="light"
+          backgroundColor={designColors.navy800}
+          translucent={false}
+          navigationBarColor={designColors.navy800}
+          navigationBarHidden={false}
+        />
+        <View style={styles.container}>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+          <NetworkBanner />
+          <GlobalToast />
+        </View>
+      </FacadeProvider>
     </ThemeProvider>
   );
 };
@@ -72,11 +78,9 @@ const App = (): React.JSX.Element => {
       <SafeAreaProvider>
         <I18nextProvider i18n={i18n}>
           <Provider store={store}>
-            <FacadeProvider>
-              <PersistGate loading={loadingFallback} persistor={persistor}>
-                <AppShell />
-              </PersistGate>
-            </FacadeProvider>
+            <PersistGate loading={loadingFallback} persistor={persistor}>
+              <AppShell />
+            </PersistGate>
           </Provider>
         </I18nextProvider>
       </SafeAreaProvider>

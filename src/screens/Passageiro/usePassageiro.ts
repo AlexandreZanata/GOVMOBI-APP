@@ -108,6 +108,12 @@ export const usePassageiro = (): PassageiroState => {
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestSearchRequestIdRef = useRef(0);
+  const userLocationRef = useRef<Coordenada | null>(null);
+
+  useEffect(() => {
+    userLocationRef.current = userLocation;
+  }, [userLocation]);
 
   // ---------------------------------------------------------------------------
   // Map config — fetch Mapbox public token from the backend on mount
@@ -194,35 +200,65 @@ export const usePassageiro = (): PassageiroState => {
   }, []);
 
   const onCloseSearch = useCallback((): void => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = null;
+    }
+    latestSearchRequestIdRef.current += 1;
+    dispatch(setIsSearching(false));
     setIsSearchOpen(false);
     setSearchQuery('');
     dispatch(clearSearch());
   }, [dispatch]);
 
+  useEffect(
+    () => () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    },
+    [],
+  );
+
   const onSearchChange = useCallback(
     (text: string): void => {
       setSearchQuery(text);
+      const normalizedQuery = text.trim();
 
       if (searchDebounceRef.current) {
         clearTimeout(searchDebounceRef.current);
       }
 
-      if (!text.trim()) {
+      if (normalizedQuery.length < 3) {
+        latestSearchRequestIdRef.current += 1;
+        dispatch(setIsSearching(false));
         dispatch(clearSearch());
         return;
       }
 
+      const requestId = latestSearchRequestIdRef.current + 1;
+      latestSearchRequestIdRef.current = requestId;
+
       searchDebounceRef.current = setTimeout(async () => {
         dispatch(setIsSearching(true));
 
-        const proximity = userLocation
-          ? {lat: userLocation.latitude, lng: userLocation.longitude}
+        const latestUserLocation = userLocationRef.current;
+        const proximity = latestUserLocation
+          ? {
+              lat: latestUserLocation.latitude,
+              lng: latestUserLocation.longitude,
+            }
           : undefined;
 
         const result = await pesquisaFacade.geocodeAddress({
-          query: text,
+          query: normalizedQuery,
           proximity,
         });
+
+        // Ignore outdated responses (older query resolved after a newer one).
+        if (latestSearchRequestIdRef.current !== requestId) {
+          return;
+        }
 
         dispatch(setIsSearching(false));
 
@@ -240,7 +276,7 @@ export const usePassageiro = (): PassageiroState => {
         }
       }, SEARCH_DEBOUNCE_MS);
     },
-    [pesquisaFacade, dispatch, userLocation],
+    [pesquisaFacade, dispatch],
   );
 
   const onSelectResult = useCallback(

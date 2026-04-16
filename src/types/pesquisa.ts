@@ -44,7 +44,7 @@ export interface ReverseGeocodingResult {
 export interface GeocodeAddressInput {
   /** Address or place term to search (min 3 chars). */
   query: string;
-  /** Optional proximity hint to bias results toward the user's location. */
+  /** Proximity hint to bias results toward the user's location. Always pass when available. */
   proximity?: {lat: number; lng: number};
 }
 

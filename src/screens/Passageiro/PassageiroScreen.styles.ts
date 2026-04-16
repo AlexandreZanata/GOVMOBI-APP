@@ -9,37 +9,37 @@ import {StyleSheet} from 'react-native';
 
 const C = {
   // surfaces
-  surfaceDark:    '#09090B',
-  surfaceCard:    '#FFFFFF',
-  surfaceSubtle:  '#F7F7F8',   // input bg inside white sheet
-  accent:         '#F5C842',
-  accentPress:    '#D4A900',
-  interactive:    '#276EF1',
-  interactiveBg:    '#EFF6FF',
-  interactivePress: '#1A5DC8',
-  // search bar header band — vibrant modern blue (Facebook-inspired)
-  searchBand:     '#0555bdff',
-  searchBandFocus:'#1565D8',
+  surfaceDark: '#09090B',
+  surfaceCard: '#FFFFFF',
+  surfaceSubtle: '#F7F7F8', // input bg inside white sheet
+  accent: '#F5C842',
+  accentPress: '#D4A900',
+  interactive: '#2F80FF',
+  interactiveBg: '#EFF6FF',
+  interactivePress: '#1F6FE5',
+  // search bar header band — matches passenger action/tab bar background
+  searchBand: '#0D1B2A',
+  searchBandFocus: '#0D1B2A',
   searchBandIcon: 'rgba(255,255,255,0.20)',
   // text on white
-  textDark:       '#09090B',
-  textMid:        '#52525B',
-  textMuted:      '#A1A1AA',
+  textDark: '#09090B',
+  textMid: '#52525B',
+  textMuted: '#A1A1AA',
   // text on dark (FABs + search band)
-  textOnDark:     '#FFFFFF',
-  textOnDarkMuted:'rgba(255,255,255,0.75)',
+  textOnDark: '#FFFFFF',
+  textOnDarkMuted: 'rgba(255,255,255,0.75)',
   // map / misc
-  mapBg:          '#F5F5F5',
-  dividerLight:   '#E4E4E7',   // divider inside white sheet
-  handleLight:    '#D4D4D8',   // drag handle on white
-  resultDivider:  '#F4F4F5',
-  resultHover:    '#FAFAFA',
-  closeBg:        '#F4F4F5',
-  errorRed:       '#EF4444',
-  shadow:         '#000000',
-  accentShadow:   '#F5C842',
-  pulseBg:        'rgba(39,110,241,0.15)',
-  transparent:    'transparent',
+  mapBg: '#F5F5F5',
+  dividerLight: '#E4E4E7', // divider inside white sheet
+  handleLight: '#D4D4D8', // drag handle on white
+  resultDivider: '#F4F4F5',
+  resultHover: '#FAFAFA',
+  closeBg: '#F4F4F5',
+  errorRed: '#EF4444',
+  shadow: '#000000',
+  accentShadow: '#F5C842',
+  pulseBg: 'rgba(39,110,241,0.15)',
+  transparent: 'transparent',
 } as const;
 
 export const PassageiroColors = C;
@@ -250,7 +250,7 @@ export const createPassageiroStyles = () =>
       zIndex: 20,
       shadowColor: C.shadow,
       shadowOffset: {width: 0, height: -4},
-      shadowOpacity: 0.10,
+      shadowOpacity: 0.1,
       shadowRadius: 20,
       elevation: 12,
     },
@@ -287,27 +287,6 @@ export const createPassageiroStyles = () =>
       fontWeight: '400',
       color: C.textMuted,
       marginTop: 1,
-    },
-
-    // "Where to?" search row inside the sheet
-    sheetSearchRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: C.surfaceSubtle,
-      borderRadius: 14,
-      paddingHorizontal: 14,
-      height: 50,
-      marginBottom: 16,
-      gap: 10,
-    },
-    sheetSearchText: {
-      flex: 1,
-      fontSize: 15,
-      color: C.textMuted,
-    },
-    sheetSearchTextActive: {
-      color: C.textDark,
-      fontWeight: '500',
     },
 
     // Divider
@@ -359,7 +338,7 @@ export const createPassageiroStyles = () =>
       justifyContent: 'center',
       shadowColor: C.interactive,
       shadowOffset: {width: 0, height: 4},
-      shadowOpacity: 0.30,
+      shadowOpacity: 0.3,
       shadowRadius: 16,
       elevation: 6,
     },

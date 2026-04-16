@@ -7,6 +7,9 @@ if (process.env.MAPBOX_SECRET_TOKEN) {
   process.env.RNMAPBOX_MAPS_DOWNLOAD_TOKEN = process.env.MAPBOX_SECRET_TOKEN;
 }
 
+const MAPBOX_SECRET_TOKEN = process.env.MAPBOX_SECRET_TOKEN ?? '';
+const MAPBOX_ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN ?? '';
+
 /**
  * Dynamic Expo config — reads environment variables from .env at build time.
  * Use `app.json` values as fallbacks for CI environments that inject vars directly.
@@ -49,8 +52,21 @@ module.exports = {
       'expo-image-picker',
       'expo-av',
       'expo-font',
-      'expo-location',
-      '@rnmapbox/maps',
+      [
+        'expo-location',
+        {
+          locationWhenInUsePermission:
+            'GovMobile needs your location to show your position on the map.',
+        },
+      ],
+      [
+        '@rnmapbox/maps',
+        {
+          // RNMAPBOX_MAPS_DOWNLOAD_TOKEN is set from MAPBOX_SECRET_TOKEN above.
+          // No RNMapboxMapsVersion override — let @rnmapbox/maps@10.3.0 use its
+          // own default (11.18.2), which ships android-ndk27 artifacts.
+        },
+      ],
     ],
     scheme: 'govmobile',
     extra: {
@@ -58,8 +74,8 @@ module.exports = {
       wsUrl: process.env.WS_URL ?? 'ws://172.19.2.116:3000',
       appEnv: process.env.APP_ENV ?? 'development',
       mockMode: process.env.MOCK_MODE === 'true',
-      mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN ?? '',
-      mapboxSecretToken: process.env.MAPBOX_SECRET_TOKEN ?? '',
+      mapboxAccessToken: MAPBOX_ACCESS_TOKEN,
+      mapboxSecretToken: MAPBOX_SECRET_TOKEN,
     },
   },
 };

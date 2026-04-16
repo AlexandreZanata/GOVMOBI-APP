@@ -29,6 +29,85 @@ const fail = <T>(error: FacadeError): Result<T, FacadeError> => ({
   error,
 });
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const unwrapEnvelopeData = (payload: unknown): unknown => {
+  if (isRecord(payload) && 'data' in payload) {
+    return payload.data;
+  }
+  return payload;
+};
+
+const toPesquisaConfig = (payload: unknown): PesquisaConfig | null => {
+  const unwrapped = unwrapEnvelopeData(payload);
+  if (!isRecord(unwrapped)) {
+    return null;
+  }
+
+  const directToken = unwrapped.mapboxPublicToken;
+  if (typeof directToken === 'string' && directToken.trim().length > 0) {
+    return {mapboxPublicToken: directToken};
+  }
+
+  const altToken = unwrapped.token;
+  if (typeof altToken === 'string' && altToken.trim().length > 0) {
+    return {mapboxPublicToken: altToken};
+  }
+
+  return null;
+};
+
+const toGeocodingResults = (payload: unknown): GeocodingResult[] => {
+  const unwrapped = unwrapEnvelopeData(payload);
+  if (!Array.isArray(unwrapped)) {
+    return [];
+  }
+
+  return unwrapped
+    .filter((item): item is Record<string, unknown> => isRecord(item))
+    .map(item => ({
+      address: String(item.address ?? ''),
+      placeName: String(item.placeName ?? ''),
+      lat: Number(item.lat ?? NaN),
+      lng: Number(item.lng ?? NaN),
+    }))
+    .filter(
+      item =>
+        item.address.length > 0 &&
+        item.placeName.length > 0 &&
+        Number.isFinite(item.lat) &&
+        Number.isFinite(item.lng),
+    );
+};
+
+const toReverseGeocodingResult = (
+  payload: unknown,
+): ReverseGeocodingResult | null => {
+  const unwrapped = unwrapEnvelopeData(payload);
+  if (!isRecord(unwrapped)) {
+    return null;
+  }
+
+  const address = unwrapped.address;
+  const lat = unwrapped.lat;
+  const lng = unwrapped.lng;
+
+  if (
+    typeof address !== 'string' ||
+    !Number.isFinite(Number(lat)) ||
+    !Number.isFinite(Number(lng))
+  ) {
+    return null;
+  }
+
+  return {
+    address,
+    lat: Number(lat),
+    lng: Number(lng),
+  };
+};
+
 // ---------------------------------------------------------------------------
 // Contract
 // ---------------------------------------------------------------------------
@@ -89,7 +168,9 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
   }
 
   /** @inheritdoc */
-  public async getPesquisaConfig(): Promise<Result<PesquisaConfig, FacadeError>> {
+  public async getPesquisaConfig(): Promise<
+    Result<PesquisaConfig, FacadeError>
+  > {
     if (this.mockMode) {
       await delay(120);
       return ok({mapboxPublicToken: 'pk.mock_token_for_testing'});
@@ -108,7 +189,16 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
         });
       }
 
-      const data = (await res.json()) as PesquisaConfig;
+      const payload = (await res.json()) as unknown;
+      const data = toPesquisaConfig(payload);
+
+      if (!data) {
+        return fail({
+          code: 'PARSE_ERROR',
+          message: 'Invalid pesquisa config payload',
+        });
+      }
+
       return ok(data);
     } catch {
       return fail({
@@ -124,8 +214,9 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
     input: GeocodeAddressInput,
   ): Promise<Result<GeocodingResult[], FacadeError>> {
     const {query, proximity} = input;
+    const normalizedQuery = query.trim();
 
-    if (!query.trim() || query.trim().length < 3) {
+    if (!normalizedQuery || normalizedQuery.length < 3) {
       return ok([]);
     }
 
@@ -135,8 +226,12 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
     }
 
     try {
-      const params = new URLSearchParams({q: query.trim()});
-      if (proximity) {
+      const params = new URLSearchParams({q: normalizedQuery});
+      if (
+        proximity &&
+        Number.isFinite(proximity.lat) &&
+        Number.isFinite(proximity.lng)
+      ) {
         params.set('lat', String(proximity.lat));
         params.set('lng', String(proximity.lng));
       }
@@ -147,7 +242,11 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
       );
 
       if (res.status === 401) {
-        return fail({code: 'UNAUTHORIZED', message: 'Unauthorized', statusCode: 401});
+        return fail({
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+          statusCode: 401,
+        });
       }
 
       if (res.status === 429) {
@@ -167,8 +266,8 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
         });
       }
 
-      const data = (await res.json()) as GeocodingResult[];
-      return ok(data);
+      const payload = (await res.json()) as unknown;
+      return ok(toGeocodingResults(payload));
     } catch {
       return fail({
         code: 'NETWORK_ERROR',
@@ -203,7 +302,11 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
       );
 
       if (res.status === 401) {
-        return fail({code: 'UNAUTHORIZED', message: 'Unauthorized', statusCode: 401});
+        return fail({
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+          statusCode: 401,
+        });
       }
 
       if (!res.ok) {
@@ -214,7 +317,16 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
         });
       }
 
-      const data = (await res.json()) as ReverseGeocodingResult;
+      const payload = (await res.json()) as unknown;
+      const data = toReverseGeocodingResult(payload);
+
+      if (!data) {
+        return fail({
+          code: 'PARSE_ERROR',
+          message: 'Invalid reverse geocoding payload',
+        });
+      }
+
       return ok(data);
     } catch {
       return fail({

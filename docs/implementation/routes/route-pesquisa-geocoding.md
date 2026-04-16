@@ -156,12 +156,13 @@ If the token is missing or invalid, the API returns unauthorized in the same err
 ## Frontend Integration Notes
 
 - Debounce text input (recommended `300ms` to `500ms`) before calling this route.
+- Trigger geocoding automatically when the user stops typing (no explicit search button required).
 - Do not call with empty `q`; require at least 3 characters.
 - Show top 3 to 5 suggestions and let users pick one.
 - Persist selected place as `{ placeName, lat, lng }` in form state.
 - Handle rate-limit headers and fallback gracefully (retry with backoff).
 - Load `/pesquisa/config` once on app boot and cache it in memory.
-- Use `lat`/`lng` proximity when the device location is known to improve relevance.
+- Always send `lat`/`lng` from the current user location when available to prioritize nearby results.
 - Use reverse geocoding to prefill forms from map pin position.
 
 ---

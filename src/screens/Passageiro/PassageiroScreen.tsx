@@ -25,8 +25,12 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {usePassageiro} from './usePassageiro';
-import {createPassageiroStyles, PassageiroColors as C} from './PassageiroScreen.styles';
+import {
+  createPassageiroStyles,
+  PassageiroColors as C,
+} from './PassageiroScreen.styles';
 import type {SearchResult} from '../../types/corrida';
+import {ENV} from '../../config/env';
 
 // ── Mapbox lazy-load ─────────────────────────────────────────────────────────
 type MapboxModule = {
@@ -36,6 +40,8 @@ type MapboxModule = {
     styleURL?: string;
     logoEnabled?: boolean;
     attributionEnabled?: boolean;
+    onDidFinishLoadingMap?: () => void;
+    onMapLoadingError?: (error?: unknown) => void;
     testID?: string;
     accessibilityLabel?: string;
     children?: React.ReactNode;
@@ -54,9 +60,17 @@ type MapboxModule = {
 };
 
 /**
- * Raw Mapbox module reference — token is NOT set here.
- * `setAccessToken` is called inside the component once the token
- * is fetched from GET /pesquisa/config.
+ * Raw Mapbox module reference.
+ *
+ * Initialization strategy (two-phase):
+ *   Phase 1 (module load): Call setAccessToken with the build-time public token
+ *            from ENV.MAPBOX_ACCESS_TOKEN so the native layer is ready immediately.
+ *   Phase 2 (component mount): Override with the server-issued token from
+ *            GET /pesquisa/config once it arrives, which may be a scoped or
+ *            rotated token that supersedes the build-time one.
+ *
+ * If the native module is unavailable (Expo Go), MapboxGL is set to null and
+ * the screen renders a graceful fallback.
  */
 let MapboxGL: MapboxModule | null = null;
 try {
@@ -67,7 +81,15 @@ try {
     Camera: MapboxModule['Camera'];
     PointAnnotation: MapboxModule['PointAnnotation'];
   };
-  // Token intentionally NOT set here — deferred to component mount.
+
+  // Phase 1: apply the build-time public token immediately so the native SDK
+  // is initialized before the first render. The component will override this
+  // with the server-issued token once /pesquisa/config responds.
+  if (ENV.MAPBOX_ACCESS_TOKEN) {
+    mod.default.setAccessToken(ENV.MAPBOX_ACCESS_TOKEN);
+    console.info('[Mapbox] Phase-1 token applied from build-time ENV');
+  }
+
   MapboxGL = {
     setAccessToken: mod.default.setAccessToken.bind(mod.default),
     MapView: mod.MapView,
@@ -99,11 +121,12 @@ export const PassageiroScreen = (): React.JSX.Element => {
 
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [ctaPressed, setCtaPressed] = useState(false);
+  const [isMapboxTokenApplied, setIsMapboxTokenApplied] = useState(false);
 
-  const overlayOpacity  = useRef(new Animated.Value(0)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
   const overlayTranslate = useRef(new Animated.Value(8)).current;
-  const sheetTranslate  = useRef(new Animated.Value(0)).current;
-  const sheetAnimated   = useRef(false);
+  const sheetTranslate = useRef(new Animated.Value(0)).current;
+  const sheetAnimated = useRef(false);
   // Search bar lift animation on focus
   const searchBarTranslate = useRef(new Animated.Value(0)).current;
 
@@ -127,11 +150,54 @@ export const PassageiroScreen = (): React.JSX.Element => {
     onCenterOnUser,
   } = usePassageiro();
 
-  // Apply the server-issued Mapbox token as soon as it's available.
-  // This replaces the old module-level setAccessToken(ENV.MAPBOX_ACCESS_TOKEN) call.
+  // Phase 2: override with the server-issued token from GET /pesquisa/config.
+  // This supersedes the build-time ENV token with a potentially scoped/rotated one.
   useEffect(() => {
-    if (mapboxToken && MapboxGL) {
-      MapboxGL.setAccessToken(mapboxToken);
+    if (!MapboxGL) {
+      setIsMapboxTokenApplied(false);
+      return;
+    }
+
+    // If the server token hasn't arrived yet but we have a build-time token,
+    // mark as applied so the map can render immediately without waiting.
+    if (mapboxToken === null && ENV.MAPBOX_ACCESS_TOKEN) {
+      setIsMapboxTokenApplied(true);
+      return;
+    }
+
+    if (!mapboxToken) {
+      setIsMapboxTokenApplied(false);
+      return;
+    }
+
+    console.info('[Mapbox] Phase-2 token applied from /pesquisa/config', {
+      tokenLength: mapboxToken.length,
+    });
+    MapboxGL.setAccessToken(mapboxToken);
+    setIsMapboxTokenApplied(true);
+  }, [mapboxToken]);
+
+  useEffect(() => {
+    if (!MapboxGL) {
+      console.error(
+        '[Mapbox] @rnmapbox/maps native module unavailable. ' +
+          'This app requires a custom Development Build — it cannot run in Expo Go. ' +
+          'Run: npx expo run:android  or  npx expo run:ios',
+      );
+      return;
+    }
+
+    if (mapboxToken === null) {
+      console.info(
+        '[Mapbox] Phase-1 token active; waiting for /pesquisa/config (Phase-2)',
+      );
+      return;
+    }
+
+    if (mapboxToken === '') {
+      console.error(
+        '[Mapbox] /pesquisa/config returned empty token; map is using Phase-1 build-time token',
+      );
     }
   }, [mapboxToken]);
 
@@ -155,8 +221,16 @@ export const PassageiroScreen = (): React.JSX.Element => {
       overlayOpacity.setValue(0);
       overlayTranslate.setValue(8);
       Animated.parallel([
-        Animated.timing(overlayOpacity,   {toValue: 1, duration: 200, useNativeDriver: true}),
-        Animated.timing(overlayTranslate, {toValue: 0, duration: 200, useNativeDriver: true}),
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayTranslate, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }
@@ -198,72 +272,89 @@ export const PassageiroScreen = (): React.JSX.Element => {
   );
 
   // ── Map layer ──────────────────────────────────────────────────────────────
-  // mapboxToken === null  → still loading config from /pesquisa/config
-  // mapboxToken === ''    → fetch failed, show fallback
-  // mapboxToken is set    → token applied via useEffect, render map
-  const mapContent = MapboxGL && mapboxToken ? (
-    <MapboxGL.MapView
-      accessibilityLabel={t('passageiro.map.label')}
-      logoEnabled={false}
-      attributionEnabled={false}
-      style={styles.map}
-      styleURL="mapbox://styles/mapbox/light-v11"
-      testID="passageiro-map">
-      <MapboxGL.Camera
-        animationDuration={600}
-        centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
-        zoomLevel={mapRegion.zoomLevel}
-      />
-      {userLocation && (
-        <MapboxGL.PointAnnotation
-          coordinate={[userLocation.longitude, userLocation.latitude]}
-          id="user-location"
-          title={t('passageiro.currentLocation')}>
-          <View style={styles.userMarkerPulse} testID="user-marker">
-            <View style={styles.userMarkerRing}>
-              <View style={styles.userMarkerDot} />
-            </View>
-          </View>
-        </MapboxGL.PointAnnotation>
-      )}
-      {selectedDestinoCoords && (
-        <MapboxGL.PointAnnotation
-          coordinate={[selectedDestinoCoords.longitude, selectedDestinoCoords.latitude]}
-          id="destination"
-          title={selectedDestinoLabel ?? ''}>
-          <DestinationPin />
-        </MapboxGL.PointAnnotation>
-      )}
-    </MapboxGL.MapView>
-  ) : (
-    <View style={styles.mapFallback} testID="map-fallback">
-      {mapboxToken === null ? (
-        // Token still loading — show a spinner instead of the error icon
-        <ActivityIndicator
-          color={C.interactive}
-          size="large"
-          testID="map-token-loading"
+  // MapboxGL === null                        → native module unavailable (Expo Go)
+  // isMapboxTokenApplied === false           → waiting for a valid token
+  // isMapboxTokenApplied === true            → render map (Phase-1 or Phase-2 token active)
+  const mapContent =
+    MapboxGL && isMapboxTokenApplied ? (
+      <MapboxGL.MapView
+        accessibilityLabel={t('passageiro.map.label')}
+        logoEnabled={false}
+        attributionEnabled={false}
+        onDidFinishLoadingMap={() => {
+          console.info('[Mapbox] Map loaded successfully');
+        }}
+        onMapLoadingError={(error?: unknown) => {
+          console.error('[Mapbox] Map loading error', error);
+        }}
+        style={styles.map}
+        styleURL="mapbox://styles/mapbox/light-v11"
+        testID="passageiro-map">
+        <MapboxGL.Camera
+          animationDuration={600}
+          centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
+          zoomLevel={mapRegion.zoomLevel}
         />
-      ) : (
-        <>
-          <MaterialIcons name="map" size={56} color={C.textMuted} />
-          <Text style={styles.mapFallbackText}>{t('passageiro.map.notInstalled')}</Text>
-        </>
-      )}
-    </View>
-  );
+        {userLocation && (
+          <MapboxGL.PointAnnotation
+            coordinate={[userLocation.longitude, userLocation.latitude]}
+            id="user-location"
+            title={t('passageiro.currentLocation')}>
+            <View style={styles.userMarkerPulse} testID="user-marker">
+              <View style={styles.userMarkerRing}>
+                <View style={styles.userMarkerDot} />
+              </View>
+            </View>
+          </MapboxGL.PointAnnotation>
+        )}
+        {selectedDestinoCoords && (
+          <MapboxGL.PointAnnotation
+            coordinate={[
+              selectedDestinoCoords.longitude,
+              selectedDestinoCoords.latitude,
+            ]}
+            id="destination"
+            title={selectedDestinoLabel ?? ''}>
+            <DestinationPin />
+          </MapboxGL.PointAnnotation>
+        )}
+      </MapboxGL.MapView>
+    ) : (
+      <View style={styles.mapFallback} testID="map-fallback">
+        {!MapboxGL ? (
+          // Native module unavailable — app must be run as a Development Build
+          <>
+            <MaterialIcons name="map" size={56} color={C.textMuted} />
+            <Text style={styles.mapFallbackText}>
+              {t('passageiro.map.notInstalled')}
+            </Text>
+          </>
+        ) : (
+          // Token still loading — show a spinner
+          <ActivityIndicator
+            color={C.interactive}
+            size="large"
+            testID="map-token-loading"
+          />
+        )}
+      </View>
+    );
 
   const searchBandHeight = insets.top + 10 + 54 + 14; // paddingTop + bar + paddingBottom
-  const fabTop        = searchBandHeight + 12;
-  const overlayTop    = searchBandHeight + 8;
+  const fabTop = searchBandHeight + 12;
+  const overlayTop = searchBandHeight + 8;
   const hasDestination = !!selectedDestinoLabel;
-  const ctaDisabled   = isRequesting || isLocating || !hasDestination;
+  const ctaDisabled = isRequesting || isLocating || !hasDestination;
   const sheetPaddingBottom = 14;
 
   return (
     <View style={styles.container} testID="passageiro-screen">
       {/* Status bar — light-content so time/battery/signal show white on dark navy */}
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       {/* Layer 1: Map */}
       {mapContent}
@@ -283,7 +374,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
           style={[
             styles.searchBarContainer,
             isInputFocused && styles.searchBarContainerFocused,
-            !isInputFocused && hasDestination && styles.searchBarContainerFilled,
+            !isInputFocused &&
+              hasDestination &&
+              styles.searchBarContainerFilled,
           ]}>
           {/* Left icon: search when typing, location-on otherwise */}
           <View style={styles.searchBarLeftIcon}>
@@ -321,7 +414,11 @@ export const PassageiroScreen = (): React.JSX.Element => {
             </Pressable>
           ) : (
             <View style={styles.searchBarRightIcon}>
-              <MaterialIcons name="search" size={18} color={C.textOnDarkMuted} />
+              <MaterialIcons
+                name="search"
+                size={18}
+                color={C.textOnDarkMuted}
+              />
             </View>
           )}
         </View>
@@ -408,7 +505,10 @@ export const PassageiroScreen = (): React.JSX.Element => {
         onLayout={onSheetLayout}
         style={[
           styles.bottomSheet,
-          {paddingBottom: sheetPaddingBottom, transform: [{translateY: sheetTranslate}]},
+          {
+            paddingBottom: sheetPaddingBottom,
+            transform: [{translateY: sheetTranslate}],
+          },
         ]}
         testID="bottom-sheet">
         {/* Drag handle */}
@@ -427,27 +527,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
           <MaterialIcons name="expand-more" size={20} color={C.textMuted} />
         </View>
 
-        {/* "Where to?" tappable row — opens search */}
-        <Pressable
-          accessibilityLabel={t('passageiro.searchBar.placeholder')}
-          accessibilityRole="button"
-          onPress={onOpenSearch}
-          style={styles.sheetSearchRow}
-          testID="sheet-search-row">
-          <MaterialIcons name="search" size={20} color={C.interactive} />
-          <Text
-            style={[
-              styles.sheetSearchText,
-              hasDestination && styles.sheetSearchTextActive,
-            ]}
-            numberOfLines={1}>
-            {selectedDestinoLabel ?? t('passageiro.searchBar.placeholder')}
-          </Text>
-          {hasDestination && (
-            <MaterialIcons name="close" size={16} color={C.textMuted} onPress={onCloseSearch} />
-          )}
-        </Pressable>
-
         {/* Destination detail row */}
         <View style={styles.destinoRow}>
           <View style={styles.destinoIconWrapper}>
@@ -458,9 +537,12 @@ export const PassageiroScreen = (): React.JSX.Element => {
               {t('passageiro.bottomSheet.destinoLabel')}
             </Text>
             <Text
-              style={hasDestination ? styles.destinoValue : styles.destinoPlaceholder}
+              style={
+                hasDestination ? styles.destinoValue : styles.destinoPlaceholder
+              }
               testID="destino-value">
-              {selectedDestinoLabel ?? t('passageiro.bottomSheet.destinoPlaceholder')}
+              {selectedDestinoLabel ??
+                t('passageiro.bottomSheet.destinoPlaceholder')}
             </Text>
           </View>
         </View>
