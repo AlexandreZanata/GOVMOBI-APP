@@ -24,8 +24,18 @@ export const createProfileStyles = (theme: Theme) => {
 
   return StyleSheet.create({
     // ── Root ──────────────────────────────────────────────────────────────────
+    /** ProfileScreen root — dark so the hero header fills edge-to-edge. */
     safeArea: {
       backgroundColor: design.navy800,
+      flex: 1,
+    },
+    /**
+     * SettingsScreen root — light background matches the page body.
+     * Using a separate key (not safeArea) prevents the dark flash on
+     * back-navigation from Settings → Profile.
+     */
+    settingsSafeArea: {
+      backgroundColor: design.surface200,
       flex: 1,
     },
     scrollContent: {

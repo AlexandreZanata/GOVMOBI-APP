@@ -1,23 +1,31 @@
 /**
  * @fileoverview Profile stack navigator — Profile and Settings screens.
+ *
+ * White-flash-on-back fix:
+ * When the native stack slides a screen out, it reveals the navigator's
+ * container background behind it. We must set that background to match
+ * what is actually visible on the screen being revealed (ProfileScreen's
+ * light body = surface200 = #F4F6F9).
+ *
+ * Three-layer defence:
+ * 1. `contentStyle` on the Navigator — sets the container background.
+ * 2. `backgroundColor` in screenOptions — sets the OS-level window background
+ *    for each screen so the system compositor never shows white.
+ * 3. Each screen's own SafeAreaView/ScrollView background — already correct.
  */
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {type ProfileStackParamList} from './types';
 import {ProfileScreen} from '../screens/Profile/ProfileScreen';
 import {SettingsScreen} from '../screens/Profile/SettingsScreen';
-import {colors} from '../theme';
+import {designColors} from '../theme';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 /**
- * Profile feature navigator.
+ * Profile feature navigator with flash-free back-navigation.
  *
- * `contentStyle` sets the navigator container background to `colors.light.primary`
- * so the slide-out animation never reveals a white flash behind the screens.
- * This is the correct fix for the white-screen-on-back-navigation issue:
- * the native stack slides the top screen away, revealing the container behind it —
- * without `contentStyle` that container defaults to white (OS default).
+ * @returns The profile stack navigator element.
  */
 export const ProfileNavigator = (): React.JSX.Element => {
   return (
@@ -26,10 +34,27 @@ export const ProfileNavigator = (): React.JSX.Element => {
         headerShown: false,
         animation: 'slide_from_right',
         animationDuration: 220,
-        contentStyle: {backgroundColor: colors.light.primary},
+        // contentStyle fills the container revealed during slide-out.
+        // Must match ProfileScreen's scrollContent background (surface200).
+        contentStyle: {backgroundColor: designColors.surface200},
       }}>
-      <Stack.Screen component={ProfileScreen} name="Profile" />
-      <Stack.Screen component={SettingsScreen} name="Settings" />
+      <Stack.Screen
+        component={ProfileScreen}
+        name="Profile"
+        options={{
+          // The ProfileScreen root SafeAreaView is navy800 (dark header),
+          // but the OS window background should be surface200 so the
+          // bottom portion never flashes white or dark during transitions.
+          contentStyle: {backgroundColor: designColors.surface200},
+        }}
+      />
+      <Stack.Screen
+        component={SettingsScreen}
+        name="Settings"
+        options={{
+          contentStyle: {backgroundColor: designColors.surface200},
+        }}
+      />
     </Stack.Navigator>
   );
 };
