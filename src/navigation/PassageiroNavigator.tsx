@@ -5,23 +5,21 @@
  * Uses a custom tab bar matching the dark-navy-on-white design from the screenshots.
  */
 import React from 'react';
-import {Pressable, StyleSheet, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {type BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useTheme, type Theme} from '../theme';
-import {Text} from '../components/atoms/Text';
 import {PassageiroScreen} from '../screens/Passageiro/PassageiroScreen';
 import {ProfileNavigator} from './ProfileNavigator';
 import {NotificationsScreen} from '../screens/Notifications/NotificationsScreen';
-import type {PassageiroStackParamList} from './types';
 
 type PassageiroTabParamList = {
   PassageiroHome: undefined;
   PassageiroCorridas: undefined;
-  PassageiroPagamentos: undefined;
+  PassageiroNotificacoes: undefined;
   PassageiroProfile: undefined;
 };
 
@@ -33,17 +31,17 @@ const TAB_ICONS: Record<
   keyof PassageiroTabParamList,
   {active: TabIconName; inactive: TabIconName}
 > = {
-  PassageiroHome: {active: 'home', inactive: 'home'},
-  PassageiroCorridas: {active: 'directions-car', inactive: 'directions-car'},
-  PassageiroPagamentos: {active: 'account-balance-wallet', inactive: 'account-balance-wallet'},
-  PassageiroProfile: {active: 'person', inactive: 'person-outline'},
+  PassageiroHome:          {active: 'home',           inactive: 'home'},
+  PassageiroCorridas:      {active: 'directions-car', inactive: 'directions-car'},
+  PassageiroNotificacoes:  {active: 'notifications',  inactive: 'notifications-none'},
+  PassageiroProfile:       {active: 'person',         inactive: 'person-outline'},
 };
 
 const TAB_LABEL_KEYS: Record<keyof PassageiroTabParamList, string> = {
-  PassageiroHome: 'passageiro.tabs.home',
-  PassageiroCorridas: 'passageiro.tabs.corridas',
-  PassageiroPagamentos: 'passageiro.tabs.pagamentos',
-  PassageiroProfile: 'passageiro.tabs.perfil',
+  PassageiroHome:         'passageiro.tabs.home',
+  PassageiroCorridas:     'passageiro.tabs.corridas',
+  PassageiroNotificacoes: 'passageiro.tabs.notificacoes',
+  PassageiroProfile:      'passageiro.tabs.perfil',
 };
 
 /**
@@ -91,15 +89,14 @@ const PassageiroTabBar = ({
             onPress={onPress}
             style={styles.tab}
             testID={`passageiro-tab-${route.name}`}>
+            {isFocused && <View style={styles.activeIndicator} />}
             <MaterialIcons
-              color={isFocused ? theme.colors.info : theme.colors.textMuted}
+              color={isFocused ? INTERACTIVE : TEXT_MUTED}
               name={isFocused ? icons.active : icons.inactive}
               size={24}
             />
             <Text
-              color={isFocused ? 'info' : 'textMuted'}
-              style={styles.label}
-              variant="caption">
+              style={[styles.label, {color: isFocused ? INTERACTIVE : TEXT_MUTED}]}>
               {label}
             </Text>
           </Pressable>
@@ -111,31 +108,49 @@ const PassageiroTabBar = ({
 
 PassageiroTabBar.displayName = 'PassageiroTabBar';
 
-const createTabBarStyles = (theme: Theme, bottomInset: number) =>
+const INTERACTIVE = '#FFFFFF';
+const TEXT_MUTED  = 'rgba(255,255,255,0.45)';
+const NAV_BG      = '#0D1B2A';
+
+// eslint-disable-next-line react-native/no-unused-styles
+const createTabBarStyles = (_theme: Theme, bottomInset: number) =>
   StyleSheet.create({
     container: {
-      backgroundColor: theme.colors.surface,
-      borderTopColor: theme.colors.border,
-      borderTopWidth: StyleSheet.hairlineWidth,
+      backgroundColor: NAV_BG,
+      borderTopWidth: 0,
       flexDirection: 'row',
-      paddingBottom: bottomInset > 0 ? bottomInset : theme.spacing.md,
-      paddingTop: theme.spacing.sm,
-      ...theme.shadows.tabBar,
+      height: 64 + (bottomInset > 0 ? bottomInset : 0),
+      paddingBottom: bottomInset > 0 ? bottomInset : 0,
+      shadowColor: '#000',
+      shadowOffset: {width: 0, height: -2},
+      shadowOpacity: 0.20,
+      shadowRadius: 10,
+      elevation: 12,
     },
     label: {
-      marginTop: 2,
+      fontSize: 11,
+      fontWeight: '500',
+      marginTop: 3,
     },
     tab: {
       alignItems: 'center',
       flex: 1,
       justifyContent: 'center',
-      paddingVertical: theme.spacing.xs,
+      paddingTop: 8,
+    },
+    activeIndicator: {
+      width: 20,
+      height: 3,
+      borderRadius: 1.5,
+      backgroundColor: INTERACTIVE,
+      position: 'absolute',
+      top: 0,
     },
   });
 
 // Placeholder screens for tabs not yet implemented
-const CorridasPlaceholder = (): React.JSX.Element => <NotificationsScreen />;
-const PagamentosPlaceholder = (): React.JSX.Element => <NotificationsScreen />;
+const CorridasPlaceholder      = (): React.JSX.Element => <NotificationsScreen />;
+const NotificacoesPlaceholder  = (): React.JSX.Element => <NotificationsScreen />;
 
 /**
  * Bottom-tab navigator for the passenger (USUARIO/ADMIN) experience.
@@ -147,10 +162,10 @@ export const PassageiroNavigator = (): React.JSX.Element => {
     <Tab.Navigator
       screenOptions={{headerShown: false}}
       tabBar={props => <PassageiroTabBar {...props} />}>
-      <Tab.Screen component={PassageiroScreen} name="PassageiroHome" />
-      <Tab.Screen component={CorridasPlaceholder} name="PassageiroCorridas" />
-      <Tab.Screen component={PagamentosPlaceholder} name="PassageiroPagamentos" />
-      <Tab.Screen component={ProfileNavigator} name="PassageiroProfile" />
+      <Tab.Screen component={PassageiroScreen}        name="PassageiroHome" />
+      <Tab.Screen component={CorridasPlaceholder}     name="PassageiroCorridas" />
+      <Tab.Screen component={NotificacoesPlaceholder} name="PassageiroNotificacoes" />
+      <Tab.Screen component={ProfileNavigator}        name="PassageiroProfile" />
     </Tab.Navigator>
   );
 };

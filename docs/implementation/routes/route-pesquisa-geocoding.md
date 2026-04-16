@@ -1,6 +1,6 @@
-# Route: /pesquisa/geocoding — Address Search
+# Route: /pesquisa/\* — Search and Geocoding
 
-> **Domain:** Pesquisa (address geocoding)
+> **Domain:** Pesquisa (search/geocoding)
 > **Base URL:** `http://172.19.2.116:3000` (env: `API_BASE_URL`)
 > **Auth required:** Yes (`Authorization: Bearer <accessToken>`)
 > **Provider:** Mapbox (with Redis cache)
@@ -9,17 +9,21 @@
 
 ## What This Route Does
 
-`GET /pesquisa/geocoding` searches for an address/place text and returns coordinate candidates (`lat`, `lng`) with a human-readable `placeName`.
+`/pesquisa` provides forward and reverse geocoding APIs.
 
-The backend uses Mapbox geocoding and caches results in Redis to reduce latency and provider calls.
+- `GET /pesquisa/geocoding`: text -> coordinate candidates (`lat`, `lng`) with `placeName`.
+- `GET /pesquisa/reverse-geocoding`: coordinate pair -> human-readable address.
+
+The backend uses Mapbox with Redis cache to reduce latency and provider calls.
 
 ---
 
 ## API Endpoint
 
-| Method | Endpoint              | Description                                  | Success |
-| ------ | --------------------- | -------------------------------------------- | ------- |
-| `GET`  | `/pesquisa/geocoding` | Search address and return coordinate matches | `200`   |
+| Method | Endpoint                      | Description                                  | Success |
+| ------ | ----------------------------- | -------------------------------------------- | ------- |
+| `GET`  | `/pesquisa/geocoding`         | Search address and return coordinate matches | `200`   |
+| `GET`  | `/pesquisa/reverse-geocoding` | Convert coordinates to a readable address    | `200`   |
 
 ---
 
@@ -29,15 +33,17 @@ Searches address candidates by free text.
 
 ### Query params
 
-| Name | Type   | Required | Description                  |
-| ---- | ------ | -------- | ---------------------------- |
-| `q`  | string | Yes      | Address/place term to search |
+| Name  | Type   | Required | Description                                 |
+| ----- | ------ | -------- | ------------------------------------------- |
+| `q`   | string | Yes      | Address/place term to search                |
+| `lat` | number | No       | Latitude used to prioritize nearby results  |
+| `lng` | number | No       | Longitude used to prioritize nearby results |
 
 ### Example request
 
 ```bash
 curl -X GET \
-  'http://172.19.2.116:3000/pesquisa/geocoding?q=dtalia' \
+  'http://172.19.2.116:3000/pesquisa/geocoding?q=ditalia&lat=-16.6869&lng=-49.2648' \
   -H 'accept: */*' \
   -H 'Authorization: Bearer <accessToken>'
 ```
@@ -47,13 +53,13 @@ curl -X GET \
 ```json
 [
   {
-    "address": "dtalia",
+    "address": "ditalia",
     "placeName": "Rua Dalia Vermelha, Aparecida de Goiania - Goias, Brasil",
     "lng": -49.235608,
     "lat": -16.768804
   },
   {
-    "address": "dtalia",
+    "address": "ditalia",
     "placeName": "Rua Italia Nova Europa, Alto Da Boa Vista, Tres Lagoas - Mato Grosso do Sul, Brasil",
     "lng": -51.723769,
     "lat": -20.766677
@@ -68,6 +74,54 @@ curl -X GET \
 - `x-ratelimit-remaining-short: 9`
 - `x-ratelimit-reset-short: 59999`
 
+### Response `401`
+
+```json
+{
+  "statusCode": 401,
+  "timestamp": "2026-04-16T19:01:56.422Z",
+  "path": "/pesquisa/geocoding?q=ditalia",
+  "code": "Unauthorized",
+  "message": "Acesso nao autorizado"
+}
+```
+
+---
+
+## GET /pesquisa/reverse-geocoding
+
+Converts coordinates to a readable address.
+
+### Query params
+
+| Name  | Type   | Required | Description |
+| ----- | ------ | -------- | ----------- |
+| `lat` | number | Yes      | Latitude    |
+| `lng` | number | Yes      | Longitude   |
+
+### Example request
+
+```bash
+curl -X GET \
+  'http://172.19.2.116:3000/pesquisa/reverse-geocoding?lat=-16.768804&lng=-49.235608' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer <accessToken>'
+```
+
+### Response `200`
+
+```json
+{
+  "address": "Rua Dalia Vermelha, Aparecida de Goiania - Goias, Brasil",
+  "lat": -16.768804,
+  "lng": -49.235608
+}
+```
+
+### Response `401`
+
+If the token is missing or invalid, the API returns unauthorized in the same error shape shown above.
+
 ---
 
 ## Frontend Integration Notes
@@ -77,6 +131,8 @@ curl -X GET \
 - Show top 3 to 5 suggestions and let users pick one.
 - Persist selected place as `{ placeName, lat, lng }` in form state.
 - Handle rate-limit headers and fallback gracefully (retry with backoff).
+- Use `lat`/`lng` proximity when the device location is known to improve relevance.
+- Use reverse geocoding to prefill forms from map pin position.
 
 ---
 
@@ -92,8 +148,20 @@ export type GeocodingResult = {
 
 export async function geocodeAddress(
   query: string,
+  proximity?: {lat: number; lng: number},
 ): Promise<GeocodingResult[]> {
-  // GET /pesquisa/geocoding?q=${encodeURIComponent(query)}
+  // GET /pesquisa/geocoding?q=${encodeURIComponent(query)}&lat=...&lng=...
+}
+
+export async function reverseGeocode(
+  lat: number,
+  lng: number,
+): Promise<{
+  address: string;
+  lat: number;
+  lng: number;
+}> {
+  // GET /pesquisa/reverse-geocoding?lat=${lat}&lng=${lng}
 }
 ```
 
@@ -102,6 +170,7 @@ export async function geocodeAddress(
 ## Error Handling
 
 - `400`: missing/invalid `q`
+- `400`: missing/invalid `lat` or `lng` (reverse geocoding)
 - `401`: invalid or expired JWT
 - `429`: too many requests (short window rate limit)
 - `5xx`: provider or backend transient failure

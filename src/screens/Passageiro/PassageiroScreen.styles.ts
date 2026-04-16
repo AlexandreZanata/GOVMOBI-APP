@@ -1,232 +1,422 @@
 /**
- * @fileoverview Styles for the PassageiroScreen (ride-hailing map experience).
+ * @fileoverview Styles for PassageiroScreen — white bottom sheet variant.
  *
- * Layout layers (bottom to top):
- *   1. Full-screen Mapbox map
- *   2. Top search bar (floating)
- *   3. Right-side floating action buttons
- *   4. Search results overlay (conditional)
- *   5. Bottom sheet (always visible)
- *   6. Bottom tab bar (handled by navigator)
+ * Bottom sheet & search bar are now white (#FFFFFF) with dark text.
+ * FABs remain dark. CTA stays amber. Map unchanged.
  */
 import {StyleSheet} from 'react-native';
-import type {Theme} from '../../theme';
 
-/**
- * Creates the StyleSheet for PassageiroScreen.
- *
- * @param theme - The current GovMobile theme object.
- * @returns StyleSheet scoped to the Passageiro screen.
- */
-export const createPassageiroStyles = (theme: Theme) => {
-  const {design, spacing, borderRadius, shadows, typography: typo} = theme;
+const C = {
+  // surfaces
+  surfaceDark:    '#09090B',
+  surfaceCard:    '#FFFFFF',
+  surfaceSubtle:  '#F7F7F8',   // input bg inside white sheet
+  accent:         '#F5C842',
+  accentPress:    '#D4A900',
+  interactive:    '#276EF1',
+  interactiveBg:  '#EFF6FF',
+  // text on white
+  textDark:       '#09090B',
+  textMid:        '#52525B',
+  textMuted:      '#A1A1AA',
+  // text on dark (FABs only)
+  textOnDark:     '#FFFFFF',
+  // map / misc
+  mapBg:          '#F5F5F5',
+  dividerLight:   '#E4E4E7',   // divider inside white sheet
+  handleLight:    '#D4D4D8',   // drag handle on white
+  resultDivider:  '#F4F4F5',
+  resultHover:    '#FAFAFA',
+  closeBg:        '#F4F4F5',
+  errorRed:       '#EF4444',
+  shadow:         '#000000',
+  accentShadow:   '#F5C842',
+  pulseBg:        'rgba(39,110,241,0.15)',
+  transparent:    'transparent',
+} as const;
 
-  return StyleSheet.create({
-    // ── Root ──────────────────────────────────────────────────────────────────
+export const PassageiroColors = C;
+
+export const createPassageiroStyles = () =>
+  StyleSheet.create({
+    // ── Root ────────────────────────────────────────────────────────────────
     container: {
       flex: 1,
-      backgroundColor: design.navy800,
-    },
-    map: {
-      flex: 1,
+      backgroundColor: C.mapBg,
     },
 
-    // ── Top search bar ────────────────────────────────────────────────────────
+    // ── Layer 1: Map ─────────────────────────────────────────────────────────
+    map: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    mapFallback: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      backgroundColor: C.mapBg,
+      justifyContent: 'center',
+    },
+    mapFallbackText: {
+      fontSize: 14,
+      color: C.textMuted,
+      marginTop: 12,
+    },
+
+    // ── User location marker ─────────────────────────────────────────────────
+    userMarkerPulse: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: C.pulseBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    userMarkerRing: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: C.surfaceCard,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    userMarkerDot: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: C.interactive,
+    },
+
+    // ── Destination pin ──────────────────────────────────────────────────────
+    destPinOuter: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: C.accent,
+      borderWidth: 1.5,
+      borderColor: C.surfaceDark,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    destPinInner: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: C.surfaceDark,
+    },
+    destPinTail: {
+      width: 0,
+      height: 0,
+      borderLeftWidth: 5,
+      borderRightWidth: 5,
+      borderTopWidth: 8,
+      borderLeftColor: C.transparent,
+      borderRightColor: C.transparent,
+      borderTopColor: C.accent,
+      marginTop: -1,
+    },
+    destPinWrapper: {
+      alignItems: 'center',
+    },
+
+    // ── Layer 2: Top search bar ──────────────────────────────────────────────
     searchBarWrapper: {
-      left: spacing[4],
       position: 'absolute',
-      right: spacing[4],
-      top: spacing[3],
+      left: 16,
+      right: 16,
       zIndex: 10,
     },
     searchBarContainer: {
-      alignItems: 'center',
-      backgroundColor: design.surface100,
-      borderRadius: borderRadius.radius.full,
+      height: 52,
+      backgroundColor: C.surfaceCard,
+      borderRadius: 26,
       flexDirection: 'row',
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
-      ...shadows.md,
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      shadowColor: C.shadow,
+      shadowOffset: {width: 0, height: 4},
+      shadowOpacity: 0.10,
+      shadowRadius: 20,
+      elevation: 6,
+    },
+    searchBarContainerFocused: {
+      shadowOpacity: 0.15,
+      shadowRadius: 24,
+      elevation: 8,
     },
     searchBarInput: {
-      ...typo.scale.bodyLg,
-      color: design.textPrimary,
       flex: 1,
-      marginHorizontal: spacing[2],
+      fontSize: 15,
+      color: C.textDark,
+      marginHorizontal: 10,
+      paddingVertical: 0,
     },
     searchBarClearBtn: {
+      width: 28,
+      height: 28,
       alignItems: 'center',
-      height: 24,
       justifyContent: 'center',
-      width: 24,
     },
 
-    // ── Right floating action buttons ─────────────────────────────────────────
+    // ── Layer 3: Right FAB column ────────────────────────────────────────────
     fabColumn: {
-      gap: spacing[2],
       position: 'absolute',
-      right: spacing[4],
-      top: 80,
+      right: 16,
       zIndex: 10,
+      gap: 10,
     },
     fab: {
-      alignItems: 'center',
-      backgroundColor: design.navy800,
-      borderRadius: borderRadius.radius.full,
-      height: 48,
-      justifyContent: 'center',
       width: 48,
-      ...shadows.md,
-    },
-    fabGreen: {
-      alignItems: 'center',
-      backgroundColor: design.success,
-      borderRadius: borderRadius.radius.full,
       height: 48,
+      borderRadius: 24,
+      backgroundColor: C.surfaceDark,
+      alignItems: 'center',
       justifyContent: 'center',
-      width: 48,
-      ...shadows.md,
+      shadowColor: C.shadow,
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.18,
+      shadowRadius: 12,
+      elevation: 5,
     },
-
-    // ── Search results overlay ────────────────────────────────────────────────
-    searchOverlay: {
-      backgroundColor: design.surface100,
-      borderRadius: borderRadius.radius.lg,
-      left: spacing[4],
-      maxHeight: 340,
+    fabLocation: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: C.interactive,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: C.shadow,
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.18,
+      shadowRadius: 12,
+      elevation: 5,
+    },
+    fabBadge: {
       position: 'absolute',
-      right: spacing[4],
-      top: 72,
-      zIndex: 20,
-      ...shadows.lg,
-    },
-    searchOverlayHeader: {
-      alignItems: 'center',
-      borderBottomColor: design.surface300,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
-    },
-    searchOverlayTitle: {
-      ...typo.scale.headingSm,
-      color: design.textPrimary,
-    },
-    searchResultItem: {
-      borderBottomColor: design.surface300,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
-    },
-    searchResultName: {
-      ...typo.scale.headingSm,
-      color: design.textPrimary,
-      marginBottom: spacing[1],
-    },
-    searchResultAddress: {
-      ...typo.scale.bodySm,
-      color: design.textSecondary,
-    },
-    searchEmptyText: {
-      ...typo.scale.bodyMd,
-      color: design.textTertiary,
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[4],
-      textAlign: 'center',
+      top: 6,
+      right: 6,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: C.errorRed,
     },
 
-    // ── Bottom sheet ──────────────────────────────────────────────────────────
+    // ── Layer 4: Bottom sheet — WHITE ────────────────────────────────────────
     bottomSheet: {
-      backgroundColor: design.navy800,
-      borderTopLeftRadius: borderRadius.radius.xl,
-      borderTopRightRadius: borderRadius.radius.xl,
-      paddingBottom: spacing[4],
-      paddingHorizontal: spacing[4],
-      paddingTop: spacing[4],
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: C.surfaceCard,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingHorizontal: 20,
+      paddingBottom: 32,
+      zIndex: 20,
+      shadowColor: C.shadow,
+      shadowOffset: {width: 0, height: -4},
+      shadowOpacity: 0.10,
+      shadowRadius: 20,
+      elevation: 12,
     },
+    dragHandle: {
+      alignSelf: 'center',
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: C.handleLight,
+      marginTop: 10,
+      marginBottom: 16,
+    },
+
+    // Header row
     bottomSheetHeader: {
-      alignItems: 'center',
       flexDirection: 'row',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: spacing[3],
+      marginBottom: 14,
     },
     bottomSheetHeaderLeft: {
-      alignItems: 'center',
       flexDirection: 'row',
-      gap: spacing[2],
+      alignItems: 'center',
+      gap: 8,
     },
     bottomSheetTitle: {
-      ...typo.scale.headingMd,
-      color: design.textOnDark,
+      fontSize: 17,
+      fontWeight: '700',
+      color: C.textDark,
+      letterSpacing: -0.2,
     },
-    bottomSheetDivider: {
-      backgroundColor: design.navy600,
-      height: StyleSheet.hairlineWidth,
-      marginBottom: spacing[3],
+    bottomSheetSubtitle: {
+      fontSize: 13,
+      fontWeight: '400',
+      color: C.textMuted,
+      marginTop: 1,
     },
-    destinoRow: {
-      alignItems: 'flex-start',
+
+    // "Where to?" search row inside the sheet
+    sheetSearchRow: {
       flexDirection: 'row',
-      gap: spacing[3],
-      marginBottom: spacing[4],
+      alignItems: 'center',
+      backgroundColor: C.surfaceSubtle,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      height: 50,
+      marginBottom: 16,
+      gap: 10,
+    },
+    sheetSearchText: {
+      flex: 1,
+      fontSize: 15,
+      color: C.textMuted,
+    },
+    sheetSearchTextActive: {
+      color: C.textDark,
+      fontWeight: '500',
+    },
+
+    // Divider
+    bottomSheetDivider: {
+      height: 1,
+      backgroundColor: C.dividerLight,
+      marginBottom: 16,
+    },
+
+    // Destination row
+    destinoRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+      marginBottom: 20,
+    },
+    destinoIconWrapper: {
+      marginTop: 2,
+    },
+    destinoTextBlock: {
+      flex: 1,
     },
     destinoLabel: {
-      ...typo.scale.labelSm,
-      color: design.textOnDarkMuted,
+      fontSize: 11,
+      fontWeight: '600',
+      color: C.textMuted,
       letterSpacing: 1,
-      marginBottom: spacing[1],
       textTransform: 'uppercase',
+      marginBottom: 3,
     },
     destinoValue: {
-      ...typo.scale.bodyMd,
-      color: design.textOnDark,
+      fontSize: 15,
+      fontWeight: '500',
+      color: C.textDark,
     },
+    destinoPlaceholder: {
+      fontSize: 15,
+      fontWeight: '400',
+      color: C.textMuted,
+    },
+
+    // CTA button
     ctaButton: {
+      width: '100%',
+      height: 54,
+      backgroundColor: C.accent,
+      borderRadius: 14,
       alignItems: 'center',
-      backgroundColor: design.amber400,
-      borderRadius: borderRadius.radius.lg,
       justifyContent: 'center',
-      paddingVertical: spacing[4],
+      shadowColor: C.accentShadow,
+      shadowOffset: {width: 0, height: 4},
+      shadowOpacity: 0.30,
+      shadowRadius: 16,
+      elevation: 6,
+    },
+    ctaButtonPressed: {
+      backgroundColor: C.accentPress,
+      transform: [{scale: 0.98}],
     },
     ctaButtonDisabled: {
-      opacity: 0.6,
+      opacity: 0.4,
     },
     ctaButtonText: {
-      ...typo.scale.headingMd,
-      color: design.textOnDark,
+      fontSize: 16,
+      fontWeight: '700',
+      color: C.textDark,
+      letterSpacing: 0.3,
     },
 
-    // ── User location marker ──────────────────────────────────────────────────
-    userMarker: {
+    // ── Layer 5: Search results overlay ─────────────────────────────────────
+    searchOverlay: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      backgroundColor: C.surfaceCard,
+      borderRadius: 20,
+      maxHeight: 340,
+      zIndex: 30,
+      overflow: 'hidden',
+      shadowColor: C.shadow,
+      shadowOffset: {width: 0, height: 8},
+      shadowOpacity: 0.12,
+      shadowRadius: 32,
+      elevation: 10,
+    },
+    searchOverlayHeader: {
+      flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: design.navy800,
-      borderColor: design.surface100,
-      borderRadius: borderRadius.radius.full,
-      borderWidth: 2,
-      height: 20,
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    searchOverlayTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: C.textDark,
+    },
+    searchOverlayClose: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: C.closeBg,
+      alignItems: 'center',
       justifyContent: 'center',
-      width: 20,
     },
-    userMarkerDot: {
-      backgroundColor: design.info,
-      borderRadius: borderRadius.radius.full,
-      height: 8,
-      width: 8,
+    searchResultItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 64,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderTopWidth: 1,
+      borderTopColor: C.resultDivider,
+      gap: 12,
     },
-
-    // ── Misc ──────────────────────────────────────────────────────────────────
-    searchResultItemLast: {
-      borderBottomWidth: 0,
+    searchResultIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: C.interactiveBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
     },
-    mapFallback: {
-      alignItems: 'center' as const,
-      backgroundColor: design.surface200,
+    searchResultTextBlock: {
       flex: 1,
-      justifyContent: 'center' as const,
     },
-    destinoIcon: {
-      marginTop: spacing[1],
+    searchResultName: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: C.textDark,
+      marginBottom: 2,
+    },
+    searchResultAddress: {
+      fontSize: 13,
+      fontWeight: '400',
+      color: C.textMid,
+    },
+    searchEmptyText: {
+      fontSize: 14,
+      color: C.textMuted,
+      textAlign: 'center',
+      paddingVertical: 24,
+      paddingHorizontal: 16,
+    },
+    searchLoadingPad: {
+      paddingVertical: 20,
     },
   });
-};

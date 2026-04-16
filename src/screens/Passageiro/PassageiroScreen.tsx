@@ -1,16 +1,17 @@
 /**
- * @fileoverview PassageiroScreen — full-screen ride-hailing map experience.
+ * @fileoverview PassageiroScreen — production-grade ride-hailing map experience.
  *
- * Layers (bottom to top):
- *   1. Mapbox MapView (full screen, light-v11 style)
- *   2. Top search bar (floating)
- *   3. Right FAB column (bell, zoom+/-, location)
- *   4. Search results overlay (conditional)
- *   5. Bottom sheet (Nova Corrida)
+ * Z-layers (bottom → top):
+ *   1. MapboxMap          full screen base layer
+ *   2. Top search bar     floating pill, z=10
+ *   3. Right FAB column   floating buttons, z=10
+ *   4. Bottom sheet       white card, always visible, z=20
+ *   5. Search overlay     conditional, z=30
  */
-import React, {useMemo} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Pressable,
   Text,
@@ -19,28 +20,48 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
-import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
-import {useTheme} from '../../theme';
 import {usePassageiro} from './usePassageiro';
-import {createPassageiroStyles} from './PassageiroScreen.styles';
+import {createPassageiroStyles, PassageiroColors as C} from './PassageiroScreen.styles';
 import {ENV} from '../../config/env';
 import type {SearchResult} from '../../types/corrida';
 
-// Lazy-load Mapbox to avoid crashing in environments where it's not installed
+// ── Mapbox lazy-load ─────────────────────────────────────────────────────────
 type MapboxModule = {
   setAccessToken: (token: string) => void;
-  MapView: React.ComponentType<{style?: object; styleURL?: string; logoEnabled?: boolean; attributionEnabled?: boolean; testID?: string; accessibilityLabel?: string; children?: React.ReactNode}>;
-  Camera: React.ComponentType<{centerCoordinate?: [number, number]; zoomLevel?: number; animationDuration?: number}>;
-  PointAnnotation: React.ComponentType<{id: string; coordinate: [number, number]; title?: string; children?: React.ReactNode}>;
+  MapView: React.ComponentType<{
+    style?: object;
+    styleURL?: string;
+    logoEnabled?: boolean;
+    attributionEnabled?: boolean;
+    testID?: string;
+    accessibilityLabel?: string;
+    children?: React.ReactNode;
+  }>;
+  Camera: React.ComponentType<{
+    centerCoordinate?: [number, number];
+    zoomLevel?: number;
+    animationDuration?: number;
+  }>;
+  PointAnnotation: React.ComponentType<{
+    id: string;
+    coordinate: [number, number];
+    title?: string;
+    children?: React.ReactNode;
+  }>;
 };
 
 let MapboxGL: MapboxModule | null = null;
-
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require('@rnmapbox/maps') as {default: {setAccessToken: (t: string) => void}; MapView: MapboxModule['MapView']; Camera: MapboxModule['Camera']; PointAnnotation: MapboxModule['PointAnnotation']};
+  const mod = require('@rnmapbox/maps') as {
+    default: {setAccessToken: (t: string) => void};
+    MapView: MapboxModule['MapView'];
+    Camera: MapboxModule['Camera'];
+    PointAnnotation: MapboxModule['PointAnnotation'];
+  };
   mod.default.setAccessToken(ENV.MAPBOX_ACCESS_TOKEN);
   MapboxGL = {
     setAccessToken: mod.default.setAccessToken.bind(mod.default),
@@ -52,18 +73,32 @@ try {
   MapboxGL = null;
 }
 
-/**
- * PassageiroScreen renders the full ride-hailing map experience for users
- * with the USUARIO or ADMIN role.
- *
- * @returns JSX element for the passenger home screen.
- */
+// ── Teardrop destination pin ─────────────────────────────────────────────────
+const DestinationPin = (): React.JSX.Element => {
+  const s = useMemo(() => createPassageiroStyles(), []);
+  return (
+    <View style={s.destPinWrapper}>
+      <View style={s.destPinOuter}>
+        <View style={s.destPinInner} />
+      </View>
+      <View style={s.destPinTail} />
+    </View>
+  );
+};
+
+// ── Main component ────────────────────────────────────────────────────────────
 export const PassageiroScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
-  const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const styles = useMemo(() => createPassageiroStyles(theme), [theme]);
-  const {design, typography: typo} = theme;
+  const styles = useMemo(() => createPassageiroStyles(), []);
+
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [ctaPressed, setCtaPressed] = useState(false);
+
+  const overlayOpacity  = useRef(new Animated.Value(0)).current;
+  const overlayTranslate = useRef(new Animated.Value(8)).current;
+  const sheetTranslate  = useRef(new Animated.Value(0)).current;
+  const sheetAnimated   = useRef(false);
 
   const {
     userLocation,
@@ -74,37 +109,68 @@ export const PassageiroScreen = (): React.JSX.Element => {
     searchResults,
     isSearching,
     selectedDestinoLabel,
+    selectedDestinoCoords,
     isRequesting,
     onOpenSearch,
     onCloseSearch,
     onSearchChange,
     onSelectResult,
     onSolicitarCorrida,
-    onZoomIn,
-    onZoomOut,
     onCenterOnUser,
   } = usePassageiro();
 
-  const renderSearchResult: ListRenderItem<SearchResult> = ({item, index}) => (
-    <TouchableOpacity
+  // Bottom sheet slide-up on first render
+  const onSheetLayout = useCallback(() => {
+    if (sheetAnimated.current) return;
+    sheetAnimated.current = true;
+    sheetTranslate.setValue(200);
+    Animated.timing(sheetTranslate, {
+      toValue: 0,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  }, [sheetTranslate]);
+
+  // Search overlay fade + slide-in
+  const prevSearchOpen = useRef(false);
+  if (isSearchOpen !== prevSearchOpen.current) {
+    prevSearchOpen.current = isSearchOpen;
+    if (isSearchOpen) {
+      overlayOpacity.setValue(0);
+      overlayTranslate.setValue(8);
+      Animated.parallel([
+        Animated.timing(overlayOpacity,   {toValue: 1, duration: 200, useNativeDriver: true}),
+        Animated.timing(overlayTranslate, {toValue: 0, duration: 200, useNativeDriver: true}),
+      ]).start();
+    }
+  }
+
+  // ── Search result row ──────────────────────────────────────────────────────
+  const renderSearchResult: ListRenderItem<SearchResult> = ({item}) => (
+    <Pressable
       accessibilityLabel={item.placeName}
       accessibilityRole="button"
-      key={item.id}
       onPress={() => onSelectResult(item)}
-      style={[
+      style={({pressed}) => [
         styles.searchResultItem,
-        index === searchResults.length - 1 && styles.searchResultItemLast,
+        pressed && {backgroundColor: C.resultHover},
       ]}
       testID={`search-result-${item.id}`}>
-      <Text style={styles.searchResultName} numberOfLines={1}>
-        {item.placeName}
-      </Text>
-      <Text style={styles.searchResultAddress} numberOfLines={2}>
-        {item.address}
-      </Text>
-    </TouchableOpacity>
+      <View style={styles.searchResultIconWrap}>
+        <MaterialIcons name="location-on" size={18} color={C.interactive} />
+      </View>
+      <View style={styles.searchResultTextBlock}>
+        <Text style={styles.searchResultName} numberOfLines={1}>
+          {item.placeName}
+        </Text>
+        <Text style={styles.searchResultAddress} numberOfLines={2}>
+          {item.address}
+        </Text>
+      </View>
+    </Pressable>
   );
 
+  // ── Map layer ──────────────────────────────────────────────────────────────
   const mapContent = MapboxGL ? (
     <MapboxGL.MapView
       accessibilityLabel={t('passageiro.map.label')}
@@ -114,39 +180,43 @@ export const PassageiroScreen = (): React.JSX.Element => {
       styleURL="mapbox://styles/mapbox/light-v11"
       testID="passageiro-map">
       <MapboxGL.Camera
-        animationDuration={400}
+        animationDuration={600}
         centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
         zoomLevel={mapRegion.zoomLevel}
       />
-
-      {/* User location marker */}
       {userLocation && (
         <MapboxGL.PointAnnotation
           coordinate={[userLocation.longitude, userLocation.latitude]}
           id="user-location"
           title={t('passageiro.currentLocation')}>
-          <View style={styles.userMarker} testID="user-marker">
-            <View style={styles.userMarkerDot} />
+          <View style={styles.userMarkerPulse} testID="user-marker">
+            <View style={styles.userMarkerRing}>
+              <View style={styles.userMarkerDot} />
+            </View>
           </View>
+        </MapboxGL.PointAnnotation>
+      )}
+      {selectedDestinoCoords && (
+        <MapboxGL.PointAnnotation
+          coordinate={[selectedDestinoCoords.longitude, selectedDestinoCoords.latitude]}
+          id="destination"
+          title={selectedDestinoLabel ?? ''}>
+          <DestinationPin />
         </MapboxGL.PointAnnotation>
       )}
     </MapboxGL.MapView>
   ) : (
-    // Fallback when Mapbox is not installed
-    <View
-      style={styles.mapFallback}
-      testID="map-fallback">
-      <MaterialIcons color={design.textTertiary} name="map" size={64} />
-      <Text
-        style={{
-          ...typo.scale.bodyMd,
-          color: design.textTertiary,
-          marginTop: theme.spacing[3],
-        }}>
-        {t('passageiro.map.notInstalled')}
-      </Text>
+    <View style={styles.mapFallback} testID="map-fallback">
+      <MaterialIcons name="map" size={56} color={C.textMuted} />
+      <Text style={styles.mapFallbackText}>{t('passageiro.map.notInstalled')}</Text>
     </View>
   );
+
+  const searchBarTop  = insets.top + 12;
+  const fabTop        = insets.top + 80;
+  const overlayTop    = searchBarTop + 64;
+  const hasDestination = !!selectedDestinoLabel;
+  const ctaDisabled   = isRequesting || isLocating || !hasDestination;
 
   return (
     <View style={styles.container} testID="passageiro-screen">
@@ -154,23 +224,27 @@ export const PassageiroScreen = (): React.JSX.Element => {
       {mapContent}
 
       {/* Layer 2: Top search bar */}
-      <SafeAreaView
-        edges={['top']}
-        style={[styles.searchBarWrapper, {top: insets.top + theme.spacing[3]}]}
+      <View
+        style={[styles.searchBarWrapper, {top: searchBarTop}]}
         testID="search-bar-wrapper">
-        <View style={styles.searchBarContainer}>
-          <MaterialIcons
-            color={design.info}
-            name="location-on"
-            size={20}
-            testID="search-icon-location"
-          />
+        <View
+          style={[
+            styles.searchBarContainer,
+            isInputFocused && styles.searchBarContainerFocused,
+          ]}>
+          <MaterialIcons name="location-on" size={18} color={C.interactive} />
           <TextInput
             accessibilityLabel={t('passageiro.searchBar.placeholder')}
+            autoComplete="street-address"
+            returnKeyType="search"
             onChangeText={onSearchChange}
-            onFocus={onOpenSearch}
+            onFocus={() => {
+              setIsInputFocused(true);
+              onOpenSearch();
+            }}
+            onBlur={() => setIsInputFocused(false)}
             placeholder={t('passageiro.searchBar.placeholder')}
-            placeholderTextColor={design.textTertiary}
+            placeholderTextColor={C.textMuted}
             style={styles.searchBarInput}
             testID="search-bar-input"
             value={searchQuery}
@@ -178,97 +252,75 @@ export const PassageiroScreen = (): React.JSX.Element => {
           {searchQuery.length > 0 ? (
             <Pressable
               accessibilityLabel={t('common.clear')}
+              hitSlop={8}
               onPress={onCloseSearch}
               style={styles.searchBarClearBtn}
               testID="search-clear-btn">
-              <MaterialIcons color={design.danger} name="cancel" size={20} />
+              <MaterialIcons name="close" size={16} color={C.textMuted} />
             </Pressable>
           ) : (
-            <MaterialIcons
-              color={design.textTertiary}
-              name="search"
-              size={20}
-              testID="search-icon-magnifier"
-            />
+            <MaterialIcons name="search" size={18} color={C.textMuted} />
           )}
         </View>
-      </SafeAreaView>
+      </View>
 
       {/* Layer 3: Right FAB column */}
-      <View
-        style={[styles.fabColumn, {top: insets.top + 72}]}
-        testID="fab-column">
+      <View style={[styles.fabColumn, {top: fabTop}]} testID="fab-column">
         <TouchableOpacity
           accessibilityLabel={t('common.notifications')}
           accessibilityRole="button"
+          activeOpacity={0.75}
           style={styles.fab}
           testID="fab-notifications">
-          <MaterialIcons
-            color={design.textOnDark}
-            name="notifications"
-            size={22}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          accessibilityLabel={t('passageiro.map.zoomOut')}
-          accessibilityRole="button"
-          onPress={onZoomOut}
-          style={styles.fab}
-          testID="fab-zoom-out">
-          <MaterialIcons color={design.textOnDark} name="remove" size={22} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          accessibilityLabel={t('passageiro.map.zoomIn')}
-          accessibilityRole="button"
-          onPress={onZoomIn}
-          style={styles.fab}
-          testID="fab-zoom-in">
-          <MaterialIcons color={design.textOnDark} name="add" size={22} />
+          <MaterialIcons name="notifications" size={20} color={C.textOnDark} />
+          <View style={styles.fabBadge} />
         </TouchableOpacity>
 
         <TouchableOpacity
           accessibilityLabel={t('passageiro.map.centerOnUser')}
           accessibilityRole="button"
+          activeOpacity={0.75}
           onPress={onCenterOnUser}
-          style={styles.fabGreen}
+          style={styles.fabLocation}
           testID="fab-center">
-          <MaterialIcons
-            color={design.textOnDark}
-            name="my-location"
-            size={22}
-          />
+          <MaterialIcons name="my-location" size={20} color={C.textOnDark} />
         </TouchableOpacity>
       </View>
 
-      {/* Layer 4: Search results overlay */}
+      {/* Layer 5: Search results overlay */}
       {isSearchOpen && (
-        <View style={styles.searchOverlay} testID="search-overlay">
+        <Animated.View
+          style={[
+            styles.searchOverlay,
+            {
+              top: overlayTop,
+              opacity: overlayOpacity,
+              transform: [{translateY: overlayTranslate}],
+            },
+          ]}
+          testID="search-overlay">
           <View style={styles.searchOverlayHeader}>
             <Text style={styles.searchOverlayTitle}>
               {t('passageiro.searchBar.results')}
             </Text>
             <Pressable
               accessibilityLabel={t('common.cancel')}
+              hitSlop={8}
               onPress={onCloseSearch}
+              style={styles.searchOverlayClose}
               testID="search-overlay-close">
-              <MaterialIcons
-                color={design.textSecondary}
-                name="close"
-                size={20}
-              />
+              <MaterialIcons name="close" size={14} color={C.textDark} />
             </Pressable>
           </View>
 
           {isSearching ? (
             <ActivityIndicator
-              color={design.info}
+              color={C.interactive}
               size="small"
-              style={{paddingVertical: theme.spacing[4]}}
+              style={styles.searchLoadingPad}
               testID="search-loading"
             />
-          ) : searchResults.length === 0 && searchQuery.length > 0 ? (
+          ) : searchResults.length === 0 && searchQuery.length >= 2 ? (
             <Text style={styles.searchEmptyText} testID="search-empty">
               {t('passageiro.searchBar.noResults')}
             </Text>
@@ -281,72 +333,101 @@ export const PassageiroScreen = (): React.JSX.Element => {
               testID="search-results-list"
             />
           )}
-        </View>
+        </Animated.View>
       )}
 
-      {/* Layer 5: Bottom sheet */}
-      <View style={styles.bottomSheet} testID="bottom-sheet">
+      {/* Layer 4: Bottom sheet — white */}
+      <Animated.View
+        onLayout={onSheetLayout}
+        style={[
+          styles.bottomSheet,
+          {
+            paddingBottom: Math.max(insets.bottom + 16, 32),
+            transform: [{translateY: sheetTranslate}],
+          },
+        ]}
+        testID="bottom-sheet">
+        {/* Drag handle */}
+        <View style={styles.dragHandle} />
+
         {/* Header */}
         <View style={styles.bottomSheetHeader}>
-          <View style={styles.bottomSheetHeaderLeft}>
-            <MaterialIcons
-              color={design.info}
-              name="directions-car"
-              size={20}
-              testID="bottom-sheet-car-icon"
-            />
+          <View>
             <Text style={styles.bottomSheetTitle}>
               {t('passageiro.bottomSheet.title')}
             </Text>
+            <Text style={styles.bottomSheetSubtitle}>
+              {t('passageiro.searchBar.placeholder')}
+            </Text>
           </View>
-          <MaterialIcons
-            color={design.textOnDarkMuted}
-            name="expand-more"
-            size={24}
-          />
+          <MaterialIcons name="expand-more" size={20} color={C.textMuted} />
         </View>
 
-        {/* Divider */}
-        <View style={styles.bottomSheetDivider} />
+        {/* "Where to?" tappable row — opens search */}
+        <Pressable
+          accessibilityLabel={t('passageiro.searchBar.placeholder')}
+          accessibilityRole="button"
+          onPress={onOpenSearch}
+          style={styles.sheetSearchRow}
+          testID="sheet-search-row">
+          <MaterialIcons name="search" size={20} color={C.interactive} />
+          <Text
+            style={[
+              styles.sheetSearchText,
+              hasDestination && styles.sheetSearchTextActive,
+            ]}
+            numberOfLines={1}>
+            {selectedDestinoLabel ?? t('passageiro.searchBar.placeholder')}
+          </Text>
+          {hasDestination && (
+            <MaterialIcons name="close" size={16} color={C.textMuted} onPress={onCloseSearch} />
+          )}
+        </Pressable>
 
-        {/* Destination row */}
+        {/* Destination detail row */}
         <View style={styles.destinoRow}>
-          <MaterialIcons
-            color={design.info}
-            name="location-on"
-            size={20}
-            testID="bottom-sheet-location-icon"
-          />
-          <View>
+          <View style={styles.destinoIconWrapper}>
+            <MaterialIcons name="location-on" size={20} color={C.interactive} />
+          </View>
+          <View style={styles.destinoTextBlock}>
             <Text style={styles.destinoLabel}>
               {t('passageiro.bottomSheet.destinoLabel')}
             </Text>
-            <Text style={styles.destinoValue} testID="destino-value">
+            <Text
+              style={hasDestination ? styles.destinoValue : styles.destinoPlaceholder}
+              testID="destino-value">
               {selectedDestinoLabel ?? t('passageiro.bottomSheet.destinoPlaceholder')}
             </Text>
           </View>
         </View>
 
-        {/* CTA button */}
-        <TouchableOpacity
-          accessibilityLabel={t('passageiro.bottomSheet.cta')}
+        {/* CTA */}
+        <Pressable
+          accessibilityLabel={
+            hasDestination
+              ? `${t('passageiro.bottomSheet.cta')} ${selectedDestinoLabel ?? ''}`
+              : t('passageiro.bottomSheet.cta')
+          }
           accessibilityRole="button"
-          disabled={isRequesting || isLocating}
+          disabled={ctaDisabled}
           onPress={onSolicitarCorrida}
+          onPressIn={() => setCtaPressed(true)}
+          onPressOut={() => setCtaPressed(false)}
           style={[
             styles.ctaButton,
-            (isRequesting || isLocating) && styles.ctaButtonDisabled,
+            ctaPressed && styles.ctaButtonPressed,
+            ctaDisabled && styles.ctaButtonDisabled,
           ]}
           testID="cta-solicitar">
           {isRequesting ? (
-            <ActivityIndicator color={design.textOnDark} size="small" />
+            <ActivityIndicator color={C.textDark} size="small" />
           ) : (
             <Text style={styles.ctaButtonText}>
               {t('passageiro.bottomSheet.cta')}
             </Text>
           )}
-        </TouchableOpacity>
-      </View>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 };
