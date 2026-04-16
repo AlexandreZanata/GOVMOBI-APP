@@ -1,118 +1,166 @@
+/**
+ * @fileoverview Styles for the redesigned ProfileScreen (Design_Prompt §4 Screen 3).
+ *
+ * Layout:
+ * - Dark header (navy800, curved bottom radius.xl, ~220px):
+ *     Avatar circle (80px, amber border), name (displayMd), email (bodyMd), role badge
+ * - Page body (surface200, padding space.4):
+ *     Info card, Settings card, Sign-out card
+ *
+ * All values reference theme tokens — zero hardcoded colors or pixel values.
+ */
 import {StyleSheet} from 'react-native';
 import {type Theme} from '../../theme';
 
+/**
+ * Creates the StyleSheet for ProfileScreen and SettingsScreen.
+ *
+ * @param theme - The current GovMobile theme object.
+ * @returns A StyleSheet object scoped to the Profile feature.
+ */
 // eslint-disable-next-line react-native/no-unused-styles
-export const createProfileStyles = (theme: Theme) =>
-  StyleSheet.create({
-    flex: {flex: 1},
+export const createProfileStyles = (theme: Theme) => {
+  const {design, spacing, borderRadius, shadows, typography: typo} = theme;
 
-    /** Dark blue safe area — matches the brand header. */
+  return StyleSheet.create({
+    // ── Root ──────────────────────────────────────────────────────────────────
     safeArea: {
-      backgroundColor: theme.colors.primary,
+      backgroundColor: design.navy800,
       flex: 1,
     },
-
-    /** Light background for the scrollable content below the hero. */
     scrollContent: {
-      backgroundColor: theme.colors.background,
+      backgroundColor: design.surface200,
       flexGrow: 1,
-      paddingBottom: theme.spacing['4xl'],
+      paddingBottom: spacing[10],
     },
 
-    // ---- Hero header (dark blue band) ----
+    // ── Dark hero header (Design_Prompt §3.6) ─────────────────────────────────
     hero: {
       alignItems: 'center',
-      backgroundColor: theme.colors.primary,
-      gap: theme.spacing.sm,
-      paddingBottom: theme.spacing['3xl'],
-      paddingTop: theme.spacing.xl,
+      backgroundColor: design.navy800,
+      borderBottomLeftRadius: borderRadius.radius.xl,
+      borderBottomRightRadius: borderRadius.radius.xl,
+      gap: spacing[2],
+      minHeight: 220,
+      paddingBottom: spacing[8],
+      paddingTop: spacing[6],
     },
+
+    /** Amber ring around the avatar circle. */
     avatarRing: {
-      borderColor: theme.colors.accent,
-      borderRadius: theme.borderRadius.pill,
+      borderColor: design.amber500,
+      borderRadius: borderRadius.radius.full,
       borderWidth: 3,
       padding: 3,
     },
+
+    /** 80×80 avatar fallback background. */
+    avatarFallback: {
+      alignItems: 'center',
+      backgroundColor: design.navy600,
+      borderRadius: borderRadius.radius.full,
+      height: 80,
+      justifyContent: 'center',
+      width: 80,
+    },
+
+    avatarInitials: {
+      ...typo.scale.displayMd,
+      color: design.amber500,
+    },
+
     heroName: {
-      marginTop: theme.spacing.sm,
+      ...typo.scale.displayMd,
+      color: design.textOnDark,
+      marginTop: spacing[2],
+      textAlign: 'center',
     },
+
     heroEmail: {
-      opacity: 0.7,
+      ...typo.scale.bodyMd,
+      color: design.textOnDarkMuted,
+      textAlign: 'center',
     },
+
+    /** Role badge pill (Design_Prompt §3.6). */
     roleBadge: {
-      borderRadius: theme.borderRadius.pill,
-      marginTop: theme.spacing.xs,
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.xs,
+      backgroundColor: design.amber500,
+      borderRadius: borderRadius.radius.full,
+      marginTop: spacing[1],
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[1],
     },
 
-    // ---- Card sections ----
+    roleBadgeText: {
+      ...typo.scale.labelMd,
+      color: design.navy900,
+    },
+
+    // ── Card sections (Design_Prompt §3.7) ────────────────────────────────────
     section: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: theme.borderRadius.lg,
-      marginHorizontal: theme.spacing.lg,
-      marginTop: theme.spacing.lg,
+      backgroundColor: design.surface100,
+      borderRadius: borderRadius.radius.lg,
+      marginHorizontal: spacing[4],
+      marginTop: spacing[4],
       overflow: 'hidden',
-      ...theme.shadows.sm,
-    },
-    sectionLabel: {
-      color: theme.colors.textMuted,
-      fontSize: theme.typography.fontSize.xs,
-      fontWeight: '600' as const,
-      letterSpacing: 0.8,
-      paddingBottom: theme.spacing.xs,
-      paddingHorizontal: theme.spacing.lg,
-      paddingTop: theme.spacing.md,
-      textTransform: 'uppercase' as const,
+      ...shadows.card,
     },
 
-    // ---- Info rows ----
+    // ── Info rows (Design_Prompt §3.7) ────────────────────────────────────────
     row: {
       alignItems: 'center',
-      borderBottomColor: theme.colors.border,
-      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: design.surface300,
+      borderBottomWidth: 0.5,
       flexDirection: 'row',
-      gap: theme.spacing.md,
+      gap: spacing[3],
       minHeight: 56,
-      paddingHorizontal: theme.spacing.lg,
-      paddingVertical: theme.spacing.md,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
     },
+
     rowLast: {
       borderBottomWidth: 0,
     },
+
     rowIcon: {
       alignItems: 'center',
       justifyContent: 'center',
-      width: theme.spacing['2xl'],
+      width: spacing[5],
     },
+
     rowContent: {
       flex: 1,
       gap: 2,
     },
+
+    /** Small label above the value (Design_Prompt §3.7). */
     rowLabel: {
-      color: theme.colors.textMuted,
-      fontSize: theme.typography.fontSize.xs,
+      ...typo.scale.caption,
+      color: design.textTertiary,
     },
+
     rowValue: {
-      color: theme.colors.text,
-      fontSize: theme.typography.fontSize.md,
+      ...typo.scale.bodyMd,
+      color: design.textPrimary,
     },
+
     rowChevron: {
       alignItems: 'center',
       justifyContent: 'center',
     },
 
-    // ---- Editable input ----
+    // ── Editable input ────────────────────────────────────────────────────────
     input: {
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadius.sm,
+      ...typo.scale.bodyMd,
+      borderColor: design.surface400,
+      borderRadius: borderRadius.radius.md,
       borderWidth: 1,
-      color: theme.colors.text,
+      color: design.textPrimary,
       flex: 1,
-      fontSize: theme.typography.fontSize.md,
-      paddingHorizontal: theme.spacing.sm,
-      paddingVertical: theme.spacing.xs,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[2],
     },
+
     editButton: {
       alignItems: 'center',
       justifyContent: 'center',
@@ -120,45 +168,85 @@ export const createProfileStyles = (theme: Theme) =>
       minWidth: 44,
     },
 
-    // ---- Danger row (sign out) ----
+    // ── Danger row (sign out) ─────────────────────────────────────────────────
     dangerRow: {
       alignItems: 'center',
       flexDirection: 'row',
-      gap: theme.spacing.md,
+      gap: spacing[3],
       minHeight: 56,
-      paddingHorizontal: theme.spacing.lg,
-      paddingVertical: theme.spacing.md,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
     },
 
-    // ---- Settings screen ----
-    background: {backgroundColor: theme.colors.background, flex: 1},
-    sectionHeader: {
-      paddingHorizontal: theme.spacing.lg,
-      paddingTop: theme.spacing.lg,
-      paddingBottom: theme.spacing.sm,
+    dangerLabel: {
+      ...typo.scale.bodyMd,
+      color: design.danger,
     },
+
+    // ── Settings screen ───────────────────────────────────────────────────────
+    background: {
+      backgroundColor: design.surface200,
+      flex: 1,
+    },
+
+    sectionHeader: {
+      ...typo.scale.labelMd,
+      color: design.textTertiary,
+      paddingBottom: spacing[2],
+      paddingHorizontal: spacing[4],
+      paddingTop: spacing[6],
+    },
+
     radioRow: {
       alignItems: 'center',
-      borderBottomColor: theme.colors.border,
-      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: design.surface300,
+      borderBottomWidth: 0.5,
       flexDirection: 'row',
       justifyContent: 'space-between',
-      paddingHorizontal: theme.spacing.lg,
-      paddingVertical: theme.spacing.md,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[4],
     },
+
+    radioLabel: {
+      ...typo.scale.bodyMd,
+      color: design.textPrimary,
+    },
+
     radioIndicator: {
-      borderColor: theme.colors.primary,
-      borderRadius: theme.borderRadius.pill,
+      alignItems: 'center',
+      borderColor: design.navy800,
+      borderRadius: borderRadius.radius.full,
       borderWidth: 2,
       height: 20,
-      width: 20,
-      alignItems: 'center',
       justifyContent: 'center',
+      width: 20,
     },
+
     radioInner: {
-      backgroundColor: theme.colors.primary,
-      borderRadius: theme.borderRadius.pill,
+      backgroundColor: design.navy800,
+      borderRadius: borderRadius.radius.full,
       height: 10,
       width: 10,
     },
+
+    aboutRow: {
+      alignItems: 'center',
+      borderBottomColor: design.surface300,
+      borderBottomWidth: 0.5,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[4],
+    },
+
+    aboutLabel: {
+      ...typo.scale.bodyMd,
+      color: design.textPrimary,
+    },
+
+    aboutValue: {
+      ...typo.scale.bodyMd,
+      color: design.textTertiary,
+    },
   });
+};

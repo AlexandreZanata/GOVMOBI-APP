@@ -1,29 +1,42 @@
 /**
- * @fileoverview Profile screen — professional user identity card.
+ * @fileoverview Redesigned ProfileScreen (Design_Prompt §4 Screen 3).
  *
  * Layout:
- * - Dark blue hero band (matches brand) with avatar, name, email, role badge
- * - Light card sections below for info rows and actions
- * - Uber/99-style: icon + label + value rows, chevrons on navigable items
+ * 1. Dark header (navy800, curved bottom radius.xl, ~220px):
+ *    - Avatar circle (80px, navy600 bg, amber initials, 3px amber border)
+ *    - Name (displayMd, textOnDark)
+ *    - Email (bodyMd, textOnDarkMuted)
+ *    - Role badge pill (amber500 bg, navy900 text)
+ * 2. Page body (surface200, padding space.4):
+ *    - Info card: Name row + Email row with divider (Design_Prompt §3.7)
+ *    - Settings row card: gear icon + label + chevron
+ *    - Sign-out row card: exit icon (danger) + label (danger)
  *
- * Tab root — SafeAreaView covers top only; BottomTabBar handles the bottom inset.
+ * All strings via i18n. All values via theme tokens.
  */
 import React, {useMemo} from 'react';
-import {Pressable, ScrollView, TextInput, View} from 'react-native';
+import {Pressable, ScrollView, Text, TextInput, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {type NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
-import {Avatar, Text} from '../../components/atoms';
 import {useAppSelector} from '../../store';
 import {type ProfileStackParamList} from '../../navigation/types';
 import {useProfile} from './useProfile';
 import {createProfileStyles} from './ProfileScreens.styles';
 
+/** Derives up to 2 uppercase initials from a full name. */
+const getInitials = (name: string): string => {
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
 /**
- * Profile screen with dark hero header and card-based info sections.
+ * Profile screen with dark immersive hero header and card-based info sections.
  *
  * @returns The profile screen JSX element.
  */
@@ -31,79 +44,72 @@ export const ProfileScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const styles = useMemo(() => createProfileStyles(theme), [theme]);
+  const {design} = theme;
+
   const navigation =
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
   const user = useAppSelector(state => state.auth.user);
-  const {
-    displayName,
-    setDisplayName,
-    isEditing,
-    toggleEdit,
-    saveProfile,
-    signOut,
-  } = useProfile();
+  const {displayName, setDisplayName, isEditing, toggleEdit, saveProfile, signOut} =
+    useProfile();
 
-  const roleBgColor = useMemo(() => {
-    const map: Record<string, string> = {
-      ADMIN: theme.colors.error,
-      MANAGER: theme.colors.warning,
-      OFFICER: theme.colors.info,
-      CITIZEN: theme.colors.success,
-    };
-    return map[user?.role ?? ''] ?? theme.colors.secondary;
-  }, [theme.colors, user?.role]);
+  const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <SafeAreaView edges={['top']} style={styles.safeArea} testID="profile-screen">
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
 
-        {/* ── Hero band ── */}
-        <View style={styles.hero}>
+        {/* ── Dark hero header ── */}
+        <View style={styles.hero} testID="profile-hero">
+
+          {/* Avatar with amber ring */}
           <View style={styles.avatarRing}>
-            <Avatar name={displayName} size="xl" testID="profile-avatar" />
+            <View style={styles.avatarFallback} testID="profile-avatar">
+              <Text style={styles.avatarInitials} accessibilityElementsHidden>
+                {initials}
+              </Text>
+            </View>
           </View>
 
-          <Text
-            color="textInverse"
-            style={styles.heroName}
-            variant="heading"
-            testID="profile-name">
+          {/* Name */}
+          <Text style={styles.heroName} testID="profile-name">
             {displayName}
           </Text>
 
+          {/* Email */}
           {user?.email ? (
-            <Text color="textInverse" style={styles.heroEmail} variant="caption">
+            <Text style={styles.heroEmail} testID="profile-email">
               {user.email}
             </Text>
           ) : null}
 
+          {/* Role badge */}
           {user?.role ? (
-            <View style={[styles.roleBadge, {backgroundColor: roleBgColor}]}>
-              <Text color="textInverse" variant="caption">
+            <View style={styles.roleBadge} testID="profile-role-badge">
+              <Text style={styles.roleBadgeText}>
                 {t(`common.role.${user.role}`, {defaultValue: user.role})}
               </Text>
             </View>
           ) : null}
         </View>
 
-        {/* ── Personal info card ── */}
-        <View style={styles.section}>
+        {/* ── Info card: Name + Email rows ── */}
+        <View style={styles.section} testID="profile-info-card">
+
           {/* Name row — editable */}
           <View style={styles.row}>
             <View style={styles.rowIcon}>
               <MaterialIcons
-                color={theme.colors.textMuted}
+                color={design.textTertiary}
                 name="person-outline"
-                size={theme.typography.fontSize.lg}
+                size={20}
+                accessibilityElementsHidden
               />
             </View>
             <View style={styles.rowContent}>
-              <Text style={styles.rowLabel} variant="caption">
-                {t('profile.fields.name')}
-              </Text>
+              <Text style={styles.rowLabel}>{t('profile.fields.name')}</Text>
               {isEditing ? (
                 <TextInput
                   accessibilityLabel={t('profile.fields.name')}
@@ -114,111 +120,90 @@ export const ProfileScreen = (): React.JSX.Element => {
                   value={displayName}
                 />
               ) : (
-                <Text style={styles.rowValue} variant="body">
+                <Text style={styles.rowValue} testID="profile-name-value">
                   {displayName}
                 </Text>
               )}
             </View>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={isEditing ? t('profile.save') : t('profile.edit')}
               onPress={isEditing ? () => void saveProfile() : toggleEdit}
               style={styles.editButton}
               testID="profile-edit-toggle">
               <MaterialIcons
-                color={isEditing ? theme.colors.accent : theme.colors.textMuted}
+                color={isEditing ? design.amber500 : design.textTertiary}
                 name={isEditing ? 'check' : 'edit'}
-                size={theme.typography.fontSize.lg}
+                size={20}
               />
             </Pressable>
           </View>
 
           {/* Email row */}
-          <View style={styles.row}>
+          <View style={[styles.row, styles.rowLast]}>
             <View style={styles.rowIcon}>
               <MaterialIcons
-                color={theme.colors.textMuted}
+                color={design.textTertiary}
                 name="mail-outline"
-                size={theme.typography.fontSize.lg}
+                size={20}
+                accessibilityElementsHidden
               />
             </View>
             <View style={styles.rowContent}>
-              <Text style={styles.rowLabel} variant="caption">
-                {t('profile.fields.email')}
-              </Text>
-              <Text style={styles.rowValue} variant="body">
+              <Text style={styles.rowLabel}>{t('profile.fields.email')}</Text>
+              <Text style={styles.rowValue} testID="profile-email-value">
                 {user?.email ?? '—'}
               </Text>
             </View>
           </View>
-
-          {/* Department row */}
-          {user?.departmentName ? (
-            <View style={[styles.row, styles.rowLast]}>
-              <View style={styles.rowIcon}>
-                <MaterialIcons
-                  color={theme.colors.textMuted}
-                  name="business"
-                  size={theme.typography.fontSize.lg}
-                />
-              </View>
-              <View style={styles.rowContent}>
-                <Text style={styles.rowLabel} variant="caption">
-                  {t('profile.fields.department')}
-                </Text>
-                <Text style={styles.rowValue} variant="body">
-                  {user.departmentName}
-                </Text>
-              </View>
-            </View>
-          ) : null}
         </View>
 
-        {/* ── App card ── */}
-        <View style={styles.section}>
+        {/* ── Settings card ── */}
+        <View style={styles.section} testID="profile-settings-card">
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('profile.settings')}
             onPress={() => navigation.navigate('Settings')}
             style={[styles.row, styles.rowLast]}
             testID="profile-settings-row">
             <View style={styles.rowIcon}>
               <MaterialIcons
-                color={theme.colors.textMuted}
+                color={design.textTertiary}
                 name="settings"
-                size={theme.typography.fontSize.lg}
+                size={20}
+                accessibilityElementsHidden
               />
             </View>
             <View style={styles.rowContent}>
-              <Text style={styles.rowValue} variant="body">
-                {t('profile.settings')}
-              </Text>
+              <Text style={styles.rowValue}>{t('profile.settings')}</Text>
             </View>
             <View style={styles.rowChevron}>
               <MaterialIcons
-                color={theme.colors.textMuted}
+                color={design.textTertiary}
                 name="chevron-right"
-                size={theme.typography.fontSize.xl}
+                size={20}
               />
             </View>
           </Pressable>
         </View>
 
-        {/* ── Sign out card ── */}
-        <View style={styles.section}>
+        {/* ── Sign-out card ── */}
+        <View style={styles.section} testID="profile-signout-card">
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('profile.signOut')}
             onPress={signOut}
             style={[styles.dangerRow, styles.rowLast]}
             testID="profile-signout">
             <View style={styles.rowIcon}>
               <MaterialIcons
-                color={theme.colors.error}
+                color={design.danger}
                 name="logout"
-                size={theme.typography.fontSize.lg}
+                size={20}
+                accessibilityElementsHidden
               />
             </View>
-            <Text color="error" variant="body">
-              {t('profile.signOut')}
-            </Text>
+            <Text style={styles.dangerLabel}>{t('profile.signOut')}</Text>
           </Pressable>
         </View>
 

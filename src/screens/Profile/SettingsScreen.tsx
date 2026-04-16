@@ -1,21 +1,19 @@
 /**
- * @fileoverview App settings screen — language, notifications, about.
+ * @fileoverview Settings screen — language selection and app info.
+ *
+ * Uses the same createProfileStyles factory as ProfileScreen.
+ * All values via theme tokens, all strings via i18n.
  */
 import React, {useCallback, useMemo} from 'react';
-import {ScrollView, View} from 'react-native';
-import {Pressable} from 'react-native';
+import {Pressable, ScrollView, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Constants = require('expo-constants').default as {
-  expoConfig?: {
-    version?: string;
-    ios?: {buildNumber?: string};
-    android?: {versionCode?: number};
-  };
+  expoConfig?: {version?: string; ios?: {buildNumber?: string}; android?: {versionCode?: number}};
 };
 import {useTheme} from '../../theme';
-import {Divider, Text} from '../../components/atoms';
+import {Divider} from '../../components/atoms';
 import {AppHeader} from '../../components/organisms';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setLanguage} from '../../store/slices/uiSlice';
@@ -29,7 +27,9 @@ const LANGUAGE_LABELS: Record<AppLanguage, string> = {
 };
 
 /**
- * Settings screen — language selection and app info.
+ * Settings screen — language selection and app version info.
+ *
+ * @returns The settings screen JSX element.
  */
 export const SettingsScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
@@ -38,31 +38,23 @@ export const SettingsScreen = (): React.JSX.Element => {
   const dispatch = useAppDispatch();
   const currentLanguage = useAppSelector(state => state.ui.language);
 
-  const handleLanguageChange = useCallback(
-    async (lang: AppLanguage): Promise<void> => {
-      await i18n.changeLanguage(lang);
-      dispatch(setLanguage(lang));
-    },
-    [dispatch],
-  );
+  const handleLanguageChange = useCallback(async (lang: AppLanguage): Promise<void> => {
+    await i18n.changeLanguage(lang);
+    dispatch(setLanguage(lang));
+  }, [dispatch]);
 
   const appVersion = (Constants.expoConfig?.version ?? '—') as string;
-  const buildNumber =
-    ((Constants.expoConfig?.ios?.buildNumber ??
-      Constants.expoConfig?.android?.versionCode) as string | number | undefined) ?? '—';
+  const buildNumber = String(
+    (Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.android?.versionCode) ?? '—',
+  );
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <AppHeader
-        title={t('settings.title')}
-        showBack
-        testID="settings-header"
-      />
+      <AppHeader title={t('settings.title')} showBack testID="settings-header" />
       <ScrollView style={styles.background}>
-        {/* Language */}
-        <Text variant="caption" color="textMuted" style={styles.sectionHeader}>
-          {t('settings.sections.language')}
-        </Text>
+
+        {/* Language section */}
+        <Text style={styles.sectionHeader}>{t('settings.sections.language')}</Text>
         <View style={styles.section}>
           {availableLanguages.map((lang, idx) => (
             <Pressable
@@ -70,16 +62,11 @@ export const SettingsScreen = (): React.JSX.Element => {
               accessibilityRole="radio"
               accessibilityState={{checked: currentLanguage === lang}}
               onPress={() => void handleLanguageChange(lang)}
-              style={[
-                styles.radioRow,
-                idx === availableLanguages.length - 1 && styles.rowLast,
-              ]}
+              style={[styles.radioRow, idx === availableLanguages.length - 1 && styles.rowLast]}
               testID={`language-option-${lang}`}>
-              <Text variant="body">{LANGUAGE_LABELS[lang]}</Text>
+              <Text style={styles.radioLabel}>{LANGUAGE_LABELS[lang]}</Text>
               <View style={styles.radioIndicator}>
-                {currentLanguage === lang ? (
-                  <View style={styles.radioInner} />
-                ) : null}
+                {currentLanguage === lang ? <View style={styles.radioInner} /> : null}
               </View>
             </Pressable>
           ))}
@@ -87,20 +74,19 @@ export const SettingsScreen = (): React.JSX.Element => {
 
         <Divider />
 
-        {/* About */}
-        <Text variant="caption" color="textMuted" style={styles.sectionHeader}>
-          {t('settings.sections.about')}
-        </Text>
+        {/* About section */}
+        <Text style={styles.sectionHeader}>{t('settings.sections.about')}</Text>
         <View style={styles.section}>
-          <View style={styles.row}>
-            <Text variant="body">{t('settings.about.version')}</Text>
-            <Text variant="body" color="textMuted">{appVersion}</Text>
+          <View style={styles.aboutRow}>
+            <Text style={styles.aboutLabel}>{t('settings.about.version')}</Text>
+            <Text style={styles.aboutValue}>{appVersion}</Text>
           </View>
-          <View style={[styles.row, styles.rowLast]}>
-            <Text variant="body">{t('settings.about.build')}</Text>
-            <Text variant="body" color="textMuted">{String(buildNumber)}</Text>
+          <View style={[styles.aboutRow, styles.rowLast]}>
+            <Text style={styles.aboutLabel}>{t('settings.about.build')}</Text>
+            <Text style={styles.aboutValue}>{buildNumber}</Text>
           </View>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
