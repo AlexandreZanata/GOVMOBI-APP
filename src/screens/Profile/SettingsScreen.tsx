@@ -4,6 +4,7 @@
 import React, {useCallback, useMemo} from 'react';
 import {ScrollView, View} from 'react-native';
 import {Pressable} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Constants = require('expo-constants').default as {
@@ -51,14 +52,13 @@ export const SettingsScreen = (): React.JSX.Element => {
       Constants.expoConfig?.android?.versionCode) as string | number | undefined) ?? '—';
 
   return (
-    <View style={styles.background}>
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
       <AppHeader
         title={t('settings.title')}
         showBack
         testID="settings-header"
       />
-
-      <ScrollView>
+      <ScrollView style={styles.background}>
         {/* Language */}
         <Text variant="caption" color="textMuted" style={styles.sectionHeader}>
           {t('settings.sections.language')}
@@ -102,7 +102,7 @@ export const SettingsScreen = (): React.JSX.Element => {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

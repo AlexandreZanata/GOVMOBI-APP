@@ -8,6 +8,7 @@ import {AppHeader} from '../components/organisms';
 import {ConversationListScreen} from '../screens/Chat/ConversationListScreen';
 import {ChatRoomScreen} from '../screens/Chat/ChatRoomScreen';
 import {NewConversationScreen} from './placeholders';
+import {colors} from '../theme';
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
 
@@ -28,6 +29,7 @@ export const ChatNavigator = (): React.JSX.Element => {
         ),
         animation: 'slide_from_right',
         animationDuration: 220,
+        contentStyle: {backgroundColor: colors.light.primary},
       }}>
       <Stack.Screen
         component={ConversationListScreen}

@@ -8,6 +8,7 @@ import {AppHeader} from '../components/organisms';
 import {CallHistoryScreen} from '../screens/Calls/CallHistoryScreen';
 import {ActiveCallScreen} from '../screens/Calls/ActiveCallScreen';
 import {IncomingCallScreen} from '../screens/Calls/IncomingCallScreen';
+import {colors} from '../theme';
 
 const Stack = createNativeStackNavigator<CallsStackParamList>();
 
@@ -23,6 +24,7 @@ export const CallsNavigator = (): React.JSX.Element => {
       screenOptions={{
         animation: 'slide_from_right',
         animationDuration: 220,
+        contentStyle: {backgroundColor: colors.light.primary},
       }}>
       <Stack.Screen
         component={CallHistoryScreen}
