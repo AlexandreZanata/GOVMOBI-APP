@@ -105,7 +105,8 @@
     "passwordRequired": "Ingrese la contrasena",
     "forgotPassword": "Olvide mi contrasena",
     "loginFailed": "CPF o contrasena invalidos.",
-    "subtitle": "Sistema de Movilidad Operacional"
+    "subtitle": "Sistema de Movilidad Operacional",
+    "version": "v{{version}}"
   },
   "errors": {
     "networkError": "Error de red",

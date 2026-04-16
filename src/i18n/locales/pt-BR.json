@@ -105,7 +105,8 @@
     "passwordRequired": "Informe a senha",
     "forgotPassword": "Esqueci minha senha",
     "loginFailed": "CPF ou senha inválidos.",
-    "subtitle": "Sistema de Mobilidade Operacional"
+    "subtitle": "Sistema de Mobilidade Operacional",
+    "version": "v{{version}}"
   },
   "errors": {
     "networkError": "Erro de rede",

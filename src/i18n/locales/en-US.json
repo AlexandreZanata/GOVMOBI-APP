@@ -105,7 +105,8 @@
     "passwordRequired": "Password is required",
     "forgotPassword": "Forgot password",
     "loginFailed": "Invalid CPF or password.",
-    "subtitle": "Government Operational Mobility System"
+    "subtitle": "Government Operational Mobility System",
+    "version": "v{{version}}"
   },
   "errors": {
     "networkError": "Network error",
