@@ -8,12 +8,13 @@
  *   4. Bottom sheet       white card, always visible, z=20
  *   5. Search overlay     conditional, z=30
  */
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
   FlatList,
   Pressable,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
@@ -25,7 +26,6 @@ import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {usePassageiro} from './usePassageiro';
 import {createPassageiroStyles, PassageiroColors as C} from './PassageiroScreen.styles';
-import {ENV} from '../../config/env';
 import type {SearchResult} from '../../types/corrida';
 
 // ── Mapbox lazy-load ─────────────────────────────────────────────────────────
@@ -53,6 +53,11 @@ type MapboxModule = {
   }>;
 };
 
+/**
+ * Raw Mapbox module reference — token is NOT set here.
+ * `setAccessToken` is called inside the component once the token
+ * is fetched from GET /pesquisa/config.
+ */
 let MapboxGL: MapboxModule | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -62,7 +67,7 @@ try {
     Camera: MapboxModule['Camera'];
     PointAnnotation: MapboxModule['PointAnnotation'];
   };
-  mod.default.setAccessToken(ENV.MAPBOX_ACCESS_TOKEN);
+  // Token intentionally NOT set here — deferred to component mount.
   MapboxGL = {
     setAccessToken: mod.default.setAccessToken.bind(mod.default),
     MapView: mod.MapView,
@@ -99,6 +104,8 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const overlayTranslate = useRef(new Animated.Value(8)).current;
   const sheetTranslate  = useRef(new Animated.Value(0)).current;
   const sheetAnimated   = useRef(false);
+  // Search bar lift animation on focus
+  const searchBarTranslate = useRef(new Animated.Value(0)).current;
 
   const {
     userLocation,
@@ -111,6 +118,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     selectedDestinoLabel,
     selectedDestinoCoords,
     isRequesting,
+    mapboxToken,
     onOpenSearch,
     onCloseSearch,
     onSearchChange,
@@ -118,6 +126,14 @@ export const PassageiroScreen = (): React.JSX.Element => {
     onSolicitarCorrida,
     onCenterOnUser,
   } = usePassageiro();
+
+  // Apply the server-issued Mapbox token as soon as it's available.
+  // This replaces the old module-level setAccessToken(ENV.MAPBOX_ACCESS_TOKEN) call.
+  useEffect(() => {
+    if (mapboxToken && MapboxGL) {
+      MapboxGL.setAccessToken(mapboxToken);
+    }
+  }, [mapboxToken]);
 
   // Bottom sheet slide-up on first render
   const onSheetLayout = useCallback(() => {
@@ -143,6 +159,17 @@ export const PassageiroScreen = (): React.JSX.Element => {
         Animated.timing(overlayTranslate, {toValue: 0, duration: 200, useNativeDriver: true}),
       ]).start();
     }
+  }
+
+  // Search bar lift on focus
+  const prevFocused = useRef(false);
+  if (isInputFocused !== prevFocused.current) {
+    prevFocused.current = isInputFocused;
+    Animated.timing(searchBarTranslate, {
+      toValue: isInputFocused ? -4 : 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
   }
 
   // ── Search result row ──────────────────────────────────────────────────────
@@ -171,7 +198,10 @@ export const PassageiroScreen = (): React.JSX.Element => {
   );
 
   // ── Map layer ──────────────────────────────────────────────────────────────
-  const mapContent = MapboxGL ? (
+  // mapboxToken === null  → still loading config from /pesquisa/config
+  // mapboxToken === ''    → fetch failed, show fallback
+  // mapboxToken is set    → token applied via useEffect, render map
+  const mapContent = MapboxGL && mapboxToken ? (
     <MapboxGL.MapView
       accessibilityLabel={t('passageiro.map.label')}
       logoEnabled={false}
@@ -207,33 +237,62 @@ export const PassageiroScreen = (): React.JSX.Element => {
     </MapboxGL.MapView>
   ) : (
     <View style={styles.mapFallback} testID="map-fallback">
-      <MaterialIcons name="map" size={56} color={C.textMuted} />
-      <Text style={styles.mapFallbackText}>{t('passageiro.map.notInstalled')}</Text>
+      {mapboxToken === null ? (
+        // Token still loading — show a spinner instead of the error icon
+        <ActivityIndicator
+          color={C.interactive}
+          size="large"
+          testID="map-token-loading"
+        />
+      ) : (
+        <>
+          <MaterialIcons name="map" size={56} color={C.textMuted} />
+          <Text style={styles.mapFallbackText}>{t('passageiro.map.notInstalled')}</Text>
+        </>
+      )}
     </View>
   );
 
-  const searchBarTop  = insets.top + 12;
-  const fabTop        = insets.top + 80;
-  const overlayTop    = searchBarTop + 64;
+  const searchBandHeight = insets.top + 10 + 54 + 14; // paddingTop + bar + paddingBottom
+  const fabTop        = searchBandHeight + 12;
+  const overlayTop    = searchBandHeight + 8;
   const hasDestination = !!selectedDestinoLabel;
   const ctaDisabled   = isRequesting || isLocating || !hasDestination;
   const sheetPaddingBottom = 14;
 
   return (
     <View style={styles.container} testID="passageiro-screen">
+      {/* Status bar — light-content so time/battery/signal show white on dark navy */}
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
       {/* Layer 1: Map */}
       {mapContent}
 
-      {/* Layer 2: Top search bar */}
-      <View
-        style={[styles.searchBarWrapper, {top: searchBarTop}]}
+      {/* Layer 2: Top search bar — dark navy band covering status bar */}
+      <Animated.View
+        style={[
+          styles.searchBarWrapper,
+          {
+            top: 0,
+            paddingTop: insets.top + 10,
+            transform: [{translateY: searchBarTranslate}],
+          },
+        ]}
         testID="search-bar-wrapper">
         <View
           style={[
             styles.searchBarContainer,
             isInputFocused && styles.searchBarContainerFocused,
+            !isInputFocused && hasDestination && styles.searchBarContainerFilled,
           ]}>
-          <MaterialIcons name="location-on" size={18} color={C.interactive} />
+          {/* Left icon: search when typing, location-on otherwise */}
+          <View style={styles.searchBarLeftIcon}>
+            <MaterialIcons
+              name={isInputFocused ? 'search' : 'location-on'}
+              size={18}
+              color={C.textOnDark}
+            />
+          </View>
           <TextInput
             accessibilityLabel={t('passageiro.searchBar.placeholder')}
             autoComplete="street-address"
@@ -245,11 +304,12 @@ export const PassageiroScreen = (): React.JSX.Element => {
             }}
             onBlur={() => setIsInputFocused(false)}
             placeholder={t('passageiro.searchBar.placeholder')}
-            placeholderTextColor={C.textMuted}
+            placeholderTextColor={C.textOnDarkMuted}
             style={styles.searchBarInput}
             testID="search-bar-input"
             value={searchQuery}
           />
+          {/* Right icon: clear (✕) when typing, search icon at idle */}
           {searchQuery.length > 0 ? (
             <Pressable
               accessibilityLabel={t('common.clear')}
@@ -257,13 +317,15 @@ export const PassageiroScreen = (): React.JSX.Element => {
               onPress={onCloseSearch}
               style={styles.searchBarClearBtn}
               testID="search-clear-btn">
-              <MaterialIcons name="close" size={16} color={C.textMuted} />
+              <MaterialIcons name="close" size={16} color={C.textOnDark} />
             </Pressable>
           ) : (
-            <MaterialIcons name="search" size={18} color={C.textMuted} />
+            <View style={styles.searchBarRightIcon}>
+              <MaterialIcons name="search" size={18} color={C.textOnDarkMuted} />
+            </View>
           )}
         </View>
-      </View>
+      </Animated.View>
 
       {/* Layer 3: Right FAB column */}
       <View style={[styles.fabColumn, {top: fabTop}]} testID="fab-column">
@@ -321,11 +383,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
               style={styles.searchLoadingPad}
               testID="search-loading"
             />
-          ) : searchResults.length === 0 && searchQuery.length >= 2 ? (
-            <Text style={styles.searchEmptyText} testID="search-empty">
-              {t('passageiro.searchBar.noResults')}
-            </Text>
-          ) : (
+          ) : searchResults.length > 0 ? (
             <FlatList
               data={searchResults}
               keyExtractor={item => item.id}
@@ -333,6 +391,14 @@ export const PassageiroScreen = (): React.JSX.Element => {
               renderItem={renderSearchResult}
               testID="search-results-list"
             />
+          ) : searchQuery.trim().length >= 3 ? (
+            <Text style={styles.searchEmptyText} testID="search-empty">
+              {t('passageiro.searchBar.noResults')}
+            </Text>
+          ) : (
+            <Text style={styles.searchEmptyText} testID="search-hint">
+              {t('pesquisa.geocoding.minChars')}
+            </Text>
           )}
         </Animated.View>
       )}

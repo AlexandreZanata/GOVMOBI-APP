@@ -199,9 +199,13 @@
       "centerOnUser": "Center on my location"
     },
     "searchBar": {
-      "placeholder": "Where to send?",
+      "placeholder": "Where are you going?",
+      "placeholderTyping": "Enter destination",
       "results": "Results",
-      "noResults": "No results found"
+      "noResults": "No results found",
+      "recentLabel": "Recent",
+      "home": "Home",
+      "work": "Work"
     },
     "bottomSheet": {
       "title": "New Ride",
@@ -224,5 +228,20 @@
   "motorista": {
     "title": "Driver Area",
     "subtitle": "Waiting for available rides."
+  },
+  "pesquisa": {
+    "geocoding": {
+      "minChars": "Type at least 3 characters",
+      "noResults": "No address found",
+      "error": "Error searching address",
+      "rateLimited": "Too many searches. Please wait.",
+      "unauthorized": "Session expired. Please log in again."
+    },
+    "reverseGeocoding": {
+      "error": "Could not retrieve address"
+    },
+    "config": {
+      "error": "Error loading map configuration"
+    }
   }
 }

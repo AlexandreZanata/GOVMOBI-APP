@@ -261,9 +261,13 @@
       "centerOnUser": "Centralizar na minha localização"
     },
     "searchBar": {
-      "placeholder": "Para onde enviar?",
+      "placeholder": "Para onde você vai?",
+      "placeholderTyping": "Digite o destino",
       "results": "Resultados",
-      "noResults": "Nenhum resultado encontrado"
+      "noResults": "Nenhum resultado encontrado",
+      "recentLabel": "Recentes",
+      "home": "Casa",
+      "work": "Trabalho"
     },
     "bottomSheet": {
       "title": "Nova Corrida",
@@ -286,5 +290,20 @@
   "motorista": {
     "title": "Área do Motorista",
     "subtitle": "Aguarde corridas disponíveis."
+  },
+  "pesquisa": {
+    "geocoding": {
+      "minChars": "Digite pelo menos 3 caracteres",
+      "noResults": "Nenhum endereço encontrado",
+      "error": "Erro ao buscar endereço",
+      "rateLimited": "Muitas buscas. Aguarde um momento.",
+      "unauthorized": "Sessão expirada. Faça login novamente."
+    },
+    "reverseGeocoding": {
+      "error": "Não foi possível obter o endereço"
+    },
+    "config": {
+      "error": "Erro ao carregar configurações do mapa"
+    }
   }
 }

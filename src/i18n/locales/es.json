@@ -224,5 +224,20 @@
   "motorista": {
     "title": "Área del Conductor",
     "subtitle": "Esperando viajes disponibles."
+  },
+  "pesquisa": {
+    "geocoding": {
+      "minChars": "Escribe al menos 3 caracteres",
+      "noResults": "No se encontró ninguna dirección",
+      "error": "Error al buscar dirección",
+      "rateLimited": "Demasiadas búsquedas. Espera un momento.",
+      "unauthorized": "Sesión expirada. Inicia sesión nuevamente."
+    },
+    "reverseGeocoding": {
+      "error": "No se pudo obtener la dirección"
+    },
+    "config": {
+      "error": "Error al cargar la configuración del mapa"
+    }
   }
 }

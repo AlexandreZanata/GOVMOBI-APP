@@ -25,17 +25,17 @@ SOLICITADA → ACEITA → EM_DESLOCAMENTO → PASSAGEIRO_EMBARCADO → FINALIZAD
 
 ## API Endpoints
 
-| Method | Endpoint                            | Role            | Description                                    | Success | Error codes |
-|--------|-------------------------------------|-----------------|------------------------------------------------|---------|-------------|
-| `POST` | `/corridas`                         | Passageiro      | Request a new ride (async Outbox)              | `202`   | `400`       |
-| `POST` | `/corridas/:id/aceitar`             | Motorista       | Accept a dispatched ride                       | `201`   | `409`       |
-| `POST` | `/corridas/:id/recusar`             | Motorista       | Refuse a ride (system finds next candidate)    | `201`   | —           |
-| `POST` | `/corridas/:id/iniciar-deslocamento`| Motorista       | Start driving to pickup point                  | `201`   | —           |
-| `POST` | `/corridas/:id/confirmar-embarque`  | Motorista       | Confirm passenger has boarded                  | `201`   | —           |
-| `POST` | `/corridas/:id/finalizar`           | Motorista       | Complete the ride at destination               | `201`   | —           |
-| `POST` | `/corridas/:id/cancelar`            | Passageiro/Admin| Cancel an active ride                          | `201`   | `400`       |
-| `GET`  | `/corridas/:id`                     | Any             | Get full ride details                          | `200`   | `404`       |
-| `GET`  | `/corridas/:id/status`              | Any             | Get current status (Redis-optimised, fast)     | `200`   | `404`       |
+| Method | Endpoint                             | Role             | Description                                 | Success | Error codes |
+|--------|--------------------------------------|------------------|---------------------------------------------|---------|-------------|
+| `POST` | `/corridas`                          | Passageiro       | Request a new ride (async Outbox)           | `202`   | `400`       |
+| `POST` | `/corridas/:id/aceitar`              | Motorista        | Accept a dispatched ride                    | `201`   | `409`       |
+| `POST` | `/corridas/:id/recusar`              | Motorista        | Refuse a ride (system finds next candidate) | `201`   | —           |
+| `POST` | `/corridas/:id/iniciar-deslocamento` | Motorista        | Start driving to pickup point               | `201`   | —           |
+| `POST` | `/corridas/:id/confirmar-embarque`   | Motorista        | Confirm passenger has boarded               | `201`   | —           |
+| `POST` | `/corridas/:id/finalizar`            | Motorista        | Complete the ride at destination            | `201`   | —           |
+| `POST` | `/corridas/:id/cancelar`             | Passageiro/Admin | Cancel an active ride                       | `201`   | `400`       |
+| `GET`  | `/corridas/:id`                      | Any              | Get full ride details                       | `200`   | `404`       |
+| `GET`  | `/corridas/:id/status`               | Any              | Get current status (Redis-optimised, fast)  | `200`   | `404`       |
 
 ---
 
@@ -94,10 +94,10 @@ Driver accepts a dispatched ride. Only one driver can accept — first write win
 }
 ```
 
-| Field        | Type   | Required | Description                          |
-|--------------|--------|----------|--------------------------------------|
-| `motoristaId`| string | Yes      | UUID of the accepting motorista      |
-| `veiculoId`  | string | Yes      | UUID of the vehicle being used       |
+| Field         | Type   | Required | Description                     |
+|---------------|--------|----------|---------------------------------|
+| `motoristaId` | string | Yes      | UUID of the accepting motorista |
+| `veiculoId`   | string | Yes      | UUID of the vehicle being used  |
 
 ### Response `201`
 
@@ -122,10 +122,10 @@ Driver refuses the ride. The dispatch system will find the next available candid
 }
 ```
 
-| Field        | Type   | Required | Description                    |
-|--------------|--------|----------|--------------------------------|
-| `motoristaId`| string | Yes      | UUID of the refusing motorista |
-| `motivo`     | string | No       | Reason for refusal             |
+| Field         | Type   | Required | Description                    |
+|---------------|--------|----------|--------------------------------|
+| `motoristaId` | string | Yes      | UUID of the refusing motorista |
+| `motivo`      | string | No       | Reason for refusal             |
 
 ### Response `201`
 
@@ -157,11 +157,11 @@ Driver confirms the passenger has boarded the vehicle.
 }
 ```
 
-| Field        | Type   | Required | Description                              |
-|--------------|--------|----------|------------------------------------------|
-| `motoristaId`| string | Yes      | UUID of the motorista                    |
-| `posicaoLat` | number | Yes      | Driver's current latitude at boarding    |
-| `posicaoLng` | number | Yes      | Driver's current longitude at boarding   |
+| Field         | Type   | Required | Description                            |
+|---------------|--------|----------|----------------------------------------|
+| `motoristaId` | string | Yes      | UUID of the motorista                  |
+| `posicaoLat`  | number | Yes      | Driver's current latitude at boarding  |
+| `posicaoLng`  | number | Yes      | Driver's current longitude at boarding |
 
 ### Response `201`
 
@@ -183,11 +183,11 @@ Driver completes the ride at the destination.
 }
 ```
 
-| Field            | Type   | Required | Description                              |
-|------------------|--------|----------|------------------------------------------|
-| `motoristaId`    | string | Yes      | UUID of the motorista                    |
-| `posicaoFinalLat`| number | Yes      | Driver's latitude at destination         |
-| `posicaoFinalLng`| number | Yes      | Driver's longitude at destination        |
+| Field             | Type   | Required | Description                       |
+|-------------------|--------|----------|-----------------------------------|
+| `motoristaId`     | string | Yes      | UUID of the motorista             |
+| `posicaoFinalLat` | number | Yes      | Driver's latitude at destination  |
+| `posicaoFinalLng` | number | Yes      | Driver's longitude at destination |
 
 ### Response `201`
 
@@ -309,14 +309,14 @@ After `POST /corridas` returns `202`, the app must track the ride status. Two st
 
 ### Role-based action visibility
 
-| Action                  | Visible to          |
-|-------------------------|---------------------|
-| Solicitar corrida       | Passageiro (USUARIO)|
-| Aceitar / Recusar       | Motorista           |
-| Iniciar deslocamento    | Motorista           |
-| Confirmar embarque      | Motorista           |
-| Finalizar               | Motorista           |
-| Cancelar                | Passageiro + Admin  |
+| Action               | Visible to           |
+|----------------------|----------------------|
+| Solicitar corrida    | Passageiro (USUARIO) |
+| Aceitar / Recusar    | Motorista            |
+| Iniciar deslocamento | Motorista            |
+| Confirmar embarque   | Motorista            |
+| Finalizar            | Motorista            |
+| Cancelar             | Passageiro + Admin   |
 
 ### Facade pattern note
 

@@ -1,0 +1,281 @@
+/**
+ * @fileoverview Facade contract and implementation for the Pesquisa domain.
+ *
+ * Covers:
+ *   GET /pesquisa/config            — map settings (Mapbox public token)
+ *   GET /pesquisa/geocoding         — forward geocoding (text → coordinates)
+ *   GET /pesquisa/reverse-geocoding — reverse geocoding (coordinates → address)
+ *
+ * Auth: every request sends `Authorization: Bearer <token>` from the Redux store.
+ * The token is injected at call-time via {@link PesquisaFacadeImpl} constructor.
+ */
+import type {
+  GeocodingResult,
+  GeocodeAddressInput,
+  PesquisaConfig,
+  ReverseGeocodingResult,
+  ReverseGeocodeInput,
+} from '../../types/pesquisa';
+import {type FacadeConfig, type FacadeError, type Result} from './types';
+import {ENV} from '../../config/env';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});
+const fail = <T>(error: FacadeError): Result<T, FacadeError> => ({
+  data: null,
+  error,
+});
+
+// ---------------------------------------------------------------------------
+// Contract
+// ---------------------------------------------------------------------------
+
+/**
+ * Facade contract for the /pesquisa/* endpoints.
+ */
+export interface IPesquisaFacade {
+  /**
+   * Fetches map configuration (Mapbox public token) from the backend.
+   *
+   * @returns Result wrapping {@link PesquisaConfig} or a {@link FacadeError}.
+   */
+  getPesquisaConfig(): Promise<Result<PesquisaConfig, FacadeError>>;
+
+  /**
+   * Forward-geocodes a free-text address query into coordinate candidates.
+   *
+   * @param input - Query string and optional proximity coordinates.
+   * @returns Result wrapping an array of {@link GeocodingResult} or a {@link FacadeError}.
+   */
+  geocodeAddress(
+    input: GeocodeAddressInput,
+  ): Promise<Result<GeocodingResult[], FacadeError>>;
+
+  /**
+   * Reverse-geocodes a coordinate pair into a human-readable address.
+   *
+   * @param input - Latitude and longitude to resolve.
+   * @returns Result wrapping {@link ReverseGeocodingResult} or a {@link FacadeError}.
+   */
+  reverseGeocode(
+    input: ReverseGeocodeInput,
+  ): Promise<Result<ReverseGeocodingResult, FacadeError>>;
+}
+
+// ---------------------------------------------------------------------------
+// Implementation
+// ---------------------------------------------------------------------------
+
+/**
+ * API-backed implementation of {@link IPesquisaFacade}.
+ * Requires a valid JWT token to be passed via {@link PesquisaFacadeConfig}.
+ */
+export class PesquisaFacadeImpl implements IPesquisaFacade {
+  private readonly apiBaseUrl: string;
+  private readonly mockMode: boolean;
+  /** Token getter — called at request time so it always reflects the latest value. */
+  private readonly getToken: () => string | null;
+
+  /**
+   * @param config - Facade configuration including optional token getter.
+   */
+  constructor(config: PesquisaFacadeConfig = {}) {
+    this.apiBaseUrl = config.apiBaseUrl ?? ENV.apiUrl;
+    this.mockMode = config.mockMode ?? ENV.mockMode;
+    this.getToken = config.getToken ?? (() => null);
+  }
+
+  /** @inheritdoc */
+  public async getPesquisaConfig(): Promise<Result<PesquisaConfig, FacadeError>> {
+    if (this.mockMode) {
+      await delay(120);
+      return ok({mapboxPublicToken: 'pk.mock_token_for_testing'});
+    }
+
+    try {
+      const res = await fetch(`${this.apiBaseUrl}/pesquisa/config`, {
+        headers: this.authHeaders(),
+      });
+
+      if (!res.ok) {
+        return fail({
+          code: 'NETWORK_ERROR',
+          message: 'Failed to load pesquisa config',
+          statusCode: res.status,
+        });
+      }
+
+      const data = (await res.json()) as PesquisaConfig;
+      return ok(data);
+    } catch {
+      return fail({
+        code: 'NETWORK_ERROR',
+        message: 'Network error loading pesquisa config',
+        retryable: true,
+      });
+    }
+  }
+
+  /** @inheritdoc */
+  public async geocodeAddress(
+    input: GeocodeAddressInput,
+  ): Promise<Result<GeocodingResult[], FacadeError>> {
+    const {query, proximity} = input;
+
+    if (!query.trim() || query.trim().length < 3) {
+      return ok([]);
+    }
+
+    if (this.mockMode) {
+      await delay(300);
+      return ok(mockGeocodingResults(query));
+    }
+
+    try {
+      const params = new URLSearchParams({q: query.trim()});
+      if (proximity) {
+        params.set('lat', String(proximity.lat));
+        params.set('lng', String(proximity.lng));
+      }
+
+      const res = await fetch(
+        `${this.apiBaseUrl}/pesquisa/geocoding?${params.toString()}`,
+        {headers: this.authHeaders()},
+      );
+
+      if (res.status === 401) {
+        return fail({code: 'UNAUTHORIZED', message: 'Unauthorized', statusCode: 401});
+      }
+
+      if (res.status === 429) {
+        return fail({
+          code: 'RATE_LIMITED',
+          message: 'Too many requests',
+          statusCode: 429,
+          retryable: true,
+        });
+      }
+
+      if (!res.ok) {
+        return fail({
+          code: 'NETWORK_ERROR',
+          message: 'Geocoding request failed',
+          statusCode: res.status,
+        });
+      }
+
+      const data = (await res.json()) as GeocodingResult[];
+      return ok(data);
+    } catch {
+      return fail({
+        code: 'NETWORK_ERROR',
+        message: 'Network error during geocoding',
+        retryable: true,
+      });
+    }
+  }
+
+  /** @inheritdoc */
+  public async reverseGeocode(
+    input: ReverseGeocodeInput,
+  ): Promise<Result<ReverseGeocodingResult, FacadeError>> {
+    if (this.mockMode) {
+      await delay(200);
+      return ok({
+        address: 'Rua Mock, Goiânia - Goiás, Brasil',
+        lat: input.lat,
+        lng: input.lng,
+      });
+    }
+
+    try {
+      const params = new URLSearchParams({
+        lat: String(input.lat),
+        lng: String(input.lng),
+      });
+
+      const res = await fetch(
+        `${this.apiBaseUrl}/pesquisa/reverse-geocoding?${params.toString()}`,
+        {headers: this.authHeaders()},
+      );
+
+      if (res.status === 401) {
+        return fail({code: 'UNAUTHORIZED', message: 'Unauthorized', statusCode: 401});
+      }
+
+      if (!res.ok) {
+        return fail({
+          code: 'NETWORK_ERROR',
+          message: 'Reverse geocoding request failed',
+          statusCode: res.status,
+        });
+      }
+
+      const data = (await res.json()) as ReverseGeocodingResult;
+      return ok(data);
+    } catch {
+      return fail({
+        code: 'NETWORK_ERROR',
+        message: 'Network error during reverse geocoding',
+        retryable: true,
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
+  private authHeaders(): Record<string, string> {
+    const token = this.getToken();
+    return token
+      ? {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'}
+      : {'Content-Type': 'application/json'};
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Extended config
+// ---------------------------------------------------------------------------
+
+/**
+ * Extended facade config that accepts a token getter for authenticated requests.
+ */
+export interface PesquisaFacadeConfig extends FacadeConfig {
+  /**
+   * Returns the current JWT access token from the Redux store.
+   * Called at request time so it always reflects the latest value.
+   */
+  getToken?: () => string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+
+const delay = (ms: number): Promise<void> =>
+  new Promise(resolve => setTimeout(resolve, ms));
+
+const mockGeocodingResults = (query: string): GeocodingResult[] => [
+  {
+    address: query,
+    placeName: `Rua ${query}, Goiânia - Goiás, Brasil`,
+    lat: -16.6869 + Math.random() * 0.01,
+    lng: -49.2648 + Math.random() * 0.01,
+  },
+  {
+    address: query,
+    placeName: `Avenida ${query}, Aparecida de Goiânia - Goiás, Brasil`,
+    lat: -16.8234 + Math.random() * 0.01,
+    lng: -49.2437 + Math.random() * 0.01,
+  },
+  {
+    address: query,
+    placeName: `${query}, Brasília - DF, Brasil`,
+    lat: -15.7801 + Math.random() * 0.01,
+    lng: -47.9292 + Math.random() * 0.01,
+  },
+];

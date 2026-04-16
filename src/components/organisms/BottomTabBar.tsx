@@ -139,7 +139,7 @@ export const BottomTabBar = ({
             testID={`bottom-tab-${route.name}`}>
             <View style={styles.iconWrapper}>
               <MaterialIcons
-                color={isFocused ? theme.colors.accent : theme.colors.textMuted}
+                color={isFocused ? '#1877F2' : '#A1A1AA'}
                 name={isFocused ? icons.active : icons.inactive}
                 size={theme.typography.fontSize.xl}
               />
@@ -155,8 +155,10 @@ export const BottomTabBar = ({
               ) : null}
             </View>
             <Text
-              color={isFocused ? 'accent' : 'textMuted'}
-              style={styles.label}
+              style={[
+                styles.label,
+                {color: isFocused ? '#1877F2' : '#A1A1AA'},
+              ]}
               variant="caption">
               {label}
             </Text>
@@ -195,13 +197,16 @@ const createStyles = (theme: Theme, bottomInset: number) =>
       lineHeight: 12,
     },
     container: {
-      backgroundColor: theme.colors.surface,
-      borderTopColor: theme.colors.border,
-      borderTopWidth: StyleSheet.hairlineWidth,
+      backgroundColor: '#FFFFFF',
+      borderTopWidth: 0,
       flexDirection: 'row',
       paddingBottom: bottomInset > 0 ? bottomInset : theme.spacing.md,
       paddingTop: theme.spacing.sm,
-      ...theme.shadows.sm,
+      shadowColor: '#000000',
+      shadowOffset: {width: 0, height: -2},
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 10,
     },
     iconWrapper: {
       alignItems: 'center',

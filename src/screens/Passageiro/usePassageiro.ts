@@ -48,6 +48,11 @@ export interface PassageiroState {
   selectedDestinoCoords: Coordenada | null;
   /** Whether a ride request is being submitted. */
   isRequesting: boolean;
+  /**
+   * Mapbox public token fetched from GET /pesquisa/config.
+   * Null while loading; empty string signals a fetch failure.
+   */
+  mapboxToken: string | null;
   /** Opens the search overlay. */
   onOpenSearch: () => void;
   /** Closes the search overlay and clears results. */
@@ -86,7 +91,7 @@ const DEFAULT_REGION: MapRegion = {
 export const usePassageiro = (): PassageiroState => {
   const {t} = useTranslation();
   const dispatch = useAppDispatch();
-  const {corridaFacade} = useFacades();
+  const {corridaFacade, pesquisaFacade} = useFacades();
 
   const searchResults = useAppSelector(state => state.corrida.searchResults);
   const isSearching = useAppSelector(state => state.corrida.isSearching);
@@ -99,8 +104,36 @@ export const usePassageiro = (): PassageiroState => {
   const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  /** null = loading, string = resolved (may be empty on error) */
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // Map config — fetch Mapbox public token from the backend on mount
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchMapConfig = async (): Promise<void> => {
+      const result = await pesquisaFacade.getPesquisaConfig();
+      if (cancelled) return;
+
+      if (result.data?.mapboxPublicToken) {
+        setMapboxToken(result.data.mapboxPublicToken);
+      } else {
+        // Signal failure with empty string so the screen can show the fallback
+        setMapboxToken('');
+      }
+    };
+
+    void fetchMapConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pesquisaFacade]);
 
   // ---------------------------------------------------------------------------
   // Location
@@ -181,17 +214,33 @@ export const usePassageiro = (): PassageiroState => {
 
       searchDebounceRef.current = setTimeout(async () => {
         dispatch(setIsSearching(true));
-        const result = await corridaFacade.searchLocations(text);
+
+        const proximity = userLocation
+          ? {lat: userLocation.latitude, lng: userLocation.longitude}
+          : undefined;
+
+        const result = await pesquisaFacade.geocodeAddress({
+          query: text,
+          proximity,
+        });
+
         dispatch(setIsSearching(false));
 
         if (result.data) {
-          dispatch(setSearchResults(result.data));
+          // Map GeocodingResult → SearchResult (used by the store and UI)
+          const mapped: SearchResult[] = result.data.map((r, idx) => ({
+            id: `${r.lat}-${r.lng}-${idx}`,
+            placeName: r.placeName,
+            address: r.address,
+            coordinates: {latitude: r.lat, longitude: r.lng},
+          }));
+          dispatch(setSearchResults(mapped));
         } else {
           dispatch(setSearchResults([]));
         }
       }, SEARCH_DEBOUNCE_MS);
     },
-    [corridaFacade, dispatch],
+    [pesquisaFacade, dispatch, userLocation],
   );
 
   const onSelectResult = useCallback(
@@ -328,6 +377,7 @@ export const usePassageiro = (): PassageiroState => {
       ? {latitude: selectedDestino.latitude, longitude: selectedDestino.longitude}
       : null,
     isRequesting,
+    mapboxToken,
     onOpenSearch,
     onCloseSearch,
     onSearchChange,

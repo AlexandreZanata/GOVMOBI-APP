@@ -3,6 +3,7 @@
  *
  * Bottom sheet & search bar are now white (#FFFFFF) with dark text.
  * FABs remain dark. CTA stays amber. Map unchanged.
+ * Search bar header band extends edge-to-edge covering the status bar area.
  */
 import {StyleSheet} from 'react-native';
 
@@ -16,12 +17,17 @@ const C = {
   interactive:    '#276EF1',
   interactiveBg:    '#EFF6FF',
   interactivePress: '#1A5DC8',
+  // search bar header band — vibrant modern blue (Facebook-inspired)
+  searchBand:     '#0555bdff',
+  searchBandFocus:'#1565D8',
+  searchBandIcon: 'rgba(255,255,255,0.20)',
   // text on white
   textDark:       '#09090B',
   textMid:        '#52525B',
   textMuted:      '#A1A1AA',
-  // text on dark (FABs only)
+  // text on dark (FABs + search band)
   textOnDark:     '#FFFFFF',
+  textOnDarkMuted:'rgba(255,255,255,0.75)',
   // map / misc
   mapBg:          '#F5F5F5',
   dividerLight:   '#E4E4E7',   // divider inside white sheet
@@ -118,41 +124,71 @@ export const createPassageiroStyles = () =>
       alignItems: 'center',
     },
 
-    // ── Layer 2: Top search bar ──────────────────────────────────────────────
+    // ── Layer 2: Top search bar — full-width vibrant blue band ──────────────
+    // The band starts at y=0 (behind the status bar) and extends edge-to-edge.
+    // `searchBarWrapper` is positioned absolutely with left:0/right:0 so it
+    // bleeds under the status bar, giving the "status bar tinted" effect.
     searchBarWrapper: {
       position: 'absolute',
-      left: 16,
-      right: 16,
+      left: 0,
+      right: 0,
       zIndex: 10,
+      backgroundColor: C.searchBand,
+      // bottom padding is baked in; top padding is set dynamically via
+      // paddingTop = insets.top + 10 in the component
+      paddingHorizontal: 16,
+      paddingBottom: 14,
+      shadowColor: C.searchBand,
+      shadowOffset: {width: 0, height: 4},
+      shadowOpacity: 0.28,
+      shadowRadius: 14,
+      elevation: 10,
     },
     searchBarContainer: {
-      height: 52,
-      backgroundColor: C.surfaceCard,
-      borderRadius: 26,
+      height: 54,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.25)',
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      shadowColor: C.shadow,
-      shadowOffset: {width: 0, height: 4},
-      shadowOpacity: 0.10,
-      shadowRadius: 20,
-      elevation: 6,
+      paddingHorizontal: 12,
     },
     searchBarContainerFocused: {
-      shadowOpacity: 0.15,
-      shadowRadius: 24,
-      elevation: 8,
+      backgroundColor: 'rgba(255,255,255,0.22)',
+      borderColor: 'rgba(255,255,255,0.50)',
+    },
+    searchBarContainerFilled: {
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      borderColor: 'rgba(255,255,255,0.35)',
+    },
+    searchBarLeftIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: C.searchBandIcon,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
     },
     searchBarInput: {
       flex: 1,
       fontSize: 15,
-      color: C.textDark,
+      color: C.textOnDark,
       marginHorizontal: 10,
       paddingVertical: 0,
     },
     searchBarClearBtn: {
-      width: 28,
-      height: 28,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    searchBarRightIcon: {
+      width: 32,
+      height: 32,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -419,5 +455,28 @@ export const createPassageiroStyles = () =>
     },
     searchLoadingPad: {
       paddingVertical: 20,
+    },
+    // ── Quick shortcuts (Home / Work) ────────────────────────────────────────
+    shortcutsRow: {
+      flexDirection: 'row',
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+    },
+    shortcutChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: C.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: C.dividerLight,
+    },
+    shortcutChipText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: C.textMid,
     },
   });

@@ -13,6 +13,7 @@ import {RunFacadeImpl, type IRunFacade} from './RunFacade';
 import {ServidoresFacadeImpl, type IServidoresFacade} from './ServidoresFacade';
 import {FrotaFacadeImpl, type IFrotaFacade} from './FrotaFacade';
 import {CorridaFacadeImpl, type ICorridaFacade} from './CorridaFacade';
+import {PesquisaFacadeImpl, type IPesquisaFacade} from './PesquisaFacade';
 import {type FacadeConfig} from './types';
 import {ENV} from '../../config/env';
 
@@ -25,15 +26,18 @@ export interface Facades {
   servidoresFacade: IServidoresFacade;
   frotaFacade: IFrotaFacade;
   corridaFacade: ICorridaFacade;
+  pesquisaFacade: IPesquisaFacade;
 }
 
 export interface FacadeProviderProps {
   children: React.ReactNode;
   config?: FacadeConfig;
   facades?: Partial<Facades>;
+  /** Optional token getter — if omitted, facades read from Redux via store import. */
+  getToken?: () => string | null;
 }
 
-const createDefaultFacades = (config?: FacadeConfig): Facades => {
+const createDefaultFacades = (config?: FacadeConfig, getToken?: () => string | null): Facades => {
   const resolvedConfig: FacadeConfig = {
     ...config,
     mockMode: config?.mockMode ?? ENV.mockMode,
@@ -51,6 +55,8 @@ const createDefaultFacades = (config?: FacadeConfig): Facades => {
     const {NotificationFacadeMock} = require('./mock/NotificationFacadeMock') as typeof import('./mock/NotificationFacadeMock');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const {RunFacadeMock} = require('./mock/RunFacadeMock') as typeof import('./mock/RunFacadeMock');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {PesquisaFacadeMock} = require('./mock/PesquisaFacadeMock') as typeof import('./mock/PesquisaFacadeMock');
 
     return {
       authFacade: new AuthFacadeMock(),
@@ -61,6 +67,7 @@ const createDefaultFacades = (config?: FacadeConfig): Facades => {
       servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
       frotaFacade: new FrotaFacadeImpl(resolvedConfig),
       corridaFacade: new CorridaFacadeImpl(resolvedConfig),
+      pesquisaFacade: new PesquisaFacadeMock(),
     };
   }
 
@@ -73,6 +80,7 @@ const createDefaultFacades = (config?: FacadeConfig): Facades => {
     servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
     frotaFacade: new FrotaFacadeImpl(resolvedConfig),
     corridaFacade: new CorridaFacadeImpl(resolvedConfig),
+    pesquisaFacade: new PesquisaFacadeImpl({...resolvedConfig, getToken}),
   };
 };
 
@@ -85,14 +93,15 @@ export const FacadeProvider = ({
   children,
   config,
   facades,
+  getToken,
 }: FacadeProviderProps): React.JSX.Element => {
   const resolvedFacades = useMemo(() => {
-    const defaults = createDefaultFacades(config);
+    const defaults = createDefaultFacades(config, getToken);
     return {
       ...defaults,
       ...facades,
     };
-  }, [config, facades]);
+  }, [config, facades, getToken]);
 
   return React.createElement(
     FacadeContext.Provider,
@@ -123,3 +132,4 @@ export * from './RunFacade';
 export * from './ServidoresFacade';
 export * from './FrotaFacade';
 export * from './CorridaFacade';
+export * from './PesquisaFacade';
