@@ -24,17 +24,29 @@ export const createProfileStyles = (theme: Theme) => {
 
   return StyleSheet.create({
     // ── Root ──────────────────────────────────────────────────────────────────
-    /** ProfileScreen root — dark so the hero header fills edge-to-edge. */
+    /**
+     * ProfileScreen root SafeAreaView.
+     * Uses surface200 — NOT navy800 — so the OS compositor sees the correct
+     * light background during the slide-out animation. The dark hero is
+     * painted by the hero View inside the ScrollView, not by this root.
+     */
     safeArea: {
-      backgroundColor: design.navy800,
+      backgroundColor: design.surface200,
       flex: 1,
     },
     /**
-     * SettingsScreen root — light background matches the page body.
-     * Using a separate key (not safeArea) prevents the dark flash on
-     * back-navigation from Settings → Profile.
+     * SettingsScreen root — also surface200 for the same reason.
      */
     settingsSafeArea: {
+      backgroundColor: design.surface200,
+      flex: 1,
+    },
+    /**
+     * ScrollView itself must carry the background color so there is no
+     * transparent gap between the SafeAreaView and the content during
+     * the transition animation.
+     */
+    scrollView: {
       backgroundColor: design.surface200,
       flex: 1,
     },

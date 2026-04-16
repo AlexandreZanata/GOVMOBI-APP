@@ -1,18 +1,11 @@
 /**
  * @fileoverview Redesigned ProfileScreen (Design_Prompt §4 Screen 3).
  *
- * Layout:
- * 1. Dark header (navy800, curved bottom radius.xl, ~220px):
- *    - Avatar circle (80px, navy600 bg, amber initials, 3px amber border)
- *    - Name (displayMd, textOnDark)
- *    - Email (bodyMd, textOnDarkMuted)
- *    - Role badge pill (amber500 bg, navy900 text)
- * 2. Page body (surface200, padding space.4):
- *    - Info card: Name row + Email row with divider (Design_Prompt §3.7)
- *    - Settings row card: gear icon + label + chevron
- *    - Sign-out row card: exit icon (danger) + label (danger)
- *
- * All strings via i18n. All values via theme tokens.
+ * Flash-free transition strategy:
+ * The root SafeAreaView uses surface200 (light) — NOT navy800 — so the OS
+ * compositor always sees the correct background during the slide-out animation.
+ * The dark hero header is painted by the hero View inside the ScrollView.
+ * The ScrollView itself also carries surface200 so every pixel is covered.
  */
 import React, {useMemo} from 'react';
 import {Pressable, ScrollView, Text, TextInput, View} from 'react-native';
@@ -56,15 +49,14 @@ export const ProfileScreen = (): React.JSX.Element => {
   const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea} testID="profile-screen">
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea} testID="profile-screen">
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}>
 
         {/* ── Dark hero header ── */}
         <View style={styles.hero} testID="profile-hero">
-
-          {/* Avatar with amber ring */}
           <View style={styles.avatarRing}>
             <View style={styles.avatarFallback} testID="profile-avatar">
               <Text style={styles.avatarInitials} accessibilityElementsHidden>
@@ -72,20 +64,10 @@ export const ProfileScreen = (): React.JSX.Element => {
               </Text>
             </View>
           </View>
-
-          {/* Name */}
-          <Text style={styles.heroName} testID="profile-name">
-            {displayName}
-          </Text>
-
-          {/* Email */}
+          <Text style={styles.heroName} testID="profile-name">{displayName}</Text>
           {user?.email ? (
-            <Text style={styles.heroEmail} testID="profile-email">
-              {user.email}
-            </Text>
+            <Text style={styles.heroEmail} testID="profile-email">{user.email}</Text>
           ) : null}
-
-          {/* Role badge */}
           {user?.role ? (
             <View style={styles.roleBadge} testID="profile-role-badge">
               <Text style={styles.roleBadgeText}>
@@ -95,18 +77,11 @@ export const ProfileScreen = (): React.JSX.Element => {
           ) : null}
         </View>
 
-        {/* ── Info card: Name + Email rows ── */}
+        {/* ── Info card ── */}
         <View style={styles.section} testID="profile-info-card">
-
-          {/* Name row — editable */}
           <View style={styles.row}>
             <View style={styles.rowIcon}>
-              <MaterialIcons
-                color={design.textTertiary}
-                name="person-outline"
-                size={20}
-                accessibilityElementsHidden
-              />
+              <MaterialIcons color={design.textTertiary} name="person-outline" size={20} accessibilityElementsHidden />
             </View>
             <View style={styles.rowContent}>
               <Text style={styles.rowLabel}>{t('profile.fields.name')}</Text>
@@ -120,9 +95,7 @@ export const ProfileScreen = (): React.JSX.Element => {
                   value={displayName}
                 />
               ) : (
-                <Text style={styles.rowValue} testID="profile-name-value">
-                  {displayName}
-                </Text>
+                <Text style={styles.rowValue} testID="profile-name-value">{displayName}</Text>
               )}
             </View>
             <Pressable
@@ -138,22 +111,13 @@ export const ProfileScreen = (): React.JSX.Element => {
               />
             </Pressable>
           </View>
-
-          {/* Email row */}
           <View style={[styles.row, styles.rowLast]}>
             <View style={styles.rowIcon}>
-              <MaterialIcons
-                color={design.textTertiary}
-                name="mail-outline"
-                size={20}
-                accessibilityElementsHidden
-              />
+              <MaterialIcons color={design.textTertiary} name="mail-outline" size={20} accessibilityElementsHidden />
             </View>
             <View style={styles.rowContent}>
               <Text style={styles.rowLabel}>{t('profile.fields.email')}</Text>
-              <Text style={styles.rowValue} testID="profile-email-value">
-                {user?.email ?? '—'}
-              </Text>
+              <Text style={styles.rowValue} testID="profile-email-value">{user?.email ?? '—'}</Text>
             </View>
           </View>
         </View>
@@ -167,22 +131,13 @@ export const ProfileScreen = (): React.JSX.Element => {
             style={[styles.row, styles.rowLast]}
             testID="profile-settings-row">
             <View style={styles.rowIcon}>
-              <MaterialIcons
-                color={design.textTertiary}
-                name="settings"
-                size={20}
-                accessibilityElementsHidden
-              />
+              <MaterialIcons color={design.textTertiary} name="settings" size={20} accessibilityElementsHidden />
             </View>
             <View style={styles.rowContent}>
               <Text style={styles.rowValue}>{t('profile.settings')}</Text>
             </View>
             <View style={styles.rowChevron}>
-              <MaterialIcons
-                color={design.textTertiary}
-                name="chevron-right"
-                size={20}
-              />
+              <MaterialIcons color={design.textTertiary} name="chevron-right" size={20} />
             </View>
           </Pressable>
         </View>
@@ -196,12 +151,7 @@ export const ProfileScreen = (): React.JSX.Element => {
             style={[styles.dangerRow, styles.rowLast]}
             testID="profile-signout">
             <View style={styles.rowIcon}>
-              <MaterialIcons
-                color={design.danger}
-                name="logout"
-                size={20}
-                accessibilityElementsHidden
-              />
+              <MaterialIcons color={design.danger} name="logout" size={20} accessibilityElementsHidden />
             </View>
             <Text style={styles.dangerLabel}>{t('profile.signOut')}</Text>
           </Pressable>
