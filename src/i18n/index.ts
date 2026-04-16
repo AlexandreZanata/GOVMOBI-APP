@@ -7,6 +7,23 @@ import ptBR from './locales/pt-BR.json';
 import enUS from './locales/en-US.json';
 import es from './locales/es.json';
 
+// ---------------------------------------------------------------------------
+// Intl.PluralRules polyfill
+// Older Android versions (< API 30) ship without Intl.PluralRules.
+// i18next v4 requires it for plural resolution. This minimal shim satisfies
+// the check without pulling in a heavy polyfill package.
+// ---------------------------------------------------------------------------
+if (typeof Intl === 'undefined' || typeof Intl.PluralRules === 'undefined') {
+  // @ts-expect-error — patching missing global on older Android runtimes
+  globalThis.Intl = globalThis.Intl ?? {};
+  // @ts-expect-error — minimal PluralRules shim: always returns 'other'
+  globalThis.Intl.PluralRules = class PluralRulesShim {
+    select(_n: number): Intl.LDMLPluralRule {
+      return 'other';
+    }
+  };
+}
+
 export const defaultLanguage = 'pt-BR' as const;
 
 export const availableLanguages = ['pt-BR', 'en-US', 'es'] as const;
