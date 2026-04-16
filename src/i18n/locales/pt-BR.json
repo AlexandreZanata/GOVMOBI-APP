@@ -105,8 +105,7 @@
     "passwordRequired": "Informe a senha",
     "forgotPassword": "Esqueci minha senha",
     "loginFailed": "CPF ou senha inválidos.",
-    "subtitle": "Sistema de Mobilidade Operacional",
-    "mockHint": "Demo: 003.017.481-36"
+    "subtitle": "Sistema de Mobilidade Operacional"
   },
   "errors": {
     "networkError": "Erro de rede",

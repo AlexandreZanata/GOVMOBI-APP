@@ -66,9 +66,6 @@ export const createLoginStyles = (theme: Theme) =>
       marginBottom: theme.spacing.xs,
       textAlign: 'center',
     },
-    hint: {
-      textAlign: 'center',
-    },
     button: {
       alignItems: 'center',
       backgroundColor: theme.colors.primary,

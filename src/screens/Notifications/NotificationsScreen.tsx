@@ -89,7 +89,7 @@ export const NotificationsScreen = (): React.JSX.Element => {
     <SafeAreaView edges={['top']} style={styles.background}>
       {/* Inline title row — no AppHeader */}
       <View style={styles.titleRow}>
-        <Text variant="heading" color="text">
+        <Text variant="heading" color="textInverse">
           {t('navigation.titles.notifications')}
         </Text>
         {unreadCount > 0 ? (
@@ -109,32 +109,34 @@ export const NotificationsScreen = (): React.JSX.Element => {
       {isLoading ? (
         renderSkeleton()
       ) : (
-        <FlatList
-          data={notifications}
-          keyExtractor={item => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={
-            notifications.length === 0 ? styles.emptyState : styles.listContent
-          }
-          windowSize={10}
-          removeClippedSubviews
-          refreshControl={
-            <RefreshControl
-              colors={[theme.colors.accent]}
-              refreshing={isRefreshing}
-              onRefresh={onRefresh}
-              tintColor={theme.colors.accent}
-            />
-          }
-          ListEmptyComponent={
-            <View testID="notifications-empty">
-              <Text variant="body" color="textMuted">
-                {t('notifications.empty.message')}
-              </Text>
-            </View>
-          }
-          testID="notifications-list"
-        />
+        <View style={styles.contentArea}>
+          <FlatList
+            data={notifications}
+            keyExtractor={item => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={
+              notifications.length === 0 ? styles.emptyState : styles.listContent
+            }
+            windowSize={10}
+            removeClippedSubviews
+            refreshControl={
+              <RefreshControl
+                colors={[theme.colors.accent]}
+                refreshing={isRefreshing}
+                onRefresh={onRefresh}
+                tintColor={theme.colors.accent}
+              />
+            }
+            ListEmptyComponent={
+              <View testID="notifications-empty">
+                <Text variant="body" color="textMuted">
+                  {t('notifications.empty.message')}
+                </Text>
+              </View>
+            }
+            testID="notifications-list"
+          />
+        </View>
       )}
     </SafeAreaView>
   );

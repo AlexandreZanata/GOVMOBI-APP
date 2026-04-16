@@ -5,7 +5,8 @@ import {type Theme} from '../../theme';
 export const createNotificationsStyles = (theme: Theme) =>
   StyleSheet.create({
     flex: {flex: 1},
-    background: {backgroundColor: theme.colors.background, flex: 1},
+    /** Dark blue safe area — matches the brand. */
+    background: {backgroundColor: theme.colors.primary, flex: 1},
     listContent: {
       gap: theme.spacing.xs,
       paddingVertical: theme.spacing.sm,
@@ -30,9 +31,14 @@ export const createNotificationsStyles = (theme: Theme) =>
     },
     titleRow: {
       alignItems: 'center',
+      backgroundColor: theme.colors.primary,
       flexDirection: 'row',
       justifyContent: 'space-between',
       paddingHorizontal: theme.spacing.lg,
       paddingVertical: theme.spacing.md,
+    },
+    contentArea: {
+      backgroundColor: theme.colors.background,
+      flex: 1,
     },
   });

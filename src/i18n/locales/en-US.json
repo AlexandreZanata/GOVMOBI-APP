@@ -105,8 +105,7 @@
     "passwordRequired": "Password is required",
     "forgotPassword": "Forgot password",
     "loginFailed": "Invalid CPF or password.",
-    "subtitle": "Government Operational Mobility System",
-    "mockHint": "Demo: 003.017.481-36"
+    "subtitle": "Government Operational Mobility System"
   },
   "errors": {
     "networkError": "Network error",

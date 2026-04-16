@@ -160,10 +160,6 @@ export const LoginScreen = (): React.JSX.Element => {
               testID="login-password"
             />
 
-            <Text variant="caption" color="textMuted" style={styles.hint}>
-              {t('auth.mockHint')}
-            </Text>
-
             <Pressable
               accessibilityRole="button"
               accessibilityState={{disabled: isLoading}}
