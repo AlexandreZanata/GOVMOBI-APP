@@ -313,7 +313,7 @@ export const HomeScreen = (): React.JSX.Element => {
   // ---------------------------------------------------------------------------
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
       {/* Header — always visible, not animated */}
       <AnimatedSection anim={sectionAnims.header} testID="section-header">
         <HomeHeader

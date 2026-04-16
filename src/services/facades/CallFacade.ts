@@ -8,7 +8,7 @@ import {
   type Result,
   type ApiEnvelope,
 } from './types';
-import {delay, shouldFail} from '../mock/data/simulation';
+import {delay, shouldFail} from '@services/mock/data';
 
 /**
  * Call facade contract for call signaling and history operations.

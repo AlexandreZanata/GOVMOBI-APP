@@ -156,7 +156,7 @@ export const ConversationListScreen = (): React.JSX.Element => {
   // Skeleton loader
   if (isLoading) {
     return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.screenBackground}>
           {[1, 2, 3, 4, 5].map(i => (
             <View key={i} style={styles.skeletonItem}>
@@ -177,7 +177,7 @@ export const ConversationListScreen = (): React.JSX.Element => {
   }
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.screenBackground}>
         <FlatList<ConversationRow>
           data={rows}

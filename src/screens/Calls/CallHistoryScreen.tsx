@@ -63,7 +63,7 @@ export const CallHistoryScreen = (): React.JSX.Element => {
 
   if (isLoading) {
     return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.screenBackground}>
           {[1, 2, 3].map(i => (
             <View key={i} style={styles.skeletonItem}>
@@ -81,7 +81,7 @@ export const CallHistoryScreen = (): React.JSX.Element => {
   }
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.screenBackground}>
         {/* Filter tabs */}
         <View style={styles.tabRow} testID="filter-tabs">

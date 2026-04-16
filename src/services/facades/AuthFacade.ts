@@ -8,7 +8,7 @@ import {
   type FacadeError,
   type Result,
 } from './types';
-import {delay, shouldFail} from '../mock/data/simulation';
+import {delay, shouldFail} from '@services/mock/data';
 
 const ACCESS_TOKEN_KEY = 'govmobile_access_token';
 const REFRESH_TOKEN_KEY = 'govmobile_refresh_token';

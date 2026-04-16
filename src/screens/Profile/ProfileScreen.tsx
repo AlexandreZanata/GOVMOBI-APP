@@ -1,5 +1,6 @@
 /**
  * @fileoverview User profile screen with editable display name.
+ * Tab root — SafeAreaView covers top only; BottomTabBar handles the bottom inset.
  */
 import React, {useMemo} from 'react';
 import {Pressable, ScrollView, TextInput, View} from 'react-native';
@@ -10,7 +11,6 @@ import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
 import {Avatar, Divider, Text} from '../../components/atoms';
-import {AppHeader} from '../../components/organisms';
 import {useAppSelector} from '../../store';
 import {type ProfileStackParamList} from '../../navigation/types';
 import {useProfile} from './useProfile';
@@ -33,9 +33,7 @@ export const ProfileScreen = (): React.JSX.Element => {
     displayName,
     setDisplayName,
     isEditing,
-    isSaving,
     toggleEdit,
-    saveProfile,
     signOut,
   } = useProfile();
 
@@ -54,25 +52,7 @@ export const ProfileScreen = (): React.JSX.Element => {
   void ROLE_COLORS;
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.background}>
-      <AppHeader
-        title={t('navigation.titles.profile')}
-        rightAction={
-          isEditing ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void saveProfile()}
-              disabled={isSaving}
-              testID="profile-save">
-              <Text variant="label" color="accent">
-                {t('profile.save')}
-              </Text>
-            </Pressable>
-          ) : undefined
-        }
-        testID="profile-header"
-      />
-
+    <SafeAreaView edges={['top']} style={styles.background}>
       <ScrollView>
         {/* Avatar + role */}
         <View style={styles.avatarSection}>

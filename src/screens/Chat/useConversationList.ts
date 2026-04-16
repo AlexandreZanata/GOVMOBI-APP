@@ -1,12 +1,15 @@
+/**
+ * @fileoverview Hook for the ConversationList screen.
+ * Loads conversations from the ChatFacade and manages search/filter state.
+ */
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
-  MessageStatus,
-  MessageType,
   type Conversation,
   type ConversationParticipant,
 } from '../../models';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setConversations} from '@store/slices/chatSlice';
+import {useFacades} from '../../services/facades';
 
 // ---------------------------------------------------------------------------
 // Domain types
@@ -109,152 +112,21 @@ const resolveDisplayName = (
 };
 
 // ---------------------------------------------------------------------------
-// Mock data
-// ---------------------------------------------------------------------------
-
-const MOCK_CURRENT_USER_ID = 'user-001';
-
-/** Builds mock conversations for POC validation. */
-const buildMockConversations = (): Conversation[] => [
-  {
-    id: 'conv-001',
-    isGroup: false,
-    participants: [
-      {
-        id: 'cp-001',
-        userId: MOCK_CURRENT_USER_ID,
-        conversationId: 'conv-001',
-        role: 'OWNER',
-        displayName: 'Ana Silva',
-        isOnline: true,
-        createdAt: '2024-01-15T07:00:00Z',
-        updatedAt: '2024-01-15T07:00:00Z',
-      },
-      {
-        id: 'cp-002',
-        userId: 'user-002',
-        conversationId: 'conv-001',
-        role: 'MEMBER',
-        displayName: 'Carlos Mendes',
-        avatarUrl: undefined,
-        isOnline: true,
-        createdAt: '2024-01-15T07:00:00Z',
-        updatedAt: '2024-01-15T07:00:00Z',
-      },
-    ],
-    unreadCount: 2,
-    lastMessageId: 'msg-004',
-    createdAt: '2024-01-15T07:00:00Z',
-    updatedAt: '2024-01-15T08:12:00Z',
-  },
-  {
-    id: 'conv-002',
-    isGroup: false,
-    participants: [
-      {
-        id: 'cp-003',
-        userId: MOCK_CURRENT_USER_ID,
-        conversationId: 'conv-002',
-        role: 'OWNER',
-        displayName: 'Ana Silva',
-        isOnline: true,
-        createdAt: '2024-01-14T10:00:00Z',
-        updatedAt: '2024-01-14T10:00:00Z',
-      },
-      {
-        id: 'cp-004',
-        userId: 'user-003',
-        conversationId: 'conv-002',
-        role: 'MEMBER',
-        displayName: 'Maria Santos',
-        isOnline: false,
-        createdAt: '2024-01-14T10:00:00Z',
-        updatedAt: '2024-01-14T10:00:00Z',
-      },
-    ],
-    unreadCount: 0,
-    lastMessageId: 'msg-010',
-    createdAt: '2024-01-14T10:00:00Z',
-    updatedAt: '2024-01-14T15:30:00Z',
-  },
-  {
-    id: 'conv-003',
-    isGroup: true,
-    title: 'Field Operations Team',
-    participants: [
-      {
-        id: 'cp-005',
-        userId: MOCK_CURRENT_USER_ID,
-        conversationId: 'conv-003',
-        role: 'MEMBER',
-        displayName: 'Ana Silva',
-        isOnline: true,
-        createdAt: '2024-01-10T09:00:00Z',
-        updatedAt: '2024-01-10T09:00:00Z',
-      },
-      {
-        id: 'cp-006',
-        userId: 'user-004',
-        conversationId: 'conv-003',
-        role: 'OWNER',
-        displayName: 'Roberto Lima',
-        isOnline: true,
-        createdAt: '2024-01-10T09:00:00Z',
-        updatedAt: '2024-01-10T09:00:00Z',
-      },
-    ],
-    unreadCount: 5,
-    lastMessageId: 'msg-020',
-    createdAt: '2024-01-10T09:00:00Z',
-    updatedAt: '2024-01-15T07:45:00Z',
-  },
-];
-
-/** Mock last-message previews keyed by conversation ID. */
-const MOCK_LAST_MESSAGES: Record<
-  string,
-  {preview: string; type: MessageType; status: MessageStatus; time: string}
-> = {
-  'conv-001': {
-    preview: 'Briefing received. Will review on arrival.',
-    type: MessageType.TEXT,
-    status: MessageStatus.DELIVERED,
-    time: '2024-01-15T08:12:00Z',
-  },
-  'conv-002': {
-    preview: 'sector-4-briefing.pdf',
-    type: MessageType.FILE,
-    status: MessageStatus.READ,
-    time: '2024-01-14T15:30:00Z',
-  },
-  'conv-003': {
-    preview: 'All units report to base at 09:00.',
-    type: MessageType.TEXT,
-    status: MessageStatus.READ,
-    time: '2024-01-15T07:45:00Z',
-  },
-};
-
-// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
 /**
  * Encapsulates all state and logic for the ConversationList screen.
  *
- * Loads conversations via facades (mock data for POC), manages search
- * filtering, and exposes archive/delete handlers.
+ * Loads conversations via the ChatFacade, manages search filtering,
+ * and exposes archive/delete handlers.
  *
  * @returns {@link ConversationListState} — all data and handlers the screen needs.
- *
- * @example
- * const { rows, onSearch, onRefresh } = useConversationList();
  */
 export const useConversationList = (): ConversationListState => {
   const dispatch = useAppDispatch();
-  const currentUserId = useAppSelector(
-    state => state.auth.user?.id ?? MOCK_CURRENT_USER_ID,
-  );
+  const {chatFacade} = useFacades();
+  const currentUserId = useAppSelector(state => state.auth.user?.id ?? '');
   const conversationsMap = useAppSelector(state => state.chat.conversations);
   const unreadCounts = useAppSelector(state => state.chat.unreadCounts);
 
@@ -262,11 +134,13 @@ export const useConversationList = (): ConversationListState => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  /** Fetches conversations from the facade (mock for POC). */
+  /** Fetches conversations from the ChatFacade. */
   const fetchConversations = useCallback(async (): Promise<void> => {
-    await new Promise<void>(resolve => setTimeout(resolve, 500));
-    dispatch(setConversations(buildMockConversations()));
-  }, [dispatch]);
+    const result = await chatFacade.getConversations();
+    if (result.data) {
+      dispatch(setConversations(result.data));
+    }
+  }, [chatFacade, dispatch]);
 
   // Initial load
   useEffect(() => {
@@ -343,16 +217,15 @@ export const useConversationList = (): ConversationListState => {
         const otherParticipant = conv.participants.find(
           (p: ConversationParticipant) => p.userId !== currentUserId,
         );
-        const lastMsg = MOCK_LAST_MESSAGES[conv.id];
 
         return {
           conversation: conv,
           displayName,
           avatarUrl: otherParticipant?.avatarUrl,
           isOnline: otherParticipant?.isOnline ?? false,
-          lastMessagePreview: lastMsg?.preview ?? '',
-          lastMessageTime: lastMsg
-            ? formatConversationTime(lastMsg.time)
+          lastMessagePreview: '',
+          lastMessageTime: conv.updatedAt
+            ? formatConversationTime(conv.updatedAt)
             : '',
           unreadCount: unreadCounts[conv.id] ?? conv.unreadCount ?? 0,
         };

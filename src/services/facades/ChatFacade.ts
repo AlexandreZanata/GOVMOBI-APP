@@ -14,7 +14,7 @@ import {
   type Result,
   type ApiEnvelope,
 } from './types';
-import {delay, shouldFail} from '../mock/data/simulation';
+import {delay, shouldFail} from '@services/mock/data';
 
 export interface UploadableFile {
   uri: string;

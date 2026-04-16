@@ -28,4 +28,11 @@ export const createNotificationsStyles = (theme: Theme) =>
       paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.xs,
     },
+    titleRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: theme.spacing.lg,
+      paddingVertical: theme.spacing.md,
+    },
   });

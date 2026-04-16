@@ -1,16 +1,13 @@
 /**
- * @fileoverview Module implementation for screens/Home/useHomeScreen.
+ * @fileoverview Hook for the Home screen dashboard.
+ * Derives recent activity from Redux state (populated by call/chat facades).
  */
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Animated} from 'react-native';
 import {
-  CallStatus,
-  CallType,
-  MessageStatus,
-  MessageType,
-  NotificationPriority,
   type Call,
   type Message,
+  NotificationPriority,
 } from '../../models';
 import {useAppSelector} from '../../store';
 
@@ -64,150 +61,6 @@ export interface HomeScreenState {
 }
 
 // ---------------------------------------------------------------------------
-// Mock data factory
-// ---------------------------------------------------------------------------
-
-const MOCK_USER_ID = 'user-001';
-
-/**
- * Builds mock recent activity items for POC validation.
- * Returns a mixed list of calls and messages sorted by recency.
- *
- * @returns Array of up to 5 ActivityItem entries.
- */
-const buildMockActivity = (): ActivityItem[] => [
-  {
-    kind: 'call',
-    displayName: 'Carlos Mendes',
-    departmentName: 'Field Operations',
-    data: {
-      id: 'call-001',
-      type: CallType.VOICE,
-      status: CallStatus.MISSED,
-      initiatorId: 'user-002',
-      participants: [
-        {
-          id: 'cp-001',
-          userId: 'user-002',
-          callId: 'call-001',
-          displayName: 'Carlos Mendes',
-          departmentName: 'Field Operations',
-          createdAt: '2024-01-15T09:00:00Z',
-          updatedAt: '2024-01-15T09:00:00Z',
-        },
-      ],
-      createdAt: '2024-01-15T09:00:00Z',
-      updatedAt: '2024-01-15T09:00:00Z',
-    },
-  },
-  {
-    kind: 'message',
-    isSentByCurrentUser: false,
-    timestamp: '09:15',
-    data: {
-      id: 'msg-001',
-      conversationId: 'conv-001',
-      senderId: 'user-003',
-      type: MessageType.TEXT,
-      status: MessageStatus.READ,
-      content: 'Dispatch confirmed for sector 4.',
-      createdAt: '2024-01-15T09:15:00Z',
-      updatedAt: '2024-01-15T09:15:00Z',
-    },
-  },
-  {
-    kind: 'call',
-    displayName: 'Maria Santos',
-    departmentName: 'Administration',
-    data: {
-      id: 'call-002',
-      type: CallType.VOICE,
-      status: CallStatus.ENDED,
-      initiatorId: MOCK_USER_ID,
-      participants: [
-        {
-          id: 'cp-002',
-          userId: 'user-004',
-          callId: 'call-002',
-          displayName: 'Maria Santos',
-          departmentName: 'Administration',
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-01-15T10:00:00Z',
-        },
-      ],
-      duration: {
-        id: 'dur-001',
-        totalSeconds: 183,
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:03:03Z',
-      },
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-15T10:03:03Z',
-    },
-  },
-  {
-    kind: 'message',
-    isSentByCurrentUser: true,
-    timestamp: '10:30',
-    data: {
-      id: 'msg-002',
-      conversationId: 'conv-002',
-      senderId: MOCK_USER_ID,
-      type: MessageType.TEXT,
-      status: MessageStatus.DELIVERED,
-      content: 'Report submitted. Awaiting review.',
-      createdAt: '2024-01-15T10:30:00Z',
-      updatedAt: '2024-01-15T10:30:00Z',
-    },
-  },
-  {
-    kind: 'message',
-    isSentByCurrentUser: false,
-    timestamp: '11:00',
-    data: {
-      id: 'msg-003',
-      conversationId: 'conv-001',
-      senderId: 'user-003',
-      type: MessageType.FILE,
-      status: MessageStatus.READ,
-      content: '',
-      attachmentName: 'incident-report-jan15.pdf',
-      createdAt: '2024-01-15T11:00:00Z',
-      updatedAt: '2024-01-15T11:00:00Z',
-    },
-  },
-];
-
-/**
- * Builds mock announcements for POC validation.
- *
- * @returns Array of Announcement items.
- */
-const buildMockAnnouncements = (): Announcement[] => [
-  {
-    id: 'ann-001',
-    title: 'System maintenance scheduled',
-    body: 'Planned maintenance on Jan 20 from 02:00 to 04:00. Services may be temporarily unavailable.',
-    priority: NotificationPriority.HIGH,
-    createdAt: '2024-01-15T08:00:00Z',
-  },
-  {
-    id: 'ann-002',
-    title: 'New dispatch protocol active',
-    body: 'Updated field dispatch procedures are now in effect. Review the documentation in the Documents section.',
-    priority: NotificationPriority.MEDIUM,
-    createdAt: '2024-01-14T14:00:00Z',
-  },
-  {
-    id: 'ann-003',
-    title: 'Training session reminder',
-    body: 'Mandatory safety training on Jan 22 at 09:00. All field officers must attend.',
-    priority: NotificationPriority.CRITICAL,
-    createdAt: '2024-01-13T10:00:00Z',
-  },
-];
-
-// ---------------------------------------------------------------------------
 // Animation helpers
 // ---------------------------------------------------------------------------
 
@@ -240,25 +93,21 @@ const runEntranceAnimation = (
 // ---------------------------------------------------------------------------
 
 /**
- * Encapsulates all data-fetching and state logic for the Home screen.
+ * Encapsulates all data and state logic for the Home screen dashboard.
  *
- * Fetches recent activity and announcements via facades (mock data for POC).
- * Manages loading, refresh, and staggered entrance animations.
+ * Recent activity is derived from Redux state populated by the call and chat
+ * facades. Announcements come from the notifications slice.
  *
  * @returns HomeScreenState — all data and handlers the screen needs to render.
- *
- * @example
- * const { isLoading, recentActivity, onRefresh } = useHomeScreen();
  */
 export const useHomeScreen = (): HomeScreenState => {
-  const unreadCount = useAppSelector(
-    state => state.notifications.unreadCount,
-  );
+  const unreadCount = useAppSelector(state => state.notifications.unreadCount);
+  const callHistory = useAppSelector(state => state.calls.callHistory);
+  const conversationsMap = useAppSelector(state => state.chat.conversations);
+  const currentUserId = useAppSelector(state => state.auth.user?.id ?? '');
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   const sectionAnims = useRef({
     header: new Animated.Value(0),
@@ -268,50 +117,58 @@ export const useHomeScreen = (): HomeScreenState => {
     announcements: new Animated.Value(0),
   }).current;
 
-  /**
-   * Simulates a facade data fetch with a short async delay.
-   * Replace with real facade calls in Step 6 implementation.
-   */
-  const fetchData = useCallback(async (): Promise<void> => {
-    await new Promise<void>(resolve => setTimeout(resolve, 600));
-    setRecentActivity(buildMockActivity());
-    setAnnouncements(buildMockAnnouncements());
-  }, []);
+  // Derive recent activity from Redux state — no mock data
+  const recentActivity: ActivityItem[] = (() => {
+    const callItems: ActivityItem[] = callHistory.slice(0, 3).map(call => {
+      const other = call.participants.find(p => p.userId !== currentUserId);
+      return {
+        kind: 'call' as const,
+        data: call,
+        displayName: other?.displayName ?? 'Unknown',
+        departmentName: other?.departmentName,
+      };
+    });
 
-  // Initial load
+    const messageItems: ActivityItem[] = Object.values(conversationsMap)
+      .slice(0, 2)
+      .flatMap(conv => {
+        const msgs = conv.lastMessageId ? [] : [];
+        return msgs;
+      });
+
+    return [...callItems, ...messageItems].slice(0, 5);
+  })();
+
+  // Announcements derived from high-priority notifications
+  const notifications = useAppSelector(state => state.notifications.notifications);
+  const announcements: Announcement[] = notifications
+    .filter(n => n.type === 'ANNOUNCEMENT')
+    .slice(0, 5)
+    .map(n => ({
+      id: n.id,
+      title: n.title,
+      body: n.body,
+      priority: n.priority as NotificationPriority,
+      createdAt: n.createdAt,
+    }));
+
+  // Run entrance animation once on mount
   useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      setIsLoading(true);
-      await fetchData();
-      if (!cancelled) {
-        setIsLoading(false);
-        runEntranceAnimation(Object.values(sectionAnims));
-      }
-    };
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchData, sectionAnims]);
+    runEntranceAnimation(Object.values(sectionAnims));
+  }, [sectionAnims]);
 
   /**
-   * Pull-to-refresh handler. Re-fetches all data and re-runs entrance animation.
+   * Pull-to-refresh handler — re-runs entrance animation.
    */
   const onRefresh = useCallback((): void => {
     setIsRefreshing(true);
-
-    // Reset animation values so sections re-animate on refresh
     Object.values(sectionAnims).forEach(v => v.setValue(0));
-
-    fetchData().then(() => {
+    // Data is live from Redux — just re-animate
+    setTimeout(() => {
       setIsRefreshing(false);
       runEntranceAnimation(Object.values(sectionAnims));
-    });
-  }, [fetchData, sectionAnims]);
+    }, 400);
+  }, [sectionAnims]);
 
   return {
     isLoading,

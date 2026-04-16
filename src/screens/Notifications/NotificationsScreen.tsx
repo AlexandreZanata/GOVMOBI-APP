@@ -1,5 +1,6 @@
 /**
  * @fileoverview Notification inbox screen.
+ * Tab root — SafeAreaView covers top only; BottomTabBar handles the bottom inset.
  */
 import React, {useCallback, useMemo} from 'react';
 import {
@@ -9,12 +10,11 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../../theme';
 import {Skeleton, Text} from '../../components/atoms';
 import {NotificationItem} from '../../components/molecules';
-import {AppHeader} from '../../components/organisms';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {markAllAsRead, markAsRead} from '../../store/slices/notificationsSlice';
 import {type Notification} from '../../models';
@@ -43,17 +43,12 @@ export const NotificationsScreen = (): React.JSX.Element => {
   const notifications = useAppSelector(state => state.notifications.notifications);
   const unreadCount = useAppSelector(state => state.notifications.unreadCount);
 
-  // Notifications are loaded by the app shell — no local fetch needed.
   const isLoading = false;
   const isRefreshing = false;
-  const onRefresh = useCallback(() => {
-    // Refresh is handled by the global notification hook in App.tsx
-  }, []);
+  const onRefresh = useCallback(() => {}, []);
 
   const handleMarkAsRead = useCallback(
-    (id: string) => {
-      dispatch(markAsRead(id));
-    },
+    (id: string) => { dispatch(markAsRead(id)); },
     [dispatch],
   );
 
@@ -76,23 +71,6 @@ export const NotificationsScreen = (): React.JSX.Element => {
     [handleMarkAsRead],
   );
 
-  const rightAction = useMemo(
-    () =>
-      unreadCount > 0 ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('notifications.markAllRead')}
-          onPress={handleMarkAllAsRead}
-          style={styles.markAllButton}
-          testID="mark-all-read">
-          <Text variant="caption" color="accent">
-            {t('notifications.markAllRead')}
-          </Text>
-        </Pressable>
-      ) : undefined,
-    [handleMarkAllAsRead, styles, t, unreadCount],
-  );
-
   const renderSkeleton = () => (
     <>
       {Array.from({length: 5}).map((_, i) => (
@@ -108,12 +86,25 @@ export const NotificationsScreen = (): React.JSX.Element => {
   );
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.background}>
-      <AppHeader
-        title={t('navigation.titles.notifications')}
-        rightAction={rightAction}
-        testID="notifications-header"
-      />
+    <SafeAreaView edges={['top']} style={styles.background}>
+      {/* Inline title row — no AppHeader */}
+      <View style={styles.titleRow}>
+        <Text variant="heading" color="text">
+          {t('navigation.titles.notifications')}
+        </Text>
+        {unreadCount > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('notifications.markAllRead')}
+            onPress={handleMarkAllAsRead}
+            style={styles.markAllButton}
+            testID="mark-all-read">
+            <Text variant="caption" color="accent">
+              {t('notifications.markAllRead')}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       {isLoading ? (
         renderSkeleton()
@@ -128,7 +119,12 @@ export const NotificationsScreen = (): React.JSX.Element => {
           windowSize={10}
           removeClippedSubviews
           refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+            <RefreshControl
+              colors={[theme.colors.accent]}
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.accent}
+            />
           }
           ListEmptyComponent={
             <View testID="notifications-empty">

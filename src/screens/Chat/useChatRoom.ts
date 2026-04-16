@@ -7,9 +7,9 @@ import {
   clearUnreadCount,
   setActiveConversation,
   setMessages,
-  setTyping,
   updateMessage,
 } from '@store/slices/chatSlice';
+import {useFacades} from '../../services/facades';
 
 export type MessageListItem =
   | {kind: 'message'; data: Message}
@@ -54,37 +54,9 @@ export const buildListItems = (messages: Message[]): MessageListItem[] => {
   return items.reverse();
 };
 
-const MOCK_CURRENT_USER_ID = 'user-001';
-
-const buildMockMessages = (conversationId: string): Message[] => [
-  {
-    id: 'msg-001', conversationId, senderId: 'user-002',
-    type: MessageType.TEXT, status: MessageStatus.READ,
-    content: 'Good morning. Dispatch confirmed for sector 4.',
-    createdAt: '2024-01-15T08:00:00Z', updatedAt: '2024-01-15T08:00:00Z',
-  },
-  {
-    id: 'msg-002', conversationId, senderId: MOCK_CURRENT_USER_ID,
-    type: MessageType.TEXT, status: MessageStatus.READ,
-    content: 'Acknowledged. En route.',
-    createdAt: '2024-01-15T08:05:00Z', updatedAt: '2024-01-15T08:05:00Z',
-  },
-  {
-    id: 'msg-003', conversationId, senderId: 'user-002',
-    type: MessageType.FILE, status: MessageStatus.READ,
-    content: '', attachmentName: 'sector-4-briefing.pdf',
-    createdAt: '2024-01-15T08:10:00Z', updatedAt: '2024-01-15T08:10:00Z',
-  },
-  {
-    id: 'msg-004', conversationId, senderId: MOCK_CURRENT_USER_ID,
-    type: MessageType.TEXT, status: MessageStatus.DELIVERED,
-    content: 'Briefing received. Will review on arrival.',
-    createdAt: '2024-01-15T08:12:00Z', updatedAt: '2024-01-15T08:12:00Z',
-  },
-];
-
 export const useChatRoom = (conversationId: string): ChatRoomState => {
   const dispatch = useAppDispatch();
+  const {chatFacade} = useFacades();
   const currentUserId = useAppSelector(state => state.auth.user?.id ?? '');
   const EMPTY: never[] = [];
   const rawMessages = useAppSelector(state => state.chat.messages[conversationId] ?? EMPTY);
@@ -111,26 +83,17 @@ export const useChatRoom = (conversationId: string): ChatRoomState => {
     let cancelled = false;
     const load = async () => {
       setIsLoading(true);
-      await new Promise<void>(resolve => setTimeout(resolve, 400));
+      const result = await chatFacade.getMessages(conversationId, 1);
       if (!cancelled) {
-        dispatch(setMessages({conversationId, messages: buildMockMessages(conversationId)}));
+        if (result.data) {
+          dispatch(setMessages({conversationId, messages: result.data}));
+        }
         setIsLoading(false);
       }
     };
     void load();
     return () => { cancelled = true; };
-  }, [conversationId, dispatch]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    const t1 = setTimeout(() => {
-      dispatch(setTyping({conversationId, userId: 'user-002', isTyping: true}));
-    }, 2000);
-    const t2 = setTimeout(() => {
-      dispatch(setTyping({conversationId, userId: 'user-002', isTyping: false}));
-    }, 4500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [conversationId, dispatch, isLoading]);
+  }, [conversationId, chatFacade, dispatch]);
 
   const onChangeText = useCallback((text: string): void => { setDraftText(text); }, []);
 
