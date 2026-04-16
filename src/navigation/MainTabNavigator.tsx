@@ -4,10 +4,12 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {type MainTabParamList} from './types';
-import {BottomTabBar, AppHeader} from '../components/organisms';
+import {BottomTabBar} from '../components/organisms';
 import {ChatNavigator} from './ChatNavigator';
 import {CallsNavigator} from './CallsNavigator';
-import {HomeScreen, NotificationsScreen, ProfileScreen} from './placeholders';
+import {HomeScreen} from '../screens/Home/HomeScreen';
+import {NotificationsScreen} from '../screens/Notifications/NotificationsScreen';
+import {ProfileNavigator} from './ProfileNavigator';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -24,10 +26,7 @@ export const MainTabNavigator = (): React.JSX.Element => {
       <Tab.Screen
         component={HomeScreen}
         name="HomeTab"
-        options={{
-          header: () => <AppHeader />,
-          headerShown: true,
-        }}
+        options={{headerShown: false}}
       />
       <Tab.Screen
         component={ChatNavigator}
@@ -42,18 +41,12 @@ export const MainTabNavigator = (): React.JSX.Element => {
       <Tab.Screen
         component={NotificationsScreen}
         name="NotificationsTab"
-        options={{
-          header: () => <AppHeader />,
-          headerShown: true,
-        }}
+        options={{headerShown: false}}
       />
       <Tab.Screen
-        component={ProfileScreen}
+        component={ProfileNavigator}
         name="ProfileTab"
-        options={{
-          header: () => <AppHeader />,
-          headerShown: true,
-        }}
+        options={{headerShown: false}}
       />
     </Tab.Navigator>
   );

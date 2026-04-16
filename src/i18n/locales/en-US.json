@@ -97,9 +97,12 @@
   "auth": {
     "login": "Login",
     "logout": "Logout",
-    "username": "Username",
+    "username": "Email",
     "password": "Password",
-    "forgotPassword": "Forgot password"
+    "forgotPassword": "Forgot password",
+    "loginFailed": "Invalid email or password.",
+    "subtitle": "Government Operational Mobility System",
+    "mockHint": "Demo: ana.silva@govmobile.gov"
   },
   "errors": {
     "networkError": "Network error",

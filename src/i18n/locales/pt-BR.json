@@ -97,9 +97,12 @@
   "auth": {
     "login": "Entrar",
     "logout": "Sair",
-    "username": "Usuario",
+    "username": "Email",
     "password": "Senha",
-    "forgotPassword": "Esqueci minha senha"
+    "forgotPassword": "Esqueci minha senha",
+    "loginFailed": "Email ou senha invalidos.",
+    "subtitle": "Sistema de Mobilidade Operacional",
+    "mockHint": "Demo: ana.silva@govmobile.gov"
   },
   "errors": {
     "networkError": "Erro de rede",

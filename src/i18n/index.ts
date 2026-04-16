@@ -14,11 +14,12 @@ import es from './locales/es.json';
 // the check without pulling in a heavy polyfill package.
 // ---------------------------------------------------------------------------
 if (typeof Intl === 'undefined' || typeof Intl.PluralRules === 'undefined') {
-  // @ts-expect-error — patching missing global on older Android runtimes
-  globalThis.Intl = globalThis.Intl ?? {};
-  // @ts-expect-error — minimal PluralRules shim: always returns 'other'
-  globalThis.Intl.PluralRules = class PluralRulesShim {
-    select(_n: number): Intl.LDMLPluralRule {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).Intl = (globalThis as any).Intl ?? {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).Intl.PluralRules = class PluralRulesShim {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    select(_: number): Intl.LDMLPluralRule {
       return 'other';
     }
   };

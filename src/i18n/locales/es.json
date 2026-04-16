@@ -97,9 +97,12 @@
   "auth": {
     "login": "Iniciar sesion",
     "logout": "Cerrar sesion",
-    "username": "Usuario",
+    "username": "Email",
     "password": "Contrasena",
-    "forgotPassword": "Olvide mi contrasena"
+    "forgotPassword": "Olvide mi contrasena",
+    "loginFailed": "Email o contrasena invalidos.",
+    "subtitle": "Sistema de Movilidad Operacional",
+    "mockHint": "Demo: ana.silva@govmobile.gov"
   },
   "errors": {
     "networkError": "Error de red",

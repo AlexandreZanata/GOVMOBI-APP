@@ -5,11 +5,9 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {type ChatStackParamList} from './types';
 import {AppHeader} from '../components/organisms';
-import {
-  ConversationListScreen,
-  ChatRoomScreen,
-  NewConversationScreen,
-} from './placeholders';
+import {ConversationListScreen} from '../screens/Chat/ConversationListScreen';
+import {ChatRoomScreen} from '../screens/Chat/ChatRoomScreen';
+import {NewConversationScreen} from './placeholders';
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
 

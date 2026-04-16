@@ -5,11 +5,9 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {type CallsStackParamList} from './types';
 import {AppHeader} from '../components/organisms';
-import {
-  CallHistoryScreen,
-  ActiveCallScreen,
-  IncomingCallScreen,
-} from './placeholders';
+import {CallHistoryScreen} from '../screens/Calls/CallHistoryScreen';
+import {ActiveCallScreen} from '../screens/Calls/ActiveCallScreen';
+import {IncomingCallScreen} from '../screens/Calls/IncomingCallScreen';
 
 const Stack = createNativeStackNavigator<CallsStackParamList>();
 
