@@ -45,14 +45,14 @@ const toPesquisaConfig = (payload: unknown): PesquisaConfig | null => {
     return null;
   }
 
-  const directToken = unwrapped.mapboxPublicToken;
-  if (typeof directToken === 'string' && directToken.trim().length > 0) {
-    return {mapboxPublicToken: directToken};
-  }
+  // Server returns any of these field names — accept all variants
+  const token =
+    unwrapped.mapboxPublicToken ??
+    unwrapped.mapboxToken ??
+    unwrapped.token;
 
-  const altToken = unwrapped.token;
-  if (typeof altToken === 'string' && altToken.trim().length > 0) {
-    return {mapboxPublicToken: altToken};
+  if (typeof token === 'string' && token.trim().length > 0) {
+    return {mapboxPublicToken: token.trim()};
   }
 
   return null;

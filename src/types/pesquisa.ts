@@ -6,6 +6,8 @@
 
 /**
  * Map configuration returned by GET /pesquisa/config.
+ * The server may return the token as `mapboxToken`, `mapboxPublicToken`, or `token`.
+ * The facade normalises all variants into this shape.
  */
 export interface PesquisaConfig {
   /** Mapbox public access token for frontend map rendering. */
