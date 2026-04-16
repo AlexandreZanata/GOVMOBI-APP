@@ -75,8 +75,9 @@ export class AuthFacadeMock implements IAuthFacade {
     }
 
     const state = await loadMockState();
+    // Mock users are seeded with email — match by email for dev convenience.
     const user = state.users.find(
-      candidate => candidate.email === credentials.username,
+      candidate => candidate.email === credentials.cpf,
     );
     if (!user) {
       return fail(toError('Invalid credentials', 'UNAUTHORIZED'));
@@ -158,6 +159,22 @@ export class AuthFacadeMock implements IAuthFacade {
     const user =
       state.users.find(candidate => candidate.id === state.auth.userId) ?? null;
     return ok(user ? this.mapUser(user) : null);
+  }
+
+  /**
+   * Returns the authenticated mock user profile (mirrors GET /auth/me).
+   *
+   * @returns Authenticated user or UNAUTHORIZED error when no session exists.
+   */
+  public async getMe(): Promise<Result<ModelUser, FacadeError>> {
+    await delay(120);
+    const state = await loadMockState();
+    const user =
+      state.users.find(candidate => candidate.id === state.auth.userId) ?? null;
+    if (!user) {
+      return fail(toError('Not authenticated', 'UNAUTHORIZED'));
+    }
+    return ok(this.mapUser(user));
   }
 
   /**

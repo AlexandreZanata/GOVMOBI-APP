@@ -39,10 +39,10 @@
     ],
     "scheme": "govmobile",
     "extra": {
-      "apiUrl": "https://api.govmobile.dev",
-      "wsUrl": "wss://ws.govmobile.dev",
+      "apiUrl": "http://172.19.2.116:3000",
+      "wsUrl": "ws://172.19.2.116:3000",
       "appEnv": "development",
-      "mockMode": true
+      "mockMode": false
     }
   }
 }

@@ -97,12 +97,16 @@
   "auth": {
     "login": "Iniciar sesion",
     "logout": "Cerrar sesion",
-    "username": "Email",
+    "cpf": "CPF",
+    "cpfPlaceholder": "000.000.000-00",
+    "cpfInvalid": "CPF invalido",
+    "cpfRequired": "Ingrese el CPF",
     "password": "Contrasena",
+    "passwordRequired": "Ingrese la contrasena",
     "forgotPassword": "Olvide mi contrasena",
-    "loginFailed": "Email o contrasena invalidos.",
+    "loginFailed": "CPF o contrasena invalidos.",
     "subtitle": "Sistema de Movilidad Operacional",
-    "mockHint": "Demo: ana.silva@govmobile.gov"
+    "mockHint": "Demo: 003.017.481-36"
   },
   "errors": {
     "networkError": "Error de red",

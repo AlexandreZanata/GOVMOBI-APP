@@ -28,6 +28,7 @@ The `/auth` group handles the full identity lifecycle for GovMobile:
 | `POST` | `/auth/login`          | No            | Exchange CPF + senha for token pair      | `200`   | `401`       |
 | `POST` | `/auth/refresh`        | Bearer token  | Rotate access token                      | `200`   | `401`       |
 | `POST` | `/auth/logout`         | Bearer token  | Invalidate current tokens                | `204`   | `401`       |
+| `GET`  | `/auth/me`             | Bearer token  | Return authenticated user profile        | `200`   | `401`       |
 | `POST` | `/auth/register`       | No            | Self-register (requires ADMIN activation)| `201`   | `400` `409` |
 | `POST` | `/auth/activate/:id`   | Bearer (ADMIN)| Activate a pending servidor              | `200`   | `403` `404` |
 
@@ -104,7 +105,50 @@ The server enforces a short-window rate limit on this endpoint:
 
 ---
 
-## POST /auth/refresh
+## GET /auth/me
+
+Returns the authenticated user's profile. No request body.
+
+### Request
+
+```
+GET /auth/me
+Authorization: Bearer <accessToken>
+```
+
+### Response `200`
+
+```json
+{
+  "id": "019d9674-6b4f-7102-a1f2-7cff0c5bb679",
+  "email": "admin@govmob.gov.br",
+  "nome": "Administrador do Sistema",
+  "papeis": ["ADMIN", "USUARIO"]
+}
+```
+
+> No envelope wrapper — the object is returned directly.
+> `papeis` maps to `UserRole` in the app: `ADMIN` → `UserRole.ADMIN`, `USUARIO`/`MOTORISTA` → `UserRole.OFFICER`.
+
+### Response `401`
+
+Token missing, expired, or invalid.
+
+### Rate limiting
+
+| Header                       | Value |
+|------------------------------|-------|
+| `x-ratelimit-limit-short`    | 10    |
+
+### When to call
+
+| Trigger                  | Action                                                    |
+|--------------------------|-----------------------------------------------------------|
+| After `POST /auth/login` | Call `getMe()` to get the full profile (replaces JWT decode) |
+| Cold start               | `useAuthSession` calls `getMe()` when `user` is null in Redux |
+| After token refresh      | Not required — profile doesn't change on refresh          |
+
+---
 
 ### Request
 

@@ -25,8 +25,8 @@ describe('AuthFacade mock mode', () => {
   it('logs in user and stores session tokens', async () => {
     const facade = new AuthFacadeImpl({mockMode: true});
     const credentials: LoginCredentials = {
-      username: 'officer@govmobile.local',
-      password: 'safe-password',
+      cpf: '00301748136',
+      senha: 'GovMob@2026',
     };
 
     const result = await facade.login(credentials);
@@ -43,8 +43,8 @@ describe('AuthFacade mock mode', () => {
     const facade = new AuthFacadeImpl({mockMode: true});
 
     await facade.login({
-      username: 'officer@govmobile.local',
-      password: 'safe-password',
+      cpf: '00301748136',
+      senha: 'GovMob@2026',
     });
 
     const logoutResult = await facade.logout();
@@ -59,8 +59,8 @@ describe('AuthFacade mock mode', () => {
     const facade = new AuthFacadeImpl({mockMode: true});
 
     await facade.login({
-      username: 'officer@govmobile.local',
-      password: 'safe-password',
+      cpf: '00301748136',
+      senha: 'GovMob@2026',
     });
 
     const refreshResult = await facade.refreshToken();

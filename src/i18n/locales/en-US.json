@@ -97,12 +97,16 @@
   "auth": {
     "login": "Login",
     "logout": "Logout",
-    "username": "Email",
+    "cpf": "CPF",
+    "cpfPlaceholder": "000.000.000-00",
+    "cpfInvalid": "Invalid CPF",
+    "cpfRequired": "CPF is required",
     "password": "Password",
+    "passwordRequired": "Password is required",
     "forgotPassword": "Forgot password",
-    "loginFailed": "Invalid email or password.",
+    "loginFailed": "Invalid CPF or password.",
     "subtitle": "Government Operational Mobility System",
-    "mockHint": "Demo: ana.silva@govmobile.gov"
+    "mockHint": "Demo: 003.017.481-36"
   },
   "errors": {
     "networkError": "Network error",

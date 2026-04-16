@@ -1,7 +1,7 @@
 /**
  * @fileoverview UI component module for Input.
  */
-import React, {useMemo, useState} from 'react';
+import React, {forwardRef, useMemo, useState} from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -28,11 +28,13 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
 
 /**
  * Renders a themed text input with helper/error feedback and secure toggle.
+ * Supports `ref` forwarding to the underlying `TextInput` for focus chaining.
  *
  * @param props Input behavior, value, and decoration props.
+ * @param ref   Forwarded ref to the inner TextInput.
  * @returns Input component tree.
  */
-export const Input = ({
+export const Input = forwardRef<TextInput, InputProps>(({
   label,
   error,
   helperText,
@@ -45,7 +47,7 @@ export const Input = ({
   onBlur,
   testID,
   ...rest
-}: InputProps): React.JSX.Element => {
+}, ref): React.JSX.Element => {
   const theme = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [isSecureVisible, setIsSecureVisible] = useState(false);
@@ -71,6 +73,7 @@ export const Input = ({
         {leftIcon ? <View style={styles.iconSlot}>{leftIcon}</View> : null}
 
         <TextInput
+          ref={ref}
           onBlur={event => {
             setIsFocused(false);
             onBlur?.(event);
@@ -116,7 +119,7 @@ export const Input = ({
       ) : null}
     </View>
   );
-};
+});
 
 Input.displayName = 'Input';
 

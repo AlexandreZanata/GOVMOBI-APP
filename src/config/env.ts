@@ -28,8 +28,8 @@ interface AppConfig {
 const extra = Constants.expoConfig?.extra ?? {};
 
 export const ENV: AppConfig = {
-  apiUrl: extra.apiUrl ?? 'https://api.govmobile.dev',
-  wsUrl: extra.wsUrl ?? 'wss://ws.govmobile.dev',
+  apiUrl: extra.apiUrl ?? 'http://172.19.2.116:3000',
+  wsUrl: extra.wsUrl ?? 'ws://172.19.2.116:3000',
   appEnv: extra.appEnv ?? 'development',
   mockMode: extra.mockMode === 'true' || extra.mockMode === true,
   MOCK_MODE: extra.mockMode === 'true' || extra.mockMode === true,

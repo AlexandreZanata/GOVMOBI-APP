@@ -5,18 +5,21 @@
  * - `SafeAreaView` (edges: ['top', 'bottom']) handles notch and home-indicator
  *   on both iOS and Android without manual inset arithmetic.
  * - `KeyboardAvoidingView` with `behavior="padding"` sits *inside* SafeAreaView
- *   so the offset is relative to the already-inset area. This eliminates the
- *   white gap that appears on Android when the view is placed outside the safe
- *   area with `behavior="height"`.
- * - `ScrollView` with `keyboardShouldPersistTaps="handled"` ensures taps on
- *   the Login button dismiss the keyboard and trigger the handler correctly.
+ *   so the offset is relative to the already-inset area, eliminating the white
+ *   gap that appears on Android when placed outside the safe area.
+ *
+ * CPF field:
+ * - Masked as `000.000.000-00` while typing via `maskCpf`.
+ * - Validated on submit with `isValidCpf` (Receita Federal módulo-11 algorithm).
+ * - Raw digits (sanitized) are sent to the API — never the formatted string.
  */
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
+  TextInput,
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -28,12 +31,13 @@ import {useAppDispatch} from '../../store';
 import {setUser, setToken} from '../../store/slices/authSlice';
 import {addToast} from '../../store/slices/uiSlice';
 import {useFacades} from '../../services/facades';
+import {maskCpf, sanitizeCpf, isValidCpf} from '../../utils/cpf';
 
 /**
- * Login screen with email/password form.
+ * Login screen with CPF + senha form.
  *
- * In MOCK_MODE any seeded email works with any password.
- * Demo credential shown on screen: ana.silva@govmobile.gov
+ * CPF is masked on input and validated before submission.
+ * Raw digits are sent to `POST /auth/login` as `{ cpf, senha }`.
  *
  * @returns The login screen JSX element.
  */
@@ -44,14 +48,47 @@ export const LoginScreen = (): React.JSX.Element => {
   const {authFacade} = useFacades();
   const styles = useMemo(() => createLoginStyles(theme), [theme]);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const passwordRef = useRef<TextInput>(null);
+
+  const [cpf, setCpf] = useState('');
+  const [senha, setSenha] = useState('');
+  const [cpfError, setCpfError] = useState('');
+  const [senhaError, setSenhaError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (): Promise<void> => {
-    if (!email.trim()) return;
+  /** Apply CPF mask on every keystroke. */
+  const handleCpfChange = useCallback((text: string) => {
+    setCpf(maskCpf(text));
+    if (cpfError) setCpfError('');
+  }, [cpfError]);
+
+  const handleSenhaChange = useCallback((text: string) => {
+    setSenha(text);
+    if (senhaError) setSenhaError('');
+  }, [senhaError]);
+
+  /** Validate fields and call the auth facade. */
+  const handleLogin = useCallback(async (): Promise<void> => {
+    const rawCpf = sanitizeCpf(cpf);
+    let valid = true;
+
+    if (!rawCpf) {
+      setCpfError(t('auth.cpfRequired'));
+      valid = false;
+    } else if (!isValidCpf(rawCpf)) {
+      setCpfError(t('auth.cpfInvalid'));
+      valid = false;
+    }
+
+    if (!senha.trim()) {
+      setSenhaError(t('auth.passwordRequired'));
+      valid = false;
+    }
+
+    if (!valid) return;
+
     setIsLoading(true);
-    const result = await authFacade.login({username: email.trim(), password});
+    const result = await authFacade.login({cpf: rawCpf, senha});
     setIsLoading(false);
 
     if (result.error) {
@@ -67,13 +104,12 @@ export const LoginScreen = (): React.JSX.Element => {
 
     dispatch(setToken(result.data.accessToken));
     dispatch(setUser(result.data.user));
-  };
+  }, [cpf, senha, authFacade, dispatch, t]);
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         style={styles.keyboardView}>
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -97,22 +133,29 @@ export const LoginScreen = (): React.JSX.Element => {
             </Text>
 
             <Input
-              label={t('auth.username')}
-              value={email}
-              onChangeText={setEmail}
+              label={t('auth.cpf')}
+              value={cpf}
+              onChangeText={handleCpfChange}
+              placeholder={t('auth.cpfPlaceholder')}
+              keyboardType="numeric"
               autoCapitalize="none"
               autoCorrect={false}
-              keyboardType="email-address"
               returnKeyType="next"
-              testID="login-email"
+              maxLength={14}
+              error={cpfError}
+              onSubmitEditing={() => passwordRef.current?.focus()}
+              testID="login-cpf"
             />
 
             <Input
+              ref={passwordRef}
               label={t('auth.password')}
-              value={password}
-              onChangeText={setPassword}
+              value={senha}
+              onChangeText={handleSenhaChange}
               secureTextEntry
+              secureToggle
               returnKeyType="done"
+              error={senhaError}
               onSubmitEditing={() => void handleLogin()}
               testID="login-password"
             />

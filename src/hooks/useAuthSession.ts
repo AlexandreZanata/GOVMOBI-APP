@@ -4,7 +4,7 @@
 import {useEffect, useRef} from 'react';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
-import {logout, setToken} from '@store/slices/authSlice';
+import {logout, setToken, setUser} from '@store/slices/authSlice';
 import {addToast} from '@store/slices/uiSlice';
 import {useTranslation} from 'react-i18next';
 import {logger} from '@utils/logger';
@@ -41,8 +41,14 @@ const getTokenExpiry = (token: string): number | null => {
 };
 
 /**
- * Keeps authentication session healthy by refreshing expired tokens.
- * Logs out and let's root navigation redirect to Auth when refresh fails.
+ * Keeps authentication session healthy by refreshing expired tokens
+ * and hydrating the user profile from GET /auth/me on cold start.
+ *
+ * Cold start flow:
+ *   1. Redux Persist restores `token` but `user` may be stale or null.
+ *   2. This hook calls `getMe()` to fetch the current profile from the server.
+ *   3. If the token is expired, `refreshToken()` is called first.
+ *   4. If refresh fails, the session is cleared and the user is sent to Auth.
  *
  * @returns Void side effect hook.
  */
@@ -52,6 +58,7 @@ export const useAuthSession = (): void => {
   const {t} = useTranslation();
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
   const token = useAppSelector(state => state.auth.token);
+  const user = useAppSelector(state => state.auth.user);
   const isRefreshing = useRef<boolean>(false);
 
   useEffect(() => {
@@ -69,37 +76,46 @@ export const useAuthSession = (): void => {
     }
 
     const exp = getTokenExpiry(token);
-    if (!exp) {
-      return;
-    }
-
     const nowSeconds = Math.floor(Date.now() / 1000);
-    if (exp - nowSeconds > REFRESH_THRESHOLD_SECONDS) {
-      return;
-    }
+    const isExpired = exp !== null && exp - nowSeconds <= REFRESH_THRESHOLD_SECONDS;
 
-    const refreshSession = async (): Promise<void> => {
+    const restoreSession = async (): Promise<void> => {
       isRefreshing.current = true;
 
-      const refreshed = await authFacade.refreshToken();
-      if (refreshed.error || !refreshed.data) {
-        logger.warn('useAuthSession', 'Token refresh failed, ending session');
-        dispatch(logout());
-        dispatch(
-          addToast({
-            id: `session-expired-${Date.now()}`,
-            message: t('errors.sessionExpired'),
-            type: 'warning',
-          }),
-        );
-        isRefreshing.current = false;
-        return;
+      // If token is expired, refresh first.
+      if (isExpired) {
+        const refreshed = await authFacade.refreshToken();
+        if (refreshed.error || !refreshed.data) {
+          logger.warn('useAuthSession', 'Token refresh failed, ending session');
+          dispatch(logout());
+          dispatch(
+            addToast({
+              id: `session-expired-${Date.now()}`,
+              message: t('errors.sessionExpired'),
+              type: 'warning',
+            }),
+          );
+          isRefreshing.current = false;
+          return;
+        }
+        dispatch(setToken(refreshed.data.accessToken));
       }
 
-      dispatch(setToken(refreshed.data.accessToken));
+      // Hydrate user profile from server on cold start (user null or stale).
+      if (!user) {
+        const meResult = await authFacade.getMe();
+        if (meResult.data) {
+          dispatch(setUser(meResult.data));
+        } else {
+          // /auth/me failed — token is invalid, force logout.
+          logger.warn('useAuthSession', 'getMe failed, ending session');
+          dispatch(logout());
+        }
+      }
+
       isRefreshing.current = false;
     };
 
-    void refreshSession();
-  }, [authFacade, dispatch, isAuthenticated, t, token]);
+    void restoreSession();
+  }, [authFacade, dispatch, isAuthenticated, t, token, user]);
 };

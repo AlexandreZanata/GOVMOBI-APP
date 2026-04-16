@@ -14,11 +14,6 @@ import {ServidoresFacadeImpl, type IServidoresFacade} from './ServidoresFacade';
 import {FrotaFacadeImpl, type IFrotaFacade} from './FrotaFacade';
 import {type FacadeConfig} from './types';
 import {ENV} from '../../config/env';
-import {AuthFacadeMock} from './mock/AuthFacadeMock';
-import {ChatFacadeMock} from './mock/ChatFacadeMock';
-import {CallFacadeMock} from './mock/CallFacadeMock';
-import {NotificationFacadeMock} from './mock/NotificationFacadeMock';
-import {RunFacadeMock} from './mock/RunFacadeMock';
 
 export interface Facades {
   authFacade: IAuthFacade;
@@ -44,6 +39,17 @@ const createDefaultFacades = (config?: FacadeConfig): Facades => {
   };
 
   if (resolvedConfig.mockMode) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {AuthFacadeMock} = require('./mock/AuthFacadeMock') as typeof import('./mock/AuthFacadeMock');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {ChatFacadeMock} = require('./mock/ChatFacadeMock') as typeof import('./mock/ChatFacadeMock');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CallFacadeMock} = require('./mock/CallFacadeMock') as typeof import('./mock/CallFacadeMock');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {NotificationFacadeMock} = require('./mock/NotificationFacadeMock') as typeof import('./mock/NotificationFacadeMock');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {RunFacadeMock} = require('./mock/RunFacadeMock') as typeof import('./mock/RunFacadeMock');
+
     return {
       authFacade: new AuthFacadeMock(),
       chatFacade: new ChatFacadeMock(),
@@ -112,8 +118,3 @@ export * from './NotificationFacade';
 export * from './RunFacade';
 export * from './ServidoresFacade';
 export * from './FrotaFacade';
-export * from './mock/AuthFacadeMock';
-export * from './mock/ChatFacadeMock';
-export * from './mock/CallFacadeMock';
-export * from './mock/NotificationFacadeMock';
-export * from './mock/RunFacadeMock';
