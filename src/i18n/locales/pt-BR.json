@@ -249,5 +249,42 @@
       "version": "Versao",
       "build": "Build"
     }
+  },
+  "passageiro": {
+    "currentLocation": "Minha localização",
+    "requestSuccess": "Corrida solicitada com sucesso!",
+    "map": {
+      "label": "Mapa",
+      "notInstalled": "Mapa não disponível",
+      "zoomIn": "Aproximar",
+      "zoomOut": "Afastar",
+      "centerOnUser": "Centralizar na minha localização"
+    },
+    "searchBar": {
+      "placeholder": "Para onde enviar?",
+      "results": "Resultados",
+      "noResults": "Nenhum resultado encontrado"
+    },
+    "bottomSheet": {
+      "title": "Nova Corrida",
+      "destinoLabel": "DESTINO",
+      "destinoPlaceholder": "Selecione um destino",
+      "cta": "Solicitar Corrida"
+    },
+    "tabs": {
+      "home": "Início",
+      "corridas": "Corridas",
+      "pagamentos": "Pagamentos",
+      "perfil": "Perfil"
+    },
+    "errors": {
+      "selectDestination": "Selecione um destino antes de solicitar.",
+      "locationRequired": "Aguardando sua localização.",
+      "requestFailed": "Não foi possível solicitar a corrida."
+    }
+  },
+  "motorista": {
+    "title": "Área do Motorista",
+    "subtitle": "Aguarde corridas disponíveis."
   }
 }

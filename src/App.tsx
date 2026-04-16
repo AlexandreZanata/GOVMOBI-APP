@@ -9,7 +9,9 @@ import {NavigationContainer} from '@react-navigation/native';
 import {I18nextProvider} from 'react-i18next';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {StatusBar} from 'expo-status-bar';
 import {ThemeProvider} from './theme';
+import {designColors} from './theme';
 import {store, persistor, useAppSelector} from './store';
 import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
@@ -31,6 +33,19 @@ const AppShell = (): React.JSX.Element => {
 
   return (
     <ThemeProvider mode={themeMode}>
+      {/*
+        * Sets the Android system navigation bar (bottom) to navy800 — matching
+        * the top status bar color seen in the design. On iOS this has no effect
+        * (iOS doesn't expose navigation bar color control).
+        * style="light" keeps the status bar icons white on the dark background.
+        */}
+      <StatusBar
+        style="light"
+        backgroundColor={designColors.navy800}
+        translucent={false}
+        navigationBarColor={designColors.navy800}
+        navigationBarHidden={false}
+      />
       <View style={styles.container}>
         <NavigationContainer>
           <RootNavigator />

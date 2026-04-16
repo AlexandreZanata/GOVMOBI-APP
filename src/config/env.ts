@@ -23,6 +23,10 @@ interface AppConfig {
   mockMode: boolean;
   /** Uppercase alias used by architecture docs and toggles. */
   MOCK_MODE: boolean;
+  /** Mapbox public access token for maps and geocoding */
+  MAPBOX_ACCESS_TOKEN: string;
+  /** Mapbox secret token for downloads (optional) */
+  MAPBOX_SECRET_TOKEN: string;
 }
 
 const extra = Constants.expoConfig?.extra ?? {};
@@ -33,6 +37,8 @@ export const ENV: AppConfig = {
   appEnv: extra.appEnv ?? 'development',
   mockMode: extra.mockMode === 'true' || extra.mockMode === true,
   MOCK_MODE: extra.mockMode === 'true' || extra.mockMode === true,
+  MAPBOX_ACCESS_TOKEN: extra.mapboxAccessToken ?? '',
+  MAPBOX_SECRET_TOKEN: extra.mapboxSecretToken ?? '',
 };
 
 export const isDev = ENV.appEnv === 'development';

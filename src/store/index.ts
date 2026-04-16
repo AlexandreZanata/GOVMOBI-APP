@@ -20,6 +20,7 @@ import chatReducer from './slices/chatSlice';
 import callsReducer from './slices/callsSlice';
 import notificationsReducer from './slices/notificationsSlice';
 import uiReducer from './slices/uiSlice';
+import corridaReducer from './slices/corridaSlice';
 import {baseApi} from './api/baseApi';
 
 // --- Persist configs ---
@@ -44,6 +45,7 @@ const rootReducer = combineReducers({
   calls: callsReducer,
   notifications: notificationsReducer,
   ui: persistReducer(uiPersistConfig, uiReducer),
+  corrida: corridaReducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

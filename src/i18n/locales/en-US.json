@@ -187,5 +187,42 @@
     "title": "Settings",
     "sections": {"language": "Language", "notifications": "Notifications", "about": "About"},
     "about": {"version": "Version", "build": "Build"}
+  },
+  "passageiro": {
+    "currentLocation": "My location",
+    "requestSuccess": "Ride requested successfully!",
+    "map": {
+      "label": "Map",
+      "notInstalled": "Map not available",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "centerOnUser": "Center on my location"
+    },
+    "searchBar": {
+      "placeholder": "Where to send?",
+      "results": "Results",
+      "noResults": "No results found"
+    },
+    "bottomSheet": {
+      "title": "New Ride",
+      "destinoLabel": "DESTINATION",
+      "destinoPlaceholder": "Select a destination",
+      "cta": "Request Ride"
+    },
+    "tabs": {
+      "home": "Home",
+      "corridas": "Rides",
+      "pagamentos": "Payments",
+      "perfil": "Profile"
+    },
+    "errors": {
+      "selectDestination": "Please select a destination first.",
+      "locationRequired": "Waiting for your location.",
+      "requestFailed": "Could not request the ride."
+    }
+  },
+  "motorista": {
+    "title": "Driver Area",
+    "subtitle": "Waiting for available rides."
   }
 }

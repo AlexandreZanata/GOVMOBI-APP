@@ -2,10 +2,10 @@
  * @fileoverview Redesigned ProfileScreen (Design_Prompt §4 Screen 3).
  *
  * Flash-free transition strategy:
- * The root SafeAreaView uses surface200 (light) — NOT navy800 — so the OS
- * compositor always sees the correct background during the slide-out animation.
- * The dark hero header is painted by the hero View inside the ScrollView.
- * The ScrollView itself also carries surface200 so every pixel is covered.
+ * The root SafeAreaView uses navy800 — matching the dark hero header — so
+ * the OS compositor always sees the correct dark background at the top
+ * during the slide-out (back) animation from Settings. The ScrollView
+ * carries surface200 for the body area below the hero.
  */
 import React, {useMemo} from 'react';
 import {Pressable, ScrollView, Text, TextInput, View} from 'react-native';
@@ -49,7 +49,7 @@ export const ProfileScreen = (): React.JSX.Element => {
   const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea} testID="profile-screen">
+    <SafeAreaView edges={['top']} style={styles.safeArea} testID="profile-screen">
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -143,19 +143,17 @@ export const ProfileScreen = (): React.JSX.Element => {
         </View>
 
         {/* ── Sign-out card ── */}
-        <View style={styles.section} testID="profile-signout-card">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('profile.signOut')}
-            onPress={signOut}
-            style={[styles.dangerRow, styles.rowLast]}
-            testID="profile-signout">
-            <View style={styles.rowIcon}>
-              <MaterialIcons color={design.danger} name="logout" size={20} accessibilityElementsHidden />
-            </View>
-            <Text style={styles.dangerLabel}>{t('profile.signOut')}</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.signOut')}
+          onPress={signOut}
+          style={[styles.section, styles.dangerRow, styles.rowLast]}
+          testID="profile-signout-card">
+          <View style={styles.rowIcon}>
+            <MaterialIcons color={design.danger} name="logout" size={20} accessibilityElementsHidden />
+          </View>
+          <Text style={styles.dangerLabel}>{t('profile.signOut')}</Text>
+        </Pressable>
 
       </ScrollView>
     </SafeAreaView>

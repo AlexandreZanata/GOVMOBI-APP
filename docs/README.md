@@ -57,6 +57,7 @@ Interaction, motion, and performance rules.
 Step-by-step build playbooks with prompts and POCs.
 
 - [AI Driver and Dispatcher Prompt Guide](./implementation/ai-driver-dispatcher-prompt-guide.md) — prompts + POCs to finish run lifecycle, role routing, and operational screens
+- [GovMob WebSocket Integration Guide](./implementation/websocket-integration-govmob.md) — `/despacho` namespace, JWT auth, ride lifecycle, telemetry, and persistent chat
 
 ---
 
@@ -75,5 +76,6 @@ Standards, workflows, and quality practices.
 - [Engineering Standards](./engineering-standards.md) — commits, JSDoc, clean code, file naming
 - [Git Workflow](./git-workflow.md) — branching, PR, and merge strategy
 - [Testing Strategy](./testing-strategy.md) — levels, tools, coverage targets, what to test
+- [Full System Testing Guide](./testing-system-guide.md) — step-by-step local validation of lint, type-check, tests, coverage, and manual smoke flows
 - [DevOps](./devops.md) — CI pipeline, build process, deployment
 - [Security](./security.md) — authentication, authorization, data protection

@@ -10,6 +10,8 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  /** Raw papeis array from the server, used for role-based routing. */
+  papeis: string[];
 }
 
 const initialState: AuthState = {
@@ -18,6 +20,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  papeis: [],
 };
 
 /**
@@ -35,6 +38,13 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.isAuthenticated = true;
       state.error = null;
+    },
+
+    /**
+     * Stores the raw papeis array from the server for role-based routing.
+     */
+    setPapeis(state, action: PayloadAction<string[]>) {
+      state.papeis = action.payload;
     },
 
     /**
@@ -62,6 +72,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.isLoading = false;
       state.error = null;
+      state.papeis = [];
     },
 
     /**
@@ -81,7 +92,7 @@ const authSlice = createSlice({
   },
 });
 
-export const {setUser, setToken, tokenRefreshed, logout, setLoading, setError} =
+export const {setUser, setPapeis, setToken, tokenRefreshed, logout, setLoading, setError} =
   authSlice.actions;
 
 export default authSlice.reducer;

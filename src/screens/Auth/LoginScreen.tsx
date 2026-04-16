@@ -34,7 +34,7 @@ import {useTheme} from '../../theme';
 import {createLoginStyles} from './LoginScreen.styles';
 import {Text, Input, Icon} from '../../components/atoms';
 import {useAppDispatch} from '../../store';
-import {setUser, setToken} from '../../store/slices/authSlice';
+import {setUser, setToken, setPapeis} from '../../store/slices/authSlice';
 import {addToast} from '../../store/slices/uiSlice';
 import {useFacades} from '../../services/facades';
 import {maskCpf, sanitizeCpf, isValidCpf} from '../../utils/cpf';
@@ -144,6 +144,14 @@ export const LoginScreen = (): React.JSX.Element => {
 
     dispatch(setToken(result.data.accessToken));
     dispatch(setUser(result.data.user));
+
+    // Fetch papeis from /auth/me for role-based routing
+    const meResult = await authFacade.getMe();
+    if (meResult.data) {
+      // MeResponse has papeis array — store for routing
+      const meRaw = meResult.data as unknown as {papeis?: string[]};
+      dispatch(setPapeis(meRaw.papeis ?? []));
+    }
   }, [cpf, senha, authFacade, dispatch, t, animatePress]);
 
   return (

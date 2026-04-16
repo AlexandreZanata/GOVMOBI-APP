@@ -16,11 +16,12 @@ import {Icon, Text} from '../atoms';
 
 export interface QuickActionCardProps {
   iconName: React.ComponentProps<typeof Icon>['name'];
-  label: string;
-  description: string;
+  label?: string;
+  description?: string;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  showLabels?: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ export const QuickActionCard = ({
   onPress,
   style,
   testID,
+  showLabels = false,
 }: QuickActionCardProps): React.JSX.Element => {
   const theme = useTheme();
   const scale = useRef(new Animated.Value(1)).current;
@@ -73,12 +75,16 @@ export const QuickActionCard = ({
         <View style={styles.iconWrap}>
           <Icon color="primary" name={iconName} size="lg" />
         </View>
-        <Text color="text" variant="label">
-          {label}
-        </Text>
-        <Text color="textMuted" variant="caption">
-          {description}
-        </Text>
+        {showLabels && label ? (
+          <Text color="text" variant="label">
+            {label}
+          </Text>
+        ) : null}
+        {showLabels && description ? (
+          <Text color="textMuted" variant="caption">
+            {description}
+          </Text>
+        ) : null}
       </Pressable>
     </Animated.View>
   );
@@ -99,7 +105,6 @@ const createStyles = (theme: Theme) =>
       borderColor: theme.colors.border,
       borderRadius: theme.borderRadius.md,
       borderWidth: 1,
-      minHeight: theme.spacing['6xl'] + theme.spacing['5xl'],
       width: '100%',
     },
     pressable: {

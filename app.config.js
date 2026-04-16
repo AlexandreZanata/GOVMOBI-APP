@@ -1,6 +1,12 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('dotenv').config();
 
+// @rnmapbox/maps reads RNMAPBOX_MAPS_DOWNLOAD_TOKEN from the environment.
+// We set it here from .env so the plugin picks it up without any config option.
+if (process.env.MAPBOX_SECRET_TOKEN) {
+  process.env.RNMAPBOX_MAPS_DOWNLOAD_TOKEN = process.env.MAPBOX_SECRET_TOKEN;
+}
+
 /**
  * Dynamic Expo config — reads environment variables from .env at build time.
  * Use `app.json` values as fallbacks for CI environments that inject vars directly.
@@ -43,6 +49,8 @@ module.exports = {
       'expo-image-picker',
       'expo-av',
       'expo-font',
+      'expo-location',
+      '@rnmapbox/maps',
     ],
     scheme: 'govmobile',
     extra: {
@@ -50,6 +58,8 @@ module.exports = {
       wsUrl: process.env.WS_URL ?? 'ws://172.19.2.116:3000',
       appEnv: process.env.APP_ENV ?? 'development',
       mockMode: process.env.MOCK_MODE === 'true',
+      mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN ?? '',
+      mapboxSecretToken: process.env.MAPBOX_SECRET_TOKEN ?? '',
     },
   },
 };

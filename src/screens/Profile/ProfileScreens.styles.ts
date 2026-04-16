@@ -7,6 +7,11 @@
  * - Page body (surface200, padding space.4):
  *     Info card, Settings card, Sign-out card
  *
+ * Flash-free back-navigation:
+ * safeArea uses navy800 (matches the hero) so the OS compositor never reveals
+ * a white background at the top when Settings slides out to the right.
+ * The ScrollView carries surface200 for the body below the hero.
+ *
  * All values reference theme tokens — zero hardcoded colors or pixel values.
  */
 import {StyleSheet} from 'react-native';
@@ -26,12 +31,12 @@ export const createProfileStyles = (theme: Theme) => {
     // ── Root ──────────────────────────────────────────────────────────────────
     /**
      * ProfileScreen root SafeAreaView.
-     * Uses surface200 — NOT navy800 — so the OS compositor sees the correct
-     * light background during the slide-out animation. The dark hero is
-     * painted by the hero View inside the ScrollView, not by this root.
+     * Uses navy800 to match the hero header so the OS compositor never
+     * reveals a white/light background at the top during back-navigation.
+     * The ScrollView carries surface200 for the body area below the hero.
      */
     safeArea: {
-      backgroundColor: design.surface200,
+      backgroundColor: design.navy800,
       flex: 1,
     },
     /**
@@ -65,7 +70,8 @@ export const createProfileStyles = (theme: Theme) => {
       gap: spacing[2],
       minHeight: 220,
       paddingBottom: spacing[8],
-      paddingTop: spacing[6],
+      // Extra top padding compensates for the hidden status bar (no safe-area top edge).
+      paddingTop: spacing[12],
     },
 
     /** Amber ring around the avatar circle. */

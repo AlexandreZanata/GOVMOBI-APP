@@ -30,6 +30,6 @@ module.exports = {
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-vector-icons|@expo/vector-icons|react-native-safe-area-context|react-native-screens|react-native-gesture-handler|@reduxjs/toolkit|immer|react-redux|@react-navigation)/)',
+    'node_modules/(?!(react-native|@react-native|react-native-vector-icons|@expo/vector-icons|react-native-safe-area-context|react-native-screens|react-native-gesture-handler|@reduxjs/toolkit|immer|react-redux|@react-navigation|expo-status-bar|expo-secure-store|expo-location|expo-modules-core|expo-constants|expo-font|expo-asset|expo-file-system|@rnmapbox)/)',
   ],
 };

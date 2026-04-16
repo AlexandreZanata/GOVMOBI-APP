@@ -12,6 +12,7 @@ import {
 import {RunFacadeImpl, type IRunFacade} from './RunFacade';
 import {ServidoresFacadeImpl, type IServidoresFacade} from './ServidoresFacade';
 import {FrotaFacadeImpl, type IFrotaFacade} from './FrotaFacade';
+import {CorridaFacadeImpl, type ICorridaFacade} from './CorridaFacade';
 import {type FacadeConfig} from './types';
 import {ENV} from '../../config/env';
 
@@ -23,6 +24,7 @@ export interface Facades {
   runFacade: IRunFacade;
   servidoresFacade: IServidoresFacade;
   frotaFacade: IFrotaFacade;
+  corridaFacade: ICorridaFacade;
 }
 
 export interface FacadeProviderProps {
@@ -58,6 +60,7 @@ const createDefaultFacades = (config?: FacadeConfig): Facades => {
       runFacade: new RunFacadeMock(),
       servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
       frotaFacade: new FrotaFacadeImpl(resolvedConfig),
+      corridaFacade: new CorridaFacadeImpl(resolvedConfig),
     };
   }
 
@@ -69,6 +72,7 @@ const createDefaultFacades = (config?: FacadeConfig): Facades => {
     runFacade: new RunFacadeImpl(resolvedConfig),
     servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
     frotaFacade: new FrotaFacadeImpl(resolvedConfig),
+    corridaFacade: new CorridaFacadeImpl(resolvedConfig),
   };
 };
 
@@ -118,3 +122,4 @@ export * from './NotificationFacade';
 export * from './RunFacade';
 export * from './ServidoresFacade';
 export * from './FrotaFacade';
+export * from './CorridaFacade';

@@ -49,7 +49,7 @@ export const SettingsScreen = (): React.JSX.Element => {
   );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.settingsSafeArea}>
+    <SafeAreaView edges={[]} style={styles.settingsSafeArea}>
       <AppHeader title={t('settings.title')} showBack testID="settings-header" />
       <ScrollView style={styles.background}>
 

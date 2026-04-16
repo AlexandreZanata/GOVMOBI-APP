@@ -187,5 +187,42 @@
     "title": "Configuracion",
     "sections": {"language": "Idioma", "notifications": "Notificaciones", "about": "Acerca de"},
     "about": {"version": "Version", "build": "Build"}
+  },
+  "passageiro": {
+    "currentLocation": "Mi ubicación",
+    "requestSuccess": "¡Viaje solicitado con éxito!",
+    "map": {
+      "label": "Mapa",
+      "notInstalled": "Mapa no disponible",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "centerOnUser": "Centrar en mi ubicación"
+    },
+    "searchBar": {
+      "placeholder": "¿A dónde enviar?",
+      "results": "Resultados",
+      "noResults": "Sin resultados"
+    },
+    "bottomSheet": {
+      "title": "Nuevo Viaje",
+      "destinoLabel": "DESTINO",
+      "destinoPlaceholder": "Seleccione un destino",
+      "cta": "Solicitar Viaje"
+    },
+    "tabs": {
+      "home": "Inicio",
+      "corridas": "Viajes",
+      "pagamentos": "Pagos",
+      "perfil": "Perfil"
+    },
+    "errors": {
+      "selectDestination": "Seleccione un destino primero.",
+      "locationRequired": "Esperando su ubicación.",
+      "requestFailed": "No se pudo solicitar el viaje."
+    }
+  },
+  "motorista": {
+    "title": "Área del Conductor",
+    "subtitle": "Esperando viajes disponibles."
   }
 }

@@ -71,10 +71,21 @@ export type MainTabParamList = {
 };
 
 // ---------------------------------------------------------------------------
+// Passageiro Stack
+// ---------------------------------------------------------------------------
+
+export type PassageiroStackParamList = {
+  PassageiroHome: undefined;
+  PassageiroSearch: undefined;
+};
+
+// ---------------------------------------------------------------------------
 // Root Stack
 // ---------------------------------------------------------------------------
 
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
+  Passageiro: NavigatorScreenParams<PassageiroStackParamList>;
+  Motorista: undefined;
 };
