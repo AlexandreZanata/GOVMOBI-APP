@@ -1,6 +1,7 @@
 /**
  * @fileoverview UI organism module for GlobalToast.
  */
+/* eslint-disable react-native/no-unused-styles */
 import React, {useEffect, useMemo} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';

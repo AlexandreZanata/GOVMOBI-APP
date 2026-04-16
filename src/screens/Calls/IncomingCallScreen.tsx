@@ -79,7 +79,7 @@ export const IncomingCallScreen = (): React.JSX.Element => {
         </Text>
 
         {/* Avatar with pulsing rings */}
-        <View style={{alignItems: 'center', justifyContent: 'center', height: AVATAR_SIZE + 80, width: AVATAR_SIZE + 80}}>
+        <View style={[styles.incomingAvatarWrapper, {height: AVATAR_SIZE + 80, width: AVATAR_SIZE + 80}]}>
           {ringAnims.map((anim, i) => (
             <Animated.View
               key={i}
@@ -107,7 +107,7 @@ export const IncomingCallScreen = (): React.JSX.Element => {
 
       {/* Action buttons */}
       <View style={styles.incomingActions}>
-        <View style={{alignItems: 'center', gap: theme.spacing.sm}}>
+        <View style={styles.incomingActionItem}>
           <Pressable
             accessibilityLabel={t('calls.decline')}
             accessibilityRole="button"
@@ -125,7 +125,7 @@ export const IncomingCallScreen = (): React.JSX.Element => {
           </Text>
         </View>
 
-        <View style={{alignItems: 'center', gap: theme.spacing.sm}}>
+        <View style={styles.incomingActionItem}>
           <Pressable
             accessibilityLabel={t('calls.answer')}
             accessibilityRole="button"

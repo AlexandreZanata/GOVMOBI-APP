@@ -58,6 +58,14 @@ export const createCallsStyles = (theme: Theme) =>
     },
     incomingCallerSection: {alignItems: 'center', gap: theme.spacing.lg},
     incomingLabel: {opacity: 0.75},
+    incomingAvatarWrapper: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    incomingActionItem: {
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+    },
     pulseRing: {
       borderColor: theme.colors.accent,
       borderRadius: theme.borderRadius.pill,
@@ -73,7 +81,6 @@ export const createCallsStyles = (theme: Theme) =>
     callActionButton: {
       alignItems: 'center',
       borderRadius: theme.borderRadius.pill,
-      gap: theme.spacing.sm,
       height: theme.spacing['6xl'] + theme.spacing['2xl'],
       justifyContent: 'center',
       width: theme.spacing['6xl'] + theme.spacing['2xl'],

@@ -6,3 +6,6 @@ export * from './Message';
 export * from './Call';
 export * from './Notification';
 export * from './Department';
+export * from './Servidor';
+export * from './Veiculo';
+export * from './Motorista';

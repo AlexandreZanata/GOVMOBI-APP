@@ -1,6 +1,7 @@
 /**
  * @fileoverview UI organism module for AppHeader.
  */
+/* eslint-disable react-native/no-unused-styles */
 import React, {useMemo} from 'react';
 import {
   Pressable,

@@ -136,5 +136,49 @@
     "network": {
       "offline": "You are offline"
     }
+  },
+  "servidores": {
+    "list": {
+      "title": "Public Servants",
+      "searchPlaceholder": "Search by name or email",
+      "filters": {"all": "All", "active": "Active", "inactive": "Inactive"},
+      "empty": {"title": "No servants found", "message": "No servants match the selected filters."}
+    },
+    "detail": {
+      "title": "Servant",
+      "cpf": "CPF", "email": "Email", "telefone": "Phone",
+      "cargo": "Position", "lotacao": "Unit", "papeis": "Roles", "status": "Status"
+    },
+    "status": {"active": "Active", "inactive": "Inactive"},
+    "papeis": {"USUARIO": "User", "ADMIN": "Admin", "MOTORISTA": "Driver"}
+  },
+  "frota": {
+    "title": "Fleet",
+    "tabs": {"veiculos": "Vehicles", "motoristas": "Drivers"},
+    "status": {"active": "Active", "inactive": "Inactive"},
+    "veiculos": {
+      "filters": {"all": "All", "active": "Active", "inactive": "Inactive"},
+      "empty": {"title": "No vehicles found", "message": "No vehicles match the selected filter."}
+    },
+    "motoristas": {
+      "filters": {"all": "All"},
+      "status": {"DISPONIVEL": "Available", "EM_ROTA": "On route", "AFASTADO": "Off duty"},
+      "empty": {"title": "No drivers found", "message": "No drivers match the selected filter."}
+    }
+  },
+  "notifications": {
+    "markAllRead": "Mark all as read",
+    "empty": {"title": "No notifications", "message": "You have no notifications at this time."}
+  },
+  "profile": {
+    "save": "Save", "edit": "Edit", "cancel": "Cancel",
+    "signOut": "Sign out", "settings": "Settings",
+    "fields": {"name": "Name", "email": "Email", "role": "Role", "department": "Department"},
+    "toast": {"updated": "Profile updated.", "updateFailed": "Could not update profile."}
+  },
+  "settings": {
+    "title": "Settings",
+    "sections": {"language": "Language", "notifications": "Notifications", "about": "About"},
+    "about": {"version": "Version", "build": "Build"}
   }
 }

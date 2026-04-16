@@ -10,6 +10,8 @@ import {
   type INotificationFacade,
 } from './NotificationFacade';
 import {RunFacadeImpl, type IRunFacade} from './RunFacade';
+import {ServidoresFacadeImpl, type IServidoresFacade} from './ServidoresFacade';
+import {FrotaFacadeImpl, type IFrotaFacade} from './FrotaFacade';
 import {type FacadeConfig} from './types';
 import {ENV} from '../../config/env';
 import {AuthFacadeMock} from './mock/AuthFacadeMock';
@@ -24,6 +26,8 @@ export interface Facades {
   callFacade: ICallFacade;
   notificationFacade: INotificationFacade;
   runFacade: IRunFacade;
+  servidoresFacade: IServidoresFacade;
+  frotaFacade: IFrotaFacade;
 }
 
 export interface FacadeProviderProps {
@@ -46,6 +50,8 @@ const createDefaultFacades = (config?: FacadeConfig): Facades => {
       callFacade: new CallFacadeMock(),
       notificationFacade: new NotificationFacadeMock(),
       runFacade: new RunFacadeMock(),
+      servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
+      frotaFacade: new FrotaFacadeImpl(resolvedConfig),
     };
   }
 
@@ -55,6 +61,8 @@ const createDefaultFacades = (config?: FacadeConfig): Facades => {
     callFacade: new CallFacadeImpl(resolvedConfig),
     notificationFacade: new NotificationFacadeImpl(resolvedConfig),
     runFacade: new RunFacadeImpl(resolvedConfig),
+    servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
+    frotaFacade: new FrotaFacadeImpl(resolvedConfig),
   };
 };
 
@@ -102,6 +110,8 @@ export * from './ChatFacade';
 export * from './CallFacade';
 export * from './NotificationFacade';
 export * from './RunFacade';
+export * from './ServidoresFacade';
+export * from './FrotaFacade';
 export * from './mock/AuthFacadeMock';
 export * from './mock/ChatFacadeMock';
 export * from './mock/CallFacadeMock';

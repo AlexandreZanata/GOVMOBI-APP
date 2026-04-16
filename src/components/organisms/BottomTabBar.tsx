@@ -1,6 +1,7 @@
 /**
  * @fileoverview UI organism module for BottomTabBar.
  */
+/* eslint-disable react-native/no-unused-styles */
 import React, {useCallback, useMemo} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {MaterialIcons} from '@expo/vector-icons';

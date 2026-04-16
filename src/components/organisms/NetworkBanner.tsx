@@ -1,6 +1,7 @@
 /**
  * @fileoverview UI organism module for NetworkBanner.
  */
+/* eslint-disable react-native/no-unused-styles */
 import React, {useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';

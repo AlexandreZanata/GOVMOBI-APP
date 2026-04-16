@@ -7,10 +7,7 @@ import {
   type Conversation,
   type Message,
 } from '../../models';
-import type {
-  Conversation as SharedConversation,
-  Message as SharedMessage,
-} from '../../types';
+import type {Message as SharedMessage} from '../../types';
 import {
   type FacadeConfig,
   type FacadeError,

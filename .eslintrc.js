@@ -34,6 +34,12 @@ module.exports = {
         'react-native/no-unused-styles': 'off',
       },
     },
+    {
+      files: ['src/components/organisms/**/*.tsx'],
+      rules: {
+        'react-native/no-unused-styles': 'off',
+      },
+    },
   ],
   ignorePatterns: ['node_modules/**', 'dist/**', 'build/**', '.expo/**'],
   rules: {

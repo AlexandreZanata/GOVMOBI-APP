@@ -136,5 +136,111 @@
     "network": {
       "offline": "Voce esta offline"
     }
+  },
+  "servidores": {
+    "list": {
+      "title": "Servidores",
+      "searchPlaceholder": "Buscar por nome ou email",
+      "filters": {
+        "all": "Todos",
+        "active": "Ativos",
+        "inactive": "Inativos"
+      },
+      "empty": {
+        "title": "Nenhum servidor encontrado",
+        "message": "Nenhum servidor corresponde aos filtros selecionados."
+      }
+    },
+    "detail": {
+      "title": "Servidor",
+      "cpf": "CPF",
+      "email": "Email",
+      "telefone": "Telefone",
+      "cargo": "Cargo",
+      "lotacao": "Lotacao",
+      "papeis": "Papeis",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo"
+    },
+    "papeis": {
+      "USUARIO": "Usuario",
+      "ADMIN": "Admin",
+      "MOTORISTA": "Motorista"
+    }
+  },
+  "frota": {
+    "title": "Frota",
+    "tabs": {
+      "veiculos": "Veiculos",
+      "motoristas": "Motoristas"
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo"
+    },
+    "veiculos": {
+      "filters": {
+        "all": "Todos",
+        "active": "Ativos",
+        "inactive": "Inativos"
+      },
+      "empty": {
+        "title": "Nenhum veiculo encontrado",
+        "message": "Nenhum veiculo corresponde ao filtro selecionado."
+      }
+    },
+    "motoristas": {
+      "filters": {
+        "all": "Todos"
+      },
+      "status": {
+        "DISPONIVEL": "Disponivel",
+        "EM_ROTA": "Em rota",
+        "AFASTADO": "Afastado"
+      },
+      "empty": {
+        "title": "Nenhum motorista encontrado",
+        "message": "Nenhum motorista corresponde ao filtro selecionado."
+      }
+    }
+  },
+  "notifications": {
+    "markAllRead": "Marcar tudo como lido",
+    "empty": {
+      "title": "Sem notificacoes",
+      "message": "Voce nao tem notificacoes no momento."
+    }
+  },
+  "profile": {
+    "save": "Salvar",
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "signOut": "Sair",
+    "settings": "Configuracoes",
+    "fields": {
+      "name": "Nome",
+      "email": "Email",
+      "role": "Funcao",
+      "department": "Departamento"
+    },
+    "toast": {
+      "updated": "Perfil atualizado com sucesso.",
+      "updateFailed": "Nao foi possivel atualizar o perfil."
+    }
+  },
+  "settings": {
+    "title": "Configuracoes",
+    "sections": {
+      "language": "Idioma",
+      "notifications": "Notificacoes",
+      "about": "Sobre"
+    },
+    "about": {
+      "version": "Versao",
+      "build": "Build"
+    }
   }
 }
