@@ -217,6 +217,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const overlayTop    = searchBarTop + 64;
   const hasDestination = !!selectedDestinoLabel;
   const ctaDisabled   = isRequesting || isLocating || !hasDestination;
+  const sheetPaddingBottom = 14;
 
   return (
     <View style={styles.container} testID="passageiro-screen">
@@ -341,10 +342,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
         onLayout={onSheetLayout}
         style={[
           styles.bottomSheet,
-          {
-            paddingBottom: Math.max(insets.bottom + 16, 32),
-            transform: [{translateY: sheetTranslate}],
-          },
+          {paddingBottom: sheetPaddingBottom, transform: [{translateY: sheetTranslate}]},
         ]}
         testID="bottom-sheet">
         {/* Drag handle */}
@@ -420,7 +418,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
           ]}
           testID="cta-solicitar">
           {isRequesting ? (
-            <ActivityIndicator color={C.textDark} size="small" />
+            <ActivityIndicator color={C.surfaceCard} size="small" />
           ) : (
             <Text style={styles.ctaButtonText}>
               {t('passageiro.bottomSheet.cta')}

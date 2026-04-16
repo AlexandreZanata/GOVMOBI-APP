@@ -9,8 +9,9 @@
 
 ## What This Route Does
 
-`/pesquisa` provides forward and reverse geocoding APIs.
+`/pesquisa` provides map config, forward geocoding, and reverse geocoding APIs.
 
+- `GET /pesquisa/config`: returns frontend map settings, including the public Mapbox token.
 - `GET /pesquisa/geocoding`: text -> coordinate candidates (`lat`, `lng`) with `placeName`.
 - `GET /pesquisa/reverse-geocoding`: coordinate pair -> human-readable address.
 
@@ -22,8 +23,36 @@ The backend uses Mapbox with Redis cache to reduce latency and provider calls.
 
 | Method | Endpoint                      | Description                                  | Success |
 | ------ | ----------------------------- | -------------------------------------------- | ------- |
+| `GET`  | `/pesquisa/config`            | Return map settings for frontend usage       | `200`   |
 | `GET`  | `/pesquisa/geocoding`         | Search address and return coordinate matches | `200`   |
 | `GET`  | `/pesquisa/reverse-geocoding` | Convert coordinates to a readable address    | `200`   |
+
+---
+
+## GET /pesquisa/config
+
+Returns map configuration values used by the frontend.
+
+### Query params
+
+None.
+
+### Example request
+
+```bash
+curl -X GET \
+  'http://172.19.2.116:3000/pesquisa/config' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer <accessToken>'
+```
+
+### Response `200`
+
+```json
+{
+  "mapboxPublicToken": "pk.********************************"
+}
+```
 
 ---
 
@@ -131,6 +160,7 @@ If the token is missing or invalid, the API returns unauthorized in the same err
 - Show top 3 to 5 suggestions and let users pick one.
 - Persist selected place as `{ placeName, lat, lng }` in form state.
 - Handle rate-limit headers and fallback gracefully (retry with backoff).
+- Load `/pesquisa/config` once on app boot and cache it in memory.
 - Use `lat`/`lng` proximity when the device location is known to improve relevance.
 - Use reverse geocoding to prefill forms from map pin position.
 
@@ -145,6 +175,14 @@ export type GeocodingResult = {
   lng: number;
   lat: number;
 };
+
+export type PesquisaConfig = {
+  mapboxPublicToken: string;
+};
+
+export async function getPesquisaConfig(): Promise<PesquisaConfig> {
+  // GET /pesquisa/config
+}
 
 export async function geocodeAddress(
   query: string,

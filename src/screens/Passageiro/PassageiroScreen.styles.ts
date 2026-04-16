@@ -14,7 +14,8 @@ const C = {
   accent:         '#F5C842',
   accentPress:    '#D4A900',
   interactive:    '#276EF1',
-  interactiveBg:  '#EFF6FF',
+  interactiveBg:    '#EFF6FF',
+  interactivePress: '#1A5DC8',
   // text on white
   textDark:       '#09090B',
   textMid:        '#52525B',
@@ -209,7 +210,7 @@ export const createPassageiroStyles = () =>
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingHorizontal: 20,
-      paddingBottom: 32,
+      paddingBottom: 4,
       zIndex: 20,
       shadowColor: C.shadow,
       shadowOffset: {width: 0, height: -4},
@@ -316,18 +317,18 @@ export const createPassageiroStyles = () =>
     ctaButton: {
       width: '100%',
       height: 54,
-      backgroundColor: C.accent,
+      backgroundColor: C.interactive,
       borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: C.accentShadow,
+      shadowColor: C.interactive,
       shadowOffset: {width: 0, height: 4},
       shadowOpacity: 0.30,
       shadowRadius: 16,
       elevation: 6,
     },
     ctaButtonPressed: {
-      backgroundColor: C.accentPress,
+      backgroundColor: C.interactivePress,
       transform: [{scale: 0.98}],
     },
     ctaButtonDisabled: {
@@ -336,7 +337,7 @@ export const createPassageiroStyles = () =>
     ctaButtonText: {
       fontSize: 16,
       fontWeight: '700',
-      color: C.textDark,
+      color: C.surfaceCard,
       letterSpacing: 0.3,
     },
 
