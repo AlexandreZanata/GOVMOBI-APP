@@ -10,9 +10,7 @@ import {Badge, Text} from '@components/atoms';
 import {createHomeStyles} from '../HomeScreen.styles';
 
 export interface HomeHeaderProps {
-  /** Full name of the authenticated user for greeting interpolation. */
-  userName: string;
-  /** Department name displayed below the greeting. */
+  /** Department name displayed below the app name. */
   departmentName: string;
   /** Unread notification count shown on the bell badge. */
   unreadCount: number;
@@ -22,13 +20,13 @@ export interface HomeHeaderProps {
 }
 
 /**
- * Home screen header with user greeting, department label, and notification bell.
+ * Home screen header — shows app name, department, and notification bell.
+ * The greeting ("Hello, ...") is intentionally omitted for a cleaner dashboard.
  *
  * @param props - {@link HomeHeaderProps}
  * @returns The rendered header section.
  */
 export const HomeHeader = ({
-  userName,
   departmentName,
   unreadCount,
   onBellPress,
@@ -42,14 +40,16 @@ export const HomeHeader = ({
     <View style={styles.header} testID={testID}>
       <View style={styles.headerLeft}>
         <Text color="textInverse" variant="heading">
-          {t('home.greeting', {name: userName})}
+          {t('common.appName')}
         </Text>
-        <Text
-          color="textInverse"
-          style={styles.headerGreeting}
-          variant="caption">
-          {departmentName}
-        </Text>
+        {departmentName ? (
+          <Text
+            color="textInverse"
+            style={styles.headerGreeting}
+            variant="caption">
+            {departmentName}
+          </Text>
+        ) : null}
       </View>
 
       <Pressable

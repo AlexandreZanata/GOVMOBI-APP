@@ -62,7 +62,7 @@ export const ChatRoomScreen = (): React.JSX.Element => {
   );
 
   return (
-    <SafeAreaView edges={['bottom']} style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
       {/* Custom header */}
       <View
         style={[styles.chatHeader, {paddingTop: insets.top + theme.spacing.sm}]}

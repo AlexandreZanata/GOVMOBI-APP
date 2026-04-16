@@ -313,7 +313,7 @@ export const HomeScreen = (): React.JSX.Element => {
   // ---------------------------------------------------------------------------
 
   return (
-    <SafeAreaView edges={['bottom']} style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
       {/* Header — always visible, not animated */}
       <AnimatedSection anim={sectionAnims.header} testID="section-header">
         <HomeHeader
@@ -321,7 +321,6 @@ export const HomeScreen = (): React.JSX.Element => {
           onBellPress={handleBellPress}
           testID="home-header"
           unreadCount={unreadCount}
-          userName={user?.fullName ?? ''}
         />
       </AnimatedSection>
 

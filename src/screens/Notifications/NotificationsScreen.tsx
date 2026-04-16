@@ -14,6 +14,7 @@ import {useTheme} from '../../theme';
 import {Skeleton, Text} from '../../components/atoms';
 import {NotificationItem} from '../../components/molecules';
 import {AppHeader} from '../../components/organisms';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {markAllAsRead, markAsRead} from '../../store/slices/notificationsSlice';
 import {type Notification} from '../../models';
@@ -107,7 +108,7 @@ export const NotificationsScreen = (): React.JSX.Element => {
   );
 
   return (
-    <View style={styles.background}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.background}>
       <AppHeader
         title={t('navigation.titles.notifications')}
         rightAction={rightAction}
@@ -139,7 +140,7 @@ export const NotificationsScreen = (): React.JSX.Element => {
           testID="notifications-list"
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

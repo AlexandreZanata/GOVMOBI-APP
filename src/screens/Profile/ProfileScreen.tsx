@@ -3,6 +3,7 @@
  */
 import React, {useMemo} from 'react';
 import {Pressable, ScrollView, TextInput, View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {type NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
@@ -53,7 +54,7 @@ export const ProfileScreen = (): React.JSX.Element => {
   void ROLE_COLORS;
 
   return (
-    <View style={styles.background}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.background}>
       <AppHeader
         title={t('navigation.titles.profile')}
         rightAction={
@@ -171,7 +172,7 @@ export const ProfileScreen = (): React.JSX.Element => {
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

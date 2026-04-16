@@ -7,6 +7,7 @@ import {Pressable, StyleSheet, View} from 'react-native';
 import {type BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {MaterialIcons} from '@expo/vector-icons';
+import {useTranslation} from 'react-i18next';
 import {useTheme, type Theme} from '../theme';
 import {Text} from '../components/atoms/Text';
 
@@ -21,12 +22,13 @@ const TAB_ICONS: Record<string, {active: TabIconName; inactive: TabIconName}> =
     ProfileTab: {active: 'person', inactive: 'person-outline'},
   };
 
-const TAB_LABELS: Record<string, string> = {
-  HomeTab: 'Home',
-  ChatTab: 'Messages',
-  CallsTab: 'Calls',
-  NotificationsTab: 'Alerts',
-  ProfileTab: 'Profile',
+/** i18n key map — resolved inside the component via useTranslation. */
+const TAB_LABEL_KEYS: Record<string, string> = {
+  HomeTab: 'navigation.tabs.home',
+  ChatTab: 'navigation.tabs.messages',
+  CallsTab: 'navigation.tabs.calls',
+  NotificationsTab: 'navigation.tabs.alerts',
+  ProfileTab: 'navigation.tabs.profile',
 };
 
 /**
@@ -39,6 +41,7 @@ export const TabBar = ({
   descriptors,
   navigation,
 }: BottomTabBarProps): React.JSX.Element => {
+  const {t} = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(theme, insets.bottom);
@@ -52,7 +55,8 @@ export const TabBar = ({
           active: 'circle',
           inactive: 'circle',
         };
-        const label = TAB_LABELS[route.name] ?? route.name;
+        const labelKey = TAB_LABEL_KEYS[route.name];
+        const label = labelKey ? t(labelKey) : route.name;
         const badgeCount =
           typeof options.tabBarBadge === 'number' ? options.tabBarBadge : 0;
 
