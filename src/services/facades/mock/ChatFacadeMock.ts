@@ -1,7 +1,6 @@
 /**
  * @fileoverview Mock chat facade with simulated realtime stream.
  */
-import {EventEmitter} from 'events';
 import {
   MessageType,
   MessageStatus,
@@ -26,6 +25,32 @@ type RealtimePayload = {
   isTyping?: boolean;
 };
 
+/**
+ * Minimal typed event emitter that works in React Native (no Node built-ins).
+ */
+/**
+ * Minimal typed event emitter that works in React Native (no Node built-ins).
+ * Uses string keys and unknown payloads internally; public API is fully typed.
+ */
+class NativeEventEmitter {
+  private readonly listeners = new Map<string, Set<(payload: unknown) => void>>();
+
+  on<K extends string, T>(event: K, handler: (payload: T) => void): void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event)!.add(handler as (p: unknown) => void);
+  }
+
+  off<K extends string, T>(event: K, handler: (payload: T) => void): void {
+    this.listeners.get(event)?.delete(handler as (p: unknown) => void);
+  }
+
+  emit<K extends string, T>(event: K, payload: T): void {
+    this.listeners.get(event)?.forEach(h => h(payload));
+  }
+}
+
 const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});
 const fail = <T>(error: FacadeError): Result<T, FacadeError> => ({
   data: null,
@@ -44,7 +69,7 @@ const toError = (message: string, code = 'INTERNAL_ERROR'): FacadeError => ({
  * Failure probability: deterministic 10-20% per operation key.
  */
 export class ChatFacadeMock implements IChatFacade {
-  private readonly stream = new EventEmitter();
+  private readonly stream = new NativeEventEmitter();
   private streamTimer: ReturnType<typeof setInterval> | null = null;
   private readonly realtimeListeners = new Set<
     (event: RealtimePayload) => void

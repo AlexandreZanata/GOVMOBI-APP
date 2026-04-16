@@ -1,7 +1,6 @@
 /**
  * @fileoverview Mock run facade with lifecycle simulation and incoming assignments.
  */
-import {EventEmitter} from 'events';
 import type {CreateRunInput, Run, RunProof, RunStatus} from '../../../types';
 import {
   type CompleteRunPayload,
@@ -22,6 +21,26 @@ interface RunEvents {
   runUpdated: Run;
 }
 
+/**
+ * Minimal typed event emitter — no Node built-ins, safe for React Native.
+ */
+class NativeEventEmitter {
+  private readonly listeners = new Map<string, Set<(payload: unknown) => void>>();
+
+  on<K extends string, T>(event: K, handler: (payload: T) => void): void {
+    if (!this.listeners.has(event)) this.listeners.set(event, new Set());
+    this.listeners.get(event)!.add(handler as (p: unknown) => void);
+  }
+
+  off<K extends string, T>(event: K, handler: (payload: T) => void): void {
+    this.listeners.get(event)?.delete(handler as (p: unknown) => void);
+  }
+
+  emit<K extends string, T>(event: K, payload: T): void {
+    this.listeners.get(event)?.forEach(h => h(payload));
+  }
+}
+
 const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});
 const fail = <T>(error: FacadeError): Result<T, FacadeError> => ({
   data: null,
@@ -40,7 +59,7 @@ const toError = (message: string, code = 'INTERNAL_ERROR'): FacadeError => ({
  * Failure probability: deterministic 10-20% depending on operation key.
  */
 export class RunFacadeMock implements IRunFacade {
-  private readonly stream = new EventEmitter();
+  private readonly stream = new NativeEventEmitter();
   private lifecycleCleanups = new Map<string, () => void>();
 
   public async createRun(
