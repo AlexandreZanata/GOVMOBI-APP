@@ -45,6 +45,15 @@ const authSlice = createSlice({
     },
 
     /**
+     * Atomically replaces the access token after a successful token refresh.
+     * Keeps `isAuthenticated` and `user` intact — only the token changes.
+     */
+    tokenRefreshed(state, action: PayloadAction<string>) {
+      state.token = action.payload;
+      state.error = null;
+    },
+
+    /**
      * Clears all auth state. Called on logout or session expiry.
      */
     logout(state) {
@@ -72,7 +81,7 @@ const authSlice = createSlice({
   },
 });
 
-export const {setUser, setToken, logout, setLoading, setError} =
+export const {setUser, setToken, tokenRefreshed, logout, setLoading, setError} =
   authSlice.actions;
 
 export default authSlice.reducer;

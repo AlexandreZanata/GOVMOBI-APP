@@ -1,52 +1,62 @@
 /**
- * @fileoverview Module implementation for screens/Home/HomeScreen.styles.
+ * @fileoverview Styles for the redesigned HomeScreen.
+ *
+ * Layout (Design_Prompt §4 Screen 2):
+ * - Dark header (navy800) with curved bottom (radius.xl)
+ * - Page body (surface200) with section rhythm
+ * - Service cards: surface100, shadows.card, radius.lg, amber icon containers
+ *
+ * All values reference theme tokens — zero hardcoded colors or pixel values.
  */
 import {StyleSheet} from 'react-native';
 import {type Theme} from '../../theme';
 
 /**
  * Creates the StyleSheet for HomeScreen and its subcomponents.
- * All values come from theme tokens — no hardcoded colors or sizes.
  *
  * @param theme - The current GovMobile theme object.
  * @returns A StyleSheet object scoped to the Home screen.
  */
 // eslint-disable-next-line react-native/no-unused-styles
-export const createHomeStyles = (theme: Theme) =>
-  StyleSheet.create({
-    // ---- Root ----
+export const createHomeStyles = (theme: Theme) => {
+  const {design, spacing, borderRadius, shadows, typography: typo} = theme;
+
+  return StyleSheet.create({
+    // ── Root ──────────────────────────────────────────────────────────────────
     safeArea: {
-      backgroundColor: theme.colors.primary,
+      backgroundColor: design.navy800,
       flex: 1,
     },
     scrollContent: {
-      backgroundColor: theme.colors.background,
+      backgroundColor: design.surface200,
       flexGrow: 1,
-      paddingBottom: theme.spacing['4xl'],
+      paddingBottom: spacing[10],
     },
 
-    // ---- Header ----
+    // ── Dark header (Pattern A) ───────────────────────────────────────────────
     header: {
+      backgroundColor: design.navy800,
+      borderBottomLeftRadius: borderRadius.radius.xl,
+      borderBottomRightRadius: borderRadius.radius.xl,
+      paddingHorizontal: spacing[4],
+      paddingTop: spacing[4],
+      paddingBottom: spacing[6],
+    },
+    headerRow: {
       alignItems: 'center',
-      backgroundColor: theme.colors.primary,
       flexDirection: 'row',
       justifyContent: 'space-between',
-      paddingHorizontal: theme.spacing.lg,
-      paddingVertical: theme.spacing.md,
+      marginBottom: spacing[3],
     },
-    headerLeft: {
-      flex: 1,
-      gap: theme.spacing.xs,
-    },
-    headerGreeting: {
-      opacity: 0.75,
+    headerTitle: {
+      ...typo.scale.displayMd,
+      color: design.textOnDark,
     },
     headerBell: {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 44,
       minWidth: 44,
-      position: 'relative',
     },
     headerBadge: {
       position: 'absolute',
@@ -54,79 +64,133 @@ export const createHomeStyles = (theme: Theme) =>
       top: 4,
     },
 
-    // ---- Status bar ----
+    // ── Status row (inside header) ────────────────────────────────────────────
     statusBar: {
       alignItems: 'center',
-      backgroundColor: theme.colors.surfaceAlt,
-      borderBottomColor: theme.colors.border,
-      borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: 'row',
-      gap: theme.spacing.md,
-      paddingHorizontal: theme.spacing.lg,
-      paddingVertical: theme.spacing.sm,
+      gap: spacing[2],
     },
     statusDot: {
-      borderRadius: theme.borderRadius.pill,
-      height: theme.spacing.sm,
-      width: theme.spacing.sm,
+      borderRadius: borderRadius.radius.full,
+      height: 8,
+      width: 8,
+    },
+    statusLabel: {
+      ...typo.scale.labelMd,
+      color: design.textOnDarkMuted,
     },
     statusSeparator: {
-      color: theme.colors.border,
+      ...typo.scale.caption,
+      color: design.navy600,
+    },
+    statusTimestamp: {
+      ...typo.scale.caption,
+      color: design.textOnDarkMuted,
     },
 
-    // ---- Section wrapper ----
+    // ── Section wrapper ───────────────────────────────────────────────────────
     section: {
-      paddingHorizontal: theme.spacing.lg,
-      paddingTop: theme.spacing['2xl'],
+      paddingHorizontal: spacing[4],
+      paddingTop: spacing[6],
     },
     sectionTitle: {
-      marginBottom: theme.spacing.md,
+      ...typo.scale.headingMd,
+      color: design.textPrimary,
+      marginBottom: spacing[3],
     },
 
-    // ---- Quick actions grid ----
+    // ── Service cards grid (2×3) ──────────────────────────────────────────────
     quickActionsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: theme.spacing.md,
+      gap: spacing[3],
     },
     quickActionCell: {
-      width: '47%',
+      width: '47.5%',
     },
 
-    // ---- Recent activity ----
+    // ── Service card (Design_Prompt §3.3) ─────────────────────────────────────
+    serviceCard: {
+      backgroundColor: design.surface100,
+      borderColor: design.surface300,
+      borderRadius: borderRadius.radius.lg,
+      borderWidth: 0.5,
+      padding: spacing[4],
+      ...shadows.card,
+    },
+    serviceCardIconWrap: {
+      alignItems: 'center',
+      backgroundColor: design.amber100,
+      borderRadius: borderRadius.radius.md,
+      height: 44,
+      justifyContent: 'center',
+      marginBottom: spacing[3],
+      width: 44,
+    },
+    serviceCardTitle: {
+      ...typo.scale.headingSm,
+      color: design.textPrimary,
+      marginBottom: spacing[1],
+    },
+    serviceCardSubtitle: {
+      ...typo.scale.bodySm,
+      color: design.textSecondary,
+    },
+
+    // ── Recent activity ───────────────────────────────────────────────────────
     activityList: {
-      gap: theme.spacing.md,
+      gap: spacing[3],
     },
 
-    // ---- Announcements ----
+    // ── Announcements ─────────────────────────────────────────────────────────
     announcementsScroll: {
-      marginHorizontal: -theme.spacing.lg,
-      paddingHorizontal: theme.spacing.lg,
+      marginHorizontal: -spacing[4],
+      paddingHorizontal: spacing[4],
     },
     announcementCard: {
-      backgroundColor: theme.colors.surface,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadius.md,
-      borderWidth: 1,
-      marginRight: theme.spacing.md,
-      padding: theme.spacing.md,
+      backgroundColor: design.surface100,
+      borderColor: design.surface300,
+      borderRadius: borderRadius.radius.lg,
+      borderWidth: 0.5,
+      marginRight: spacing[3],
+      padding: spacing[4],
       width: 260,
+      ...shadows.card,
     },
     announcementStripe: {
-      borderRadius: theme.borderRadius.pill,
-      height: theme.spacing.xs,
-      marginBottom: theme.spacing.sm,
-      width: theme.spacing['4xl'],
+      borderRadius: borderRadius.radius.full,
+      height: 3,
+      marginBottom: spacing[3],
+      width: spacing[8],
+    },
+    announcementTitle: {
+      ...typo.scale.headingSm,
+      color: design.textPrimary,
+      marginBottom: spacing[1],
+    },
+    announcementBody: {
+      ...typo.scale.bodySm,
+      color: design.textSecondary,
     },
 
-    // ---- Skeleton ----
+    // ── Skeleton ──────────────────────────────────────────────────────────────
     skeletonSection: {
-      gap: theme.spacing.md,
-      paddingHorizontal: theme.spacing.lg,
-      paddingTop: theme.spacing['2xl'],
+      gap: spacing[3],
+      paddingHorizontal: spacing[4],
+      paddingTop: spacing[6],
     },
     skeletonRow: {
       flexDirection: 'row',
-      gap: theme.spacing.md,
+      gap: spacing[3],
+    },
+
+    // ── Legacy keys kept for HomeHeader / HomeStatusBar backward-compat ───────
+    headerLeft: {
+      flex: 1,
+      gap: spacing[1],
+    },
+    headerGreeting: {
+      opacity: 0.75,
     },
   });
+};

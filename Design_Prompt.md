@@ -417,7 +417,7 @@ Layout order:
 Layout order:
 1. Dark immersive header (Pattern A): "Notifications" (`displayMd`, `textOnDark`)
 2. Page body (`surface200`):
-   - If has items: FlatList of notification cards
+   - If it has items: FlatList of notification cards
      - Icon left (semantic color per type), title (`headingSm`), body (`bodySm`), timestamp (`caption`)
      - Unread: left `3px` border in `amber500`, `surface100` bg
      - Read: no border, `surface200` bg
