@@ -41,7 +41,7 @@ export const createNotificationsStyles = (theme: Theme) =>
       paddingVertical: theme.spacing[4],
     },
     contentArea: {
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.design.surface100,
       flex: 1,
     },
   });

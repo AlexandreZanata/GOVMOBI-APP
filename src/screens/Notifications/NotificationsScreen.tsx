@@ -117,8 +117,8 @@ export const NotificationsScreen = (): React.JSX.Element => {
               />
             }
             ListEmptyComponent={
-              <View testID="notifications-empty">
-                <Text variant="body" color="textMuted">
+              <View style={styles.emptyState} testID="notifications-empty">
+                <Text style={hs.emptySubtitle}>
                   {t('notifications.empty.message')}
                 </Text>
               </View>
