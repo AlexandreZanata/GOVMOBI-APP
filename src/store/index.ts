@@ -29,7 +29,11 @@ import {baseApi} from './api/baseApi';
 const authPersistConfig = {
   key: 'auth',
   storage: AsyncStorage,
-  whitelist: ['user', 'token', 'isAuthenticated'],
+  // Persist all fields needed for cold-start role routing.
+  // motoristaId + municipioId are the authoritative driver signals —
+  // without them persisted, drivers always land on PassageiroNavigator
+  // until the async getMe() resolves.
+  whitelist: ['user', 'token', 'isAuthenticated', 'papeis', 'motoristaId', 'municipioId'],
 };
 
 const uiPersistConfig = {

@@ -118,6 +118,9 @@ const buildStore = (isAuthenticated: boolean) =>
         isLoading: false,
         error: null,
         papeis: [],
+        motoristaId: null,
+        municipioId: null,
+        isHydrating: false,
       },
     },
   });

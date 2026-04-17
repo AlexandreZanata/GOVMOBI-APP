@@ -23,6 +23,12 @@ export interface AuthState {
    * Non-null only for users with a linked Motorista record.
    */
   municipioId: string | null;
+  /**
+   * True while the cold-start getMe() call is in flight.
+   * RootNavigator waits for this to be false before rendering role-specific screens,
+   * preventing drivers from briefly seeing the passenger interface.
+   */
+  isHydrating: boolean;
 }
 
 const initialState: AuthState = {
@@ -34,6 +40,7 @@ const initialState: AuthState = {
   papeis: [],
   motoristaId: null,
   municipioId: null,
+  isHydrating: false,
 };
 
 /**
@@ -120,10 +127,18 @@ const authSlice = createSlice({
       state.error = action.payload;
       state.isLoading = false;
     },
+
+    /**
+     * Marks the cold-start session hydration as in-progress.
+     * Set to true before getMe() is called, false when it resolves.
+     */
+    setIsHydrating(state, action: PayloadAction<boolean>) {
+      state.isHydrating = action.payload;
+    },
   },
 });
 
-export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setToken, tokenRefreshed, logout, setLoading, setError} =
+export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setIsHydrating, setToken, tokenRefreshed, logout, setLoading, setError} =
   authSlice.actions;
 
 export default authSlice.reducer;

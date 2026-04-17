@@ -156,9 +156,14 @@ export const createMotoristaStyles = (theme: Theme) => {
       borderTopLeftRadius: borderRadius.radius.xl,
       borderTopRightRadius: borderRadius.radius.xl,
       paddingHorizontal: spacing[5],
-      paddingTop: spacing[3],
+      paddingTop: spacing[5],
       zIndex: 20,
-      ...shadows.lg,
+      // Shadow only upward — avoids the top-edge line on Android elevation
+      shadowColor: '#0A1628',
+      shadowOffset: {width: 0, height: -4},
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 8,
     },
     dragHandle: {
       width: 36,

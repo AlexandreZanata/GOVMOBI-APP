@@ -198,46 +198,68 @@ export const usePassageiro = (): PassageiroState => {
   }, [pesquisaFacade, authToken]);
 
   // ---------------------------------------------------------------------------
-  // Location
+  // Location — with timeout + watch fallback
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
+    let watchSub: {remove: () => void} | null = null;
 
     const fetchLocation = async (): Promise<void> => {
       try {
-        // expo-location is used for GPS
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const Location =
-          require('expo-location') as typeof import('expo-location');
+        const Location = require('expo-location') as typeof import('expo-location');
 
         const {status} = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
+          if (!cancelled) setIsLocating(false);
+          return;
+        }
+
+        // Race getCurrentPositionAsync against a 6-second timeout.
+        // On some devices the first call hangs indefinitely — the watch
+        // fallback below will still deliver a position.
+        const positionPromise = Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const timeoutPromise = new Promise<null>(resolve =>
+          setTimeout(() => resolve(null), 6000),
+        );
+
+        const result = await Promise.race([positionPromise, timeoutPromise]);
+
+        if (!cancelled && result) {
+          const coords: Coordenada = {
+            latitude: result.coords.latitude,
+            longitude: result.coords.longitude,
+          };
+          setUserLocation(coords);
+          setMapRegion({latitude: coords.latitude, longitude: coords.longitude, zoomLevel: DEFAULT_ZOOM});
           setIsLocating(false);
           return;
         }
 
-        const position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-
+        // Fallback: subscribe to position updates — first fix resolves the state
         if (!cancelled) {
-          const coords: Coordenada = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          setUserLocation(coords);
-          setMapRegion({
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            zoomLevel: DEFAULT_ZOOM,
-          });
-          setIsLocating(false);
+          watchSub = await Location.watchPositionAsync(
+            {accuracy: Location.Accuracy.Balanced, distanceInterval: 10},
+            pos => {
+              if (cancelled) return;
+              const coords: Coordenada = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              };
+              setUserLocation(coords);
+              setMapRegion({latitude: coords.latitude, longitude: coords.longitude, zoomLevel: DEFAULT_ZOOM});
+              setIsLocating(false);
+              // Unsubscribe after first fix — we only needed the initial position
+              watchSub?.remove();
+              watchSub = null;
+            },
+          );
         }
       } catch {
-        if (!cancelled) {
-          setIsLocating(false);
-        }
+        if (!cancelled) setIsLocating(false);
       }
     };
 
@@ -245,6 +267,7 @@ export const usePassageiro = (): PassageiroState => {
 
     return () => {
       cancelled = true;
+      watchSub?.remove();
     };
   }, []);
 

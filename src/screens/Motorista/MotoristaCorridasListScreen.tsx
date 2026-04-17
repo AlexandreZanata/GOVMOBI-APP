@@ -5,8 +5,6 @@
  *   - Active ride card (if any) with a CTA to the action screen
  *   - Available rides (SOLICITADA) the driver can accept
  *   - Ride history (terminal rides from Redux corridaHistory)
- *
- * Uses GET /corridas (via useMotorista) and GET /corridas/:id/status polling.
  */
 import React, {useCallback, useMemo} from 'react';
 import {
@@ -27,6 +25,7 @@ import {useTheme} from '../../theme';
 import {useMotorista} from './useMotorista';
 import {createCorridasStyles, statusColor} from '@screens/Corridas/CorridasScreens.styles';
 import {createHistoricoStyles} from '@screens/Corridas/HistoricoCorridas.styles';
+import {RideCard} from '@components/molecules/RideCard';
 import type {MotoristaCorridasStackParamList} from '@navigation/types';
 import {useAppSelector} from '../../store';
 import type {Corrida} from '@models/Corrida';
@@ -61,20 +60,16 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
   }, [activeCorrida, navigation]);
 
   const handleViewDetail = useCallback(
-    (corridaId: string) => {
-      navigation.navigate('MotoristaCorridaDetalhe', {corridaId});
-    },
+    (corridaId: string) => navigation.navigate('MotoristaCorridaDetalhe', {corridaId}),
     [navigation],
   );
 
   const handleViewAction = useCallback(
-    (corridaId: string) => {
-      navigation.navigate('MotoristaCorridaAction', {corridaId});
-    },
+    (corridaId: string) => navigation.navigate('MotoristaCorridaAction', {corridaId}),
     [navigation],
   );
 
-  // ── Render available ride card ──────────────────────────────────────────────
+  // ── Available ride card (compact — shows time only, no full date) ──────────
   const renderAvailableRide: ListRenderItem<Corrida> = useCallback(
     ({item}) => {
       const badgeColor = statusColor(item.status, theme);
@@ -116,49 +111,16 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
     [handleViewAction, s, t, theme],
   );
 
-  // ── Render history ride card ────────────────────────────────────────────────
   const renderHistoryRide: ListRenderItem<Corrida> = useCallback(
-    ({item, index}) => {
-      const badgeColor = statusColor(item.status, theme);
-      const isLast = index === corridaHistory.length - 1;
-      const date = new Date(item.createdAt);
-      const dateStr = date.toLocaleDateString([], {day: '2-digit', month: 'short', year: 'numeric'});
-      const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-
-      return (
-        <Pressable
-          accessibilityLabel={t('corridas.detail.title')}
-          accessibilityRole="button"
-          onPress={() => handleViewDetail(item.id)}
-          style={[s.rideCard, isLast && s.rideCardLast]}
-          testID={`history-ride-${item.id}`}>
-          <View style={[s.statusBar, {backgroundColor: badgeColor}]} />
-          <View style={s.rideContent}>
-            <View style={s.rideTopRow}>
-              <View style={[s.statusPill, {backgroundColor: badgeColor}]}>
-                <Text style={s.statusPillText}>{t(`corridas.status.${item.status}`)}</Text>
-              </View>
-              <Text style={s.rideDate}>{`${dateStr} · ${timeStr}`}</Text>
-            </View>
-            <View style={s.routeRow}>
-              <MaterialIcons name="trip-origin" size={14} color={theme.design.success} style={s.routeIcon} />
-              <Text style={s.routeText} numberOfLines={1}>
-                {`${item.origemLat.toFixed(4)}, ${item.origemLng.toFixed(4)}`}
-              </Text>
-            </View>
-            <View style={s.routeRow}>
-              <MaterialIcons name="location-on" size={14} color={theme.design.danger} style={s.routeIcon} />
-              <Text style={s.routeText} numberOfLines={1}>
-                {`${item.destinoLat.toFixed(4)}, ${item.destinoLng.toFixed(4)}`}
-              </Text>
-            </View>
-            <Text style={s.motivoText} numberOfLines={1}>{item.motivoServico}</Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={20} color={theme.design.textTertiary} style={s.chevron} />
-        </Pressable>
-      );
-    },
-    [corridaHistory.length, handleViewDetail, s, t, theme],
+    ({item, index}) => (
+      <RideCard
+        corrida={item}
+        isLast={index === corridaHistory.length - 1}
+        onPress={handleViewDetail}
+        testID={`history-ride-${item.id}`}
+      />
+    ),
+    [corridaHistory.length, handleViewDetail],
   );
 
   const ListHeader = useCallback(
@@ -167,9 +129,7 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
         {/* Active ride card */}
         {hasActiveRide && activeCorrida && (
           <View testID="active-ride-section">
-            <Text style={[s.headerTitle, {fontSize: 15, marginBottom: theme.spacing[2]}]}>
-              {t('motorista.corridas.activeRide')}
-            </Text>
+            <Text style={s.headerTitle}>{t('motorista.corridas.activeRide')}</Text>
             <Pressable
               accessibilityLabel={t('corridas.list.viewActive')}
               accessibilityRole="button"
@@ -197,7 +157,7 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
                   </Text>
                 </View>
               </View>
-              <MaterialIcons name="chevron-right" size={20} color={theme.colors.textMuted} style={{marginLeft: 'auto'}} />
+              <MaterialIcons name="chevron-right" size={20} color={theme.colors.textMuted} />
             </Pressable>
           </View>
         )}
@@ -205,9 +165,7 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
         {/* Available rides */}
         {!hasActiveRide && (
           <View testID="available-rides-section">
-            <Text style={[s.headerTitle, {fontSize: 15, marginBottom: theme.spacing[2]}]}>
-              {t('motorista.corridas.available')}
-            </Text>
+            <Text style={s.headerTitle}>{t('motorista.corridas.available')}</Text>
             {isLoadingRides ? (
               <ActivityIndicator color={theme.design.blue500} size="small" style={{marginBottom: theme.spacing[4]}} />
             ) : availableRides.length === 0 ? (
@@ -217,32 +175,24 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
               </View>
             ) : (
               availableRides.map(ride => (
-                <View key={ride.id}>{renderAvailableRide({item: ride, index: 0, separators: {} as never})}</View>
+                <View key={ride.id}>
+                  {renderAvailableRide({item: ride, index: 0, separators: {} as never})}
+                </View>
               ))
             )}
           </View>
         )}
 
-        {/* History header */}
         {corridaHistory.length > 0 && (
-          <Text style={[s.headerTitle, {fontSize: 15, marginTop: theme.spacing[4], marginBottom: theme.spacing[2]}]}>
+          <Text style={[s.headerTitle, {marginTop: theme.spacing[4]}]}>
             {t('corridas.history.title')}
           </Text>
         )}
       </>
     ),
     [
-      activeCorrida,
-      availableRides,
-      corridaHistory.length,
-      handleViewActive,
-      hasActiveRide,
-      isLoadingRides,
-      renderAvailableRide,
-      s,
-      shared,
-      t,
-      theme,
+      activeCorrida, availableRides, corridaHistory.length, handleViewActive,
+      hasActiveRide, isLoadingRides, renderAvailableRide, s, shared, t, theme,
     ],
   );
 
@@ -265,10 +215,7 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
       </View>
 
       <FlatList
-        contentContainerStyle={[
-          s.listContent,
-          corridaHistory.length === 0 && s.listContentEmpty,
-        ]}
+        contentContainerStyle={[s.listContent, corridaHistory.length === 0 && s.listContentEmpty]}
         data={corridaHistory}
         keyExtractor={item => item.id}
         ListEmptyComponent={ListEmpty}

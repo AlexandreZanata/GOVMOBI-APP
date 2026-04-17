@@ -96,6 +96,9 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         isLoading: false,
         error: null,
         papeis: ['MOTORISTA'],
+        motoristaId: null,
+        municipioId: null,
+        isHydrating: false,
       },
       corrida: {
         activeCorrida: null,

@@ -43,6 +43,7 @@ export const ProfileScreen = (): React.JSX.Element => {
     useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
   const user = useAppSelector(state => state.auth.user);
+  const motoristaId = useAppSelector(state => state.auth.motoristaId);
   const {displayName, setDisplayName, isEditing, toggleEdit, saveProfile, signOut} =
     useProfile();
 
@@ -68,10 +69,12 @@ export const ProfileScreen = (): React.JSX.Element => {
           {user?.email ? (
             <Text style={styles.heroEmail} testID="profile-email">{user.email}</Text>
           ) : null}
-          {user?.role ? (
+          {user?.role || motoristaId ? (
             <View style={styles.roleBadge} testID="profile-role-badge">
               <Text style={styles.roleBadgeText}>
-                {t(`common.role.${user.role}`, {defaultValue: user.role})}
+                {motoristaId
+                  ? t('servidores.papeis.MOTORISTA')
+                  : t(`common.role.${user!.role}`, {defaultValue: user!.role})}
               </Text>
             </View>
           ) : null}

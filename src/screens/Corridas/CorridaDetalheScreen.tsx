@@ -19,11 +19,12 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {useRoute, type RouteProp} from '@react-navigation/native';
 import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
-import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
+import {createCorridasStyles} from './CorridasScreens.styles';
+import {CorridaStatusBadge} from '@components/molecules/CorridaStatusBadge';
+import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
 import type {CorridaMensagem} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList, CorridasStackParamList} from '@navigation/types';
 
-// CorridaDetalhe exists in both stacks — accept either param list
 type RouteProps =
   | RouteProp<PassageiroCorridasStackParamList, 'CorridaDetalhe'>
   | RouteProp<CorridasStackParamList, 'CorridaDetalhe'>;
@@ -42,13 +43,8 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
 
   const styles = useMemo(() => createCorridasStyles(theme), [theme]);
 
-  const {
-    activeCorrida,
-    mensagens,
-    isLoadingMensagens,
-    onLoadCorrida,
-    onLoadMensagens,
-  } = usePassageiroCorrida(corridaId);
+  const {activeCorrida, mensagens, isLoadingMensagens, onLoadCorrida, onLoadMensagens} =
+    usePassageiroCorrida(corridaId);
 
   useEffect(() => {
     void onLoadCorrida(corridaId);
@@ -74,43 +70,25 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
     );
   }
 
-  const badgeColor = statusColor(activeCorrida.status, theme);
-
   return (
     <View style={[styles.container, {paddingBottom: insets.bottom}]} testID="detalhe-screen">
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Status badge */}
-        <View style={[styles.statusBadge, {backgroundColor: badgeColor}]} testID="status-badge">
-          <Text style={styles.statusText}>
-            {t(`corridas.status.${activeCorrida.status}`)}
-          </Text>
-        </View>
+        <CorridaStatusBadge status={activeCorrida.status} testID="status-badge" />
 
         {/* Route card */}
         <View style={styles.card} testID="route-card">
           <Text style={styles.cardTitle}>{t('corridas.detail.route')}</Text>
-
-          <View style={styles.cardRow}>
-            <MaterialIcons name="trip-origin" size={18} color={theme.colors.success} style={styles.cardRowIcon} />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.origem')}</Text>
-              <Text style={styles.cardValue}>
-                {`${activeCorrida.origemLat.toFixed(5)}, ${activeCorrida.origemLng.toFixed(5)}`}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.cardRow}>
-            <MaterialIcons name="location-on" size={18} color={theme.colors.error} style={styles.cardRowIcon} />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.destino')}</Text>
-              <Text style={styles.cardValue}>
-                {`${activeCorrida.destinoLat.toFixed(5)}, ${activeCorrida.destinoLng.toFixed(5)}`}
-              </Text>
-            </View>
-          </View>
-
+          <RouteInfoRow
+            type="origin"
+            label={t('corridas.detail.origem')}
+            value={`${activeCorrida.origemLat.toFixed(5)}, ${activeCorrida.origemLng.toFixed(5)}`}
+          />
+          <RouteInfoRow
+            type="destination"
+            label={t('corridas.detail.destino')}
+            value={`${activeCorrida.destinoLat.toFixed(5)}, ${activeCorrida.destinoLng.toFixed(5)}`}
+          />
           <View style={styles.cardRow}>
             <MaterialIcons name="work-outline" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
             <View>
@@ -118,7 +96,6 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
               <Text style={styles.cardValue}>{activeCorrida.motivoServico}</Text>
             </View>
           </View>
-
           {activeCorrida.observacoes ? (
             <View style={styles.cardRow}>
               <MaterialIcons name="notes" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
@@ -133,7 +110,6 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
         {/* Metadata card */}
         <View style={styles.card} testID="meta-card">
           <Text style={styles.cardTitle}>{t('corridas.detail.metadata')}</Text>
-
           <View style={styles.cardRow}>
             <MaterialIcons name="person-outline" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
             <View>
@@ -141,7 +117,6 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
               <Text style={styles.cardValue}>{activeCorrida.passageiroId}</Text>
             </View>
           </View>
-
           {activeCorrida.motoristaId ? (
             <View style={styles.cardRow}>
               <MaterialIcons name="drive-eta" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
@@ -151,14 +126,11 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
               </View>
             </View>
           ) : null}
-
           <View style={styles.cardRow}>
             <MaterialIcons name="schedule" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
             <View>
               <Text style={styles.cardLabel}>{t('corridas.detail.createdAt')}</Text>
-              <Text style={styles.cardValue}>
-                {new Date(activeCorrida.createdAt).toLocaleString()}
-              </Text>
+              <Text style={styles.cardValue}>{new Date(activeCorrida.createdAt).toLocaleString()}</Text>
             </View>
           </View>
         </View>

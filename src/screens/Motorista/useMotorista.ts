@@ -137,39 +137,71 @@ export const useMotorista = (): MotoristaState => {
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   // ---------------------------------------------------------------------------
-  // GPS location
+  // GPS location — with timeout + watch fallback
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
+    let watchSub: {remove: () => void} | null = null;
+
     const fetchLocation = async (): Promise<void> => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const Location = require('expo-location') as typeof import('expo-location');
         const {status} = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          setIsLocating(false);
+          if (!cancelled) setIsLocating(false);
           return;
         }
-        const pos = await Location.getCurrentPositionAsync({
+
+        // Race getCurrentPositionAsync against a 6-second timeout
+        const positionPromise = Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
-        if (!cancelled) {
+        const timeoutPromise = new Promise<null>(resolve =>
+          setTimeout(() => resolve(null), 6000),
+        );
+
+        const result = await Promise.race([positionPromise, timeoutPromise]);
+
+        if (!cancelled && result) {
           const coords: Coordenada = {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
+            latitude: result.coords.latitude,
+            longitude: result.coords.longitude,
           };
           setUserLocation(coords);
           setMapRegion({latitude: coords.latitude, longitude: coords.longitude, zoomLevel: 13});
           setIsLocating(false);
+          return;
+        }
+
+        // Fallback: watch for first available fix
+        if (!cancelled) {
+          watchSub = await Location.watchPositionAsync(
+            {accuracy: Location.Accuracy.Balanced, distanceInterval: 10},
+            pos => {
+              if (cancelled) return;
+              const coords: Coordenada = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              };
+              setUserLocation(coords);
+              setMapRegion({latitude: coords.latitude, longitude: coords.longitude, zoomLevel: 13});
+              setIsLocating(false);
+              watchSub?.remove();
+              watchSub = null;
+            },
+          );
         }
       } catch {
         if (!cancelled) setIsLocating(false);
       }
     };
+
     void fetchLocation();
     return () => {
       cancelled = true;
+      watchSub?.remove();
     };
   }, []);
 

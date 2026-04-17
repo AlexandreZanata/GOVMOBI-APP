@@ -24,7 +24,9 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
 import {useTheme} from '../../theme';
 import {useCorridas} from './useCorridas';
-import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
+import {createCorridasStyles} from './CorridasScreens.styles';
+import {CorridaStatusBadge} from '@components/molecules/CorridaStatusBadge';
+import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
 import type {CorridasStackParamList} from '@navigation/types';
 import {useAppSelector} from '../../store';
 
@@ -45,7 +47,6 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
   const {corridaId} = route.params;
 
   const styles = useMemo(() => createCorridasStyles(theme), [theme]);
-
   const userId = useAppSelector(s => s.auth.user?.id ?? '');
 
   const {
@@ -69,16 +70,11 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
   }, [corridaId, onLoadCorrida]);
 
   const handleAceitar = useCallback(() => {
-    void onAceitar(corridaId, {
-      motoristaId: userId,
-      veiculoId: 'veiculo-mock-001', // In production: from driver's assigned vehicle
-    });
+    void onAceitar(corridaId, {motoristaId: userId, veiculoId: 'veiculo-mock-001'});
   }, [corridaId, onAceitar, userId]);
 
   const handleRecusar = useCallback(() => {
-    void onRecusar(corridaId, recusaMotivo || undefined).then(() => {
-      navigation.goBack();
-    });
+    void onRecusar(corridaId, recusaMotivo || undefined).then(() => navigation.goBack());
   }, [corridaId, navigation, onRecusar, recusaMotivo]);
 
   const handleIniciarDeslocamento = useCallback(() => {
@@ -88,48 +84,40 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
   const handleConfirmarEmbarque = useCallback(() => {
     void onConfirmarEmbarque(corridaId, {
       motoristaId: userId,
-      posicaoLat: -16.6869, // In production: from GPS
+      posicaoLat: -16.6869,
       posicaoLng: -49.2648,
     });
   }, [corridaId, onConfirmarEmbarque, userId]);
 
   const handleFinalizar = useCallback(() => {
-    Alert.alert(
-      t('corridas.finalizar.title'),
-      t('corridas.finalizar.confirm'),
-      [
-        {text: t('common.cancel'), style: 'cancel'},
-        {
-          text: t('common.confirm'),
-          onPress: () => {
-            void onFinalizar(corridaId, {
-              motoristaId: userId,
-              posicaoFinalLat: -16.6869, // In production: from GPS
-              posicaoFinalLng: -49.2648,
-            }).then(() => navigation.goBack());
-          },
+    Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
+      {text: t('common.cancel'), style: 'cancel'},
+      {
+        text: t('common.confirm'),
+        onPress: () => {
+          void onFinalizar(corridaId, {
+            motoristaId: userId,
+            posicaoFinalLat: -16.6869,
+            posicaoFinalLng: -49.2648,
+          }).then(() => navigation.goBack());
         },
-      ],
-    );
+      },
+    ]);
   }, [corridaId, navigation, onFinalizar, t, userId]);
 
   const handleCancelar = useCallback(() => {
-    Alert.alert(
-      t('corridas.cancel.title'),
-      t('corridas.cancel.confirm'),
-      [
-        {text: t('common.cancel'), style: 'cancel'},
-        {
-          text: t('common.confirm'),
-          style: 'destructive',
-          onPress: () => {
-            void onCancelar(corridaId, t('corridas.cancel.defaultMotivo')).then(() =>
-              navigation.goBack(),
-            );
-          },
+    Alert.alert(t('corridas.cancel.title'), t('corridas.cancel.confirm'), [
+      {text: t('common.cancel'), style: 'cancel'},
+      {
+        text: t('common.confirm'),
+        style: 'destructive',
+        onPress: () => {
+          void onCancelar(corridaId, t('corridas.cancel.defaultMotivo')).then(() =>
+            navigation.goBack(),
+          );
         },
-      ],
-    );
+      },
+    ]);
   }, [corridaId, navigation, onCancelar, t]);
 
   if (!activeCorrida) {
@@ -140,7 +128,6 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
     );
   }
 
-  const badgeColor = statusColor(activeCorrida.status, theme);
   const isTerminal =
     activeCorrida.status === 'FINALIZADA' ||
     activeCorrida.status === 'CANCELADA' ||
@@ -150,51 +137,23 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
     <View style={[styles.container, {paddingBottom: insets.bottom}]} testID="motorista-screen">
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Status badge */}
-        <View style={[styles.statusBadge, {backgroundColor: badgeColor}]} testID="status-badge">
-          <Text style={styles.statusText}>
-            {t(`corridas.status.${activeCorrida.status}`)}
-          </Text>
-        </View>
+        <CorridaStatusBadge status={activeCorrida.status} testID="status-badge" />
 
         {/* Route card */}
         <View style={styles.card} testID="route-card">
           <Text style={styles.cardTitle}>{t('corridas.detail.route')}</Text>
+          <RouteInfoRow
+            type="origin"
+            label={t('corridas.detail.origem')}
+            value={`${activeCorrida.origemLat.toFixed(4)}, ${activeCorrida.origemLng.toFixed(4)}`}
+          />
+          <RouteInfoRow
+            type="destination"
+            label={t('corridas.detail.destino')}
+            value={`${activeCorrida.destinoLat.toFixed(4)}, ${activeCorrida.destinoLng.toFixed(4)}`}
+          />
           <View style={styles.cardRow}>
-            <MaterialIcons
-              name="trip-origin"
-              size={18}
-              color={theme.colors.success}
-              style={styles.cardRowIcon}
-            />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.origem')}</Text>
-              <Text style={styles.cardValue}>
-                {`${activeCorrida.origemLat.toFixed(4)}, ${activeCorrida.origemLng.toFixed(4)}`}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.cardRow}>
-            <MaterialIcons
-              name="location-on"
-              size={18}
-              color={theme.colors.error}
-              style={styles.cardRowIcon}
-            />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.destino')}</Text>
-              <Text style={styles.cardValue}>
-                {`${activeCorrida.destinoLat.toFixed(4)}, ${activeCorrida.destinoLng.toFixed(4)}`}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.cardRow}>
-            <MaterialIcons
-              name="work-outline"
-              size={18}
-              color={theme.colors.textMuted}
-              style={styles.cardRowIcon}
-            />
+            <MaterialIcons name="work-outline" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
             <View>
               <Text style={styles.cardLabel}>{t('corridas.detail.motivo')}</Text>
               <Text style={styles.cardValue}>{activeCorrida.motivoServico}</Text>
@@ -202,12 +161,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
           </View>
           {activeCorrida.observacoes ? (
             <View style={styles.cardRow}>
-              <MaterialIcons
-                name="notes"
-                size={18}
-                color={theme.colors.textMuted}
-                style={styles.cardRowIcon}
-              />
+              <MaterialIcons name="notes" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
               <View>
                 <Text style={styles.cardLabel}>{t('corridas.detail.observacoes')}</Text>
                 <Text style={styles.cardValue}>{activeCorrida.observacoes}</Text>
@@ -221,7 +175,6 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
           <View testID="action-section">
             <Text style={styles.sectionHeader}>{t('corridas.actions.title')}</Text>
 
-            {/* SOLICITADA → Aceitar / Recusar */}
             {activeCorrida.status === 'SOLICITADA' && (
               <>
                 <Pressable
@@ -229,11 +182,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
                   accessibilityRole="button"
                   disabled={isActionLoading}
                   onPress={handleAceitar}
-                  style={[
-                    styles.actionButton,
-                    styles.actionButtonSuccess,
-                    isActionLoading && styles.actionButtonDisabled,
-                  ]}
+                  style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
                   testID="btn-aceitar">
                   {isActionLoading ? (
                     <ActivityIndicator color={theme.colors.textInverse} size="small" />
@@ -241,7 +190,6 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
                     <Text style={styles.actionButtonText}>{t('corridas.actions.aceitar')}</Text>
                   )}
                 </Pressable>
-
                 {showRecusaInput ? (
                   <View style={styles.card}>
                     <TextInput
@@ -249,11 +197,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
                       onChangeText={setRecusaMotivo}
                       placeholder={t('corridas.recusar.motivoPlaceholder')}
                       placeholderTextColor={theme.colors.textMuted}
-                      style={[
-                        styles.cardValue,
-                        styles.formInput,
-                        {borderColor: theme.colors.border, marginBottom: theme.spacing[3]},
-                      ]}
+                      style={[styles.cardValue, styles.formInput, {borderColor: theme.colors.border, marginBottom: theme.spacing[3]}]}
                       testID="recusa-motivo-input"
                       value={recusaMotivo}
                     />
@@ -262,11 +206,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
                       accessibilityRole="button"
                       disabled={isActionLoading}
                       onPress={handleRecusar}
-                      style={[
-                        styles.actionButton,
-                        styles.actionButtonDanger,
-                        isActionLoading && styles.actionButtonDisabled,
-                      ]}
+                      style={[styles.actionButton, styles.actionButtonDanger, isActionLoading && styles.actionButtonDisabled]}
                       testID="btn-recusar-confirm">
                       <Text style={styles.actionButtonText}>{t('corridas.actions.recusar')}</Text>
                     </Pressable>
@@ -284,64 +224,45 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
               </>
             )}
 
-            {/* ACEITA → Iniciar Deslocamento */}
             {activeCorrida.status === 'ACEITA' && (
               <Pressable
                 accessibilityLabel={t('corridas.actions.iniciarDeslocamento')}
                 accessibilityRole="button"
                 disabled={isActionLoading}
                 onPress={handleIniciarDeslocamento}
-                style={[
-                  styles.actionButton,
-                  styles.actionButtonPrimary,
-                  isActionLoading && styles.actionButtonDisabled,
-                ]}
+                style={[styles.actionButton, styles.actionButtonPrimary, isActionLoading && styles.actionButtonDisabled]}
                 testID="btn-iniciar-deslocamento">
                 {isActionLoading ? (
                   <ActivityIndicator color={theme.colors.textInverse} size="small" />
                 ) : (
-                  <Text style={styles.actionButtonText}>
-                    {t('corridas.actions.iniciarDeslocamento')}
-                  </Text>
+                  <Text style={styles.actionButtonText}>{t('corridas.actions.iniciarDeslocamento')}</Text>
                 )}
               </Pressable>
             )}
 
-            {/* EM_DESLOCAMENTO → Confirmar Embarque */}
             {activeCorrida.status === 'EM_DESLOCAMENTO' && (
               <Pressable
                 accessibilityLabel={t('corridas.actions.confirmarEmbarque')}
                 accessibilityRole="button"
                 disabled={isActionLoading}
                 onPress={handleConfirmarEmbarque}
-                style={[
-                  styles.actionButton,
-                  styles.actionButtonSuccess,
-                  isActionLoading && styles.actionButtonDisabled,
-                ]}
+                style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
                 testID="btn-confirmar-embarque">
                 {isActionLoading ? (
                   <ActivityIndicator color={theme.colors.textInverse} size="small" />
                 ) : (
-                  <Text style={styles.actionButtonText}>
-                    {t('corridas.actions.confirmarEmbarque')}
-                  </Text>
+                  <Text style={styles.actionButtonText}>{t('corridas.actions.confirmarEmbarque')}</Text>
                 )}
               </Pressable>
             )}
 
-            {/* PASSAGEIRO_EMBARCADO → Finalizar */}
             {activeCorrida.status === 'PASSAGEIRO_EMBARCADO' && (
               <Pressable
                 accessibilityLabel={t('corridas.actions.finalizar')}
                 accessibilityRole="button"
                 disabled={isActionLoading}
                 onPress={handleFinalizar}
-                style={[
-                  styles.actionButton,
-                  styles.actionButtonSuccess,
-                  isActionLoading && styles.actionButtonDisabled,
-                ]}
+                style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
                 testID="btn-finalizar">
                 {isActionLoading ? (
                   <ActivityIndicator color={theme.colors.textInverse} size="small" />
@@ -351,17 +272,12 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
               </Pressable>
             )}
 
-            {/* Cancel — available in any non-terminal state */}
             <Pressable
               accessibilityLabel={t('corridas.cancel.title')}
               accessibilityRole="button"
               disabled={isActionLoading}
               onPress={handleCancelar}
-              style={[
-                styles.actionButton,
-                styles.actionButtonDanger,
-                isActionLoading && styles.actionButtonDisabled,
-              ]}
+              style={[styles.actionButton, styles.actionButtonDanger, isActionLoading && styles.actionButtonDisabled]}
               testID="btn-cancelar">
               <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
             </Pressable>
@@ -375,9 +291,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
               size={48}
               color={activeCorrida.status === 'FINALIZADA' ? theme.colors.success : theme.colors.error}
             />
-            <Text style={styles.emptyTitle}>
-              {t(`corridas.terminal.${activeCorrida.status}`)}
-            </Text>
+            <Text style={styles.emptyTitle}>{t(`corridas.terminal.${activeCorrida.status}`)}</Text>
           </View>
         )}
       </ScrollView>

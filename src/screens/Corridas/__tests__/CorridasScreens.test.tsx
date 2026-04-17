@@ -189,6 +189,9 @@ const buildStore = (papeis: string[] = []) =>
         isLoading: false,
         error: null,
         papeis,
+        motoristaId: null,
+        municipioId: null,
+        isHydrating: false,
       },
     },
   });

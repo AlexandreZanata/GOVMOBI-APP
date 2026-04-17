@@ -85,6 +85,9 @@ const buildStore = (overrides?: {unreadCount?: number}) =>
         isLoading: false,
         error: null,
         papeis: [],
+        motoristaId: null,
+        municipioId: null,
+        isHydrating: false,
       },
       notifications: {
         notifications: [],

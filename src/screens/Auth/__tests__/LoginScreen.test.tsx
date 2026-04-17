@@ -112,6 +112,7 @@ const buildStore = () =>
         papeis: [],
         motoristaId: null,
         municipioId: null,
+        isHydrating: false,
       },
       ui: {
         themeMode: 'light' as const,

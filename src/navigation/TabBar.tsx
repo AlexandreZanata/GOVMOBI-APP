@@ -13,6 +13,11 @@ import {Text} from '@components/atoms';
 
 type TabIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
+const TAB_ACTIVE_COLOR = '#1877F2';
+const TAB_INACTIVE_COLOR = '#A1A1AA';
+const TAB_BG_COLOR = '#FFFFFF';
+const TAB_SHADOW_COLOR = '#000000';
+
 const TAB_ICONS: Record<string, {active: TabIconName; inactive: TabIconName}> =
   {
     HomeTab: {active: 'home', inactive: 'home'},
@@ -82,7 +87,7 @@ export const TabBar = ({
             testID={`tab-${route.name}`}>
             <View style={styles.iconWrapper}>
               <MaterialIcons
-                color={isFocused ? '#1877F2' : '#A1A1AA'}
+                color={isFocused ? TAB_ACTIVE_COLOR : TAB_INACTIVE_COLOR}
                 name={isFocused ? icons.active : icons.inactive}
                 size={theme.typography.fontSize.xl}
               />
@@ -97,7 +102,7 @@ export const TabBar = ({
             <Text
               style={[
                 styles.label,
-                {color: isFocused ? '#1877F2' : '#A1A1AA'},
+                isFocused ? styles.labelActive : styles.labelInactive,
               ]}
               variant="caption">
               {label}
@@ -131,12 +136,12 @@ const createStyles = (theme: Theme, bottomInset: number) =>
       lineHeight: 12,
     },
     container: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: TAB_BG_COLOR,
       borderTopWidth: 0,
       flexDirection: 'row',
       paddingBottom: bottomInset > 0 ? bottomInset : theme.spacing.md,
       paddingTop: theme.spacing.sm,
-      shadowColor: '#000000',
+      shadowColor: TAB_SHADOW_COLOR,
       shadowOffset: {width: 0, height: -2},
       shadowOpacity: 0.08,
       shadowRadius: 12,
@@ -149,6 +154,12 @@ const createStyles = (theme: Theme, bottomInset: number) =>
     },
     label: {
       marginTop: 2,
+    },
+    labelActive: {
+      color: TAB_ACTIVE_COLOR,
+    },
+    labelInactive: {
+      color: TAB_INACTIVE_COLOR,
     },
     tab: {
       alignItems: 'center',

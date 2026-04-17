@@ -116,6 +116,9 @@ const buildStore = () =>
         isLoading: false,
         error: null,
         papeis: [],
+        motoristaId: null,
+        municipioId: null,
+        isHydrating: false,
       },
       ui: {
         themeMode: 'light' as const,
