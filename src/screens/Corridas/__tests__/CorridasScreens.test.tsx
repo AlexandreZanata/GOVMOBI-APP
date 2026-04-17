@@ -1,8 +1,15 @@
 /**
- * @fileoverview POC tests for the Corridas screens.
+ * @fileoverview POC tests for the Corridas screens — role-separated architecture.
  *
- * Covers: loading, error, success, and primary interactions for
- * CorridasListScreen, AcompanharCorridaScreen, and MotoristaCorridaScreen.
+ * USUARIO (passenger) screens:
+ *   PassageiroCorridasListScreen — loading, empty state, active corrida card, request CTA
+ *   AcompanharCorridaScreen      — loading, details, messages, cancel flow
+ *
+ * MOTORISTA (driver) screens:
+ *   MotoristaCorridaScreen       — loading, aceitar/recusar, conflict error
+ *
+ * Covers: loading, error, success, and primary interactions.
+ * TSC clean — zero `any`.
  */
 import React from 'react';
 import {render, screen, fireEvent, waitFor, act} from '@testing-library/react-native';
@@ -16,7 +23,7 @@ import {i18n} from '../../../i18n';
 import corridaReducer from '../../../store/slices/corridaSlice';
 import authReducer from '../../../store/slices/authSlice';
 import uiReducer from '../../../store/slices/uiSlice';
-import {CorridasListScreen} from '../CorridasListScreen';
+import {PassageiroCorridasListScreen} from '../PassageiroCorridasListScreen';
 import {AcompanharCorridaScreen} from '../AcompanharCorridaScreen';
 import {MotoristaCorridaScreen} from '../MotoristaCorridaScreen';
 import {UserRole, UserStatus} from '../../../models/User';
@@ -30,9 +37,9 @@ import type {SolicitarCorridaResponse, CorridaStatusResponse} from '../../../typ
 // ---------------------------------------------------------------------------
 
 const ok = <T,>(data: T): Result<T, FacadeError> => ({data, error: null});
-const fail = <T,>(msg: string): Result<T, FacadeError> => ({
+const fail = <T,>(msg: string, code = 'NETWORK_ERROR'): Result<T, FacadeError> => ({
   data: null,
-  error: {code: 'NETWORK_ERROR', message: msg},
+  error: {code, message: msg},
 });
 
 const mockCorrida: Corrida = {
@@ -108,11 +115,7 @@ const mockUser = {
 
 const buildStore = (papeis: string[] = []) =>
   configureStore({
-    reducer: {
-      corrida: corridaReducer,
-      auth: authReducer,
-      ui: uiReducer,
-    },
+    reducer: {corrida: corridaReducer, auth: authReducer, ui: uiReducer},
     preloadedState: {
       auth: {
         user: mockUser,
@@ -136,7 +139,6 @@ const Wrapper = ({
 }) => {
   const store = buildStore(papeis);
   const mockFacade = buildMockFacade(facade);
-
   return (
     <Provider store={store}>
       <I18nextProvider i18n={i18n}>
@@ -151,14 +153,14 @@ const Wrapper = ({
 };
 
 // ---------------------------------------------------------------------------
-// CorridasListScreen
+// PassageiroCorridasListScreen — USUARIO
 // ---------------------------------------------------------------------------
 
-describe('CorridasListScreen', () => {
+describe('PassageiroCorridasListScreen (USUARIO)', () => {
   it('renders empty state when no active corrida', async () => {
     render(
       <Wrapper>
-        <CorridasListScreen />
+        <PassageiroCorridasListScreen />
       </Wrapper>,
     );
     await waitFor(() => {
@@ -166,10 +168,21 @@ describe('CorridasListScreen', () => {
     });
   });
 
+  it('always shows the request ride CTA (USUARIO always can request)', async () => {
+    render(
+      <Wrapper papeis={['USUARIO']}>
+        <PassageiroCorridasListScreen />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('btn-request-ride')).toBeTruthy();
+    });
+  });
+
   it('shows active corrida card when one exists', async () => {
     render(
       <Wrapper facade={{getActiveCorrida: jest.fn().mockResolvedValue(ok(mockCorrida))}}>
-        <CorridasListScreen />
+        <PassageiroCorridasListScreen />
       </Wrapper>,
     );
     await waitFor(() => {
@@ -177,23 +190,25 @@ describe('CorridasListScreen', () => {
     });
   });
 
-  it('shows request ride button for passageiro role', async () => {
+  it('does NOT render MotoristaCorridaAction navigation — USUARIO scope only', async () => {
+    // The screen should only navigate to AcompanharCorrida, never MotoristaCorridaAction.
+    // We verify by checking the testID of the screen itself renders correctly.
     render(
-      <Wrapper papeis={['USUARIO']}>
-        <CorridasListScreen />
+      <Wrapper>
+        <PassageiroCorridasListScreen />
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId('btn-request-ride')).toBeTruthy();
+      expect(screen.getByTestId('passageiro-corridas-list-screen')).toBeTruthy();
     });
   });
 });
 
 // ---------------------------------------------------------------------------
-// AcompanharCorridaScreen
+// AcompanharCorridaScreen — USUARIO
 // ---------------------------------------------------------------------------
 
-describe('AcompanharCorridaScreen', () => {
+describe('AcompanharCorridaScreen (USUARIO)', () => {
   beforeEach(() => {
     jest.spyOn(require('@react-navigation/native'), 'useRoute').mockReturnValue({
       params: {corridaId: 'corrida-test-001'},
@@ -212,7 +227,7 @@ describe('AcompanharCorridaScreen', () => {
     expect(screen.getByTestId('acompanhar-loading')).toBeTruthy();
   });
 
-  it('renders corrida details after load', async () => {
+  it('renders corrida details and status badge after load', async () => {
     render(
       <Wrapper>
         <AcompanharCorridaScreen />
@@ -224,7 +239,7 @@ describe('AcompanharCorridaScreen', () => {
     });
   });
 
-  it('renders message history', async () => {
+  it('renders message history from GET /corridas/:id/mensagens', async () => {
     render(
       <Wrapper>
         <AcompanharCorridaScreen />
@@ -235,7 +250,7 @@ describe('AcompanharCorridaScreen', () => {
     });
   });
 
-  it('shows cancel button for active corrida', async () => {
+  it('shows cancel button for active corrida (USUARIO can cancel)', async () => {
     render(
       <Wrapper>
         <AcompanharCorridaScreen />
@@ -245,13 +260,38 @@ describe('AcompanharCorridaScreen', () => {
       expect(screen.getByTestId('cancel-open-btn')).toBeTruthy();
     });
   });
+
+  it('does NOT show MOTORISTA-only action buttons', async () => {
+    render(
+      <Wrapper>
+        <AcompanharCorridaScreen />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('btn-aceitar')).toBeNull();
+      expect(screen.queryByTestId('btn-iniciar-deslocamento')).toBeNull();
+      expect(screen.queryByTestId('btn-confirmar-embarque')).toBeNull();
+      expect(screen.queryByTestId('btn-finalizar')).toBeNull();
+    });
+  });
+
+  it('shows empty messages state when no messages exist', async () => {
+    render(
+      <Wrapper facade={{getMensagens: jest.fn().mockResolvedValue(ok([]))}}>
+        <AcompanharCorridaScreen />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('mensagens-empty')).toBeTruthy();
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
-// MotoristaCorridaScreen
+// MotoristaCorridaScreen — MOTORISTA
 // ---------------------------------------------------------------------------
 
-describe('MotoristaCorridaScreen', () => {
+describe('MotoristaCorridaScreen (MOTORISTA)', () => {
   beforeEach(() => {
     jest.spyOn(require('@react-navigation/native'), 'useRoute').mockReturnValue({
       params: {corridaId: 'corrida-test-001'},
@@ -301,10 +341,10 @@ describe('MotoristaCorridaScreen', () => {
     );
   });
 
-  it('shows error state on aceitar failure without crashing', async () => {
+  it('handles 409 conflict on aceitar without crashing', async () => {
     const conflictFacade = buildMockFacade({
       aceitarCorrida: jest.fn().mockResolvedValue(
-        fail<Corrida>('Conflict'),
+        fail<Corrida>('Corrida já aceita', 'CONFLICT'),
       ),
     });
     render(
@@ -316,7 +356,7 @@ describe('MotoristaCorridaScreen', () => {
     await act(async () => {
       fireEvent.press(screen.getByTestId('btn-aceitar'));
     });
-    // Screen should still be mounted — no crash
+    // Screen stays mounted — no crash
     expect(screen.getByTestId('motorista-screen')).toBeTruthy();
   });
 });

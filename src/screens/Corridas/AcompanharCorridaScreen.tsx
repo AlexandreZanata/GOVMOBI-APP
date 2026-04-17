@@ -1,8 +1,13 @@
 /**
- * @fileoverview AcompanharCorridaScreen — real-time ride tracking for the passenger.
+ * @fileoverview AcompanharCorridaScreen — real-time ride tracking for the passenger (USUARIO).
  *
- * Shows current status, route info, messages, and a cancel action.
- * Polls GET /corridas/:id/status every 5s via useCorridas.
+ * Scoped to USUARIO-only operations:
+ *   GET  /corridas/:id          — load full details
+ *   GET  /corridas/:id/status   — poll status every 5s
+ *   GET  /corridas/:id/mensagens — message history
+ *   POST /corridas/:id/cancelar — cancel active ride
+ *
+ * MOTORISTA-only actions are intentionally absent from this screen.
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
@@ -21,12 +26,12 @@ import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
 import {useTheme} from '../../theme';
-import {useCorridas} from './useCorridas';
+import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import type {CorridaMensagem} from '../../models/Corrida';
-import type {CorridasStackParamList} from '../../navigation/types';
+import type {PassageiroCorridasStackParamList} from '../../navigation/types';
 
-type RouteProps = RouteProp<CorridasStackParamList, 'AcompanharCorrida'>;
+type RouteProps = RouteProp<PassageiroCorridasStackParamList, 'AcompanharCorrida'>;
 
 /**
  * Passenger ride tracking screen.
@@ -52,7 +57,7 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
     onCancelar,
     onLoadCorrida,
     onLoadMensagens,
-  } = useCorridas(corridaId);
+  } = usePassageiroCorrida(corridaId);
 
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [showCancelInput, setShowCancelInput] = useState(false);

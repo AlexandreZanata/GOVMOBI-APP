@@ -58,6 +58,7 @@ Step-by-step build playbooks with prompts and POCs.
 
 - [AI Driver and Dispatcher Prompt Guide](./implementation/ai-driver-dispatcher-prompt-guide.md) — prompts + POCs to finish run lifecycle, role routing, and operational screens
 - [GovMob WebSocket Integration Guide](./implementation/websocket-integration-govmob.md) — `/despacho` namespace, JWT auth, ride lifecycle, telemetry, and persistent chat
+- [GovMob v1.2 Real-Time Integration Guide](./implementation/realtime-integration-govmob-v1.2.md) — synchronized WebSocket + OneSignal architecture, lifecycle events, resilience, and security
 
 ---
 

@@ -15,7 +15,7 @@ import {useTheme, type Theme} from '../theme';
 import {PassageiroScreen} from '../screens/Passageiro/PassageiroScreen';
 import {ProfileNavigator} from './ProfileNavigator';
 import {NotificationsScreen} from '../screens/Notifications/NotificationsScreen';
-import {CorridasNavigator} from './CorridasNavigator';
+import {PassageiroCorridasNavigator} from './PassageiroCorridasNavigator';
 
 type PassageiroTabParamList = {
   PassageiroHome: undefined;
@@ -162,9 +162,9 @@ export const PassageiroNavigator = (): React.JSX.Element => {
     <Tab.Navigator
       screenOptions={{headerShown: false}}
       tabBar={props => <PassageiroTabBar {...props} />}>
-      <Tab.Screen component={PassageiroScreen}        name="PassageiroHome" />
-      <Tab.Screen component={CorridasNavigator}       name="PassageiroCorridas" />
-      <Tab.Screen component={NotificacoesPlaceholder} name="PassageiroNotificacoes" />
+      <Tab.Screen component={PassageiroScreen}               name="PassageiroHome" />
+      <Tab.Screen component={PassageiroCorridasNavigator}    name="PassageiroCorridas" />
+      <Tab.Screen component={NotificacoesPlaceholder}        name="PassageiroNotificacoes" />
       <Tab.Screen component={ProfileNavigator}        name="PassageiroProfile" />
     </Tab.Navigator>
   );

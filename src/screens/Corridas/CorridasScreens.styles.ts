@@ -175,6 +175,19 @@ export const createCorridasStyles = (theme: Theme) =>
       justifyContent: 'center' as const,
       padding: theme.spacing[8],
     },
+    // ── List screen helpers ───────────────────────────────────────────────────
+    cardRowLast: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      marginBottom: 0,
+    },
+    chevronRight: {
+      marginLeft: 'auto' as const,
+    },
+    fullWidthButton: {
+      width: '100%' as const,
+    },
+    // ── Loading overlay ───────────────────────────────────────────────────────
     loadingOverlay: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: theme.colors.overlay,

@@ -26,9 +26,9 @@ import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setPendingCorridaId, setActiveCorrida} from '../../store/slices/corridaSlice';
 import {addToast} from '../../store/slices/uiSlice';
-import type {CorridasStackParamList} from '../../navigation/types';
+import type {PassageiroCorridasStackParamList} from '../../navigation/types';
 
-type NavProp = NativeStackNavigationProp<CorridasStackParamList>;
+type NavProp = NativeStackNavigationProp<PassageiroCorridasStackParamList>;
 
 /**
  * Ride request form screen.

@@ -18,12 +18,15 @@ import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useRoute, type RouteProp} from '@react-navigation/native';
 import {useTheme} from '../../theme';
-import {useCorridas} from './useCorridas';
+import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import type {CorridaMensagem} from '../../models/Corrida';
-import type {CorridasStackParamList} from '../../navigation/types';
+import type {PassageiroCorridasStackParamList, CorridasStackParamList} from '../../navigation/types';
 
-type RouteProps = RouteProp<CorridasStackParamList, 'CorridaDetalhe'>;
+// CorridaDetalhe exists in both stacks — accept either param list
+type RouteProps =
+  | RouteProp<PassageiroCorridasStackParamList, 'CorridaDetalhe'>
+  | RouteProp<CorridasStackParamList, 'CorridaDetalhe'>;
 
 /**
  * Full corrida details screen.
@@ -45,7 +48,7 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
     isLoadingMensagens,
     onLoadCorrida,
     onLoadMensagens,
-  } = useCorridas(corridaId);
+  } = usePassageiroCorrida(corridaId);
 
   useEffect(() => {
     void onLoadCorrida(corridaId);

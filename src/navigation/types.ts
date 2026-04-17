@@ -80,7 +80,20 @@ export type PassageiroStackParamList = {
 };
 
 // ---------------------------------------------------------------------------
-// Corridas Stack (within Passageiro tab navigator)
+// Passageiro Corridas Stack — USUARIO-only (5 endpoints)
+// POST /corridas, POST /corridas/:id/cancelar,
+// GET /corridas/:id, GET /corridas/:id/status, GET /corridas/:id/mensagens
+// ---------------------------------------------------------------------------
+
+export type PassageiroCorridasStackParamList = {
+  PassageiroCorridasList: undefined;
+  CorridaDetalhe: {corridaId: string};
+  AcompanharCorrida: {corridaId: string};
+  SolicitarCorrida: undefined;
+};
+
+// ---------------------------------------------------------------------------
+// Corridas Stack — MOTORISTA-only (full lifecycle)
 // ---------------------------------------------------------------------------
 
 export type CorridasStackParamList = {
