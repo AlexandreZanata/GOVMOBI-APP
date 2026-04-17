@@ -1,36 +1,48 @@
 /**
- * @fileoverview Redux slice for ride (corrida) state management.
+ * @fileoverview Redux slice for the full corrida lifecycle state.
  */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
-import type {Corrida, Localizacao} from '../../models/Corrida';
+import type {Corrida, CorridaMensagem, CorridaStatus, Localizacao} from '../../models/Corrida';
 import type {SearchResult} from '../../types/corrida';
 
 export interface CorridaState {
   /** Currently active ride, if any. */
   activeCorrida: Corrida | null;
+  /** ID returned by POST /corridas (202 async). */
+  pendingCorridaId: string | null;
   /** Selected destination for the next ride. */
   selectedDestino: (Localizacao & {placeName: string}) | null;
   /** Whether a ride request is being submitted. */
   isRequesting: boolean;
+  /** Whether a lifecycle action (aceitar/recusar/etc.) is in progress. */
+  isActionLoading: boolean;
   /** Error message from the last operation. */
   error: string | null;
   /** Search results from geocoding. */
   searchResults: SearchResult[];
   /** Whether a location search is in progress. */
   isSearching: boolean;
+  /** Message history for the active corrida. */
+  mensagens: CorridaMensagem[];
+  /** Whether messages are being loaded. */
+  isLoadingMensagens: boolean;
 }
 
 const initialState: CorridaState = {
   activeCorrida: null,
+  pendingCorridaId: null,
   selectedDestino: null,
   isRequesting: false,
+  isActionLoading: false,
   error: null,
   searchResults: [],
   isSearching: false,
+  mensagens: [],
+  isLoadingMensagens: false,
 };
 
 /**
- * Manages ride request state for the Passageiro experience.
+ * Manages the full corrida lifecycle state for both Passageiro and Motorista experiences.
  */
 const corridaSlice = createSlice({
   name: 'corrida',
@@ -41,6 +53,23 @@ const corridaSlice = createSlice({
      */
     setActiveCorrida(state, action: PayloadAction<Corrida | null>) {
       state.activeCorrida = action.payload;
+    },
+
+    /**
+     * Stores the corridaId returned by POST /corridas (202 async).
+     */
+    setPendingCorridaId(state, action: PayloadAction<string | null>) {
+      state.pendingCorridaId = action.payload;
+    },
+
+    /**
+     * Updates the status of the active corrida (from polling or WebSocket).
+     */
+    updateCorridaStatus(state, action: PayloadAction<CorridaStatus>) {
+      if (state.activeCorrida) {
+        state.activeCorrida.status = action.payload;
+        state.activeCorrida.updatedAt = new Date().toISOString();
+      }
     },
 
     /**
@@ -58,6 +87,13 @@ const corridaSlice = createSlice({
      */
     setIsRequesting(state, action: PayloadAction<boolean>) {
       state.isRequesting = action.payload;
+    },
+
+    /**
+     * Toggles the lifecycle action loading state (aceitar/recusar/etc.).
+     */
+    setIsActionLoading(state, action: PayloadAction<boolean>) {
+      state.isActionLoading = action.payload;
     },
 
     /**
@@ -88,17 +124,44 @@ const corridaSlice = createSlice({
       state.searchResults = [];
       state.isSearching = false;
     },
+
+    /**
+     * Stores the message history for the active corrida.
+     */
+    setMensagens(state, action: PayloadAction<CorridaMensagem[]>) {
+      state.mensagens = action.payload;
+    },
+
+    /**
+     * Toggles the messages loading state.
+     */
+    setIsLoadingMensagens(state, action: PayloadAction<boolean>) {
+      state.isLoadingMensagens = action.payload;
+    },
+
+    /**
+     * Resets all corrida state (on logout or after ride completes).
+     */
+    resetCorrida() {
+      return initialState;
+    },
   },
 });
 
 export const {
   setActiveCorrida,
+  setPendingCorridaId,
+  updateCorridaStatus,
   setSelectedDestino,
   setIsRequesting,
+  setIsActionLoading,
   setCorridaError,
   setSearchResults,
   setIsSearching,
   clearSearch,
+  setMensagens,
+  setIsLoadingMensagens,
+  resetCorrida,
 } = corridaSlice.actions;
 
 export default corridaSlice.reducer;

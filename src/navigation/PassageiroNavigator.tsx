@@ -15,6 +15,7 @@ import {useTheme, type Theme} from '../theme';
 import {PassageiroScreen} from '../screens/Passageiro/PassageiroScreen';
 import {ProfileNavigator} from './ProfileNavigator';
 import {NotificationsScreen} from '../screens/Notifications/NotificationsScreen';
+import {CorridasNavigator} from './CorridasNavigator';
 
 type PassageiroTabParamList = {
   PassageiroHome: undefined;
@@ -149,7 +150,6 @@ const createTabBarStyles = (_theme: Theme, bottomInset: number) =>
   });
 
 // Placeholder screens for tabs not yet implemented
-const CorridasPlaceholder      = (): React.JSX.Element => <NotificationsScreen />;
 const NotificacoesPlaceholder  = (): React.JSX.Element => <NotificationsScreen />;
 
 /**
@@ -163,7 +163,7 @@ export const PassageiroNavigator = (): React.JSX.Element => {
       screenOptions={{headerShown: false}}
       tabBar={props => <PassageiroTabBar {...props} />}>
       <Tab.Screen component={PassageiroScreen}        name="PassageiroHome" />
-      <Tab.Screen component={CorridasPlaceholder}     name="PassageiroCorridas" />
+      <Tab.Screen component={CorridasNavigator}       name="PassageiroCorridas" />
       <Tab.Screen component={NotificacoesPlaceholder} name="PassageiroNotificacoes" />
       <Tab.Screen component={ProfileNavigator}        name="PassageiroProfile" />
     </Tab.Navigator>

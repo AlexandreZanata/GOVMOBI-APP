@@ -80,6 +80,18 @@ export type PassageiroStackParamList = {
 };
 
 // ---------------------------------------------------------------------------
+// Corridas Stack (within Passageiro tab navigator)
+// ---------------------------------------------------------------------------
+
+export type CorridasStackParamList = {
+  CorridasList: undefined;
+  CorridaDetalhe: {corridaId: string};
+  AcompanharCorrida: {corridaId: string};
+  SolicitarCorrida: undefined;
+  MotoristaCorridaAction: {corridaId: string};
+};
+
+// ---------------------------------------------------------------------------
 // Root Stack
 // ---------------------------------------------------------------------------
 

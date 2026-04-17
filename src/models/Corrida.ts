@@ -2,12 +2,17 @@
  * @fileoverview Domain model for ride requests (corridas).
  */
 
-/** Status of a ride request in its lifecycle. */
+/**
+ * Status of a ride request in its lifecycle.
+ * Matches the state machine from route-corridas.md.
+ */
 export type CorridaStatus =
-  | 'AGUARDANDO'
+  | 'SOLICITADA'
   | 'ACEITA'
-  | 'EM_ANDAMENTO'
-  | 'CONCLUIDA'
+  | 'RECUSADA'
+  | 'EM_DESLOCAMENTO'
+  | 'PASSAGEIRO_EMBARCADO'
+  | 'FINALIZADA'
   | 'CANCELADA';
 
 /** Geographic coordinate pair. */
@@ -24,18 +29,32 @@ export interface Localizacao extends Coordenada {
 
 /**
  * Ride request model for passenger-driver matching.
+ * Aligned with the /corridas API contract.
  */
 export interface Corrida {
   /** UUID v7 */
   id: string;
   passageiroId: string;
   motoristaId: string | null;
-  origem: Localizacao;
-  destino: Localizacao;
+  veiculoId: string | null;
+  origemLat: number;
+  origemLng: number;
+  destinoLat: number;
+  destinoLng: number;
+  motivoServico: string;
+  observacoes?: string;
   status: CorridaStatus;
-  distanciaKm: number | null;
-  duracaoMinutos: number | null;
-  valorEstimado: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Message in a ride's chat history.
+ */
+export interface CorridaMensagem {
+  id: string;
+  corridaId: string;
+  remetenteId: string;
+  conteudo: string;
+  createdAt: string;
 }

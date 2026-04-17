@@ -291,6 +291,103 @@
     "title": "Área do Motorista",
     "subtitle": "Aguarde corridas disponíveis."
   },
+  "corridas": {
+    "list": {
+      "title": "Corridas",
+      "viewActive": "Ver corrida ativa",
+      "requestRide": "Solicitar Corrida",
+      "empty": {
+        "title": "Nenhuma corrida ativa",
+        "subtitle": "Solicite uma corrida para começar."
+      }
+    },
+    "detail": {
+      "title": "Detalhes da Corrida",
+      "route": "Rota",
+      "origem": "Origem",
+      "destino": "Destino",
+      "motivo": "Motivo do Serviço",
+      "observacoes": "Observações",
+      "passageiroId": "Passageiro",
+      "motoristaId": "Motorista",
+      "createdAt": "Solicitado em",
+      "metadata": "Informações"
+    },
+    "acompanhar": {
+      "title": "Acompanhar Corrida"
+    },
+    "solicitar": {
+      "title": "Solicitar Corrida",
+      "destino": "Destino selecionado",
+      "motivoLabel": "Motivo do Serviço",
+      "motivoPlaceholder": "Ex: Visita técnica ao canteiro de obras",
+      "motivoRequired": "O motivo do serviço é obrigatório.",
+      "observacoesLabel": "Observações (opcional)",
+      "observacoesPlaceholder": "Ex: Levar material de medição",
+      "submit": "Solicitar Corrida"
+    },
+    "motorista": {
+      "title": "Ação do Motorista"
+    },
+    "status": {
+      "SOLICITADA": "Solicitada",
+      "ACEITA": "Aceita",
+      "RECUSADA": "Recusada",
+      "EM_DESLOCAMENTO": "Em Deslocamento",
+      "PASSAGEIRO_EMBARCADO": "Passageiro Embarcado",
+      "FINALIZADA": "Finalizada",
+      "CANCELADA": "Cancelada"
+    },
+    "actions": {
+      "title": "Ações",
+      "aceitar": "Aceitar Corrida",
+      "recusar": "Recusar Corrida",
+      "iniciarDeslocamento": "Iniciar Deslocamento",
+      "confirmarEmbarque": "Confirmar Embarque",
+      "finalizar": "Finalizar Corrida"
+    },
+    "recusar": {
+      "motivoPlaceholder": "Motivo da recusa (opcional)"
+    },
+    "cancel": {
+      "title": "Cancelar Corrida",
+      "confirm": "Confirmar cancelamento",
+      "motivoRequired": "Informe o motivo do cancelamento.",
+      "motivoPlaceholder": "Motivo do cancelamento",
+      "defaultMotivo": "Cancelado pelo motorista"
+    },
+    "finalizar": {
+      "title": "Finalizar Corrida",
+      "confirm": "Confirmar finalização da corrida?"
+    },
+    "mensagens": {
+      "title": "Mensagens",
+      "empty": "Nenhuma mensagem ainda."
+    },
+    "terminal": {
+      "FINALIZADA": "Corrida finalizada com sucesso.",
+      "CANCELADA": "Corrida cancelada.",
+      "RECUSADA": "Corrida recusada."
+    },
+    "success": {
+      "aceita": "Corrida aceita com sucesso.",
+      "recusada": "Corrida recusada.",
+      "emDeslocamento": "Deslocamento iniciado.",
+      "embarcado": "Embarque confirmado.",
+      "finalizada": "Corrida finalizada.",
+      "cancelada": "Corrida cancelada."
+    },
+    "errors": {
+      "jaAceita": "Esta corrida já foi aceita por outro motorista.",
+      "jaFinalizada": "Não é possível cancelar uma corrida já finalizada.",
+      "aceitarFailed": "Não foi possível aceitar a corrida.",
+      "recusarFailed": "Não foi possível recusar a corrida.",
+      "deslocamentoFailed": "Não foi possível iniciar o deslocamento.",
+      "embarqueFailed": "Não foi possível confirmar o embarque.",
+      "finalizarFailed": "Não foi possível finalizar a corrida.",
+      "cancelarFailed": "Não foi possível cancelar a corrida."
+    }
+  },
   "pesquisa": {
     "geocoding": {
       "minChars": "Digite pelo menos 3 caracteres",

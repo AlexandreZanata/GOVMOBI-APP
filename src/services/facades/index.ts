@@ -66,7 +66,8 @@ const createDefaultFacades = (config?: FacadeConfig, getToken?: () => string | n
       runFacade: new RunFacadeMock(),
       servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
       frotaFacade: new FrotaFacadeImpl(resolvedConfig),
-      corridaFacade: new CorridaFacadeImpl(resolvedConfig),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      corridaFacade: (() => { const {CorridaFacadeMock} = require('./mock/CorridaFacadeMock') as typeof import('./mock/CorridaFacadeMock'); return new CorridaFacadeMock(); })(),
       pesquisaFacade: new PesquisaFacadeMock(),
     };
   }

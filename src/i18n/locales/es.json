@@ -225,6 +225,91 @@
     "title": "Área del Conductor",
     "subtitle": "Esperando viajes disponibles."
   },
+  "corridas": {
+    "list": {
+      "title": "Viajes",
+      "viewActive": "Ver viaje activo",
+      "requestRide": "Solicitar Viaje",
+      "empty": {
+        "title": "Sin viaje activo",
+        "subtitle": "Solicita un viaje para comenzar."
+      }
+    },
+    "detail": {
+      "title": "Detalles del Viaje",
+      "route": "Ruta",
+      "origem": "Origen",
+      "destino": "Destino",
+      "motivo": "Motivo del Servicio",
+      "observacoes": "Notas",
+      "passageiroId": "Pasajero",
+      "motoristaId": "Conductor",
+      "createdAt": "Solicitado el",
+      "metadata": "Información"
+    },
+    "acompanhar": {"title": "Seguir Viaje"},
+    "solicitar": {
+      "title": "Solicitar Viaje",
+      "destino": "Destino seleccionado",
+      "motivoLabel": "Motivo del Servicio",
+      "motivoPlaceholder": "Ej: Visita técnica a la obra",
+      "motivoRequired": "El motivo del servicio es obligatorio.",
+      "observacoesLabel": "Notas (opcional)",
+      "observacoesPlaceholder": "Ej: Llevar material de medición",
+      "submit": "Solicitar Viaje"
+    },
+    "motorista": {"title": "Acción del Conductor"},
+    "status": {
+      "SOLICITADA": "Solicitado",
+      "ACEITA": "Aceptado",
+      "RECUSADA": "Rechazado",
+      "EM_DESLOCAMENTO": "En Camino",
+      "PASSAGEIRO_EMBARCADO": "Pasajero Abordado",
+      "FINALIZADA": "Finalizado",
+      "CANCELADA": "Cancelado"
+    },
+    "actions": {
+      "title": "Acciones",
+      "aceitar": "Aceptar Viaje",
+      "recusar": "Rechazar Viaje",
+      "iniciarDeslocamento": "Iniciar Desplazamiento",
+      "confirmarEmbarque": "Confirmar Abordaje",
+      "finalizar": "Finalizar Viaje"
+    },
+    "recusar": {"motivoPlaceholder": "Motivo del rechazo (opcional)"},
+    "cancel": {
+      "title": "Cancelar Viaje",
+      "confirm": "Confirmar cancelación",
+      "motivoRequired": "Ingrese el motivo de cancelación.",
+      "motivoPlaceholder": "Motivo de cancelación",
+      "defaultMotivo": "Cancelado por el conductor"
+    },
+    "finalizar": {"title": "Finalizar Viaje", "confirm": "¿Confirmar finalización del viaje?"},
+    "mensagens": {"title": "Mensajes", "empty": "Sin mensajes aún."},
+    "terminal": {
+      "FINALIZADA": "Viaje finalizado con éxito.",
+      "CANCELADA": "Viaje cancelado.",
+      "RECUSADA": "Viaje rechazado."
+    },
+    "success": {
+      "aceita": "Viaje aceptado.",
+      "recusada": "Viaje rechazado.",
+      "emDeslocamento": "En camino al punto de recogida.",
+      "embarcado": "Abordaje confirmado.",
+      "finalizada": "Viaje finalizado.",
+      "cancelada": "Viaje cancelado."
+    },
+    "errors": {
+      "jaAceita": "Este viaje ya fue aceptado por otro conductor.",
+      "jaFinalizada": "No se puede cancelar un viaje ya finalizado.",
+      "aceitarFailed": "No se pudo aceptar el viaje.",
+      "recusarFailed": "No se pudo rechazar el viaje.",
+      "deslocamentoFailed": "No se pudo iniciar el desplazamiento.",
+      "embarqueFailed": "No se pudo confirmar el abordaje.",
+      "finalizarFailed": "No se pudo finalizar el viaje.",
+      "cancelarFailed": "No se pudo cancelar el viaje."
+    }
+  },
   "pesquisa": {
     "geocoding": {
       "minChars": "Escribe al menos 3 caracteres",

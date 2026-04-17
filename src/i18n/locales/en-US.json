@@ -229,6 +229,91 @@
     "title": "Driver Area",
     "subtitle": "Waiting for available rides."
   },
+  "corridas": {
+    "list": {
+      "title": "Rides",
+      "viewActive": "View active ride",
+      "requestRide": "Request Ride",
+      "empty": {
+        "title": "No active ride",
+        "subtitle": "Request a ride to get started."
+      }
+    },
+    "detail": {
+      "title": "Ride Details",
+      "route": "Route",
+      "origem": "Origin",
+      "destino": "Destination",
+      "motivo": "Service Reason",
+      "observacoes": "Notes",
+      "passageiroId": "Passenger",
+      "motoristaId": "Driver",
+      "createdAt": "Requested at",
+      "metadata": "Information"
+    },
+    "acompanhar": {"title": "Track Ride"},
+    "solicitar": {
+      "title": "Request Ride",
+      "destino": "Selected destination",
+      "motivoLabel": "Service Reason",
+      "motivoPlaceholder": "e.g. Technical visit to construction site",
+      "motivoRequired": "Service reason is required.",
+      "observacoesLabel": "Notes (optional)",
+      "observacoesPlaceholder": "e.g. Bring measuring equipment",
+      "submit": "Request Ride"
+    },
+    "motorista": {"title": "Driver Action"},
+    "status": {
+      "SOLICITADA": "Requested",
+      "ACEITA": "Accepted",
+      "RECUSADA": "Refused",
+      "EM_DESLOCAMENTO": "En Route",
+      "PASSAGEIRO_EMBARCADO": "Passenger Boarded",
+      "FINALIZADA": "Completed",
+      "CANCELADA": "Cancelled"
+    },
+    "actions": {
+      "title": "Actions",
+      "aceitar": "Accept Ride",
+      "recusar": "Refuse Ride",
+      "iniciarDeslocamento": "Start Driving",
+      "confirmarEmbarque": "Confirm Boarding",
+      "finalizar": "Complete Ride"
+    },
+    "recusar": {"motivoPlaceholder": "Reason for refusal (optional)"},
+    "cancel": {
+      "title": "Cancel Ride",
+      "confirm": "Confirm cancellation",
+      "motivoRequired": "Please provide a cancellation reason.",
+      "motivoPlaceholder": "Cancellation reason",
+      "defaultMotivo": "Cancelled by driver"
+    },
+    "finalizar": {"title": "Complete Ride", "confirm": "Confirm ride completion?"},
+    "mensagens": {"title": "Messages", "empty": "No messages yet."},
+    "terminal": {
+      "FINALIZADA": "Ride completed successfully.",
+      "CANCELADA": "Ride cancelled.",
+      "RECUSADA": "Ride refused."
+    },
+    "success": {
+      "aceita": "Ride accepted.",
+      "recusada": "Ride refused.",
+      "emDeslocamento": "Driving to pickup.",
+      "embarcado": "Boarding confirmed.",
+      "finalizada": "Ride completed.",
+      "cancelada": "Ride cancelled."
+    },
+    "errors": {
+      "jaAceita": "This ride was already accepted by another driver.",
+      "jaFinalizada": "Cannot cancel a completed ride.",
+      "aceitarFailed": "Could not accept the ride.",
+      "recusarFailed": "Could not refuse the ride.",
+      "deslocamentoFailed": "Could not start driving.",
+      "embarqueFailed": "Could not confirm boarding.",
+      "finalizarFailed": "Could not complete the ride.",
+      "cancelarFailed": "Could not cancel the ride."
+    }
+  },
   "pesquisa": {
     "geocoding": {
       "minChars": "Type at least 3 characters",

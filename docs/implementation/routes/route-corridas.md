@@ -26,7 +26,7 @@ SOLICITADA → ACEITA → EM_DESLOCAMENTO → PASSAGEIRO_EMBARCADO → FINALIZAD
 ## API Endpoints
 
 | Method | Endpoint                             | Role             | Description                                 | Success | Error codes |
-|--------|--------------------------------------|------------------|---------------------------------------------|---------|-------------|
+| ------ | ------------------------------------ | ---------------- | ------------------------------------------- | ------- | ----------- |
 | `POST` | `/corridas`                          | Passageiro       | Request a new ride (async Outbox)           | `202`   | `400`       |
 | `POST` | `/corridas/:id/aceitar`              | Motorista        | Accept a dispatched ride                    | `201`   | `409`       |
 | `POST` | `/corridas/:id/recusar`              | Motorista        | Refuse a ride (system finds next candidate) | `201`   | —           |
@@ -36,6 +36,7 @@ SOLICITADA → ACEITA → EM_DESLOCAMENTO → PASSAGEIRO_EMBARCADO → FINALIZAD
 | `POST` | `/corridas/:id/cancelar`             | Passageiro/Admin | Cancel an active ride                       | `201`   | `400`       |
 | `GET`  | `/corridas/:id`                      | Any              | Get full ride details                       | `200`   | `404`       |
 | `GET`  | `/corridas/:id/status`               | Any              | Get current status (Redis-optimised, fast)  | `200`   | `404`       |
+| `GET`  | `/corridas/:id/mensagens`            | Any              | List ride chat message history              | `200`   | `404`       |
 
 ---
 
@@ -57,20 +58,20 @@ Initiates the intelligent dispatch process. Processed asynchronously — the ser
 }
 ```
 
-| Field           | Type   | Required | Description                                    |
-|-----------------|--------|----------|------------------------------------------------|
-| `passageiroId`  | string | Yes      | UUID of the requesting servidor (passenger)    |
-| `origemLat`     | number | Yes      | Origin latitude                                |
-| `origemLng`     | number | Yes      | Origin longitude                               |
-| `destinoLat`    | number | Yes      | Destination latitude                           |
-| `destinoLng`    | number | Yes      | Destination longitude                          |
-| `motivoServico` | string | Yes      | Official reason for the trip                   |
-| `observacoes`   | string | No       | Additional notes for the driver                |
+| Field           | Type   | Required | Description                                 |
+| --------------- | ------ | -------- | ------------------------------------------- |
+| `passageiroId`  | string | Yes      | UUID of the requesting servidor (passenger) |
+| `origemLat`     | number | Yes      | Origin latitude                             |
+| `origemLng`     | number | Yes      | Origin longitude                            |
+| `destinoLat`    | number | Yes      | Destination latitude                        |
+| `destinoLng`    | number | Yes      | Destination longitude                       |
+| `motivoServico` | string | Yes      | Official reason for the trip                |
+| `observacoes`   | string | No       | Additional notes for the driver             |
 
 ### Response `202`
 
 ```json
-{ "corridaId": "uuid", "status": "SOLICITADA" }
+{"corridaId": "uuid", "status": "SOLICITADA"}
 ```
 
 > `202 Accepted` — the ride has been enqueued, not yet assigned. Poll `GET /corridas/:id/status` or listen on the WebSocket `corrida:status` event.
@@ -95,7 +96,7 @@ Driver accepts a dispatched ride. Only one driver can accept — first write win
 ```
 
 | Field         | Type   | Required | Description                     |
-|---------------|--------|----------|---------------------------------|
+| ------------- | ------ | -------- | ------------------------------- |
 | `motoristaId` | string | Yes      | UUID of the accepting motorista |
 | `veiculoId`   | string | Yes      | UUID of the vehicle being used  |
 
@@ -123,7 +124,7 @@ Driver refuses the ride. The dispatch system will find the next available candid
 ```
 
 | Field         | Type   | Required | Description                    |
-|---------------|--------|----------|--------------------------------|
+| ------------- | ------ | -------- | ------------------------------ |
 | `motoristaId` | string | Yes      | UUID of the refusing motorista |
 | `motivo`      | string | No       | Reason for refusal             |
 
@@ -158,7 +159,7 @@ Driver confirms the passenger has boarded the vehicle.
 ```
 
 | Field         | Type   | Required | Description                            |
-|---------------|--------|----------|----------------------------------------|
+| ------------- | ------ | -------- | -------------------------------------- |
 | `motoristaId` | string | Yes      | UUID of the motorista                  |
 | `posicaoLat`  | number | Yes      | Driver's current latitude at boarding  |
 | `posicaoLng`  | number | Yes      | Driver's current longitude at boarding |
@@ -184,7 +185,7 @@ Driver completes the ride at the destination.
 ```
 
 | Field             | Type   | Required | Description                       |
-|-------------------|--------|----------|-----------------------------------|
+| ----------------- | ------ | -------- | --------------------------------- |
 | `motoristaId`     | string | Yes      | UUID of the motorista             |
 | `posicaoFinalLat` | number | Yes      | Driver's latitude at destination  |
 | `posicaoFinalLng` | number | Yes      | Driver's longitude at destination |
@@ -209,11 +210,11 @@ Cancels an active ride. Can be called by the passenger, driver, or an admin.
 }
 ```
 
-| Field             | Type   | Required | Description                                          |
-|-------------------|--------|----------|------------------------------------------------------|
-| `solicitanteId`   | string | Yes      | UUID of the cancelling party                         |
-| `motivo`          | string | Yes      | Reason for cancellation                              |
-| `tipoSolicitante` | enum   | Yes      | `"passageiro"` \| `"motorista"` \| `"admin"`         |
+| Field             | Type   | Required | Description                                  |
+| ----------------- | ------ | -------- | -------------------------------------------- |
+| `solicitanteId`   | string | Yes      | UUID of the cancelling party                 |
+| `motivo`          | string | Yes      | Reason for cancellation                      |
+| `tipoSolicitante` | enum   | Yes      | `"passageiro"` \| `"motorista"` \| `"admin"` |
 
 ### Response `201`
 
@@ -268,33 +269,55 @@ Redis-optimised status check — returns only the current status without loading
 
 ---
 
+## GET /corridas/:id/mensagens
+
+Returns the persisted message history for the ride chat room.
+
+### Response `200`
+
+```json
+[
+  {
+    "id": "uuid-da-mensagem",
+    "corridaId": "uuid",
+    "remetenteId": "uuid-do-usuario",
+    "conteudo": "O motorista chegou ao portao principal.",
+    "timestamp": "2026-04-16T13:06:00.000Z"
+  }
+]
+```
+
+> Use this endpoint to hydrate chat when the screen opens; keep live updates via WebSocket `nova-mensagem`.
+
+---
+
 ## Corrida Status Values
 
-| Status                  | Description                                      |
-|-------------------------|--------------------------------------------------|
-| `SOLICITADA`            | Ride requested, awaiting dispatch                |
-| `ACEITA`                | Driver accepted, not yet en route                |
-| `RECUSADA`              | Driver refused, system searching next candidate  |
-| `EM_DESLOCAMENTO`       | Driver en route to pickup                        |
-| `PASSAGEIRO_EMBARCADO`  | Passenger boarded, en route to destination       |
-| `FINALIZADA`            | Ride completed at destination                    |
-| `CANCELADA`             | Ride cancelled by passenger, driver, or admin    |
+| Status                 | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `SOLICITADA`           | Ride requested, awaiting dispatch               |
+| `ACEITA`               | Driver accepted, not yet en route               |
+| `RECUSADA`             | Driver refused, system searching next candidate |
+| `EM_DESLOCAMENTO`      | Driver en route to pickup                       |
+| `PASSAGEIRO_EMBARCADO` | Passenger boarded, en route to destination      |
+| `FINALIZADA`           | Ride completed at destination                   |
+| `CANCELADA`            | Ride cancelled by passenger, driver, or admin   |
 
 ---
 
 ## File Map
 
-| File                                                    | Type    | Purpose                                          |
-|---------------------------------------------------------|---------|--------------------------------------------------|
-| `src/models/Corrida.ts`                                 | Model   | `Corrida` interface + `CorridaStatus` enum       |
-| `src/types/corridas.ts`                                 | Types   | Input types for all facade methods               |
-| `src/services/facades/CorridaFacade.ts`                 | Facade  | All HTTP calls for this domain                   |
-| `src/services/facades/mock/CorridaFacadeMock.ts`        | Mock    | MOCK_MODE implementation                         |
-| `src/store/slices/corridasSlice.ts`                     | Redux   | Active corrida state + status polling            |
-| `src/screens/Corridas/SolicitarCorridaScreen.tsx`       | Screen  | Passenger ride request form                      |
-| `src/screens/Corridas/AcompanharCorridaScreen.tsx`      | Screen  | Real-time ride tracking (passenger view)         |
-| `src/screens/Corridas/MotoristaCorridaScreen.tsx`       | Screen  | Driver action screen (aceitar/recusar/finalizar) |
-| `src/i18n/locales/pt-BR.json`                           | i18n    | `corridas` namespace strings                     |
+| File                                               | Type   | Purpose                                          |
+| -------------------------------------------------- | ------ | ------------------------------------------------ |
+| `src/models/Corrida.ts`                            | Model  | `Corrida` interface + `CorridaStatus` enum       |
+| `src/types/corridas.ts`                            | Types  | Input types for all facade methods               |
+| `src/services/facades/CorridaFacade.ts`            | Facade | All HTTP calls for this domain                   |
+| `src/services/facades/mock/CorridaFacadeMock.ts`   | Mock   | MOCK_MODE implementation                         |
+| `src/store/slices/corridasSlice.ts`                | Redux  | Active corrida state + status polling            |
+| `src/screens/Corridas/SolicitarCorridaScreen.tsx`  | Screen | Passenger ride request form                      |
+| `src/screens/Corridas/AcompanharCorridaScreen.tsx` | Screen | Real-time ride tracking (passenger view)         |
+| `src/screens/Corridas/MotoristaCorridaScreen.tsx`  | Screen | Driver action screen (aceitar/recusar/finalizar) |
+| `src/i18n/locales/pt-BR.json`                      | i18n   | `corridas` namespace strings                     |
 
 ---
 
@@ -310,7 +333,7 @@ After `POST /corridas` returns `202`, the app must track the ride status. Two st
 ### Role-based action visibility
 
 | Action               | Visible to           |
-|----------------------|----------------------|
+| -------------------- | -------------------- |
 | Solicitar corrida    | Passageiro (USUARIO) |
 | Aceitar / Recusar    | Motorista            |
 | Iniciar deslocamento | Motorista            |
