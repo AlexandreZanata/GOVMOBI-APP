@@ -1,6 +1,6 @@
-# Route: /pesquisa/\* — Search and Geocoding
+# Route: /pesquisa/\* — Search, Geocoding, and Routing
 
-> **Domain:** Pesquisa (search/geocoding)
+> **Domain:** Pesquisa (search/geocoding/routing)
 > **Base URL:** `http://172.19.2.116:3000` (env: `API_BASE_URL`)
 > **Auth required:** Yes (`Authorization: Bearer <accessToken>`)
 > **Provider:** Mapbox (with Redis cache)
@@ -9,11 +9,12 @@
 
 ## What This Route Does
 
-`/pesquisa` provides map config, forward geocoding, and reverse geocoding APIs.
+`/pesquisa` provides map config, forward geocoding, reverse geocoding, and route calculation APIs.
 
 - `GET /pesquisa/config`: returns frontend map settings, including the public Mapbox token.
 - `GET /pesquisa/geocoding`: text -> coordinate candidates (`lat`, `lng`) with `placeName`.
 - `GET /pesquisa/reverse-geocoding`: coordinate pair -> human-readable address.
+- `GET /pesquisa/rota`: route trace (geometry), distance, and duration between origin and destination.
 
 The backend uses Mapbox with Redis cache to reduce latency and provider calls.
 
@@ -26,6 +27,7 @@ The backend uses Mapbox with Redis cache to reduce latency and provider calls.
 | `GET`  | `/pesquisa/config`            | Return map settings for frontend usage       | `200`   |
 | `GET`  | `/pesquisa/geocoding`         | Search address and return coordinate matches | `200`   |
 | `GET`  | `/pesquisa/reverse-geocoding` | Convert coordinates to a readable address    | `200`   |
+| `GET`  | `/pesquisa/rota`              | Calculate route geometry, distance, duration | `200`   |
 
 ---
 
@@ -153,6 +155,80 @@ If the token is missing or invalid, the API returns unauthorized in the same err
 
 ---
 
+## GET /pesquisa/rota
+
+Calculates the route trace between two points using Mapbox with Redis cache.
+
+Primary use now:
+
+- Trace route from current user location to selected destination.
+
+Planned use:
+
+- Trace route from driver location to destination in the same flow.
+
+### Query params
+
+| Name         | Type   | Required | Description           |
+| ------------ | ------ | -------- | --------------------- |
+| `origemLat`  | number | Yes      | Origin latitude       |
+| `origemLng`  | number | Yes      | Origin longitude      |
+| `destinoLat` | number | Yes      | Destination latitude  |
+| `destinoLng` | number | Yes      | Destination longitude |
+
+### Example request
+
+```bash
+curl -X GET \
+  'http://172.19.2.116:3000/pesquisa/rota?origemLat=-23.5505&origemLng=-46.6333&destinoLat=-23.553&destinoLng=-46.636' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer <accessToken>'
+```
+
+### Example request (frontend)
+
+```ts
+const params = new URLSearchParams({
+  origemLat: '-23.5505',
+  origemLng: '-46.6333',
+  destinoLat: '-23.553',
+  destinoLng: '-46.636',
+});
+
+const response = await fetch(
+  `${API_BASE_URL}/pesquisa/rota?${params.toString()}`,
+  {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  },
+);
+```
+
+### Response `200` (expected shape)
+
+```json
+{
+  "geometry": {
+    "type": "LineString",
+    "coordinates": [
+      [-46.6333, -23.5505],
+      [-46.636, -23.553]
+    ]
+  },
+  "distanciaMetros": 430,
+  "duracaoSegundos": 155
+}
+```
+
+### Integration note
+
+- Keep geometry as-is for map rendering.
+- Use `distanciaMetros` and `duracaoSegundos` for ETA and trip summary UI.
+- Cache-aware backend means repeated origin/destination calls should be faster.
+
+---
+
 ## Frontend Integration Notes
 
 - Debounce text input (recommended `300ms` to `500ms`) before calling this route.
@@ -164,6 +240,8 @@ If the token is missing or invalid, the API returns unauthorized in the same err
 - Load `/pesquisa/config` once on app boot and cache it in memory.
 - Always send `lat`/`lng` from the current user location when available to prioritize nearby results.
 - Use reverse geocoding to prefill forms from map pin position.
+- After destination selection, call `/pesquisa/rota` to draw the route preview on map.
+- Recalculate `/pesquisa/rota` whenever origin or destination changes.
 
 ---
 
@@ -202,6 +280,24 @@ export async function reverseGeocode(
 }> {
   // GET /pesquisa/reverse-geocoding?lat=${lat}&lng=${lng}
 }
+
+export type RouteResult = {
+  geometry: {
+    type: 'LineString';
+    coordinates: [number, number][];
+  };
+  distanciaMetros: number;
+  duracaoSegundos: number;
+};
+
+export async function getRouteBetweenPoints(input: {
+  origemLat: number;
+  origemLng: number;
+  destinoLat: number;
+  destinoLng: number;
+}): Promise<RouteResult> {
+  // GET /pesquisa/rota?origemLat=...&origemLng=...&destinoLat=...&destinoLng=...
+}
 ```
 
 ---
@@ -210,6 +306,7 @@ export async function reverseGeocode(
 
 - `400`: missing/invalid `q`
 - `400`: missing/invalid `lat` or `lng` (reverse geocoding)
+- `400`: missing/invalid `origemLat`, `origemLng`, `destinoLat`, or `destinoLng` (rota)
 - `401`: invalid or expired JWT
 - `429`: too many requests (short window rate limit)
 - `5xx`: provider or backend transient failure

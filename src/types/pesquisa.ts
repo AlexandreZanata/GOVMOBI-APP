@@ -1,7 +1,7 @@
 /**
- * @fileoverview Type definitions for the Pesquisa (search/geocoding) domain.
+ * @fileoverview Type definitions for the Pesquisa (search/geocoding/routing) domain.
  * Mirrors the API contract at GET /pesquisa/config, /pesquisa/geocoding,
- * and /pesquisa/reverse-geocoding.
+ * /pesquisa/reverse-geocoding, and /pesquisa/rota.
  */
 
 /**
@@ -56,4 +56,39 @@ export interface GeocodeAddressInput {
 export interface ReverseGeocodeInput {
   lat: number;
   lng: number;
+}
+
+/**
+ * Coordinate pair in Mapbox geometry order.
+ */
+export type RouteCoordinate = [number, number];
+
+/**
+ * Route geometry returned by GET /pesquisa/rota.
+ */
+export interface RouteGeometry {
+  type: 'LineString';
+  coordinates: RouteCoordinate[];
+}
+
+/**
+ * Route result returned by GET /pesquisa/rota.
+ */
+export interface PesquisaRouteResult {
+  /** Polyline geometry for map rendering. */
+  geometry: RouteGeometry;
+  /** Total route distance in meters. */
+  distanciaMetros: number;
+  /** Total route duration in seconds. */
+  duracaoSegundos: number;
+}
+
+/**
+ * Query parameters for GET /pesquisa/rota.
+ */
+export interface GetRouteInput {
+  origemLat: number;
+  origemLng: number;
+  destinoLat: number;
+  destinoLng: number;
 }

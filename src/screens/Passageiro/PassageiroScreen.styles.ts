@@ -328,6 +328,37 @@ export const createPassageiroStyles = () =>
       color: C.textMuted,
     },
 
+    // Route preview status inside bottom sheet
+    routeStatusWrap: {
+      marginBottom: 14,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      backgroundColor: C.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: C.dividerLight,
+    },
+    routeLoadingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    routeStatusText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: C.textMid,
+    },
+    routeSummaryText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: C.textDark,
+    },
+    routeErrorText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: C.errorRed,
+    },
+
     // CTA button
     ctaButton: {
       width: '100%',

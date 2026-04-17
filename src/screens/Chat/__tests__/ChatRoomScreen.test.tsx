@@ -59,6 +59,16 @@ jest.mock('@expo/vector-icons', () => ({
   MaterialIcons: 'MaterialIcons',
 }));
 
+// Mock facades — prevents real HTTP calls that would hang the test suite
+jest.mock('../../../services/facades', () => ({
+  useFacades: () => ({
+    chatFacade: {
+      getMessages: jest.fn().mockResolvedValue({data: [], error: null}),
+      sendMessage: jest.fn().mockResolvedValue({data: null, error: null}),
+    },
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Test navigator — wraps ChatRoomScreen with required route params
 // ---------------------------------------------------------------------------

@@ -11,10 +11,12 @@ export const SafeAreaProvider = ({children}: {children: React.ReactNode}) =>
   React.createElement(React.Fragment, null, children);
 export const SafeAreaView = ({children}: {children: React.ReactNode}) =>
   React.createElement(React.Fragment, null, children);
+type Insets = {top: number; bottom: number; left: number; right: number};
+
 export const SafeAreaConsumer = ({
   children,
 }: {
-  children: (insets: typeof insets) => React.ReactNode;
+  children: (i: Insets) => React.ReactNode;
 }) => React.createElement(React.Fragment, null, children(insets));
 export const SafeAreaInsetsContext = React.createContext(insets);
 export const initialWindowMetrics = {

@@ -62,7 +62,10 @@ const mockLogin = jest.fn();
 
 jest.mock('../../../services/facades', () => ({
   useFacades: () => ({
-    authFacade: {login: mockLogin},
+    authFacade: {
+      login: mockLogin,
+      getMe: jest.fn().mockResolvedValue({data: null, error: null}),
+    },
   }),
 }));
 

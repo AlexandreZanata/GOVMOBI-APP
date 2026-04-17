@@ -65,6 +65,7 @@ export const useChatRoom = (conversationId: string): ChatRoomState => {
   const [isLoading, setIsLoading] = useState(true);
   const [draftText, setDraftText] = useState('');
   const listRef = useRef<FlatList<MessageListItem> | null>(null);
+  const sendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isTyping = useMemo(
     () => typingUserIds.some(id => id !== currentUserId),
@@ -76,7 +77,10 @@ export const useChatRoom = (conversationId: string): ChatRoomState => {
   useEffect(() => {
     dispatch(setActiveConversation(conversationId));
     dispatch(clearUnreadCount(conversationId));
-    return () => { dispatch(setActiveConversation(null)); };
+    return () => {
+      dispatch(setActiveConversation(null));
+      if (sendTimerRef.current) clearTimeout(sendTimerRef.current);
+    };
   }, [conversationId, dispatch]);
 
   useEffect(() => {
@@ -109,7 +113,7 @@ export const useChatRoom = (conversationId: string): ChatRoomState => {
     dispatch(addMessage(newMessage));
     setDraftText('');
     listRef.current?.scrollToOffset({offset: 0, animated: true});
-    setTimeout(() => {
+    sendTimerRef.current = setTimeout(() => {
       dispatch(updateMessage({...newMessage, status: MessageStatus.SENT, updatedAt: new Date().toISOString()}));
     }, 800);
   }, [conversationId, currentUserId, dispatch, draftText]);

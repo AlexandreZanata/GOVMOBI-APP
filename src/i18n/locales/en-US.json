@@ -149,12 +149,20 @@
       "title": "Public Servants",
       "searchPlaceholder": "Search by name or email",
       "filters": {"all": "All", "active": "Active", "inactive": "Inactive"},
-      "empty": {"title": "No servants found", "message": "No servants match the selected filters."}
+      "empty": {
+        "title": "No servants found",
+        "message": "No servants match the selected filters."
+      }
     },
     "detail": {
       "title": "Servant",
-      "cpf": "CPF", "email": "Email", "telefone": "Phone",
-      "cargo": "Position", "lotacao": "Unit", "papeis": "Roles", "status": "Status"
+      "cpf": "CPF",
+      "email": "Email",
+      "telefone": "Phone",
+      "cargo": "Position",
+      "lotacao": "Unit",
+      "papeis": "Roles",
+      "status": "Status"
     },
     "status": {"active": "Active", "inactive": "Inactive"},
     "papeis": {"USUARIO": "User", "ADMIN": "Admin", "MOTORISTA": "Driver"}
@@ -165,27 +173,55 @@
     "status": {"active": "Active", "inactive": "Inactive"},
     "veiculos": {
       "filters": {"all": "All", "active": "Active", "inactive": "Inactive"},
-      "empty": {"title": "No vehicles found", "message": "No vehicles match the selected filter."}
+      "empty": {
+        "title": "No vehicles found",
+        "message": "No vehicles match the selected filter."
+      }
     },
     "motoristas": {
       "filters": {"all": "All"},
-      "status": {"DISPONIVEL": "Available", "EM_ROTA": "On route", "AFASTADO": "Off duty"},
-      "empty": {"title": "No drivers found", "message": "No drivers match the selected filter."}
+      "status": {
+        "DISPONIVEL": "Available",
+        "EM_ROTA": "On route",
+        "AFASTADO": "Off duty"
+      },
+      "empty": {
+        "title": "No drivers found",
+        "message": "No drivers match the selected filter."
+      }
     }
   },
   "notifications": {
     "markAllRead": "Mark all as read",
-    "empty": {"title": "No notifications", "message": "You have no notifications at this time."}
+    "empty": {
+      "title": "No notifications",
+      "message": "You have no notifications at this time."
+    }
   },
   "profile": {
-    "save": "Save", "edit": "Edit", "cancel": "Cancel",
-    "signOut": "Sign out", "settings": "Settings",
-    "fields": {"name": "Name", "email": "Email", "role": "Role", "department": "Department"},
-    "toast": {"updated": "Profile updated.", "updateFailed": "Could not update profile."}
+    "save": "Save",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "signOut": "Sign out",
+    "settings": "Settings",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "department": "Department"
+    },
+    "toast": {
+      "updated": "Profile updated.",
+      "updateFailed": "Could not update profile."
+    }
   },
   "settings": {
     "title": "Settings",
-    "sections": {"language": "Language", "notifications": "Notifications", "about": "About"},
+    "sections": {
+      "language": "Language",
+      "notifications": "Notifications",
+      "about": "About"
+    },
     "about": {"version": "Version", "build": "Build"}
   },
   "passageiro": {
@@ -289,7 +325,10 @@
       "motivoPlaceholder": "Cancellation reason",
       "defaultMotivo": "Cancelled by driver"
     },
-    "finalizar": {"title": "Complete Ride", "confirm": "Confirm ride completion?"},
+    "finalizar": {
+      "title": "Complete Ride",
+      "confirm": "Confirm ride completion?"
+    },
     "mensagens": {"title": "Messages", "empty": "No messages yet."},
     "terminal": {
       "FINALIZADA": "Ride completed successfully.",
@@ -328,6 +367,12 @@
     },
     "config": {
       "error": "Error loading map configuration"
+    },
+    "route": {
+      "loading": "Calculating route...",
+      "error": "Could not calculate the route.",
+      "empty": "Select a destination to preview the route.",
+      "summary": "Route: {{distance}} km · {{duration}} min"
     }
   }
 }

@@ -136,4 +136,85 @@ describe('PesquisaFacadeImpl', () => {
     expect(requestUrl).not.toContain('lat=');
     expect(requestUrl).not.toContain('lng=');
   });
+
+  it('maps route payload from direct backend shape', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      createResponse(200, {
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [-46.6333, -23.5505],
+            [-46.636, -23.553],
+          ],
+        },
+        distanciaMetros: 430,
+        duracaoSegundos: 155,
+      }),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const facade = new PesquisaFacadeImpl({
+      apiBaseUrl: 'http://localhost:3000',
+      mockMode: false,
+    });
+
+    const result = await facade.getRouteBetweenPoints({
+      origemLat: -23.5505,
+      origemLng: -46.6333,
+      destinoLat: -23.553,
+      destinoLng: -46.636,
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data?.geometry.coordinates).toHaveLength(2);
+    expect(result.data?.distanciaMetros).toBe(430);
+    expect(result.data?.duracaoSegundos).toBe(155);
+  });
+
+  it('maps route payload from mapbox-like routes array', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      createResponse(200, {
+        success: true,
+        data: {
+          routes: [
+            {
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [-46.6333, -23.5505],
+                  [-46.634, -23.551],
+                  [-46.636, -23.553],
+                ],
+              },
+              distance: 510,
+              duration: 200,
+            },
+          ],
+        },
+      }),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const facade = new PesquisaFacadeImpl({
+      apiBaseUrl: 'http://localhost:3000',
+      mockMode: false,
+    });
+
+    const result = await facade.getRouteBetweenPoints({
+      origemLat: -23.5505,
+      origemLng: -46.6333,
+      destinoLat: -23.553,
+      destinoLng: -46.636,
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data?.geometry.coordinates).toHaveLength(3);
+    expect(result.data?.distanciaMetros).toBe(510);
+    expect(result.data?.duracaoSegundos).toBe(200);
+
+    const requestUrl = String(fetchMock.mock.calls[0]?.[0]);
+    expect(requestUrl).toContain('/pesquisa/rota?');
+    expect(requestUrl).toContain('origemLat=-23.5505');
+    expect(requestUrl).toContain('destinoLng=-46.636');
+  });
 });

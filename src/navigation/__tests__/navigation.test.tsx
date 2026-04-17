@@ -50,6 +50,40 @@ jest.mock('@expo/vector-icons', () => ({
   MaterialIcons: 'MaterialIcons',
 }));
 
+// Mock the navigators so we get predictable placeholder testIDs
+// without pulling in the full screen trees (which need extra slices/providers).
+jest.mock('../AuthNavigator', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  return {
+    AuthNavigator: () => React.createElement(View, {testID: 'placeholder-LoginScreen'}),
+  };
+});
+
+jest.mock('../MainTabNavigator', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  return {
+    MainTabNavigator: () => React.createElement(View, {testID: 'placeholder-HomeScreen'}),
+  };
+});
+
+jest.mock('../PassageiroNavigator', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  return {
+    PassageiroNavigator: () => React.createElement(View, {testID: 'placeholder-HomeScreen'}),
+  };
+});
+
+jest.mock('../../screens/Motorista/MotoristaScreen', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  return {
+    MotoristaScreen: () => React.createElement(View, {testID: 'placeholder-MotoristaScreen'}),
+  };
+});
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

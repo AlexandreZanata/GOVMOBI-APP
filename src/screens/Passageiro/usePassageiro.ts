@@ -15,6 +15,7 @@ import {
 import {addToast} from '../../store/slices/uiSlice';
 import type {Coordenada} from '../../models/Corrida';
 import type {SearchResult} from '../../types/corrida';
+import type {PesquisaRouteResult} from '../../types/pesquisa';
 
 /** Camera region for the Mapbox map. */
 export interface MapRegion {
@@ -47,6 +48,18 @@ export interface PassageiroState {
   selectedDestinoCoords: Coordenada | null;
   /** Whether the ride request modal is open. */
   isRequestModalOpen: boolean;
+  /** True while route preview is loading from /pesquisa/rota. */
+  isRouting: boolean;
+  /** Localized route preview loading/error message. */
+  routeFeedback: string | null;
+  /** Route geometry mapped to app coordinates for map rendering. */
+  routePreviewCoords: Coordenada[];
+  /** Total route distance in meters. */
+  routeDistanceMeters: number | null;
+  /** Total route duration in seconds. */
+  routeDurationSeconds: number | null;
+  /** Whether current role can use route preview. */
+  canPreviewRoute: boolean;
   /**
    * Mapbox public token fetched from GET /pesquisa/config.
    * Null while loading; empty string signals a fetch failure.
@@ -87,10 +100,17 @@ const DEFAULT_REGION: MapRegion = {
   zoomLevel: DEFAULT_ZOOM,
 };
 
+const formatRouteCoordinates = (route: PesquisaRouteResult): Coordenada[] =>
+  route.geometry.coordinates.map(([lng, lat]) => ({
+    latitude: lat,
+    longitude: lng,
+  }));
+
 /**
  * Encapsulates all state and logic for the PassageiroScreen.
  *
  * @returns PassageiroState — all data and handlers the screen needs to render.
+ * @throws Never. Errors are exposed via Redux toasts and local route feedback state.
  */
 export const usePassageiro = (): PassageiroState => {
   const {t} = useTranslation();
@@ -102,6 +122,7 @@ export const usePassageiro = (): PassageiroState => {
   const selectedDestino = useAppSelector(
     state => state.corrida.selectedDestino,
   );
+  const papeis = useAppSelector(state => state.auth.papeis);
 
   const [userLocation, setUserLocation] = useState<Coordenada | null>(null);
   const [isLocating, setIsLocating] = useState(true);
@@ -110,6 +131,17 @@ export const usePassageiro = (): PassageiroState => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [isRouting, setIsRouting] = useState(false);
+  const [routeFeedback, setRouteFeedback] = useState<string | null>(null);
+  const [routePreviewCoords, setRoutePreviewCoords] = useState<Coordenada[]>(
+    [],
+  );
+  const [routeDistanceMeters, setRouteDistanceMeters] = useState<number | null>(
+    null,
+  );
+  const [routeDurationSeconds, setRouteDurationSeconds] = useState<
+    number | null
+  >(null);
   /** null = loading, string = resolved (may be empty on error) */
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
 
@@ -117,6 +149,12 @@ export const usePassageiro = (): PassageiroState => {
   const latestSearchRequestIdRef = useRef(0);
   const userLocationRef = useRef<Coordenada | null>(null);
   const lastSearchErrorAtRef = useRef(0);
+  const routeRequestRef = useRef(0);
+
+  const canPreviewRoute =
+    papeis.length === 0 ||
+    papeis.includes('USUARIO') ||
+    papeis.includes('MOTORISTA');
 
   useEffect(() => {
     userLocationRef.current = userLocation;
@@ -347,6 +385,63 @@ export const usePassageiro = (): PassageiroState => {
   );
 
   // ---------------------------------------------------------------------------
+  // Route preview
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!canPreviewRoute || !userLocation || !selectedDestino) {
+      setIsRouting(false);
+      setRouteFeedback(null);
+      setRoutePreviewCoords([]);
+      setRouteDistanceMeters(null);
+      setRouteDurationSeconds(null);
+      return;
+    }
+
+    let cancelled = false;
+    const requestId = routeRequestRef.current + 1;
+    routeRequestRef.current = requestId;
+
+    const loadRoute = async (): Promise<void> => {
+      setIsRouting(true);
+      setRouteFeedback(t('pesquisa.route.loading'));
+
+      const result = await pesquisaFacade.getRouteBetweenPoints({
+        origemLat: userLocation.latitude,
+        origemLng: userLocation.longitude,
+        destinoLat: selectedDestino.latitude,
+        destinoLng: selectedDestino.longitude,
+      });
+
+      if (cancelled || requestId !== routeRequestRef.current) {
+        return;
+      }
+
+      setIsRouting(false);
+
+      if (!result.data || result.error) {
+        setRoutePreviewCoords([]);
+        setRouteDistanceMeters(null);
+        setRouteDurationSeconds(null);
+        setRouteFeedback(t('pesquisa.route.error'));
+        return;
+      }
+
+      const mappedCoords = formatRouteCoordinates(result.data);
+      setRoutePreviewCoords(mappedCoords);
+      setRouteDistanceMeters(result.data.distanciaMetros);
+      setRouteDurationSeconds(result.data.duracaoSegundos);
+      setRouteFeedback(null);
+    };
+
+    void loadRoute();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canPreviewRoute, pesquisaFacade, selectedDestino, t, userLocation]);
+
+  // ---------------------------------------------------------------------------
   // Request modal
   // ---------------------------------------------------------------------------
 
@@ -415,6 +510,12 @@ export const usePassageiro = (): PassageiroState => {
         }
       : null,
     isRequestModalOpen,
+    isRouting,
+    routeFeedback,
+    routePreviewCoords,
+    routeDistanceMeters,
+    routeDurationSeconds,
+    canPreviewRoute,
     mapboxToken,
     onOpenSearch,
     onCloseSearch,

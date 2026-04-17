@@ -149,12 +149,20 @@
       "title": "Servidores",
       "searchPlaceholder": "Buscar por nombre o email",
       "filters": {"all": "Todos", "active": "Activos", "inactive": "Inactivos"},
-      "empty": {"title": "Sin servidores", "message": "Ningun servidor coincide con los filtros."}
+      "empty": {
+        "title": "Sin servidores",
+        "message": "Ningun servidor coincide con los filtros."
+      }
     },
     "detail": {
       "title": "Servidor",
-      "cpf": "CPF", "email": "Email", "telefone": "Telefono",
-      "cargo": "Cargo", "lotacao": "Unidad", "papeis": "Roles", "status": "Estado"
+      "cpf": "CPF",
+      "email": "Email",
+      "telefone": "Telefono",
+      "cargo": "Cargo",
+      "lotacao": "Unidad",
+      "papeis": "Roles",
+      "status": "Estado"
     },
     "status": {"active": "Activo", "inactive": "Inactivo"},
     "papeis": {"USUARIO": "Usuario", "ADMIN": "Admin", "MOTORISTA": "Conductor"}
@@ -165,27 +173,55 @@
     "status": {"active": "Activo", "inactive": "Inactivo"},
     "veiculos": {
       "filters": {"all": "Todos", "active": "Activos", "inactive": "Inactivos"},
-      "empty": {"title": "Sin vehiculos", "message": "Ningun vehiculo coincide con el filtro."}
+      "empty": {
+        "title": "Sin vehiculos",
+        "message": "Ningun vehiculo coincide con el filtro."
+      }
     },
     "motoristas": {
       "filters": {"all": "Todos"},
-      "status": {"DISPONIVEL": "Disponible", "EM_ROTA": "En ruta", "AFASTADO": "Ausente"},
-      "empty": {"title": "Sin conductores", "message": "Ningun conductor coincide con el filtro."}
+      "status": {
+        "DISPONIVEL": "Disponible",
+        "EM_ROTA": "En ruta",
+        "AFASTADO": "Ausente"
+      },
+      "empty": {
+        "title": "Sin conductores",
+        "message": "Ningun conductor coincide con el filtro."
+      }
     }
   },
   "notifications": {
     "markAllRead": "Marcar todo como leido",
-    "empty": {"title": "Sin notificaciones", "message": "No tienes notificaciones en este momento."}
+    "empty": {
+      "title": "Sin notificaciones",
+      "message": "No tienes notificaciones en este momento."
+    }
   },
   "profile": {
-    "save": "Guardar", "edit": "Editar", "cancel": "Cancelar",
-    "signOut": "Cerrar sesion", "settings": "Configuracion",
-    "fields": {"name": "Nombre", "email": "Email", "role": "Rol", "department": "Departamento"},
-    "toast": {"updated": "Perfil actualizado.", "updateFailed": "No se pudo actualizar el perfil."}
+    "save": "Guardar",
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "signOut": "Cerrar sesion",
+    "settings": "Configuracion",
+    "fields": {
+      "name": "Nombre",
+      "email": "Email",
+      "role": "Rol",
+      "department": "Departamento"
+    },
+    "toast": {
+      "updated": "Perfil actualizado.",
+      "updateFailed": "No se pudo actualizar el perfil."
+    }
   },
   "settings": {
     "title": "Configuracion",
-    "sections": {"language": "Idioma", "notifications": "Notificaciones", "about": "Acerca de"},
+    "sections": {
+      "language": "Idioma",
+      "notifications": "Notificaciones",
+      "about": "Acerca de"
+    },
     "about": {"version": "Version", "build": "Build"}
   },
   "passageiro": {
@@ -285,7 +321,10 @@
       "motivoPlaceholder": "Motivo de cancelación",
       "defaultMotivo": "Cancelado por el conductor"
     },
-    "finalizar": {"title": "Finalizar Viaje", "confirm": "¿Confirmar finalización del viaje?"},
+    "finalizar": {
+      "title": "Finalizar Viaje",
+      "confirm": "¿Confirmar finalización del viaje?"
+    },
     "mensagens": {"title": "Mensajes", "empty": "Sin mensajes aún."},
     "terminal": {
       "FINALIZADA": "Viaje finalizado con éxito.",
@@ -324,6 +363,12 @@
     },
     "config": {
       "error": "Error al cargar la configuración del mapa"
+    },
+    "route": {
+      "loading": "Calculando ruta...",
+      "error": "No se pudo calcular la ruta.",
+      "empty": "Seleccione un destino para ver la ruta.",
+      "summary": "Ruta: {{distance}} km · {{duration}} min"
     }
   }
 }

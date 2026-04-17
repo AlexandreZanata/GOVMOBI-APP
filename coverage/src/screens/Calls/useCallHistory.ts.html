@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">5.55% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/54</span>
+                <span class='fraction'>0/54</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">6.81% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/44</span>
+                <span class='fraction'>0/44</span>
             </div>
         
             
@@ -201,22 +201,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -224,8 +212,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -310,7 +310,7 @@ export interface CallHistoryState {
   onDelete: (call: Call) =&gt; void;
 }
 &nbsp;
-const resolveRow = <span class="fstat-no" title="function not covered" >(c</span>all: Call, currentUserId: string): CallHistoryRow =&gt; {
+const resolveRow = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(c</span>all: Call, currentUserId: string): CallHistoryRow =&gt; {</span>
   const other = <span class="cstat-no" title="statement not covered" >call.participants.find(</span>
 <span class="fstat-no" title="function not covered" >    (p</span>: CallParticipant) =&gt; <span class="cstat-no" title="statement not covered" >p.userId !== currentUserId,</span>
   );
@@ -321,7 +321,7 @@ const resolveRow = <span class="fstat-no" title="function not covered" >(c</span
   };
 };
 &nbsp;
-const filterMatches = <span class="fstat-no" title="function not covered" >(c</span>all: Call, filter: CallFilter, currentUserId: string): boolean =&gt; {
+const filterMatches = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(c</span>all: Call, filter: CallFilter, currentUserId: string): boolean =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  if (filter === 'all') <span class="cstat-no" title="statement not covered" >return true;</span></span>
 <span class="cstat-no" title="statement not covered" >  if (filter === 'missed') <span class="cstat-no" title="statement not covered" >return call.status === CallStatus.MISSED;</span></span>
 <span class="cstat-no" title="statement not covered" >  if (filter === 'incoming') <span class="cstat-no" title="statement not covered" >return call.initiatorId !== currentUserId;</span></span>
@@ -334,7 +334,7 @@ const filterMatches = <span class="fstat-no" title="function not covered" >(c</s
  *
  * @returns {@link CallHistoryState}
  */
-export const useCallHistory = <span class="fstat-no" title="function not covered" >()</span>: CallHistoryState =&gt; {
+export const useCallHistory = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >()</span>: CallHistoryState =&gt; {</span>
   const dispatch = <span class="cstat-no" title="statement not covered" >useAppDispatch();</span>
   const {callFacade} = <span class="cstat-no" title="statement not covered" >useFacades();</span>
   const currentUserId = <span class="cstat-no" title="statement not covered" >useAppSelector(<span class="fstat-no" title="function not covered" >st</span>ate =&gt; <span class="cstat-no" title="statement not covered" >state.auth.user?.id ?? '')</span>;</span>
@@ -397,7 +397,7 @@ export const useCallHistory = <span class="fstat-no" title="function not covered
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T12:17:08.411Z
+                at 2026-04-17T12:30:28.584Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

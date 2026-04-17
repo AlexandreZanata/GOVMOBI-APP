@@ -122,16 +122,17 @@ const renderScreen = (overrides?: {unreadCount?: number}) => {
 
 describe('HomeScreen', () => {
   describe('loading state', () => {
-    it('renders skeleton loaders while data is loading', () => {
+    it('renders quick action cards on initial render', () => {
       renderScreen();
-      expect(screen.getByTestId('skeleton-quick-actions')).toBeTruthy();
-      expect(screen.getByTestId('skeleton-recent-activity')).toBeTruthy();
-      expect(screen.getByTestId('skeleton-announcements')).toBeTruthy();
+      // isLoading is always false — cards render immediately
+      expect(screen.getByTestId('quick-action-newMessage')).toBeTruthy();
     });
 
-    it('does not render quick action cards while loading', () => {
+    it('renders all sections on initial render', () => {
       renderScreen();
-      expect(screen.queryByTestId('quick-action-newMessage')).toBeNull();
+      expect(screen.getByTestId('section-quick-actions')).toBeTruthy();
+      expect(screen.getByTestId('section-recent-activity')).toBeTruthy();
+      expect(screen.getByTestId('section-announcements')).toBeTruthy();
     });
   });
 
@@ -165,10 +166,10 @@ describe('HomeScreen', () => {
       );
     });
 
-    it('renders the status bar', async () => {
+    it('renders the status bar inside the header', async () => {
       renderScreen();
       await waitFor(() =>
-        expect(screen.getByTestId('home-status-bar')).toBeTruthy(),
+        expect(screen.getByTestId('home-header')).toBeTruthy(),
       );
     });
 

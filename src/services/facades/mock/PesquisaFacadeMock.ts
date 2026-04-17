@@ -4,8 +4,10 @@
  */
 import type {IPesquisaFacade} from '../PesquisaFacade';
 import type {
+  GetRouteInput,
   GeocodingResult,
   GeocodeAddressInput,
+  PesquisaRouteResult,
   PesquisaConfig,
   ReverseGeocodingResult,
   ReverseGeocodeInput,
@@ -39,7 +41,9 @@ const MOCK_GEOCODING: GeocodingResult[] = [
  */
 export class PesquisaFacadeMock implements IPesquisaFacade {
   /** @inheritdoc */
-  public async getPesquisaConfig(): Promise<Result<PesquisaConfig, FacadeError>> {
+  public async getPesquisaConfig(): Promise<
+    Result<PesquisaConfig, FacadeError>
+  > {
     await delay(80);
     return ok(MOCK_CONFIG);
   }
@@ -52,9 +56,7 @@ export class PesquisaFacadeMock implements IPesquisaFacade {
     if (!input.query.trim() || input.query.trim().length < 3) {
       return ok([]);
     }
-    return ok(
-      MOCK_GEOCODING.map(r => ({...r, address: input.query})),
-    );
+    return ok(MOCK_GEOCODING.map(r => ({...r, address: input.query})));
   }
 
   /** @inheritdoc */
@@ -66,6 +68,29 @@ export class PesquisaFacadeMock implements IPesquisaFacade {
       address: 'Rua das Flores, Goiânia - Goiás, Brasil',
       lat: input.lat,
       lng: input.lng,
+    });
+  }
+
+  /** @inheritdoc */
+  public async getRouteBetweenPoints(
+    input: GetRouteInput,
+  ): Promise<Result<PesquisaRouteResult, FacadeError>> {
+    await delay(180);
+
+    const middleLng = (input.origemLng + input.destinoLng) / 2;
+    const middleLat = (input.origemLat + input.destinoLat) / 2;
+
+    return ok({
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [input.origemLng, input.origemLat],
+          [middleLng, middleLat],
+          [input.destinoLng, input.destinoLat],
+        ],
+      },
+      distanciaMetros: 980,
+      duracaoSegundos: 320,
     });
   }
 }

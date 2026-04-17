@@ -15,14 +15,27 @@ import {designColors} from './theme';
 import {store, persistor, useAppSelector} from './store';
 import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
-import {GlobalToast, NetworkBanner} from './components/organisms';
+import {GlobalToast, NetworkBanner} from '@components/organisms';
 import {
   useAuthSession,
   useNetworkStatus,
   useNotifications,
   useRealtimeSession,
 } from './hooks';
-import {FacadeProvider} from './services/facades';
+import {FacadeProvider} from '@services/facades';
+
+/**
+ * Startup side-effect hooks that depend on app providers.
+ */
+const AppStartupEffects = (): null => {
+  useNetworkStatus();
+  useNotifications();
+  useAuthSession();
+  useRealtimeSession();
+  return null;
+};
+
+AppStartupEffects.displayName = 'AppStartupEffects';
 
 /**
  * App tree rendered after all global providers are mounted.
@@ -36,14 +49,10 @@ const AppShell = (): React.JSX.Element => {
   // Token getter for facades that need authenticated requests
   const getToken = useMemo(() => () => token, [token]);
 
-  useNetworkStatus();
-  useNotifications();
-  useAuthSession();
-  useRealtimeSession();
-
   return (
     <ThemeProvider mode={themeMode}>
       <FacadeProvider getToken={getToken}>
+        <AppStartupEffects />
         {/*
          * Sets the Android system navigation bar (bottom) to navy800 — matching
          * the top status bar color seen in the design. On iOS this has no effect

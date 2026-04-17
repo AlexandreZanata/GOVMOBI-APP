@@ -1,7 +1,7 @@
 /**
  * @fileoverview Hook module for useNotifications.
  */
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useFacades} from '@services/facades';
 import {setPermissionStatus} from '@store/slices/notificationsSlice';
 import {useAppDispatch} from '../store';
@@ -57,8 +57,15 @@ export const useNotifications = (): UseNotificationsResult => {
   const {notificationFacade} = useFacades();
   const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const hasAttemptedSetup = useRef(false);
 
   useEffect(() => {
+    if (hasAttemptedSetup.current) {
+      return;
+    }
+
+    hasAttemptedSetup.current = true;
+
     const setupNotifications = async (): Promise<void> => {
       const permissionResult = await notificationFacade.requestPermission();
       const granted = permissionResult.error === null && permissionResult.data;

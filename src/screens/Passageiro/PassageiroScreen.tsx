@@ -80,6 +80,39 @@ type MapboxModule = {
     title?: string;
     children?: React.ReactNode;
   }>;
+  ShapeSource: React.ComponentType<{
+    id: string;
+    shape: {
+      type: 'Feature';
+      geometry: {type: 'LineString'; coordinates: [number, number][]};
+      properties: Record<string, unknown>;
+    };
+    children?: React.ReactNode;
+  }>;
+  LineLayer: React.ComponentType<{
+    id: string;
+    style?: {
+      lineColor?: string;
+      lineWidth?: number;
+      lineOpacity?: number;
+      lineCap?: 'round' | 'butt' | 'square';
+      lineJoin?: 'round' | 'bevel' | 'miter';
+    };
+  }>;
+};
+
+const routeLineStyle: {
+  lineColor: string;
+  lineWidth: number;
+  lineOpacity: number;
+  lineCap: 'round';
+  lineJoin: 'round';
+} = {
+  lineColor: C.interactive,
+  lineWidth: 4,
+  lineOpacity: 0.85,
+  lineCap: 'round',
+  lineJoin: 'round',
 };
 
 /**
@@ -103,6 +136,8 @@ try {
     MapView: MapboxModule['MapView'];
     Camera: MapboxModule['Camera'];
     PointAnnotation: MapboxModule['PointAnnotation'];
+    ShapeSource: MapboxModule['ShapeSource'];
+    LineLayer: MapboxModule['LineLayer'];
   };
 
   // Phase 1: apply the build-time public token immediately so the native SDK
@@ -118,6 +153,8 @@ try {
     MapView: mod.MapView,
     Camera: mod.Camera,
     PointAnnotation: mod.PointAnnotation,
+    ShapeSource: mod.ShapeSource,
+    LineLayer: mod.LineLayer,
   };
 } catch {
   MapboxGL = null;
@@ -137,6 +174,12 @@ const DestinationPin = (): React.JSX.Element => {
 };
 
 // ── Main component ────────────────────────────────────────────────────────────
+/**
+ * Renders the passenger map experience with destination search and route preview.
+ *
+ * @returns Passenger home screen.
+ * @throws Never. Failures are represented by fallback UI and localized messages.
+ */
 export const PassageiroScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const insets = useSafeAreaInsets();
@@ -168,6 +211,12 @@ export const PassageiroScreen = (): React.JSX.Element => {
     selectedDestinoLabel,
     selectedDestinoCoords,
     isRequestModalOpen,
+    isRouting,
+    routeFeedback,
+    routePreviewCoords,
+    routeDistanceMeters,
+    routeDurationSeconds,
+    canPreviewRoute,
     mapboxToken,
     onOpenSearch,
     onCloseSearch,
@@ -177,6 +226,37 @@ export const PassageiroScreen = (): React.JSX.Element => {
     onCloseRequestModal,
     onCenterOnUser,
   } = usePassageiro();
+
+  const routeLineFeature = useMemo(() => {
+    if (routePreviewCoords.length < 2) {
+      return null;
+    }
+
+    return {
+      type: 'Feature' as const,
+      properties: {},
+      geometry: {
+        type: 'LineString' as const,
+        coordinates: routePreviewCoords.map(
+          coord => [coord.longitude, coord.latitude] as [number, number],
+        ),
+      },
+    };
+  }, [routePreviewCoords]);
+
+  const routeSummary = useMemo(() => {
+    if (!routeDistanceMeters || !routeDurationSeconds) {
+      return null;
+    }
+
+    const distanceInKm = routeDistanceMeters / 1000;
+    const durationInMin = Math.max(1, Math.round(routeDurationSeconds / 60));
+
+    return t('passageiro.route.summary', {
+      distance: distanceInKm.toFixed(1),
+      duration: durationInMin,
+    });
+  }, [routeDistanceMeters, routeDurationSeconds, t]);
 
   // Phase 2: override with the server-issued token from GET /pesquisa/config.
   // This supersedes the build-time ENV token with a potentially scoped/rotated one.
@@ -324,6 +404,19 @@ export const PassageiroScreen = (): React.JSX.Element => {
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}
         />
+        {canPreviewRoute &&
+          routeLineFeature &&
+          MapboxGL.ShapeSource &&
+          MapboxGL.LineLayer && (
+            <MapboxGL.ShapeSource
+              id="route-preview-source"
+              shape={routeLineFeature}>
+              <MapboxGL.LineLayer
+                id="route-preview-line"
+                style={routeLineStyle}
+              />
+            </MapboxGL.ShapeSource>
+          )}
         {userLocation && (
           <MapboxGL.PointAnnotation
             coordinate={[userLocation.longitude, userLocation.latitude]}
@@ -391,7 +484,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
   );
 
   return (
-    <View style={styles.container} testID="passageiro-screen"
+    <View
+      style={styles.container}
+      testID="passageiro-screen"
       onLayout={() => setIsContainerReady(true)}>
       {/* Status bar — light-content so time/battery/signal show white on dark navy */}
       <StatusBar
@@ -590,6 +685,35 @@ export const PassageiroScreen = (): React.JSX.Element => {
             </Text>
           </View>
         </View>
+
+        {canPreviewRoute && (
+          <View style={styles.routeStatusWrap} testID="route-status">
+            {isRouting ? (
+              <View style={styles.routeLoadingRow}>
+                <ActivityIndicator
+                  color={C.interactive}
+                  size="small"
+                  testID="route-loading"
+                />
+                <Text style={styles.routeStatusText}>
+                  {t('pesquisa.route.loading')}
+                </Text>
+              </View>
+            ) : routeSummary ? (
+              <Text style={styles.routeSummaryText} testID="route-summary">
+                {routeSummary}
+              </Text>
+            ) : routeFeedback ? (
+              <Text style={styles.routeErrorText} testID="route-error">
+                {routeFeedback}
+              </Text>
+            ) : (
+              <Text style={styles.routeStatusText} testID="route-empty">
+                {t('pesquisa.route.empty')}
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* CTA */}
         <Pressable

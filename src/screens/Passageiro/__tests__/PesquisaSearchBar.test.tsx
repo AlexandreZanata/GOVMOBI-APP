@@ -6,7 +6,7 @@
  * empty query guard (< 3 chars), and result selection.
  */
 import React from 'react';
-import {render, fireEvent, waitFor, act} from '@testing-library/react-native';
+import {render, fireEvent, waitFor} from '@testing-library/react-native';
 import type {ReactTestInstance} from 'react-test-renderer';
 import {Provider} from 'react-redux';
 import {configureStore} from '@reduxjs/toolkit';
@@ -104,6 +104,20 @@ const makePesquisaMock = (
     data: {address: 'Rua Mock', lat: -16.68, lng: -49.26},
     error: null,
   }),
+  getRouteBetweenPoints: jest.fn().mockResolvedValue({
+    data: {
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [-49.26, -16.68],
+          [-49.24, -16.82],
+        ],
+      },
+      distanciaMetros: 1200,
+      duracaoSegundos: 420,
+    },
+    error: null,
+  }),
   ...override,
 });
 
@@ -144,7 +158,8 @@ const typeInSearchInput = (
 };
 
 /** Wait for real timers — used instead of fake timers to avoid RNTL cleanup conflicts. */
-const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) =>
+  new Promise<void>(resolve => setTimeout(resolve, ms));
 
 // ---------------------------------------------------------------------------
 // Tests

@@ -10,8 +10,10 @@
  * The token is injected at call-time via {@link PesquisaFacadeImpl} constructor.
  */
 import type {
+  GetRouteInput,
   GeocodingResult,
   GeocodeAddressInput,
+  PesquisaRouteResult,
   PesquisaConfig,
   ReverseGeocodingResult,
   ReverseGeocodeInput,
@@ -184,6 +186,83 @@ const toReverseGeocodingResult = (
   };
 };
 
+const toRouteGeometry = (
+  payload: unknown,
+): PesquisaRouteResult['geometry'] | null => {
+  if (
+    !isRecord(payload) ||
+    payload.type !== 'LineString' ||
+    !Array.isArray(payload.coordinates)
+  ) {
+    return null;
+  }
+
+  const coordinates = payload.coordinates
+    .filter(
+      (coord): coord is [number, number] =>
+        Array.isArray(coord) &&
+        coord.length >= 2 &&
+        Number.isFinite(Number(coord[0])) &&
+        Number.isFinite(Number(coord[1])),
+    )
+    .map(coord => [Number(coord[0]), Number(coord[1])] as [number, number]);
+
+  if (coordinates.length < 2) {
+    return null;
+  }
+
+  return {
+    type: 'LineString',
+    coordinates,
+  };
+};
+
+const toPesquisaRouteResult = (
+  payload: unknown,
+): PesquisaRouteResult | null => {
+  const unwrapped = unwrapEnvelopeData(payload);
+  if (!isRecord(unwrapped)) {
+    return null;
+  }
+
+  const directGeometry = toRouteGeometry(unwrapped.geometry);
+  const routeSource =
+    !directGeometry &&
+    Array.isArray(unwrapped.routes) &&
+    unwrapped.routes.length > 0
+      ? unwrapped.routes[0]
+      : null;
+  const routeRecord = isRecord(routeSource) ? routeSource : null;
+  const geometry = directGeometry ?? toRouteGeometry(routeRecord?.geometry);
+
+  if (!geometry) {
+    return null;
+  }
+
+  const distance = Number(
+    unwrapped.distanciaMetros ??
+      routeRecord?.distanciaMetros ??
+      unwrapped.distance ??
+      routeRecord?.distance,
+  );
+  const duration = Number(
+    unwrapped.duracaoSegundos ??
+      routeRecord?.duracaoSegundos ??
+      unwrapped.duration ??
+      routeRecord?.duration,
+  );
+
+  if (!Number.isFinite(distance) || !Number.isFinite(duration)) {
+    return null;
+  }
+
+  return {
+    geometry,
+    distanciaMetros: distance,
+    duracaoSegundos: duration,
+  };
+};
+
 // ---------------------------------------------------------------------------
 // Contract
 // ---------------------------------------------------------------------------
@@ -218,6 +297,17 @@ export interface IPesquisaFacade {
   reverseGeocode(
     input: ReverseGeocodeInput,
   ): Promise<Result<ReverseGeocodingResult, FacadeError>>;
+
+  /**
+   * Calculates route geometry, distance, and duration between two points.
+   *
+   * @param input - Origin and destination coordinates.
+   * @returns Result wrapping {@link PesquisaRouteResult} or a {@link FacadeError}.
+   * @throws Never. Errors are returned via {@link Result}.
+   */
+  getRouteBetweenPoints(
+    input: GetRouteInput,
+  ): Promise<Result<PesquisaRouteResult, FacadeError>>;
 }
 
 // ---------------------------------------------------------------------------
@@ -452,6 +542,72 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
     }
   }
 
+  /** @inheritdoc */
+  public async getRouteBetweenPoints(
+    input: GetRouteInput,
+  ): Promise<Result<PesquisaRouteResult, FacadeError>> {
+    if (this.mockMode) {
+      await delay(180);
+      return ok(mockRouteResult(input));
+    }
+
+    try {
+      const params = new URLSearchParams({
+        origemLat: String(input.origemLat),
+        origemLng: String(input.origemLng),
+        destinoLat: String(input.destinoLat),
+        destinoLng: String(input.destinoLng),
+      });
+
+      const res = await fetchWithTimeout(
+        `${this.apiBaseUrl}/pesquisa/rota?${params.toString()}`,
+        {headers: this.authHeaders()},
+      );
+
+      if (res.status === 401) {
+        return fail({
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+          statusCode: 401,
+        });
+      }
+
+      if (!res.ok) {
+        return fail({
+          code: 'NETWORK_ERROR',
+          message: 'Route request failed',
+          statusCode: res.status,
+        });
+      }
+
+      const payload = (await res.json()) as unknown;
+      const route = toPesquisaRouteResult(payload);
+
+      if (!route) {
+        return fail({
+          code: 'PARSE_ERROR',
+          message: 'Invalid route payload',
+        });
+      }
+
+      return ok(route);
+    } catch (err) {
+      if (err instanceof Error && err.message === 'REQUEST_TIMEOUT') {
+        return fail({
+          code: 'NETWORK_ERROR',
+          message: 'Route request timeout',
+          retryable: true,
+        });
+      }
+
+      return fail({
+        code: 'NETWORK_ERROR',
+        message: 'Network error during route request',
+        retryable: true,
+      });
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
@@ -506,3 +662,25 @@ const mockGeocodingResults = (query: string): GeocodingResult[] => [
     lng: -47.9292 + Math.random() * 0.01,
   },
 ];
+
+const mockRouteResult = (input: GetRouteInput): PesquisaRouteResult => {
+  const midLng = (input.origemLng + input.destinoLng) / 2;
+  const midLat = (input.origemLat + input.destinoLat) / 2;
+  const distance = Math.hypot(
+    input.destinoLat - input.origemLat,
+    input.destinoLng - input.origemLng,
+  );
+
+  return {
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [input.origemLng, input.origemLat],
+        [midLng, midLat],
+        [input.destinoLng, input.destinoLat],
+      ],
+    },
+    distanciaMetros: Math.max(120, Math.round(distance * 111_000)),
+    duracaoSegundos: Math.max(60, Math.round(distance * 7_200)),
+  };
+};
