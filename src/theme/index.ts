@@ -25,6 +25,10 @@ export const designColors = {
   amber100: '#FFF4DC',
   amber900: '#7A5510',
 
+  // Interactive blue (matches PassageiroColors.interactive)
+  blue500: '#2F80FF',
+  blue100: '#EFF6FF',
+
   // Light surfaces
   surface100: '#FFFFFF',
   surface200: '#F4F6F9',

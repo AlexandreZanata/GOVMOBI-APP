@@ -311,7 +311,8 @@
       "passageiroId": "Passageiro",
       "motoristaId": "Motorista",
       "createdAt": "Solicitado em",
-      "metadata": "Informações"
+      "metadata": "Informações",
+      "coordsUnavailable": "Coordenadas não disponíveis"
     },
     "acompanhar": {
       "title": "Acompanhar Corrida"

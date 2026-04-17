@@ -285,7 +285,8 @@
       "passageiroId": "Passenger",
       "motoristaId": "Driver",
       "createdAt": "Requested at",
-      "metadata": "Information"
+      "metadata": "Information",
+      "coordsUnavailable": "Coordinates unavailable"
     },
     "acompanhar": {"title": "Track Ride"},
     "solicitar": {

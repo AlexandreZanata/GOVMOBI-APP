@@ -105,7 +105,7 @@ export const ProfileScreen = (): React.JSX.Element => {
               style={styles.editButton}
               testID="profile-edit-toggle">
               <MaterialIcons
-                color={isEditing ? design.amber500 : design.textTertiary}
+                color={isEditing ? design.blue500 : design.textTertiary}
                 name={isEditing ? 'check' : 'edit'}
                 size={20}
               />

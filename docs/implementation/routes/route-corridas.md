@@ -25,18 +25,19 @@ SOLICITADA → ACEITA → EM_DESLOCAMENTO → PASSAGEIRO_EMBARCADO → FINALIZAD
 
 ## API Endpoints
 
-| Method | Endpoint                             | Role             | Description                                 | Success | Error codes |
-| ------ | ------------------------------------ | ---------------- | ------------------------------------------- | ------- | ----------- |
-| `POST` | `/corridas`                          | Passageiro       | Request a new ride (async Outbox)           | `202`   | `400`       |
-| `POST` | `/corridas/:id/aceitar`              | Motorista        | Accept a dispatched ride                    | `201`   | `409`       |
-| `POST` | `/corridas/:id/recusar`              | Motorista        | Refuse a ride (system finds next candidate) | `201`   | —           |
-| `POST` | `/corridas/:id/iniciar-deslocamento` | Motorista        | Start driving to pickup point               | `201`   | —           |
-| `POST` | `/corridas/:id/confirmar-embarque`   | Motorista        | Confirm passenger has boarded               | `201`   | —           |
-| `POST` | `/corridas/:id/finalizar`            | Motorista        | Complete the ride at destination            | `201`   | —           |
-| `POST` | `/corridas/:id/cancelar`             | Passageiro/Admin | Cancel an active ride                       | `201`   | `400`       |
-| `GET`  | `/corridas/:id`                      | Any              | Get full ride details                       | `200`   | `404`       |
-| `GET`  | `/corridas/:id/status`               | Any              | Get current status (Redis-optimised, fast)  | `200`   | `404`       |
-| `GET`  | `/corridas/:id/mensagens`            | Any              | List ride chat message history              | `200`   | `404`       |
+| Method | Endpoint                             | Role             | Description                                  | Success | Error codes |
+| ------ | ------------------------------------ | ---------------- | -------------------------------------------- | ------- | ----------- |
+| `POST` | `/corridas`                          | Passageiro       | Request a new ride (async Outbox)            | `202`   | `400`       |
+| `POST` | `/corridas/:id/aceitar`              | Motorista        | Accept a dispatched ride                     | `201`   | `409`       |
+| `POST` | `/corridas/:id/recusar`              | Motorista        | Refuse a ride (system finds next candidate)  | `201`   | —           |
+| `POST` | `/corridas/:id/iniciar-deslocamento` | Motorista        | Start driving to pickup point                | `201`   | —           |
+| `POST` | `/corridas/:id/confirmar-embarque`   | Motorista        | Confirm passenger has boarded                | `201`   | —           |
+| `POST` | `/corridas/:id/finalizar`            | Motorista        | Complete the ride at destination             | `201`   | —           |
+| `POST` | `/corridas/:id/cancelar`             | Passageiro/Admin | Cancel an active ride                        | `201`   | `400`       |
+| `GET`  | `/corridas`                          | Role-based       | List rides with pagination and status filter | `200`   | —           |
+| `GET`  | `/corridas/:id`                      | Any              | Get full ride details                        | `200`   | `404`       |
+| `GET`  | `/corridas/:id/status`               | Any              | Get current status (Redis-optimised, fast)   | `200`   | `404`       |
+| `GET`  | `/corridas/:id/mensagens`            | Any              | List ride chat message history               | `200`   | `404`       |
 
 ---
 
@@ -223,6 +224,74 @@ Updated corrida object with `status: "CANCELADA"`.
 ### Response `400`
 
 Cannot cancel a ride that is already `FINALIZADA`.
+
+---
+
+## GET /corridas
+
+Lists rides with pagination and optional status filter.
+
+Role behavior:
+
+- **Admin**: sees all rides.
+- **Motorista** and **Passageiro**: see only their own rides.
+- Default status filter: `concluida` (when no `status` query param is sent).
+
+### Query params
+
+| Name     | Type   | Required | Default     | Description           |
+| -------- | ------ | -------- | ----------- | --------------------- |
+| `page`   | number | No       | `1`         | Current page number   |
+| `limit`  | number | No       | `10`        | Items per page        |
+| `status` | string | No       | `concluida` | Filter by ride status |
+
+Available `status` values:
+
+- `solicitada`
+- `aguardando_aceite`
+- `aceita`
+- `em_rota`
+- `concluida`
+- `cancelada`
+- `expirada`
+
+### Example request
+
+```bash
+curl -X GET \
+  'http://172.19.2.116:3000/corridas?page=1&limit=10&status=concluida' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer <accessToken>'
+```
+
+### Response `200` (expected shape)
+
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "status": "FINALIZADA",
+      "passageiroId": "uuid",
+      "motoristaId": "uuid",
+      "veiculoId": "uuid",
+      "origemLat": -2.529,
+      "origemLng": -44.301,
+      "destinoLat": -2.535,
+      "destinoLng": -44.295,
+      "motivoServico": "Visita técnica",
+      "observacoes": "Levar material",
+      "createdAt": "2026-04-16T13:00:00.000Z",
+      "updatedAt": "2026-04-16T13:30:00.000Z"
+    }
+  ],
+  "page": 1,
+  "limit": 10,
+  "total": 42
+}
+```
+
+> Use this endpoint for ride history and list views. For live tracking of one ride, prefer `GET /corridas/:id/status` + WebSocket events.
 
 ---
 

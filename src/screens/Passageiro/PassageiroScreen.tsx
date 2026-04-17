@@ -252,7 +252,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     const distanceInKm = routeDistanceMeters / 1000;
     const durationInMin = Math.max(1, Math.round(routeDurationSeconds / 60));
 
-    return t('passageiro.route.summary', {
+    return t('pesquisa.route.summary', {
       distance: distanceInKm.toFixed(1),
       duration: durationInMin,
     });

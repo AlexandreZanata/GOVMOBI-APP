@@ -120,6 +120,18 @@ export const SolicitarCorridaModal = ({
       return;
     }
 
+    // Guard: passageiroId is required by the API — block if user session not ready
+    if (!userId) {
+      dispatch(
+        addToast({
+          id: `no-user-${Date.now()}`,
+          message: t('errors.sessionExpired'),
+          type: 'warning',
+        }),
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     const origemLat = userLocation?.latitude ?? -16.6869;
@@ -138,6 +150,17 @@ export const SolicitarCorridaModal = ({
     setIsSubmitting(false);
 
     if (result.error) {
+      // Log the actual server error so it's visible in Metro/Logcat
+      console.warn('[SolicitarCorrida] request failed', {
+        code: result.error.code,
+        status: result.error.statusCode,
+        message: result.error.message,
+        passageiroId: userId,
+        origemLat,
+        origemLng,
+        destinoLat: selectedDestino.latitude,
+        destinoLng: selectedDestino.longitude,
+      });
       dispatch(
         addToast({
           id: `solicitar-err-${Date.now()}`,

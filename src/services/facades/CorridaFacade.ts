@@ -349,6 +349,17 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       if (response.status === 409) {
         return fail(toError('Conflict', 'CONFLICT', 409));
       }
+      if (response.status === 400) {
+        // Surface the server's validation message so the UI can show it
+        const errBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const message =
+          (errBody['message'] as string | undefined) ??
+          (Array.isArray(errBody['message'])
+            ? (errBody['message'] as string[]).join(', ')
+            : undefined) ??
+          'Bad request';
+        return fail(toError(message, 'BAD_REQUEST', 400));
+      }
       if (!response.ok) {
         return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
       }

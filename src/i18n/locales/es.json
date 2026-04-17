@@ -281,7 +281,8 @@
       "passageiroId": "Pasajero",
       "motoristaId": "Conductor",
       "createdAt": "Solicitado el",
-      "metadata": "Información"
+      "metadata": "Información",
+      "coordsUnavailable": "Coordenadas no disponibles"
     },
     "acompanhar": {"title": "Seguir Viaje"},
     "solicitar": {

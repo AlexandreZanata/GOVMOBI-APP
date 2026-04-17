@@ -1,13 +1,16 @@
 /**
  * @fileoverview AcompanharCorridaScreen — real-time ride tracking for the passenger (USUARIO).
  *
- * Scoped to USUARIO-only operations:
- *   GET  /corridas/:id          — load full details
- *   GET  /corridas/:id/status   — poll status every 5s
- *   GET  /corridas/:id/mensagens — message history
- *   POST /corridas/:id/cancelar — cancel active ride
+ * Design aligned with the GovMobile dashboard and profile pages:
+ *   - Dark navy hero header with status pill
+ *   - White card body on surface200 background
+ *   - Floating message FAB (bottom-right) matching the PassageiroScreen location FAB
  *
- * MOTORISTA-only actions are intentionally absent from this screen.
+ * Scoped to USUARIO-only operations:
+ *   GET  /corridas/:id           — load full details
+ *   GET  /corridas/:id/status    — poll status every 5s
+ *   GET  /corridas/:id/mensagens — message history
+ *   POST /corridas/:id/cancelar  — cancel active ride
  */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
@@ -18,6 +21,7 @@ import {
   ScrollView,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
   type ListRenderItem,
 } from 'react-native';
@@ -28,6 +32,7 @@ import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native'
 import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
+import {createAcompanharStyles} from './AcompanharCorrida.styles';
 import type {CorridaMensagem} from '../../models/Corrida';
 import type {PassageiroCorridasStackParamList} from '../../navigation/types';
 
@@ -35,7 +40,8 @@ type RouteProps = RouteProp<PassageiroCorridasStackParamList, 'AcompanharCorrida
 
 /**
  * Passenger ride tracking screen.
- * Displays live status, route details, message history, and cancel option.
+ * Displays live status in a navy hero header, route details, message history,
+ * a floating message FAB, and a cancel option.
  *
  * @returns JSX element for the AcompanharCorridaScreen.
  */
@@ -47,7 +53,8 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
   const route = useRoute<RouteProps>();
   const {corridaId} = route.params;
 
-  const styles = useMemo(() => createCorridasStyles(theme), [theme]);
+  const shared = useMemo(() => createCorridasStyles(theme), [theme]);
+  const s = useMemo(() => createAcompanharStyles(theme), [theme]);
 
   const {
     activeCorrida,
@@ -61,6 +68,7 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
 
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [showCancelInput, setShowCancelInput] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
 
   useEffect(() => {
     void onLoadCorrida(corridaId);
@@ -92,126 +100,161 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
 
   const renderMessage: ListRenderItem<CorridaMensagem> = useCallback(
     ({item}) => (
-      <View style={styles.messageItem} testID={`message-${item.id}`}>
-        <View style={[styles.messageBubble, styles.messageBubbleOther]}>
-          <Text style={[styles.messageText, styles.messageTextOther]}>
+      <View style={shared.messageItem} testID={`message-${item.id}`}>
+        <View style={[shared.messageBubble, shared.messageBubbleOther]}>
+          <Text style={[shared.messageText, shared.messageTextOther]}>
             {item.conteudo}
           </Text>
-          <Text style={styles.messageTime}>
-            {new Date(item.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+          <Text style={shared.messageTime}>
+            {new Date(item.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </Text>
         </View>
       </View>
     ),
-    [styles],
+    [shared],
   );
 
   if (!activeCorrida) {
     return (
-      <View style={[styles.container, styles.emptyContainer]} testID="acompanhar-loading">
-        <ActivityIndicator color={theme.colors.primary} size="large" />
+      <View style={[shared.container, shared.emptyContainer]} testID="acompanhar-loading">
+        <ActivityIndicator color={theme.design.blue500} size="large" />
       </View>
     );
   }
 
   const badgeColor = statusColor(activeCorrida.status, theme);
-  const isTerminal = activeCorrida.status === 'FINALIZADA' || activeCorrida.status === 'CANCELADA';
+  const isTerminal =
+    activeCorrida.status === 'FINALIZADA' || activeCorrida.status === 'CANCELADA';
   const canCancel = !isTerminal && activeCorrida.status !== 'RECUSADA';
+  const unreadCount = mensagens.length;
 
   return (
-    <View style={[styles.container, {paddingBottom: insets.bottom}]} testID="acompanhar-screen">
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <View style={s.root} testID="acompanhar-screen">
 
-        {/* Status badge */}
-        <View style={[styles.statusBadge, {backgroundColor: badgeColor}]} testID="status-badge">
-          <Text style={styles.statusText}>
-            {t(`corridas.status.${activeCorrida.status}`)}
-          </Text>
+      {/* ── Hero header — navy, matches dashboard & profile ── */}
+      <View style={[s.hero, {paddingTop: insets.top + theme.spacing[4]}]}>
+        <View style={s.heroRow}>
+          <View style={[s.statusPill, {backgroundColor: badgeColor}]} testID="status-badge">
+            <Text style={s.statusPillText}>
+              {t(`corridas.status.${activeCorrida.status}`)}
+            </Text>
+          </View>
         </View>
+        <Text style={s.heroTitle}>{t('corridas.acompanhar.title')}</Text>
+        <Text style={s.heroSubtitle} numberOfLines={1}>
+          {activeCorrida.motivoServico}
+        </Text>
+      </View>
+
+      {/* ── Scrollable body ── */}
+      <ScrollView
+        style={s.body}
+        contentContainerStyle={[s.bodyContent, {paddingBottom: insets.bottom + theme.spacing[10]}]}
+        showsVerticalScrollIndicator={false}>
 
         {/* Route card */}
-        <View style={styles.card} testID="route-card">
-          <Text style={styles.cardTitle}>{t('corridas.detail.route')}</Text>
-          <View style={styles.cardRow}>
-            <MaterialIcons
-              name="trip-origin"
-              size={18}
-              color={theme.colors.success}
-              style={styles.cardRowIcon}
-            />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.origem')}</Text>
-              <Text style={styles.cardValue}>
-                {`${activeCorrida.origemLat.toFixed(4)}, ${activeCorrida.origemLng.toFixed(4)}`}
+        <View style={s.card} testID="route-card">
+          <Text style={s.cardTitle}>{t('corridas.detail.route')}</Text>
+
+          <View style={s.infoRow}>
+            <View style={s.infoIconWrap}>
+              <MaterialIcons name="trip-origin" size={18} color={theme.design.success} />
+            </View>
+            <View style={s.infoTextBlock}>
+              <Text style={s.infoLabel}>{t('corridas.detail.origem')}</Text>
+              <Text style={s.infoValue}>
+                {activeCorrida.origemLat != null && activeCorrida.origemLng != null
+                  ? `${activeCorrida.origemLat.toFixed(4)}, ${activeCorrida.origemLng.toFixed(4)}`
+                  : t('corridas.detail.coordsUnavailable')}
               </Text>
             </View>
           </View>
-          <View style={styles.cardRow}>
-            <MaterialIcons
-              name="location-on"
-              size={18}
-              color={theme.colors.error}
-              style={styles.cardRowIcon}
-            />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.destino')}</Text>
-              <Text style={styles.cardValue}>
-                {`${activeCorrida.destinoLat.toFixed(4)}, ${activeCorrida.destinoLng.toFixed(4)}`}
+
+          <View style={s.divider} />
+
+          <View style={s.infoRow}>
+            <View style={s.infoIconWrap}>
+              <MaterialIcons name="location-on" size={18} color={theme.design.danger} />
+            </View>
+            <View style={s.infoTextBlock}>
+              <Text style={s.infoLabel}>{t('corridas.detail.destino')}</Text>
+              <Text style={s.infoValue}>
+                {activeCorrida.destinoLat != null && activeCorrida.destinoLng != null
+                  ? `${activeCorrida.destinoLat.toFixed(4)}, ${activeCorrida.destinoLng.toFixed(4)}`
+                  : t('corridas.detail.coordsUnavailable')}
               </Text>
             </View>
           </View>
-          <View style={styles.cardRow}>
-            <MaterialIcons
-              name="info-outline"
-              size={18}
-              color={theme.colors.textMuted}
-              style={styles.cardRowIcon}
-            />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.motivo')}</Text>
-              <Text style={styles.cardValue}>{activeCorrida.motivoServico}</Text>
-            </View>
-          </View>
+
+          {activeCorrida.observacoes ? (
+            <>
+              <View style={s.divider} />
+              <View style={s.infoRow}>
+                <View style={s.infoIconWrap}>
+                  <MaterialIcons name="notes" size={18} color={theme.design.textTertiary} />
+                </View>
+                <View style={s.infoTextBlock}>
+                  <Text style={s.infoLabel}>{t('corridas.detail.observacoes')}</Text>
+                  <Text style={s.infoValue}>{activeCorrida.observacoes}</Text>
+                </View>
+              </View>
+            </>
+          ) : null}
         </View>
 
-        {/* Messages */}
-        <Text style={styles.sectionHeader}>{t('corridas.mensagens.title')}</Text>
-        {isLoadingMensagens ? (
-          <ActivityIndicator
-            color={theme.colors.primary}
-            size="small"
-            testID="mensagens-loading"
-          />
-        ) : mensagens.length === 0 ? (
-          <Text style={styles.cardValue} testID="mensagens-empty">
-            {t('corridas.mensagens.empty')}
-          </Text>
-        ) : (
-          <FlatList
-            data={mensagens}
-            keyExtractor={item => item.id}
-            renderItem={renderMessage}
-            scrollEnabled={false}
-            testID="mensagens-list"
-          />
-        )}
+        {/* Messages section — collapsible */}
+        <View style={s.card} testID="mensagens-card">
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setShowMessages(v => !v)}
+            style={s.sectionToggleRow}>
+            <Text style={s.cardTitle}>{t('corridas.mensagens.title')}</Text>
+            <MaterialIcons
+              name={showMessages ? 'expand-less' : 'expand-more'}
+              size={20}
+              color={theme.design.textTertiary}
+            />
+          </Pressable>
+
+          {showMessages && (
+            isLoadingMensagens ? (
+              <ActivityIndicator
+                color={theme.design.blue500}
+                size="small"
+                style={{marginTop: theme.spacing[3]}}
+                testID="mensagens-loading"
+              />
+            ) : mensagens.length === 0 ? (
+              <Text style={s.emptyText} testID="mensagens-empty">
+                {t('corridas.mensagens.empty')}
+              </Text>
+            ) : (
+              <FlatList
+                data={mensagens}
+                keyExtractor={item => item.id}
+                renderItem={renderMessage}
+                scrollEnabled={false}
+                testID="mensagens-list"
+              />
+            )
+          )}
+        </View>
 
         {/* Cancel section */}
         {canCancel && (
-          <View style={styles.card} testID="cancel-section">
-            <Text style={styles.cardTitle}>{t('corridas.cancel.title')}</Text>
+          <View style={s.card} testID="cancel-section">
+            <Text style={s.cardTitle}>{t('corridas.cancel.title')}</Text>
             {showCancelInput ? (
               <>
                 <TextInput
                   accessibilityLabel={t('corridas.cancel.motivoPlaceholder')}
                   onChangeText={setCancelMotivo}
                   placeholder={t('corridas.cancel.motivoPlaceholder')}
-                  placeholderTextColor={theme.colors.textMuted}
-                  style={[
-                    styles.cardValue,
-                    styles.formInput,
-                    {borderColor: theme.colors.border, marginBottom: theme.spacing[3]},
-                  ]}
+                  placeholderTextColor={theme.design.textTertiary}
+                  style={s.cancelInput}
                   testID="cancel-motivo-input"
                   value={cancelMotivo}
                 />
@@ -220,16 +263,12 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
                   accessibilityRole="button"
                   disabled={isActionLoading}
                   onPress={handleCancel}
-                  style={[
-                    styles.actionButton,
-                    styles.actionButtonDanger,
-                    isActionLoading && styles.actionButtonDisabled,
-                  ]}
+                  style={[s.dangerBtn, isActionLoading && s.dangerBtnDisabled]}
                   testID="cancel-confirm-btn">
                   {isActionLoading ? (
-                    <ActivityIndicator color={theme.colors.textInverse} size="small" />
+                    <ActivityIndicator color={theme.design.textOnDark} size="small" />
                   ) : (
-                    <Text style={styles.actionButtonText}>{t('corridas.cancel.confirm')}</Text>
+                    <Text style={s.dangerBtnText}>{t('corridas.cancel.confirm')}</Text>
                   )}
                 </Pressable>
               </>
@@ -238,18 +277,37 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
                 accessibilityLabel={t('corridas.cancel.title')}
                 accessibilityRole="button"
                 onPress={() => setShowCancelInput(true)}
-                style={[styles.actionButton, styles.actionButtonDanger]}
+                style={s.dangerBtn}
                 testID="cancel-open-btn">
-                <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
+                <Text style={s.dangerBtnText}>{t('corridas.cancel.title')}</Text>
               </Pressable>
             )}
           </View>
         )}
       </ScrollView>
 
+      {/* ── Floating message FAB — bottom-right, mirrors PassageiroScreen location FAB ── */}
+      <TouchableOpacity
+        accessibilityLabel={t('corridas.mensagens.title')}
+        accessibilityRole="button"
+        activeOpacity={0.8}
+        onPress={() => setShowMessages(v => !v)}
+        style={[s.messageFab, {bottom: insets.bottom + theme.spacing[6]}]}
+        testID="fab-messages">
+        <MaterialIcons name="chat" size={22} color={theme.design.textOnDark} />
+        {unreadCount > 0 && (
+          <View style={s.fabBadge}>
+            <Text style={s.fabBadgeText}>
+              {unreadCount > 9 ? '9+' : String(unreadCount)}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      {/* Loading overlay */}
       {isActionLoading && (
-        <View style={styles.loadingOverlay} testID="action-loading-overlay">
-          <ActivityIndicator color={theme.colors.textInverse} size="large" />
+        <View style={shared.loadingOverlay} testID="action-loading-overlay">
+          <ActivityIndicator color={theme.design.textOnDark} size="large" />
         </View>
       )}
     </View>

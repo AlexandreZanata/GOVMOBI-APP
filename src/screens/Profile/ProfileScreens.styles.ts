@@ -74,9 +74,9 @@ export const createProfileStyles = (theme: Theme) => {
       paddingTop: spacing[12],
     },
 
-    /** Amber ring around the avatar circle. */
+    /** Blue ring around the avatar circle. */
     avatarRing: {
-      borderColor: design.amber500,
+      borderColor: design.blue500,
       borderRadius: borderRadius.radius.full,
       borderWidth: 3,
       padding: 3,
@@ -94,7 +94,7 @@ export const createProfileStyles = (theme: Theme) => {
 
     avatarInitials: {
       ...typo.scale.displayMd,
-      color: design.amber500,
+      color: design.blue500,
     },
 
     heroName: {
@@ -112,7 +112,7 @@ export const createProfileStyles = (theme: Theme) => {
 
     /** Role badge pill (Design_Prompt §3.6). */
     roleBadge: {
-      backgroundColor: design.amber500,
+      backgroundColor: design.blue500,
       borderRadius: borderRadius.radius.full,
       marginTop: spacing[1],
       paddingHorizontal: spacing[3],
@@ -121,7 +121,7 @@ export const createProfileStyles = (theme: Theme) => {
 
     roleBadgeText: {
       ...typo.scale.labelMd,
-      color: design.navy900,
+      color: design.textOnDark,
     },
 
     // ── Card sections (Design_Prompt §3.7) ────────────────────────────────────
