@@ -284,7 +284,8 @@
     "errors": {
       "selectDestination": "Selecione um destino antes de solicitar.",
       "locationRequired": "Aguardando sua localização.",
-      "requestFailed": "Não foi possível solicitar a corrida."
+      "requestFailed": "Não foi possível solicitar a corrida.",
+      "alreadyHasActiveRide": "Você já possui uma corrida ativa. Acompanhe-a no mapa."
     }
   },
   "motorista": {
@@ -320,7 +321,9 @@
       "motoristaId": "Motorista",
       "createdAt": "Solicitado em",
       "metadata": "Informações",
-      "coordsUnavailable": "Coordenadas não disponíveis"
+      "coordsUnavailable": "Coordenadas não disponíveis",
+      "addressLoading": "Carregando endereço...",
+      "addressUnavailable": "Endereço não disponível"
     },
     "acompanhar": {
       "title": "Acompanhar Corrida"

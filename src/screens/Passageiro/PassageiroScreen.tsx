@@ -1,16 +1,23 @@
 /**
- * @fileoverview PassageiroScreen — production-grade ride-hailing map experience.
+ * @fileoverview PassageiroScreen — map + active ride tracking, all in one place.
  *
  * Z-layers (bottom → top):
- *   1. MapboxMap          full screen base layer
+ *   1. MapboxMap          full screen base layer (shows ride route when active)
  *   2. Top search bar     floating pill, z=10
  *   3. Right FAB column   floating buttons, z=10
- *   4. Bottom sheet       white card, always visible, z=20
+ *   4. Bottom sheet       white card — search/request OR active ride panel, z=20
  *   5. Search overlay     conditional, z=30
+ *
+ * When a ride is active:
+ *   - The route from origin → destination is drawn on the map
+ *   - The bottom sheet shows: status, addresses, cancel button
+ *   - A chat FAB appears above the bottom sheet
+ *   - The user never leaves this screen
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   FlatList,
   Pressable,
@@ -36,9 +43,19 @@ import {
 } from './PassageiroScreen.styles';
 import type {SearchResult} from '../../types/corrida';
 import {ENV} from '../../config/env';
-import {useAppSelector} from '../../store';
+import {useAppDispatch, useAppSelector} from '../../store';
+import {useFacades} from '@services/facades';
+import {
+  setActiveCorrida,
+  setCorridaError,
+  setIsActionLoading,
+  setPendingCorridaId,
+  updateCorridaStatus,
+} from '../../store/slices/corridaSlice';
+import {addToast} from '../../store/slices/uiSlice';
+import type {Corrida} from '../../models/Corrida';
 
-// Navigation type: PassageiroHome tab → PassageiroCorridas tab → AcompanharCorrida screen
+// Navigation types
 type PassageiroTabParamList = {
   PassageiroHome: undefined;
   PassageiroCorridas: undefined;
@@ -50,13 +67,14 @@ type PassageiroCorridasStackParamList = {
   AcompanharCorrida: {corridaId: string};
   CorridaDetalhe: {corridaId: string};
   SolicitarCorrida: undefined;
+  CorridaMensagens: {corridaId: string};
 };
 type PassageiroScreenNavProp = CompositeNavigationProp<
   BottomTabNavigationProp<PassageiroTabParamList, 'PassageiroHome'>,
   NativeStackNavigationProp<PassageiroCorridasStackParamList>
 >;
 
-// ── Mapbox lazy-load ─────────────────────────────────────────────────────────
+// ── Mapbox lazy-load ──────────────────────────────────────────────────────────
 type MapboxModule = {
   setAccessToken: (token: string) => void;
   MapView: React.ComponentType<{
@@ -102,33 +120,21 @@ type MapboxModule = {
   }>;
 };
 
-const routeLineStyle: {
-  lineColor: string;
-  lineWidth: number;
-  lineOpacity: number;
-  lineCap: 'round';
-  lineJoin: 'round';
-} = {
+const routeLineStyle = {
   lineColor: C.interactive,
   lineWidth: 4,
   lineOpacity: 0.85,
-  lineCap: 'round',
-  lineJoin: 'round',
+  lineCap: 'round' as const,
+  lineJoin: 'round' as const,
+};
+const activeRouteLineStyle = {
+  lineColor: C.interactive,
+  lineWidth: 5,
+  lineOpacity: 1,
+  lineCap: 'round' as const,
+  lineJoin: 'round' as const,
 };
 
-/**
- * Raw Mapbox module reference.
- *
- * Initialization strategy (two-phase):
- *   Phase 1 (module load): Call setAccessToken with the build-time public token
- *            from ENV.MAPBOX_ACCESS_TOKEN so the native layer is ready immediately.
- *   Phase 2 (component mount): Override with the server-issued token from
- *            GET /pesquisa/config once it arrives, which may be a scoped or
- *            rotated token that supersedes the build-time one.
- *
- * If the native module is unavailable (Expo Go), MapboxGL is set to null and
- * the screen renders a graceful fallback.
- */
 let MapboxGL: MapboxModule | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -140,15 +146,10 @@ try {
     ShapeSource: MapboxModule['ShapeSource'];
     LineLayer: MapboxModule['LineLayer'];
   };
-
-  // Phase 1: apply the build-time public token immediately so the native SDK
-  // is initialized before the first render. The component will override this
-  // with the server-issued token once /pesquisa/config responds.
   if (ENV.MAPBOX_ACCESS_TOKEN) {
     mod.default.setAccessToken(ENV.MAPBOX_ACCESS_TOKEN);
     console.info('[Mapbox] Phase-1 token applied from build-time ENV');
   }
-
   MapboxGL = {
     setAccessToken: mod.default.setAccessToken.bind(mod.default),
     MapView: mod.MapView,
@@ -161,7 +162,14 @@ try {
   MapboxGL = null;
 }
 
-// ── Teardrop destination pin ─────────────────────────────────────────────────
+const TERMINAL_STATUSES = new Set<string>([
+  'FINALIZADA',
+  'CANCELADA',
+  'RECUSADA',
+]);
+const STATUS_POLL_MS = 5000;
+
+// ── Destination pin ───────────────────────────────────────────────────────────
 const DestinationPin = (): React.JSX.Element => {
   const s = useMemo(() => createPassageiroStyles(), []);
   return (
@@ -174,33 +182,42 @@ const DestinationPin = (): React.JSX.Element => {
   );
 };
 
-// ── Main component ────────────────────────────────────────────────────────────
 /**
- * Renders the passenger map experience with destination search and route preview.
+ * Passenger home screen — map + ride request + active ride tracking.
+ * All ride tracking happens here; the user never navigates away while a ride is active.
  *
- * @returns Passenger home screen.
- * @throws Never. Failures are represented by fallback UI and localized messages.
+ * @returns Passenger home screen JSX.
  */
 export const PassageiroScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createPassageiroStyles(), []);
   const navigation = useNavigation<PassageiroScreenNavProp>();
+  const dispatch = useAppDispatch();
+  const {corridaFacade, pesquisaFacade} = useFacades();
 
+  // ── UI state ────────────────────────────────────────────────────────────────
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [ctaPressed, setCtaPressed] = useState(false);
   const [isMapboxTokenApplied, setIsMapboxTokenApplied] = useState(false);
-  // Gate map render until the container has laid out — prevents the
-  // Mapbox ViewTagResolver "view is null" race condition on first mount.
   const [isContainerReady, setIsContainerReady] = useState(false);
+  const [cancelMotivo, setCancelMotivo] = useState('');
+  const [showCancelInput, setShowCancelInput] = useState(false);
+  const [origemAddress, setOrigemAddress] = useState<string | null>(null);
+  const [destinoAddress, setDestinoAddress] = useState<string | null>(null);
+  // Route coords for the active ride (origin → destination)
+  const [activeRouteCoords, setActiveRouteCoords] = useState<
+    [number, number][]
+  >([]);
 
+  // ── Animations ──────────────────────────────────────────────────────────────
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const overlayTranslate = useRef(new Animated.Value(8)).current;
   const sheetTranslate = useRef(new Animated.Value(0)).current;
   const sheetAnimated = useRef(false);
-  // Search bar lift animation on focus
   const searchBarTranslate = useRef(new Animated.Value(0)).current;
 
+  // ── Passageiro hook (search, route preview, map token) ──────────────────────
   const {
     userLocation,
     isLocating,
@@ -228,57 +245,171 @@ export const PassageiroScreen = (): React.JSX.Element => {
     onCenterOnUser,
   } = usePassageiro();
 
-  const routeLineFeature = useMemo(() => {
-    if (routePreviewCoords.length < 2) {
-      return null;
-    }
+  // ── Active ride from Redux ──────────────────────────────────────────────────
+  const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
+  const isActionLoading = useAppSelector(s => s.corrida.isActionLoading);
+  const pendingCorridaId = useAppSelector(s => s.corrida.pendingCorridaId);
+  const hasActiveRide =
+    activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
 
-    return {
-      type: 'Feature' as const,
-      properties: {},
-      geometry: {
-        type: 'LineString' as const,
-        coordinates: routePreviewCoords.map(
-          coord => [coord.longitude, coord.latitude] as [number, number],
-        ),
-      },
+  // ── Status polling ──────────────────────────────────────────────────────────
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const targetId = pendingCorridaId ?? activeCorrida?.id;
+
+  useEffect(() => {
+    if (!targetId || !hasActiveRide) return;
+    const poll = async (): Promise<void> => {
+      const result = await corridaFacade.getCorridaStatus(targetId);
+      if (result.data) {
+        dispatch(updateCorridaStatus(result.data.status as Corrida['status']));
+        if (TERMINAL_STATUSES.has(result.data.status)) {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }
+      }
     };
-  }, [routePreviewCoords]);
+    pollRef.current = setInterval(() => {
+      void poll();
+    }, STATUS_POLL_MS);
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [targetId, hasActiveRide, corridaFacade, dispatch]);
 
-  const routeSummary = useMemo(() => {
-    if (!routeDistanceMeters || !routeDurationSeconds) {
-      return null;
+  // ── Reverse geocoding for active ride addresses ─────────────────────────────
+  useEffect(() => {
+    if (!activeCorrida || !hasActiveRide) {
+      setOrigemAddress(null);
+      setDestinoAddress(null);
+      return;
     }
+    let cancelled = false;
+    void (async () => {
+      const [origRes, destRes] = await Promise.all([
+        pesquisaFacade.reverseGeocode({
+          lat: activeCorrida.origemLat,
+          lng: activeCorrida.origemLng,
+        }),
+        pesquisaFacade.reverseGeocode({
+          lat: activeCorrida.destinoLat,
+          lng: activeCorrida.destinoLng,
+        }),
+      ]);
+      if (cancelled) return;
+      setOrigemAddress(
+        origRes.data?.address ?? t('corridas.detail.addressUnavailable'),
+      );
+      setDestinoAddress(
+        destRes.data?.address ?? t('corridas.detail.addressUnavailable'),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCorrida, activeCorrida?.id, hasActiveRide, pesquisaFacade, t]);
 
-    const distanceInKm = routeDistanceMeters / 1000;
-    const durationInMin = Math.max(1, Math.round(routeDurationSeconds / 60));
+  // ── Route line for active ride ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!activeCorrida || !hasActiveRide) {
+      setActiveRouteCoords([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const result = await pesquisaFacade.getRouteBetweenPoints({
+        origemLat: activeCorrida.origemLat,
+        origemLng: activeCorrida.origemLng,
+        destinoLat: activeCorrida.destinoLat,
+        destinoLng: activeCorrida.destinoLng,
+      });
+      if (cancelled) return;
+      if (result.data?.geometry.coordinates?.length) {
+        setActiveRouteCoords(result.data.geometry.coordinates);
+      } else {
+        setActiveRouteCoords([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCorrida, activeCorrida?.id, hasActiveRide, pesquisaFacade]);
 
-    return t('pesquisa.route.summary', {
-      distance: distanceInKm.toFixed(1),
-      duration: durationInMin,
-    });
-  }, [routeDistanceMeters, routeDurationSeconds, t]);
+  // ── Cancel ride ─────────────────────────────────────────────────────────────
+  const handleCancel = useCallback(() => {
+    if (!cancelMotivo.trim()) {
+      Alert.alert(
+        t('corridas.cancel.title'),
+        t('corridas.cancel.motivoRequired'),
+      );
+      return;
+    }
+    if (!activeCorrida) return;
+    Alert.alert(t('corridas.cancel.title'), t('corridas.cancel.confirm'), [
+      {text: t('common.cancel'), style: 'cancel'},
+      {
+        text: t('common.confirm'),
+        style: 'destructive',
+        onPress: () => {
+          dispatch(setIsActionLoading(true));
+          void corridaFacade
+            .cancelarCorrida(activeCorrida.id, {
+              solicitanteId: 'current-user',
+              motivo: cancelMotivo.trim(),
+              tipoSolicitante: 'passageiro',
+            })
+            .then(result => {
+              dispatch(setIsActionLoading(false));
+              if (result.error) {
+                const msg =
+                  result.error.code === 'BAD_REQUEST'
+                    ? t('corridas.errors.jaFinalizada')
+                    : t('corridas.errors.cancelarFailed');
+                dispatch(setCorridaError(msg));
+                dispatch(
+                  addToast({
+                    id: `cancel-err-${Date.now()}`,
+                    message: msg,
+                    type: 'error',
+                  }),
+                );
+              } else {
+                if (result.data) dispatch(setActiveCorrida(result.data));
+                dispatch(setPendingCorridaId(null));
+                dispatch(
+                  addToast({
+                    id: `cancel-ok-${Date.now()}`,
+                    message: t('corridas.success.cancelada'),
+                    type: 'info',
+                  }),
+                );
+                setCancelMotivo('');
+                setShowCancelInput(false);
+              }
+            });
+        },
+      },
+    ]);
+  }, [activeCorrida, cancelMotivo, corridaFacade, dispatch, t]);
 
-  // Phase 2: override with the server-issued token from GET /pesquisa/config.
-  // This supersedes the build-time ENV token with a potentially scoped/rotated one.
+  // ── Mapbox token phase-2 ────────────────────────────────────────────────────
   useEffect(() => {
     if (!MapboxGL) {
       setIsMapboxTokenApplied(false);
       return;
     }
-
-    // If the server token hasn't arrived yet but we have a build-time token,
-    // mark as applied so the map can render immediately without waiting.
     if (mapboxToken === null && ENV.MAPBOX_ACCESS_TOKEN) {
       setIsMapboxTokenApplied(true);
       return;
     }
-
     if (!mapboxToken) {
       setIsMapboxTokenApplied(false);
       return;
     }
-
     console.info('[Mapbox] Phase-2 token applied from /pesquisa/config', {
       tokenLength: mapboxToken.length,
     });
@@ -286,31 +417,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     setIsMapboxTokenApplied(true);
   }, [mapboxToken]);
 
-  useEffect(() => {
-    if (!MapboxGL) {
-      console.error(
-        '[Mapbox] @rnmapbox/maps native module unavailable. ' +
-          'This app requires a custom Development Build — it cannot run in Expo Go. ' +
-          'Run: npx expo run:android  or  npx expo run:ios',
-      );
-      return;
-    }
-
-    if (mapboxToken === null) {
-      console.info(
-        '[Mapbox] Phase-1 token active; waiting for /pesquisa/config (Phase-2)',
-      );
-      return;
-    }
-
-    if (mapboxToken === '') {
-      console.error(
-        '[Mapbox] /pesquisa/config returned empty token; map is using Phase-1 build-time token',
-      );
-    }
-  }, [mapboxToken]);
-
-  // Bottom sheet slide-up on first render
+  // ── Sheet slide-up ──────────────────────────────────────────────────────────
   const onSheetLayout = useCallback(() => {
     if (sheetAnimated.current) return;
     sheetAnimated.current = true;
@@ -322,7 +429,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     }).start();
   }, [sheetTranslate]);
 
-  // Search overlay fade + slide-in
+  // ── Search overlay animation ────────────────────────────────────────────────
   const prevSearchOpen = useRef(false);
   if (isSearchOpen !== prevSearchOpen.current) {
     prevSearchOpen.current = isSearchOpen;
@@ -344,7 +451,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     }
   }
 
-  // Search bar lift on focus
+  // ── Search bar lift ─────────────────────────────────────────────────────────
   const prevFocused = useRef(false);
   if (isInputFocused !== prevFocused.current) {
     prevFocused.current = isInputFocused;
@@ -355,7 +462,16 @@ export const PassageiroScreen = (): React.JSX.Element => {
     }).start();
   }
 
-  // ── Search result row ──────────────────────────────────────────────────────
+  // ── Route summary ───────────────────────────────────────────────────────────
+  const routeSummary = useMemo(() => {
+    if (!routeDistanceMeters || !routeDurationSeconds) return null;
+    return t('pesquisa.route.summary', {
+      distance: (routeDistanceMeters / 1000).toFixed(1),
+      duration: Math.max(1, Math.round(routeDurationSeconds / 60)),
+    });
+  }, [routeDistanceMeters, routeDurationSeconds, t]);
+
+  // ── Search result row ───────────────────────────────────────────────────────
   const renderSearchResult: ListRenderItem<SearchResult> = ({item}) => (
     <Pressable
       accessibilityLabel={item.placeName}
@@ -380,23 +496,44 @@ export const PassageiroScreen = (): React.JSX.Element => {
     </Pressable>
   );
 
-  // ── Map layer ──────────────────────────────────────────────────────────────
-  // MapboxGL === null                        → native module unavailable (Expo Go)
-  // isMapboxTokenApplied === false           → waiting for a valid token
-  // isContainerReady === false               → container not yet laid out (prevents ViewTagResolver race)
-  // all true                                 → render map
+  // ── Active ride route feature ───────────────────────────────────────────────
+  const activeRouteFeature = useMemo(() => {
+    if (activeRouteCoords.length < 2) return null;
+    return {
+      type: 'Feature' as const,
+      properties: {},
+      geometry: {type: 'LineString' as const, coordinates: activeRouteCoords},
+    };
+  }, [activeRouteCoords]);
+
+  // ── Search route feature (when no active ride) ──────────────────────────────
+  const searchRouteFeature = useMemo(() => {
+    if (routePreviewCoords.length < 2) return null;
+    return {
+      type: 'Feature' as const,
+      properties: {},
+      geometry: {
+        type: 'LineString' as const,
+        coordinates: routePreviewCoords.map(
+          c => [c.longitude, c.latitude] as [number, number],
+        ),
+      },
+    };
+  }, [routePreviewCoords]);
+
+  // ── Map content ─────────────────────────────────────────────────────────────
   const mapContent =
     MapboxGL && isMapboxTokenApplied && isContainerReady ? (
       <MapboxGL.MapView
         accessibilityLabel={t('passageiro.map.label')}
         logoEnabled={false}
         attributionEnabled={false}
-        onDidFinishLoadingMap={() => {
-          console.info('[Mapbox] Map loaded successfully');
-        }}
-        onMapLoadingError={(error?: unknown) => {
-          console.error('[Mapbox] Map loading error', error);
-        }}
+        onDidFinishLoadingMap={() =>
+          console.info('[Mapbox] Map loaded successfully')
+        }
+        onMapLoadingError={(e?: unknown) =>
+          console.error('[Mapbox] Map loading error', e)
+        }
         style={styles.map}
         styleURL="mapbox://styles/mapbox/light-v11"
         testID="passageiro-map">
@@ -405,13 +542,29 @@ export const PassageiroScreen = (): React.JSX.Element => {
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}
         />
-        {canPreviewRoute &&
-          routeLineFeature &&
+        {/* Active ride route — always shown when ride is active */}
+        {hasActiveRide &&
+          activeRouteFeature &&
+          MapboxGL.ShapeSource &&
+          MapboxGL.LineLayer && (
+            <MapboxGL.ShapeSource
+              id="active-route-source"
+              shape={activeRouteFeature}>
+              <MapboxGL.LineLayer
+                id="active-route-line"
+                style={activeRouteLineStyle}
+              />
+            </MapboxGL.ShapeSource>
+          )}
+        {/* Search route preview — shown when no active ride */}
+        {!hasActiveRide &&
+          canPreviewRoute &&
+          searchRouteFeature &&
           MapboxGL.ShapeSource &&
           MapboxGL.LineLayer && (
             <MapboxGL.ShapeSource
               id="route-preview-source"
-              shape={routeLineFeature}>
+              shape={searchRouteFeature}>
               <MapboxGL.LineLayer
                 id="route-preview-line"
                 style={routeLineStyle}
@@ -430,7 +583,8 @@ export const PassageiroScreen = (): React.JSX.Element => {
             </View>
           </MapboxGL.PointAnnotation>
         )}
-        {selectedDestinoCoords && (
+        {/* Destination pin — search mode */}
+        {!hasActiveRide && selectedDestinoCoords && (
           <MapboxGL.PointAnnotation
             coordinate={[
               selectedDestinoCoords.longitude,
@@ -441,11 +595,19 @@ export const PassageiroScreen = (): React.JSX.Element => {
             <DestinationPin />
           </MapboxGL.PointAnnotation>
         )}
+        {/* Active ride destination pin */}
+        {hasActiveRide && activeCorrida && (
+          <MapboxGL.PointAnnotation
+            coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
+            id="active-destination"
+            title={destinoAddress ?? ''}>
+            <DestinationPin />
+          </MapboxGL.PointAnnotation>
+        )}
       </MapboxGL.MapView>
     ) : (
       <View style={styles.mapFallback} testID="map-fallback">
         {!MapboxGL ? (
-          // Native module unavailable — app must be run as a Development Build
           <>
             <MaterialIcons name="map" size={56} color={C.textMuted} />
             <Text style={styles.mapFallbackText}>
@@ -453,7 +615,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
             </Text>
           </>
         ) : (
-          // Token still loading — show a spinner
           <ActivityIndicator
             color={C.interactive}
             size="large"
@@ -463,34 +624,18 @@ export const PassageiroScreen = (): React.JSX.Element => {
       </View>
     );
 
-  const searchBandHeight = insets.top + 10 + 54 + 14; // paddingTop + bar + paddingBottom
+  const searchBandHeight = insets.top + 10 + 54 + 14;
   const fabTop = searchBandHeight + 12;
   const overlayTop = searchBandHeight + 8;
   const hasDestination = !!selectedDestinoLabel;
   const ctaDisabled = isLocating || !hasDestination;
-  const sheetPaddingBottom = 14;
-
-  // Active ride from Redux — non-terminal rides show the tracking banner
-  const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
-  const TERMINAL = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
-  const hasActiveRide =
-    activeCorrida !== null && !TERMINAL.has(activeCorrida.status);
-
-  // After a successful ride request, stay on Home tab — the banner appears here
-  const handleRequestSuccess = useCallback(
-    (_corridaId: string): void => {
-      onCloseRequestModal();
-      // No navigation needed — the ActiveRideBanner renders on this screen
-    },
-    [onCloseRequestModal],
-  );
+  const sheetPaddingBottom = insets.bottom > 0 ? insets.bottom : 14;
 
   return (
     <View
       style={styles.container}
       testID="passageiro-screen"
       onLayout={() => setIsContainerReady(true)}>
-      {/* Status bar — light-content so time/battery/signal show white on dark navy */}
       <StatusBar
         barStyle="light-content"
         backgroundColor="transparent"
@@ -500,7 +645,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
       {/* Layer 1: Map */}
       {mapContent}
 
-      {/* Layer 2: Top search bar — dark navy band covering status bar */}
+      {/* Layer 2: Top search bar */}
       <Animated.View
         style={[
           styles.searchBarWrapper,
@@ -519,7 +664,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
               hasDestination &&
               styles.searchBarContainerFilled,
           ]}>
-          {/* Left icon: search when typing, location-on otherwise */}
           <View style={styles.searchBarLeftIcon}>
             <MaterialIcons
               name={isInputFocused ? 'search' : 'location-on'}
@@ -543,7 +687,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
             testID="search-bar-input"
             value={searchQuery}
           />
-          {/* Right icon: clear (✕) when typing, search icon at idle */}
           {searchQuery.length > 0 ? (
             <Pressable
               accessibilityLabel={t('common.clear')}
@@ -576,7 +719,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
           <MaterialIcons name="notifications" size={20} color={C.textOnDark} />
           <View style={styles.fabBadge} />
         </TouchableOpacity>
-
         <TouchableOpacity
           accessibilityLabel={t('passageiro.map.centerOnUser')}
           accessibilityRole="button"
@@ -588,7 +730,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
         </TouchableOpacity>
       </View>
 
-      {/* Layer 5: Search results overlay */}
+      {/* Layer 5: Search overlay */}
       {isSearchOpen && (
         <Animated.View
           style={[
@@ -613,7 +755,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
               <MaterialIcons name="close" size={14} color={C.textDark} />
             </Pressable>
           </View>
-
           {isSearching ? (
             <ActivityIndicator
               color={C.interactive}
@@ -641,7 +782,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
         </Animated.View>
       )}
 
-      {/* Layer 4: Bottom sheet — white (hidden when active ride is in progress) */}
+      {/* Layer 4a: Normal bottom sheet — search & request ride */}
       {!hasActiveRide && (
         <Animated.View
           onLayout={onSheetLayout}
@@ -653,10 +794,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
             },
           ]}
           testID="bottom-sheet">
-          {/* Drag handle */}
           <View style={styles.dragHandle} />
-
-          {/* Header */}
           <View style={styles.bottomSheetHeader}>
             <View>
               <Text style={styles.bottomSheetTitle}>
@@ -668,11 +806,13 @@ export const PassageiroScreen = (): React.JSX.Element => {
             </View>
             <MaterialIcons name="expand-more" size={20} color={C.textMuted} />
           </View>
-
-          {/* Destination detail row */}
           <View style={styles.destinoRow}>
             <View style={styles.destinoIconWrapper}>
-              <MaterialIcons name="location-on" size={20} color={C.interactive} />
+              <MaterialIcons
+                name="location-on"
+                size={20}
+                color={C.interactive}
+              />
             </View>
             <View style={styles.destinoTextBlock}>
               <Text style={styles.destinoLabel}>
@@ -680,7 +820,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
               </Text>
               <Text
                 style={
-                  hasDestination ? styles.destinoValue : styles.destinoPlaceholder
+                  hasDestination
+                    ? styles.destinoValue
+                    : styles.destinoPlaceholder
                 }
                 testID="destino-value">
                 {selectedDestinoLabel ??
@@ -688,7 +830,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
               </Text>
             </View>
           </View>
-
           {canPreviewRoute && (
             <View style={styles.routeStatusWrap} testID="route-status">
               {isRouting ? (
@@ -717,8 +858,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
               )}
             </View>
           )}
-
-          {/* CTA */}
           <Pressable
             accessibilityLabel={
               hasDestination
@@ -743,43 +882,136 @@ export const PassageiroScreen = (): React.JSX.Element => {
         </Animated.View>
       )}
 
-      {/* Active ride banner — replaces bottom sheet when a ride is in progress */}
+      {/* Layer 4b: Active ride panel — status + addresses + cancel */}
       {hasActiveRide && activeCorrida && (
-        <Pressable
-          accessibilityLabel={t('corridas.acompanhar.title')}
-          accessibilityRole="button"
-          onPress={() => {
-            navigation.navigate('PassageiroCorridas');
-            setTimeout(() => {
-              navigation.navigate('AcompanharCorrida', {corridaId: activeCorrida.id});
-            }, 80);
-          }}
-          style={[
-            styles.bottomSheet,
-            styles.activeBanner,
-            {paddingBottom: sheetPaddingBottom},
-          ]}
-          testID="active-ride-banner">
-          <View style={styles.dragHandle} />
-          <View style={styles.activeBannerRow}>
-            <View style={[styles.activeBannerDot, {backgroundColor: C.interactive}]} />
-            <View style={styles.activeBannerText}>
+        <>
+          <View
+            style={[
+              styles.bottomSheet,
+              styles.activeBanner,
+              {paddingBottom: sheetPaddingBottom},
+            ]}
+            testID="active-ride-panel">
+            <View style={styles.dragHandle} />
+
+            {/* Status */}
+            <View style={styles.activeBannerRow}>
+              <View
+                style={[
+                  styles.activeBannerDot,
+                  {backgroundColor: C.interactive},
+                ]}
+              />
               <Text style={styles.activeBannerTitle}>
                 {t(`corridas.status.${activeCorrida.status}`)}
               </Text>
-              <Text style={styles.activeBannerSubtitle} numberOfLines={1}>
-                {activeCorrida.motivoServico}
+            </View>
+
+            {/* Origin */}
+            <View style={styles.activeBannerAddressRow}>
+              <MaterialIcons
+                name="trip-origin"
+                size={14}
+                color={C.interactive}
+                style={styles.activeBannerAddressIcon}
+              />
+              <Text style={styles.activeBannerAddress} numberOfLines={1}>
+                {origemAddress ?? t('corridas.detail.addressLoading')}
               </Text>
             </View>
-            <MaterialIcons name="chevron-right" size={20} color={C.textMuted} />
+
+            {/* Destination */}
+            <View style={styles.activeBannerAddressRow} testID="banner-destino">
+              <MaterialIcons
+                name="location-on"
+                size={14}
+                color={C.errorRed}
+                style={styles.activeBannerAddressIcon}
+              />
+              <Text style={styles.activeBannerAddress} numberOfLines={1}>
+                {destinoAddress ?? t('corridas.detail.addressLoading')}
+              </Text>
+            </View>
+
+            {/* Cancel */}
+            {!TERMINAL_STATUSES.has(activeCorrida.status) &&
+              (showCancelInput ? (
+                <View style={styles.cancelSection}>
+                  <TextInput
+                    accessibilityLabel={t('corridas.cancel.motivoPlaceholder')}
+                    onChangeText={setCancelMotivo}
+                    placeholder={t('corridas.cancel.motivoPlaceholder')}
+                    placeholderTextColor={C.textMuted}
+                    style={styles.cancelInput}
+                    testID="cancel-motivo-input"
+                    value={cancelMotivo}
+                  />
+                  <View style={styles.cancelBtnRow}>
+                    <Pressable
+                      onPress={() => {
+                        setShowCancelInput(false);
+                        setCancelMotivo('');
+                      }}
+                      style={styles.cancelBtnSecondary}
+                      testID="cancel-back-btn">
+                      <Text style={styles.cancelBtnSecondaryText}>
+                        {t('common.cancel')}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityLabel={t('corridas.cancel.confirm')}
+                      accessibilityRole="button"
+                      disabled={isActionLoading}
+                      onPress={handleCancel}
+                      style={[
+                        styles.cancelBtnDanger,
+                        isActionLoading && styles.cancelBtnDisabled,
+                      ]}
+                      testID="cancel-confirm-btn">
+                      {isActionLoading ? (
+                        <ActivityIndicator color={C.surfaceCard} size="small" />
+                      ) : (
+                        <Text style={styles.cancelBtnDangerText}>
+                          {t('corridas.cancel.confirm')}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={() => setShowCancelInput(true)}
+                  style={styles.cancelOpenBtn}
+                  testID="cancel-open-btn">
+                  <Text style={styles.cancelOpenBtnText}>
+                    {t('corridas.cancel.title')}
+                  </Text>
+                </Pressable>
+              ))}
           </View>
-        </Pressable>
+
+          {/* Chat FAB */}
+          <TouchableOpacity
+            accessibilityLabel={t('corridas.mensagens.title')}
+            accessibilityRole="button"
+            activeOpacity={0.8}
+            onPress={() => {
+              navigation.navigate('CorridaMensagens', {
+                corridaId: activeCorrida.id,
+              });
+            }}
+            style={[styles.chatFab, {bottom: insets.bottom + 168}]}
+            testID="fab-chat">
+            <MaterialIcons name="chat" size={22} color={C.textOnDark} />
+          </TouchableOpacity>
+        </>
       )}
 
-      {/* Ride request modal — slides up from bottom */}
       <SolicitarCorridaModal
         onClose={onCloseRequestModal}
-        onSuccess={handleRequestSuccess}
+        onSuccess={(_corridaId: string) => {
+          onCloseRequestModal();
+        }}
         visible={isRequestModalOpen}
       />
     </View>

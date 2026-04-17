@@ -25,19 +25,20 @@ SOLICITADA → ACEITA → EM_DESLOCAMENTO → PASSAGEIRO_EMBARCADO → FINALIZAD
 
 ## API Endpoints
 
-| Method | Endpoint                             | Role             | Description                                  | Success | Error codes |
-| ------ | ------------------------------------ | ---------------- | -------------------------------------------- | ------- | ----------- |
-| `POST` | `/corridas`                          | Passageiro       | Request a new ride (async Outbox)            | `202`   | `400`       |
-| `POST` | `/corridas/:id/aceitar`              | Motorista        | Accept a dispatched ride                     | `201`   | `409`       |
-| `POST` | `/corridas/:id/recusar`              | Motorista        | Refuse a ride (system finds next candidate)  | `201`   | —           |
-| `POST` | `/corridas/:id/iniciar-deslocamento` | Motorista        | Start driving to pickup point                | `201`   | —           |
-| `POST` | `/corridas/:id/confirmar-embarque`   | Motorista        | Confirm passenger has boarded                | `201`   | —           |
-| `POST` | `/corridas/:id/finalizar`            | Motorista        | Complete the ride at destination             | `201`   | —           |
-| `POST` | `/corridas/:id/cancelar`             | Passageiro/Admin | Cancel an active ride                        | `201`   | `400`       |
-| `GET`  | `/corridas`                          | Role-based       | List rides with pagination and status filter | `200`   | —           |
-| `GET`  | `/corridas/:id`                      | Any              | Get full ride details                        | `200`   | `404`       |
-| `GET`  | `/corridas/:id/status`               | Any              | Get current status (Redis-optimised, fast)   | `200`   | `404`       |
-| `GET`  | `/corridas/:id/mensagens`            | Any              | List ride chat message history               | `200`   | `404`       |
+| Method | Endpoint                             | Role              | Description                                    | Success | Error codes |
+| ------ | ------------------------------------ | ----------------- | ---------------------------------------------- | ------- | ----------- |
+| `POST` | `/corridas`                          | Passageiro        | Request a new ride (async Outbox)              | `202`   | `400`       |
+| `POST` | `/corridas/:id/aceitar`              | Motorista         | Accept a dispatched ride                       | `201`   | `409`       |
+| `POST` | `/corridas/:id/recusar`              | Motorista         | Refuse a ride (system finds next candidate)    | `201`   | —           |
+| `POST` | `/corridas/:id/iniciar-deslocamento` | Motorista         | Start driving to pickup point                  | `201`   | —           |
+| `POST` | `/corridas/:id/confirmar-embarque`   | Motorista         | Confirm passenger has boarded                  | `201`   | —           |
+| `POST` | `/corridas/:id/finalizar`            | Motorista         | Complete the ride at destination               | `201`   | —           |
+| `POST` | `/corridas/:id/cancelar`             | Passageiro/Admin  | Cancel an active ride                          | `201`   | `400`       |
+| `GET`  | `/corridas/contexto`                 | Any authenticated | Get user + active ride context for mobile sync | `200`   | —           |
+| `GET`  | `/corridas`                          | Role-based        | List rides with pagination and status filter   | `200`   | —           |
+| `GET`  | `/corridas/:id`                      | Any               | Get full ride details                          | `200`   | `404`       |
+| `GET`  | `/corridas/:id/status`               | Any               | Get current status (Redis-optimised, fast)     | `200`   | `404`       |
+| `GET`  | `/corridas/:id/mensagens`            | Any               | List ride chat message history                 | `200`   | `404`       |
 
 ---
 
@@ -292,6 +293,141 @@ curl -X GET \
 ```
 
 > Use this endpoint for ride history and list views. For live tracking of one ride, prefer `GET /corridas/:id/status` + WebSocket events.
+
+---
+
+## GET /corridas/contexto
+
+Returns current user details plus any active ride to restore mobile state instantly at app startup.
+
+This endpoint is designed for synchronization and recovery:
+
+- Startup hydration: fetch once after auth/session restore.
+- Active ride recovery: if an active ride exists, restore ride state immediately.
+- WebSocket recovery: re-join the correct ride room and sync latest chat messages.
+
+### Query params
+
+None.
+
+### Example request
+
+```bash
+curl -X GET \
+  'http://172.19.2.116:3000/corridas/contexto' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer <accessToken>'
+```
+
+### Response `200` (expected shape)
+
+```json
+{
+  "usuario": {
+    "id": "uuid",
+    "nome": "Nome do Usuário",
+    "papeis": ["USUARIO"]
+  },
+  "corridaAtiva": {
+    "id": "uuid",
+    "status": "EM_DESLOCAMENTO",
+    "passageiroId": "uuid",
+    "motoristaId": "uuid",
+    "veiculoId": "uuid",
+    "origemLat": -2.529,
+    "origemLng": -44.301,
+    "destinoLat": -2.535,
+    "destinoLng": -44.295,
+    "motivoServico": "Visita técnica",
+    "observacoes": "Levar material",
+    "createdAt": "2026-04-16T13:00:00.000Z",
+    "updatedAt": "2026-04-16T13:10:00.000Z"
+  },
+  "mensagensRecentes": [
+    {
+      "id": "uuid-da-mensagem",
+      "corridaId": "uuid",
+      "remetenteId": "uuid-do-usuario",
+      "conteudo": "Estou no portão principal.",
+      "timestamp": "2026-04-16T13:11:00.000Z"
+    }
+  ]
+}
+```
+
+> If there is no active ride, `corridaAtiva` should be `null` and the app should continue normal home/list flow.
+
+### Recovery flow (recommended)
+
+1. Call `GET /corridas/contexto` on app startup.
+2. If `corridaAtiva` exists, connect/reconnect WebSocket.
+3. Emit `assinar-corrida` with `corridaAtiva.id`.
+4. Hydrate `mensagensRecentes`, then keep live updates via `nova-mensagem`.
+
+### API captured example
+
+#### Curl
+
+```bash
+curl -X 'GET' \
+  'http://172.19.2.116:3000/corridas/contexto' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer <accessToken>'
+```
+
+#### Request URL
+
+```text
+http://172.19.2.116:3000/corridas/contexto
+```
+
+#### Server response
+
+Code: `200`
+
+#### Response body
+
+```json
+{
+  "usuario": {
+    "id": "00000000-0000-7000-8000-000000000000",
+    "email": "admin@govmob.gov.br",
+    "papeis": ["ADMIN", "USUARIO"],
+    "nome": "Administrador do Sistema"
+  },
+  "corridaAtiva": {
+    "id": "019d9b96-f389-7248-b7d7-a69f5aede600",
+    "status": "solicitada",
+    "origem": {
+      "lat": -12.5448089,
+      "lng": -55.7273959
+    },
+    "destino": {
+      "lat": -12.545971,
+      "lng": -55.720255
+    },
+    "motoristaId": null,
+    "passageiroId": "00000000-0000-7000-8000-000000000000"
+  }
+}
+```
+
+#### Response headers
+
+```text
+access-control-allow-credentials: true
+access-control-allow-origin: *
+connection: keep-alive
+content-length: 399
+content-type: application/json; charset=utf-8
+date: Fri,17 Apr 2026 13:31:48 GMT
+etag: W/"18f-yzZ7fY1IAzicaiBv52SdNJUR+VQ"
+keep-alive: timeout=5
+x-powered-by: Express
+x-ratelimit-limit-short: 999999
+x-ratelimit-remaining-short: 999998
+x-ratelimit-reset-short: 59999
+```
 
 ---
 

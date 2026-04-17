@@ -89,6 +89,7 @@ export type PassageiroCorridasStackParamList = {
   PassageiroCorridasList: undefined;
   CorridaDetalhe: {corridaId: string};
   AcompanharCorrida: {corridaId: string};
+  CorridaMensagens: {corridaId: string};
 };
 
 // ---------------------------------------------------------------------------

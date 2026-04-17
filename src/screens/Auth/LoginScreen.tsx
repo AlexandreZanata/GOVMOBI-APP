@@ -32,12 +32,12 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../../theme';
 import {createLoginStyles} from './LoginScreen.styles';
-import {Text, Input, Icon} from '../../components/atoms';
+import {Text, Input, Icon} from '@components/atoms';
 import {useAppDispatch} from '../../store';
-import {setUser, setToken, setPapeis} from '../../store/slices/authSlice';
-import {addToast} from '../../store/slices/uiSlice';
-import {useFacades} from '../../services/facades';
-import {maskCpf, sanitizeCpf, isValidCpf} from '../../utils/cpf';
+import {setUser, setToken, setPapeis} from '@store/slices/authSlice';
+import {addToast} from '@store/slices/uiSlice';
+import {useFacades} from '@services/facades';
+import {maskCpf, sanitizeCpf, isValidCpf} from '@utils/cpf';
 // expo-constants is available at runtime via Expo's module resolution;
 // the type declaration is provided by the project-level mock.
 // eslint-disable-next-line @typescript-eslint/no-require-imports

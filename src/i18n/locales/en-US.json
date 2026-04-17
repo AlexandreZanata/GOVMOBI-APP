@@ -258,7 +258,8 @@
     "errors": {
       "selectDestination": "Please select a destination first.",
       "locationRequired": "Waiting for your location.",
-      "requestFailed": "Could not request the ride."
+      "requestFailed": "Could not request the ride.",
+      "alreadyHasActiveRide": "You already have an active ride. Track it on the map."
     }
   },
   "motorista": {
@@ -294,7 +295,9 @@
       "motoristaId": "Driver",
       "createdAt": "Requested at",
       "metadata": "Information",
-      "coordsUnavailable": "Coordinates unavailable"
+      "coordsUnavailable": "Coordinates unavailable",
+      "addressLoading": "Loading address...",
+      "addressUnavailable": "Address unavailable"
     },
     "acompanhar": {"title": "Track Ride"},
     "solicitar": {

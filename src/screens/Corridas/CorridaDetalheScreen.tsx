@@ -20,8 +20,8 @@ import {useRoute, type RouteProp} from '@react-navigation/native';
 import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
-import type {CorridaMensagem} from '../../models/Corrida';
-import type {PassageiroCorridasStackParamList, CorridasStackParamList} from '../../navigation/types';
+import type {CorridaMensagem} from '@models/Corrida';
+import type {PassageiroCorridasStackParamList, CorridasStackParamList} from '@navigation/types';
 
 // CorridaDetalhe exists in both stacks — accept either param list
 type RouteProps =

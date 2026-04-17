@@ -105,3 +105,27 @@ export interface SearchResult {
   address: string;
   coordinates: Coordenada;
 }
+
+// ---------------------------------------------------------------------------
+// GET /corridas/contexto — mobile state sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalized response from GET /corridas/contexto.
+ * The raw API returns nested origem/destino objects and lowercase status;
+ * the facade normalizes these to the flat Corrida model before returning.
+ */
+export interface CorridaContexto {
+  /** Authenticated user summary. */
+  usuario: {
+    id: string;
+    email: string;
+    papeis: string[];
+    nome: string;
+  };
+  /**
+   * Active corrida normalized to the app's Corrida model, or null if none.
+   * Status is uppercased (e.g. 'SOLICITADA') to match CorridaStatus enum.
+   */
+  corridaAtiva: import('../models/Corrida').Corrida | null;
+}

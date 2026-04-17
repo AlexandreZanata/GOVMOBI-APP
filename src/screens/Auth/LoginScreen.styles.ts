@@ -2,8 +2,8 @@
  * @fileoverview Styles for the redesigned LoginScreen.
  *
  * Layout strategy (Design_Prompt §4 Screen 1):
- * - Full screen background: design.navy800
- * - Top 35%: logo area on dark background
+ * - Full-screen background: design.navy800
+ * - Top 35%: logo area on a dark background
  * - Bottom 65%: rounded-top card (surface100, radius.xl) anchored to bottom
  *
  * All values reference theme tokens — zero hardcoded colors or pixel values.

@@ -254,7 +254,8 @@
     "errors": {
       "selectDestination": "Seleccione un destino primero.",
       "locationRequired": "Esperando su ubicación.",
-      "requestFailed": "No se pudo solicitar el viaje."
+      "requestFailed": "No se pudo solicitar el viaje.",
+      "alreadyHasActiveRide": "Ya tienes un viaje activo. Síguelo en el mapa."
     }
   },
   "motorista": {
@@ -290,7 +291,9 @@
       "motoristaId": "Conductor",
       "createdAt": "Solicitado el",
       "metadata": "Información",
-      "coordsUnavailable": "Coordenadas no disponibles"
+      "coordsUnavailable": "Coordenadas no disponibles",
+      "addressLoading": "Cargando dirección...",
+      "addressUnavailable": "Dirección no disponible"
     },
     "acompanhar": {"title": "Seguir Viaje"},
     "solicitar": {

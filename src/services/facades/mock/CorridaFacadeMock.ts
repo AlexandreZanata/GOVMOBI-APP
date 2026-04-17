@@ -19,6 +19,7 @@ import type {
 } from '../../../types/corrida';
 import type {ICorridaFacade} from '../CorridaFacade';
 import type {FacadeError, Result} from '../types';
+import type {CorridaContexto} from '../../../types/corrida';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -270,5 +271,22 @@ export class CorridaFacadeMock implements ICorridaFacade {
       c => c.status !== 'FINALIZADA' && c.status !== 'CANCELADA' && c.status !== 'RECUSADA',
     );
     return ok(active ?? null);
+  }
+
+  /** @inheritdoc */
+  public async getContexto(): Promise<Result<CorridaContexto, FacadeError>> {
+    await delay(150);
+    const active = [...store.values()].find(
+      c => c.status !== 'FINALIZADA' && c.status !== 'CANCELADA' && c.status !== 'RECUSADA',
+    );
+    return ok({
+      usuario: {
+        id: 'passageiro-mock-001',
+        email: 'mock@govmob.gov.br',
+        papeis: ['USUARIO'],
+        nome: 'Mock User',
+      },
+      corridaAtiva: active ?? null,
+    });
   }
 }

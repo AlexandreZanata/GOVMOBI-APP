@@ -161,6 +161,27 @@ export const SolicitarCorridaModal = ({
         destinoLat: selectedDestino.latitude,
         destinoLng: selectedDestino.longitude,
       });
+
+      // 409 CONFLICT — passenger already has an active ride on the server.
+      // Recover: fetch the existing ride, seed Redux, close modal, and inform the user.
+      if (result.error.code === 'CONFLICT') {
+        const activeResult = await corridaFacade.getActiveCorrida();
+        if (activeResult.data) {
+          dispatch(setActiveCorrida(activeResult.data));
+          dispatch(setPendingCorridaId(activeResult.data.id));
+        }
+        dispatch(
+          addToast({
+            id: `solicitar-conflict-${Date.now()}`,
+            message: t('passageiro.errors.alreadyHasActiveRide'),
+            type: 'warning',
+          }),
+        );
+        resetForm();
+        onClose();
+        return;
+      }
+
       dispatch(
         addToast({
           id: `solicitar-err-${Date.now()}`,
@@ -208,6 +229,7 @@ export const SolicitarCorridaModal = ({
     dispatch,
     motivoServico,
     observacoes,
+    onClose,
     onSuccess,
     resetForm,
     selectedDestino,

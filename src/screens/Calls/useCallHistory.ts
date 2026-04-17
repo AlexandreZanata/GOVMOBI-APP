@@ -6,7 +6,7 @@ import {
 } from '../../models';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setCallHistory} from '@store/slices/callsSlice';
-import {useFacades} from '../../services/facades';
+import {useFacades} from '@services/facades';
 
 export type CallFilter = 'all' | 'incoming' | 'outgoing' | 'missed';
 

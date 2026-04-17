@@ -28,8 +28,6 @@ export const createHistoricoStyles = (theme: Theme) => {
       paddingHorizontal: spacing[5],
       paddingTop: spacing[4],
       paddingBottom: spacing[6],
-      borderBottomLeftRadius: borderRadius.radius.xl,
-      borderBottomRightRadius: borderRadius.radius.xl,
       marginBottom: spacing[4],
     },
     headerTitle: {

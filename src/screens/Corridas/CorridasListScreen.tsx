@@ -20,10 +20,10 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTheme} from '../../theme';
 import {useCorridas} from './useCorridas';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
-import type {CorridasStackParamList} from '../../navigation/types';
+import type {CorridasStackParamList} from '@navigation/types';
 import {useFacades} from '@services/facades';
 import {useAppDispatch} from '../../store';
-import {setActiveCorrida} from '../../store/slices/corridaSlice';
+import {setActiveCorrida} from '@store/slices/corridaSlice';
 
 type NavProp = NativeStackNavigationProp<CorridasStackParamList>;
 

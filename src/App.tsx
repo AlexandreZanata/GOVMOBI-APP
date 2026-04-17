@@ -22,6 +22,7 @@ import {
   useNotifications,
   useRealtimeSession,
 } from './hooks';
+import {useCorridaContexto} from './hooks/useCorridaContexto';
 import {FacadeProvider} from '@services/facades';
 
 /**
@@ -32,6 +33,7 @@ const AppStartupEffects = (): null => {
   useNotifications();
   useAuthSession();
   useRealtimeSession();
+  useCorridaContexto();
   return null;
 };
 

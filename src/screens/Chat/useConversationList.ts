@@ -9,7 +9,7 @@ import {
 } from '../../models';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setConversations} from '@store/slices/chatSlice';
-import {useFacades} from '../../services/facades';
+import {useFacades} from '@services/facades';
 
 // ---------------------------------------------------------------------------
 // Domain types

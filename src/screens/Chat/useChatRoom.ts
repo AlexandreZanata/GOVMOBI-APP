@@ -9,7 +9,7 @@ import {
   setMessages,
   updateMessage,
 } from '@store/slices/chatSlice';
-import {useFacades} from '../../services/facades';
+import {useFacades} from '@services/facades';
 
 export type MessageListItem =
   | {kind: 'message'; data: Message}

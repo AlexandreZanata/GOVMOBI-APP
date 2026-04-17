@@ -24,9 +24,9 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTheme} from '../../theme';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import {createHistoricoStyles} from './HistoricoCorridas.styles';
-import type {PassageiroCorridasStackParamList} from '../../navigation/types';
+import type {PassageiroCorridasStackParamList} from '@navigation/types';
 import {useAppSelector} from '../../store';
-import type {Corrida} from '../../models/Corrida';
+import type {Corrida} from '@models/Corrida';
 
 type NavProp = NativeStackNavigationProp<PassageiroCorridasStackParamList>;
 

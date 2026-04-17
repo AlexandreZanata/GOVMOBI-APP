@@ -163,13 +163,23 @@ const toReverseGeocodingResult = (
   payload: unknown,
 ): ReverseGeocodingResult | null => {
   const unwrapped = unwrapEnvelopeData(payload);
-  if (!isRecord(unwrapped)) {
+  const candidate = Array.isArray(unwrapped)
+    ? unwrapped[0]
+    : isRecord(unwrapped) && Array.isArray(unwrapped.results)
+      ? unwrapped.results[0]
+      : unwrapped;
+
+  if (!isRecord(candidate)) {
     return null;
   }
 
-  const address = unwrapped.address;
-  const lat = unwrapped.lat;
-  const lng = unwrapped.lng;
+  const address =
+    candidate.address ??
+    candidate.placeName ??
+    candidate.place_name ??
+    candidate.formatted_address;
+  const lat = candidate.lat ?? candidate.latitude;
+  const lng = candidate.lng ?? candidate.longitude;
 
   if (
     typeof address !== 'string' ||
@@ -180,7 +190,7 @@ const toReverseGeocodingResult = (
   }
 
   return {
-    address,
+    address: String(address),
     lat: Number(lat),
     lng: Number(lng),
   };
@@ -225,36 +235,58 @@ const toPesquisaRouteResult = (
     return null;
   }
 
-  const directGeometry = toRouteGeometry(unwrapped.geometry);
+  const directGeometry =
+    toRouteGeometry(unwrapped.geometry) ??
+    toRouteGeometry(unwrapped.geometria) ??
+    toRouteGeometry(unwrapped.routeGeometry);
   const routeSource =
     !directGeometry &&
-    Array.isArray(unwrapped.routes) &&
-    unwrapped.routes.length > 0
+    ((Array.isArray(unwrapped.routes) && unwrapped.routes.length > 0
       ? unwrapped.routes[0]
-      : null;
+      : null) ??
+      (isRecord(unwrapped.rota) ? unwrapped.rota : null) ??
+      (isRecord(unwrapped.route) ? unwrapped.route : null));
   const routeRecord = isRecord(routeSource) ? routeSource : null;
-  const geometry = directGeometry ?? toRouteGeometry(routeRecord?.geometry);
+  const geometry =
+    directGeometry ??
+    toRouteGeometry(routeRecord?.geometry) ??
+    toRouteGeometry(routeRecord?.geometria);
 
   if (!geometry) {
     return null;
   }
 
-  const distance = Number(
+  const rawDistance = Number(
     unwrapped.distanciaMetros ??
       routeRecord?.distanciaMetros ??
       unwrapped.distance ??
       routeRecord?.distance,
   );
-  const duration = Number(
+  const rawDuration = Number(
     unwrapped.duracaoSegundos ??
       routeRecord?.duracaoSegundos ??
       unwrapped.duration ??
       routeRecord?.duration,
   );
 
-  if (!Number.isFinite(distance) || !Number.isFinite(duration)) {
-    return null;
-  }
+  const start = geometry.coordinates[0];
+  const end = geometry.coordinates[geometry.coordinates.length - 1];
+  const fallbackDistanceMeters =
+    Number.isFinite(Number(start?.[0])) && Number.isFinite(Number(end?.[0]))
+      ? Math.round(
+          Math.hypot(
+            Number(end[0]) - Number(start[0]),
+            Number(end[1]) - Number(start[1]),
+          ) * 111000,
+        )
+      : 0;
+
+  const distance = Number.isFinite(rawDistance)
+    ? rawDistance
+    : Math.max(0, fallbackDistanceMeters);
+  const duration = Number.isFinite(rawDuration)
+    ? rawDuration
+    : Math.max(60, Math.round(distance / 8));
 
   return {
     geometry,

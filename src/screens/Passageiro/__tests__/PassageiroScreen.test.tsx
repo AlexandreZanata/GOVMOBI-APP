@@ -9,15 +9,15 @@ import {configureStore} from '@reduxjs/toolkit';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {I18nextProvider} from 'react-i18next';
 import {i18n} from '../../../i18n';
-import {ThemeProvider} from '../../../theme';
-import {FacadeProvider} from '../../../services/facades';
+import {ThemeProvider} from '@theme/index';
+import {FacadeProvider} from '@services/facades';
 import {PassageiroScreen} from '../PassageiroScreen';
 import corridaReducer from '../../../store/slices/corridaSlice';
 import authReducer from '../../../store/slices/authSlice';
 import uiReducer from '../../../store/slices/uiSlice';
-import type {ICorridaFacade} from '../../../services/facades/CorridaFacade';
-import type {FacadeError, Result} from '../../../services/facades/types';
-import type {SearchResult} from '../../../types/corrida';
+import type {ICorridaFacade} from '@services/facades';
+import type {FacadeError, Result} from '@services/facades';
+import type {SearchResult} from '../../../types';
 
 // ---------------------------------------------------------------------------
 // Mocks

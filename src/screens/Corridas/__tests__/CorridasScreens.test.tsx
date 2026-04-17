@@ -12,13 +12,19 @@
  * TSC clean — zero `any`.
  */
 import React from 'react';
-import {render, screen, fireEvent, waitFor, act} from '@testing-library/react-native';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react-native';
 import {Provider} from 'react-redux';
 import {configureStore} from '@reduxjs/toolkit';
 import {NavigationContainer} from '@react-navigation/native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {I18nextProvider} from 'react-i18next';
-import {ThemeProvider} from '../../../theme';
+import {ThemeProvider} from '@theme/index';
 import {FacadeProvider} from '@services/facades';
 import {i18n} from '../../../i18n';
 import corridaReducer from '../../../store/slices/corridaSlice';
@@ -27,11 +33,15 @@ import uiReducer from '../../../store/slices/uiSlice';
 import {PassageiroCorridasListScreen} from '../PassageiroCorridasListScreen';
 import {AcompanharCorridaScreen} from '../AcompanharCorridaScreen';
 import {MotoristaCorridaScreen} from '../MotoristaCorridaScreen';
-import {UserRole, UserStatus} from '../../../models/User';
-import type {ICorridaFacade} from '../../../services/facades/CorridaFacade';
-import type {FacadeError, Result} from '../../../services/facades/types';
-import type {Corrida, CorridaMensagem} from '../../../models/Corrida';
-import type {SolicitarCorridaResponse, CorridaStatusResponse} from '../../../types/corrida';
+import {UserRole, UserStatus} from '@models/User';
+import type {ICorridaFacade} from '@services/facades';
+import type {FacadeError, Result} from '@services/facades';
+import type {Corrida, CorridaMensagem} from '@models/Corrida';
+import type {
+  CorridaContexto,
+  CorridaStatusResponse,
+  SolicitarCorridaResponse,
+} from '../../../types';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -40,10 +50,9 @@ import type {SolicitarCorridaResponse, CorridaStatusResponse} from '../../../typ
 const mockUseRoute = jest.fn().mockReturnValue({params: {}});
 
 jest.mock('@react-navigation/native', () => {
-  const actual =
-    jest.requireActual<typeof import('@react-navigation/native')>(
-      '@react-navigation/native',
-    );
+  const actual = jest.requireActual<typeof import('@react-navigation/native')>(
+    '@react-navigation/native',
+  );
   return {
     ...actual,
     useRoute: () => mockUseRoute(),
@@ -55,7 +64,10 @@ jest.mock('@react-navigation/native', () => {
 // ---------------------------------------------------------------------------
 
 const ok = <T,>(data: T): Result<T, FacadeError> => ({data, error: null});
-const fail = <T,>(msg: string, code = 'NETWORK_ERROR'): Result<T, FacadeError> => ({
+const fail = <T,>(
+  msg: string,
+  code = 'NETWORK_ERROR',
+): Result<T, FacadeError> => ({
   data: null,
   error: {code, message: msg},
 });
@@ -85,39 +97,74 @@ const mockMensagens: CorridaMensagem[] = [
   },
 ];
 
-const buildMockFacade = (overrides: Partial<ICorridaFacade> = {}): ICorridaFacade => ({
-  solicitarCorrida: jest.fn().mockResolvedValue(
-    ok<SolicitarCorridaResponse>({corridaId: 'corrida-test-001', status: 'SOLICITADA'}),
-  ),
-  createCorrida: jest.fn().mockResolvedValue(
-    ok<SolicitarCorridaResponse>({corridaId: 'corrida-test-001', status: 'SOLICITADA'}),
-  ),
-  aceitarCorrida: jest.fn().mockResolvedValue(
-    ok({...mockCorrida, status: 'ACEITA', motoristaId: 'motorista-001'} as Corrida),
-  ),
-  recusarCorrida: jest.fn().mockResolvedValue(
-    ok({...mockCorrida, status: 'RECUSADA'} as Corrida),
-  ),
-  iniciarDeslocamento: jest.fn().mockResolvedValue(
-    ok({...mockCorrida, status: 'EM_DESLOCAMENTO'} as Corrida),
-  ),
-  confirmarEmbarque: jest.fn().mockResolvedValue(
-    ok({...mockCorrida, status: 'PASSAGEIRO_EMBARCADO'} as Corrida),
-  ),
-  finalizarCorrida: jest.fn().mockResolvedValue(
-    ok({...mockCorrida, status: 'FINALIZADA'} as Corrida),
-  ),
-  cancelarCorrida: jest.fn().mockResolvedValue(
-    ok({...mockCorrida, status: 'CANCELADA'} as Corrida),
-  ),
+const buildMockFacade = (
+  overrides: Partial<ICorridaFacade> = {},
+): ICorridaFacade => ({
+  solicitarCorrida: jest
+    .fn()
+    .mockResolvedValue(
+      ok<SolicitarCorridaResponse>({
+        corridaId: 'corrida-test-001',
+        status: 'SOLICITADA',
+      }),
+    ),
+  createCorrida: jest
+    .fn()
+    .mockResolvedValue(
+      ok<SolicitarCorridaResponse>({
+        corridaId: 'corrida-test-001',
+        status: 'SOLICITADA',
+      }),
+    ),
+  aceitarCorrida: jest
+    .fn()
+    .mockResolvedValue(
+      ok({
+        ...mockCorrida,
+        status: 'ACEITA',
+        motoristaId: 'motorista-001',
+      } as Corrida),
+    ),
+  recusarCorrida: jest
+    .fn()
+    .mockResolvedValue(ok({...mockCorrida, status: 'RECUSADA'} as Corrida)),
+  iniciarDeslocamento: jest
+    .fn()
+    .mockResolvedValue(
+      ok({...mockCorrida, status: 'EM_DESLOCAMENTO'} as Corrida),
+    ),
+  confirmarEmbarque: jest
+    .fn()
+    .mockResolvedValue(
+      ok({...mockCorrida, status: 'PASSAGEIRO_EMBARCADO'} as Corrida),
+    ),
+  finalizarCorrida: jest
+    .fn()
+    .mockResolvedValue(ok({...mockCorrida, status: 'FINALIZADA'} as Corrida)),
+  cancelarCorrida: jest
+    .fn()
+    .mockResolvedValue(ok({...mockCorrida, status: 'CANCELADA'} as Corrida)),
   getCorrida: jest.fn().mockResolvedValue(ok(mockCorrida)),
-  getCorridaStatus: jest.fn().mockResolvedValue(
-    ok<CorridaStatusResponse>({id: 'corrida-test-001', status: 'SOLICITADA'}),
-  ),
+  getCorridaStatus: jest
+    .fn()
+    .mockResolvedValue(
+      ok<CorridaStatusResponse>({id: 'corrida-test-001', status: 'SOLICITADA'}),
+    ),
   getMensagens: jest.fn().mockResolvedValue(ok(mockMensagens)),
   searchLocations: jest.fn().mockResolvedValue(ok([])),
   cancelCorrida: jest.fn().mockResolvedValue(ok(true)),
   getActiveCorrida: jest.fn().mockResolvedValue(ok(null)),
+  getContexto: jest.fn().mockResolvedValue(
+    ok<CorridaContexto>({
+      usuario: {
+        id: 'user-001',
+        email: 'test@gov.br',
+        papeis: ['USUARIO'],
+        nome: 'Test User',
+      },
+      corridaAtiva: null,
+    }),
+  ),
   ...overrides,
 });
 
@@ -201,7 +248,10 @@ describe('PassageiroCorridasListScreen (USUARIO)', () => {
 
   it('shows active corrida card when one exists', async () => {
     render(
-      <Wrapper facade={{getActiveCorrida: jest.fn().mockResolvedValue(ok(mockCorrida))}}>
+      <Wrapper
+        facade={{
+          getActiveCorrida: jest.fn().mockResolvedValue(ok(mockCorrida)),
+        }}>
         <PassageiroCorridasListScreen />
       </Wrapper>,
     );
@@ -219,7 +269,9 @@ describe('PassageiroCorridasListScreen (USUARIO)', () => {
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId('passageiro-corridas-list-screen')).toBeTruthy();
+      expect(
+        screen.getByTestId('passageiro-corridas-list-screen'),
+      ).toBeTruthy();
     });
   });
 });
@@ -343,9 +395,15 @@ describe('MotoristaCorridaScreen (MOTORISTA)', () => {
   });
 
   it('calls aceitarCorrida on aceitar press', async () => {
-    const aceitarMock = jest.fn().mockResolvedValue(
-      ok({...mockCorrida, status: 'ACEITA', motoristaId: 'motorista-001'} as Corrida),
-    );
+    const aceitarMock = jest
+      .fn()
+      .mockResolvedValue(
+        ok({
+          ...mockCorrida,
+          status: 'ACEITA',
+          motoristaId: 'motorista-001',
+        } as Corrida),
+      );
     render(
       <Wrapper facade={{aceitarCorrida: aceitarMock}} papeis={['MOTORISTA']}>
         <MotoristaCorridaScreen />
@@ -363,9 +421,9 @@ describe('MotoristaCorridaScreen (MOTORISTA)', () => {
 
   it('handles 409 conflict on aceitar without crashing', async () => {
     const conflictFacade = buildMockFacade({
-      aceitarCorrida: jest.fn().mockResolvedValue(
-        fail<Corrida>('Corrida já aceita', 'CONFLICT'),
-      ),
+      aceitarCorrida: jest
+        .fn()
+        .mockResolvedValue(fail<Corrida>('Corrida já aceita', 'CONFLICT')),
     });
     render(
       <Wrapper facade={conflictFacade} papeis={['MOTORISTA']}>

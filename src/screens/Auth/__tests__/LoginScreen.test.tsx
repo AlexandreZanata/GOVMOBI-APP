@@ -26,8 +26,8 @@ import {LoginScreen} from '../LoginScreen';
 import {i18n} from '../../../i18n';
 import authReducer from '../../../store/slices/authSlice';
 import uiReducer from '../../../store/slices/uiSlice';
-import {UserRole, UserStatus} from '../../../models';
-import type {AuthSession} from '../../../services/facades/AuthFacade';
+import {UserRole, UserStatus} from '@models/User';
+import type {AuthSession} from '@services/facades';
 
 // ---------------------------------------------------------------------------
 // Mocks

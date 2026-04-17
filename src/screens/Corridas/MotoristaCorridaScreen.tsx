@@ -25,7 +25,7 @@ import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native'
 import {useTheme} from '../../theme';
 import {useCorridas} from './useCorridas';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
-import type {CorridasStackParamList} from '../../navigation/types';
+import type {CorridasStackParamList} from '@navigation/types';
 import {useAppSelector} from '../../store';
 
 type RouteProps = RouteProp<CorridasStackParamList, 'MotoristaCorridaAction'>;
