@@ -1,10 +1,10 @@
 /**
  * @fileoverview MotoristaCorridasListScreen — available and historical rides for the driver.
  *
- * Shows:
- *   - Active ride card (if any) with a CTA to the action screen
- *   - Available rides (SOLICITADA) the driver can accept
- *   - Ride history (terminal rides from Redux corridaHistory)
+ * Layout mirrors NotificationsScreen:
+ *   - Dark blue SafeAreaView header (title only)
+ *   - White content area (flex: 1, backgroundColor: background)
+ *   - Empty state centered in the white area
  */
 import React, {useCallback, useMemo} from 'react';
 import {
@@ -12,11 +12,12 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  StatusBar,
   Text,
   View,
   type ListRenderItem,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useNavigation} from '@react-navigation/native';
@@ -43,7 +44,6 @@ const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
 export const MotoristaCorridasListScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
 
   const shared = useMemo(() => createCorridasStyles(theme), [theme]);
@@ -53,6 +53,13 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
   const corridaHistory = useAppSelector(st => st.corrida.corridaHistory ?? []);
 
   const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
+
+  // No content at all — show centered empty state
+  const isEmpty =
+    !hasActiveRide &&
+    !isLoadingRides &&
+    availableRides.length === 0 &&
+    corridaHistory.length === 0;
 
   const handleViewActive = useCallback(() => {
     if (!activeCorrida) return;
@@ -69,7 +76,6 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
     [navigation],
   );
 
-  // ── Available ride card (compact — shows time only, no full date) ──────────
   const renderAvailableRide: ListRenderItem<Corrida> = useCallback(
     ({item}) => {
       const badgeColor = statusColor(item.status, theme);
@@ -162,24 +168,14 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
           </View>
         )}
 
-        {/* Available rides */}
-        {!hasActiveRide && (
+        {/* Available rides — only shown when there are some */}
+        {!hasActiveRide && availableRides.length > 0 && (
           <View testID="available-rides-section">
-            <Text style={s.headerTitle}>{t('motorista.corridas.available')}</Text>
-            {isLoadingRides ? (
-              <ActivityIndicator color={theme.design.blue500} size="small" style={{marginBottom: theme.spacing[4]}} />
-            ) : availableRides.length === 0 ? (
-              <View style={[shared.emptyContainer, {paddingVertical: theme.spacing[6]}]} testID="no-available-rides">
-                <MaterialIcons name="directions-car" size={40} color={theme.design.textTertiary} />
-                <Text style={shared.emptySubtitle}>{t('motorista.corridas.noAvailable')}</Text>
+            {availableRides.map(ride => (
+              <View key={ride.id}>
+                {renderAvailableRide({item: ride, index: 0, separators: {} as never})}
               </View>
-            ) : (
-              availableRides.map(ride => (
-                <View key={ride.id}>
-                  {renderAvailableRide({item: ride, index: 0, separators: {} as never})}
-                </View>
-              ))
-            )}
+            ))}
           </View>
         )}
 
@@ -192,48 +188,51 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
     ),
     [
       activeCorrida, availableRides, corridaHistory.length, handleViewActive,
-      hasActiveRide, isLoadingRides, renderAvailableRide, s, shared, t, theme,
+      hasActiveRide, renderAvailableRide, s, shared, t, theme,
     ],
   );
 
-  const ListEmpty = useCallback(
-    () => (
-      <View style={s.emptyContainer} testID="history-empty">
-        <MaterialIcons name="history" size={56} color={theme.design.textTertiary} />
-        <Text style={s.emptyTitle}>{t('corridas.history.empty.title')}</Text>
-        <Text style={s.emptySubtitle}>{t('corridas.history.empty.subtitle')}</Text>
-      </View>
-    ),
-    [s, t, theme],
-  );
-
   return (
-    <View style={[s.root, {paddingTop: insets.top}]} testID="motorista-corridas-screen">
-      <View style={s.header}>
+    <SafeAreaView edges={['top']} style={[s.root, {backgroundColor: theme.colors.primary}]} testID="motorista-corridas-screen">
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+
+      {/* Dark blue title header — mirrors NotificationsScreen */}
+      <View style={s.titleRow}>
         <Text style={s.headerTitle}>{t('motorista.corridas.title')}</Text>
-        <Text style={s.headerSubtitle}>{t('motorista.corridas.subtitle')}</Text>
       </View>
 
-      <FlatList
-        contentContainerStyle={[s.listContent, corridaHistory.length === 0 && s.listContentEmpty]}
-        data={corridaHistory}
-        keyExtractor={item => item.id}
-        ListEmptyComponent={ListEmpty}
-        ListHeaderComponent={ListHeader}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoadingRides}
-            onRefresh={onRefreshRides}
-            tintColor={theme.design.blue500}
+      {/* White content area */}
+      <View style={s.contentArea}>
+        {isLoadingRides ? (
+          <View style={s.centeredFill}>
+            <ActivityIndicator color={theme.design.blue500} size="large" />
+          </View>
+        ) : isEmpty ? (
+          <View style={s.centeredFill} testID="rides-empty">
+            <Text style={s.emptySubtitle}>{t('motorista.corridas.noAvailable')}</Text>
+          </View>
+        ) : (
+          <FlatList
+            contentContainerStyle={[s.listContent, corridaHistory.length === 0 && s.listContentEmpty]}
+            data={corridaHistory}
+            keyExtractor={item => item.id}
+            ListHeaderComponent={ListHeader}
+            refreshControl={
+              <RefreshControl
+                refreshing={isLoadingRides}
+                onRefresh={onRefreshRides}
+                tintColor={theme.design.blue500}
+              />
+            }
+            removeClippedSubviews
+            renderItem={renderHistoryRide}
+            showsVerticalScrollIndicator={false}
+            testID="motorista-corridas-list"
+            windowSize={5}
           />
-        }
-        removeClippedSubviews
-        renderItem={renderHistoryRide}
-        showsVerticalScrollIndicator={false}
-        testID="motorista-corridas-list"
-        windowSize={5}
-      />
-    </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 };
 

@@ -55,11 +55,7 @@ export const MotoristaIdleSheet = ({
       testID="idle-sheet">
       <Text style={styles.idleTitle}>{t('motorista.idle.title')}</Text>
       <Text style={styles.idleSubtitle}>{t('motorista.idle.subtitle')}</Text>
-      <View style={styles.statusIndicatorRow}>
-        <View style={[styles.statusDot, {backgroundColor: C.success}]} />
-        <Text style={styles.statusLabel}>{t('motorista.status.disponivel')}</Text>
-      </View>
-      <View style={[styles.statusIndicatorRow, styles.realtimeStatusRow]} testID="realtime-status-row">
+      <View style={styles.statusIndicatorRow} testID="realtime-status-row">
         <View style={[styles.statusDot, {backgroundColor: realtimeDotColor}]} />
         <Text style={styles.statusLabel}>{realtimeLabel}</Text>
       </View>

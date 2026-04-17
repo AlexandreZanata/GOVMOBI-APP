@@ -16,17 +16,22 @@ export type MapboxModule = {
     styleURL?: string;
     logoEnabled?: boolean;
     attributionEnabled?: boolean;
+    scaleBarEnabled?: boolean;
     onDidFinishLoadingMap?: () => void;
     onMapLoadingError?: (error?: unknown) => void;
     testID?: string;
     accessibilityLabel?: string;
     children?: React.ReactNode;
   }>;
-  Camera: React.ComponentType<{
-    centerCoordinate?: [number, number];
-    zoomLevel?: number;
-    animationDuration?: number;
-  }>;
+  Camera: React.ForwardRefExoticComponent<
+    {
+      centerCoordinate?: [number, number];
+      zoomLevel?: number;
+      animationDuration?: number;
+    } & React.RefAttributes<{
+      flyTo: (coordinates: [number, number], duration?: number) => void;
+    }>
+  >;
   PointAnnotation: React.ComponentType<{
     id: string;
     coordinate: [number, number];

@@ -136,6 +136,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const navigation = useNavigation<PassageiroScreenNavProp>();
   const dispatch = useAppDispatch();
   const {corridaFacade, pesquisaFacade} = useFacades();
+  const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -183,8 +184,19 @@ export const PassageiroScreen = (): React.JSX.Element => {
     onSelectResult,
     onOpenRequestModal,
     onCloseRequestModal,
-    onCenterOnUser,
+    onCenterOnUser: onCenterOnUserBase,
   } = usePassageiro();
+
+  // Wraps the hook's center handler and also animates the Mapbox camera.
+  const onCenterOnUser = useCallback(() => {
+    onCenterOnUserBase();
+    if (userLocation) {
+      cameraRef.current?.flyTo(
+        [userLocation.longitude, userLocation.latitude],
+        600,
+      );
+    }
+  }, [onCenterOnUserBase, userLocation]);
 
   // ── Active ride from Redux ──────────────────────────────────────────────────
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
@@ -375,12 +387,14 @@ export const PassageiroScreen = (): React.JSX.Element => {
         accessibilityLabel={t('passageiro.map.label')}
         logoEnabled={false}
         attributionEnabled={false}
+        scaleBarEnabled={false}
         onDidFinishLoadingMap={() => console.info('[Mapbox] Map loaded successfully')}
         onMapLoadingError={(e?: unknown) => console.error('[Mapbox] Map loading error', e)}
         style={styles.map}
         styleURL="mapbox://styles/mapbox/light-v11"
         testID="passageiro-map">
         <MapboxGL.Camera
+          ref={cameraRef}
           animationDuration={600}
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}

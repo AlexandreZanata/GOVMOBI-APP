@@ -55,10 +55,14 @@ export const createMotoristaStyles = (theme: Theme) => {
 
     // ── Map ──────────────────────────────────────────────────────────────────
     map: {
-      ...StyleSheet.absoluteFillObject,
+      flex: 1,
+    },
+    mapWrapper: {
+      flex: 1,
+      position: 'relative',
     },
     mapFallback: {
-      ...StyleSheet.absoluteFillObject,
+      flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: C.navBg,
@@ -85,6 +89,9 @@ export const createMotoristaStyles = (theme: Theme) => {
       justifyContent: 'center',
       ...shadows.md,
     },
+    fabLocation: {
+      backgroundColor: C.interactive,
+    },
     fabBadge: {
       position: 'absolute',
       top: 8,
@@ -95,24 +102,23 @@ export const createMotoristaStyles = (theme: Theme) => {
       backgroundColor: C.danger,
     },
 
-    // ── Status pill (top center) ──────────────────────────────────────────────
-    statusPillWrapper: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
+    // ── Status header row (overrides titleRow to center content) ────────────
+    statusHeaderRow: {
+      flexDirection: 'row',
       alignItems: 'center',
-      zIndex: 10,
+      justifyContent: 'center',
+      gap: spacing[2],
     },
+    statusPillDotOnly: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // ── Status pill — dot+label row inside the header bar ───────────────────
     statusPill: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: C.navBg,
-      borderRadius: borderRadius.radius.full,
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[2],
+      justifyContent: 'center',
       gap: spacing[2],
-      ...shadows.md,
     },
     statusPillDot: {
       width: 8,
@@ -189,10 +195,10 @@ export const createMotoristaStyles = (theme: Theme) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing[2],
-      marginBottom: spacing[4],
     },
     realtimeStatusRow: {
       marginTop: spacing[1],
+      marginBottom: 0,
     },
     statusDot: {
       width: 10,

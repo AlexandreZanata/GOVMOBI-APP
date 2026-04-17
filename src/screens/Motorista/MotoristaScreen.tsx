@@ -18,7 +18,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useNavigation} from '@react-navigation/native';
@@ -29,6 +29,7 @@ import {useMotorista} from './useMotorista';
 import {useMotoristaRealtime} from './useMotoristaRealtime';
 import {NovaCorridaModal} from './components/NovaCorridaModal';
 import {createMotoristaStyles, MotoristaColors as C} from './MotoristaScreen.styles';
+import {createHistoricoStyles} from '@screens/Corridas/HistoricoCorridas.styles';
 import {useAppSelector} from '../../store';
 import {useTheme} from '../../theme';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
@@ -51,19 +52,20 @@ const TERMINAL_STATUSES = new Set<string>(['FINALIZADA', 'CANCELADA', 'RECUSADA'
  */
 export const MotoristaScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
-  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const styles = useMemo(() => createMotoristaStyles(theme), [theme]);
+  const hs = useMemo(() => createHistoricoStyles(theme), [theme]);
   const navigation = useNavigation<MotoristaNavProp>();
 
   const userId = useAppSelector(s => s.auth.user?.id ?? 'motorista-current');
+  const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
 
   const {
     userLocation,
     mapRegion,
     activeCorrida,
     isActionLoading,
-    onCenterOnUser,
+    onCenterOnUser: onCenterOnUserBase,
     onIniciarDeslocamento,
     onChegar,
     onConfirmarEmbarque,
@@ -72,6 +74,17 @@ export const MotoristaScreen = (): React.JSX.Element => {
     onAceitar,
     onRecusar,
   } = useMotorista();
+
+  // Wraps the hook's center handler and also animates the Mapbox camera.
+  const onCenterOnUser = useCallback(() => {
+    onCenterOnUserBase();
+    if (userLocation) {
+      cameraRef.current?.flyTo(
+        [userLocation.longitude, userLocation.latitude],
+        600,
+      );
+    }
+  }, [onCenterOnUserBase, userLocation]);
 
   // Realtime: location streaming + nova-corrida-disponivel modal
   const {pendingOffer, dismissOffer} = useMotoristaRealtime(userLocation);
@@ -173,12 +186,14 @@ export const MotoristaScreen = (): React.JSX.Element => {
         accessibilityLabel={t('motorista.map.label')}
         logoEnabled={false}
         attributionEnabled={false}
+        scaleBarEnabled={false}
         onDidFinishLoadingMap={() => console.info('[Mapbox][Motorista] Map loaded')}
         onMapLoadingError={(e?: unknown) => console.error('[Mapbox][Motorista] Error', e)}
         style={styles.map}
         styleURL="mapbox://styles/mapbox/light-v11"
         testID="motorista-map">
         <MapboxGL.Camera
+          ref={cameraRef}
           animationDuration={600}
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}
@@ -211,122 +226,124 @@ export const MotoristaScreen = (): React.JSX.Element => {
       </View>
     );
 
-  const sheetPaddingBottom = insets.bottom > 0 ? insets.bottom : 14;
-  const fabTop = insets.top + 10 + 54 + 12;
+  const sheetPaddingBottom = 14;
+  const fabTop = 12;
   const chatFabBottom = 220 + sheetPaddingBottom;
 
   return (
-    <View style={styles.container} testID="motorista-home-screen">
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <SafeAreaView edges={['top']} style={[styles.container, {backgroundColor: theme.colors.primary}]} testID="motorista-home-screen">
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
 
-      {/* Layer 1: Map */}
-      {mapContent}
+      {/* Header bar — same style as My Rides titleRow */}
+      <View style={[hs.titleRow, styles.statusHeaderRow]} testID="status-header">
+        <View style={styles.statusPillDotOnly}>
+          <View style={[styles.statusPillDot, {backgroundColor: hasActiveRide ? C.success : C.warning}]} />
+        </View>
+        <Text style={hs.headerTitle}>
+          {hasActiveRide && activeCorrida
+            ? t(`corridas.status.${activeCorrida.status}`)
+            : t('motorista.status.disponivel')}
+        </Text>
+      </View>
 
-      {/* Layer 2: Status pill */}
-      <View style={[styles.statusPillWrapper, {top: insets.top + 10}]} testID="status-pill-wrapper">
-        <View style={styles.statusPill}>
-          <View
-            style={[styles.statusPillDot, {backgroundColor: hasActiveRide ? C.success : C.warning}]}
+      {/* Map area */}
+      <View style={styles.mapWrapper}>
+        {/* Layer 1: Map */}
+        {mapContent}
+
+        {/* Layer 3: Right FAB column */}
+        <View style={[styles.fabColumn, {top: fabTop}]} testID="fab-column">
+          <Pressable
+            accessibilityLabel={t('common.notifications')}
+            accessibilityRole="button"
+            style={styles.fab}
+            testID="fab-notifications">
+            <MaterialIcons name="notifications" size={20} color={C.textOnDark} />
+            <View style={styles.fabBadge} />
+          </Pressable>
+          <Pressable
+            accessibilityLabel={t('passageiro.map.centerOnUser')}
+            accessibilityRole="button"
+            onPress={onCenterOnUser}
+            style={[styles.fab, styles.fabLocation]}
+            testID="fab-center">
+            <MaterialIcons name="my-location" size={20} color={C.textOnDark} />
+          </Pressable>
+        </View>
+
+        {/* Chat FAB — only when ride is active */}
+        {hasActiveRide && (
+          <Pressable
+            accessibilityLabel={t('corridas.mensagens.title')}
+            accessibilityRole="button"
+            onPress={handleOpenMessages}
+            style={[styles.chatFab, {bottom: chatFabBottom}]}
+            testID="chat-fab">
+            <MaterialIcons name="chat" size={24} color={C.textOnDark} />
+          </Pressable>
+        )}
+
+        {/* Bottom sheet — three states */}
+        {!hasActiveRide && !isTerminal && (
+          <MotoristaIdleSheet
+            onLayout={onSheetLayout}
+            paddingBottom={sheetPaddingBottom}
+            sheetTranslate={sheetTranslate}
           />
-          <Text style={styles.statusPillText}>
-            {hasActiveRide && activeCorrida
-              ? t(`corridas.status.${activeCorrida.status}`)
-              : t('motorista.status.disponivel')}
-          </Text>
-        </View>
+        )}
+
+        {isTerminal && activeCorrida && (
+          <MotoristaTerminalSheet
+            corrida={activeCorrida}
+            onLayout={onSheetLayout}
+            paddingBottom={sheetPaddingBottom}
+            sheetTranslate={sheetTranslate}
+          />
+        )}
+
+        {hasActiveRide && activeCorrida && (
+          <MotoristaActiveSheet
+            cancelMotivo={cancelMotivo}
+            corrida={activeCorrida}
+            isActionLoading={isActionLoading}
+            onAceitar={handleAceitar}
+            onCancelar={handleCancelar}
+            onCancelMotivoChange={setCancelMotivo}
+            onChegar={handleChegar}
+            onConfirmarEmbarque={handleConfirmarEmbarque}
+            onFinalizar={handleFinalizar}
+            onIniciarDeslocamento={handleIniciarDeslocamento}
+            onLayout={onSheetLayout}
+            onRecusar={handleRecusar}
+            onRecusaMotivoChange={setRecusaMotivo}
+            onShowCancelInput={() => setShowCancelInput(true)}
+            onShowRecusaInput={() => setShowRecusaInput(true)}
+            paddingBottom={sheetPaddingBottom}
+            recusaMotivo={recusaMotivo}
+            sheetTranslate={sheetTranslate}
+            showCancelInput={showCancelInput}
+            showRecusaInput={showRecusaInput}
+          />
+        )}
+
+        {/* Nova corrida offer modal */}
+        {pendingOffer && (
+          <NovaCorridaModal
+            isLoading={isActionLoading}
+            offer={pendingOffer}
+            onAccept={handleAcceptOffer}
+            onRefuse={handleRefuseOffer}
+          />
+        )}
+
+        {/* Loading overlay */}
+        {isActionLoading && (
+          <View style={styles.loadingOverlay} testID="loading-overlay">
+            <ActivityIndicator color={C.textOnDark} size="large" />
+          </View>
+        )}
       </View>
-
-      {/* Layer 3: Right FAB column */}
-      <View style={[styles.fabColumn, {top: fabTop}]} testID="fab-column">
-        <Pressable
-          accessibilityLabel={t('common.notifications')}
-          accessibilityRole="button"
-          style={styles.fab}
-          testID="fab-notifications">
-          <MaterialIcons name="notifications" size={20} color={C.textOnDark} />
-          <View style={styles.fabBadge} />
-        </Pressable>
-        <Pressable
-          accessibilityLabel={t('passageiro.map.centerOnUser')}
-          accessibilityRole="button"
-          onPress={onCenterOnUser}
-          style={styles.fab}
-          testID="fab-center">
-          <MaterialIcons name="my-location" size={20} color={C.textOnDark} />
-        </Pressable>
-      </View>
-
-      {/* Layer 5: Chat FAB — only when ride is active */}
-      {hasActiveRide && (
-        <Pressable
-          accessibilityLabel={t('corridas.mensagens.title')}
-          accessibilityRole="button"
-          onPress={handleOpenMessages}
-          style={[styles.chatFab, {bottom: chatFabBottom}]}
-          testID="chat-fab">
-          <MaterialIcons name="chat" size={24} color={C.textOnDark} />
-        </Pressable>
-      )}
-
-      {/* Layer 4: Bottom sheet — three states */}
-      {!hasActiveRide && !isTerminal && (
-        <MotoristaIdleSheet
-          onLayout={onSheetLayout}
-          paddingBottom={sheetPaddingBottom}
-          sheetTranslate={sheetTranslate}
-        />
-      )}
-
-      {isTerminal && activeCorrida && (
-        <MotoristaTerminalSheet
-          corrida={activeCorrida}
-          onLayout={onSheetLayout}
-          paddingBottom={sheetPaddingBottom}
-          sheetTranslate={sheetTranslate}
-        />
-      )}
-
-      {hasActiveRide && activeCorrida && (
-        <MotoristaActiveSheet
-          cancelMotivo={cancelMotivo}
-          corrida={activeCorrida}
-          isActionLoading={isActionLoading}
-          onAceitar={handleAceitar}
-          onCancelar={handleCancelar}
-          onCancelMotivoChange={setCancelMotivo}
-          onChegar={handleChegar}
-          onConfirmarEmbarque={handleConfirmarEmbarque}
-          onFinalizar={handleFinalizar}
-          onIniciarDeslocamento={handleIniciarDeslocamento}          onLayout={onSheetLayout}
-          onRecusar={handleRecusar}
-          onRecusaMotivoChange={setRecusaMotivo}
-          onShowCancelInput={() => setShowCancelInput(true)}
-          onShowRecusaInput={() => setShowRecusaInput(true)}
-          paddingBottom={sheetPaddingBottom}
-          recusaMotivo={recusaMotivo}
-          sheetTranslate={sheetTranslate}
-          showCancelInput={showCancelInput}
-          showRecusaInput={showRecusaInput}
-        />
-      )}
-
-      {/* Nova corrida offer modal */}
-      {pendingOffer && (
-        <NovaCorridaModal
-          isLoading={isActionLoading}
-          offer={pendingOffer}
-          onAccept={handleAcceptOffer}
-          onRefuse={handleRefuseOffer}
-        />
-      )}
-
-      {/* Loading overlay */}
-      {isActionLoading && (
-        <View style={styles.loadingOverlay} testID="loading-overlay">
-          <ActivityIndicator color={C.textOnDark} size="large" />
-        </View>
-      )}
-    </View>
+    </SafeAreaView>
   );
 };
 

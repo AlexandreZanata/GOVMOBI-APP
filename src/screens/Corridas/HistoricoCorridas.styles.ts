@@ -112,7 +112,21 @@ export const createHistoricoStyles = (theme: Theme) => {
       marginRight: spacing[2],
     },
 
-    // ── Empty state ───────────────────────────────────────────────────────────
+    // ── Compact title-only header (mirrors NotificationsScreen) ─────────────
+    titleRow: {
+      backgroundColor: design.navy800,
+      paddingHorizontal: spacing[5],
+      paddingVertical: spacing[4],
+    },
+    contentArea: {
+      flex: 1,
+      backgroundColor: design.surface100,
+    },
+    centeredFill: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     emptyContainer: {
       flex: 1,
       alignItems: 'center',
