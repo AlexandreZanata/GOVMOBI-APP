@@ -69,6 +69,12 @@ jest.mock('../../../services/facades', () => ({
   }),
 }));
 
+// Prevent the 800ms send-status setTimeout from keeping the worker alive
+jest.spyOn(global, 'setTimeout').mockImplementation(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (fn: any) => { if (typeof fn === 'function') fn(); return 0 as unknown as ReturnType<typeof setTimeout>; },
+);
+
 // ---------------------------------------------------------------------------
 // Test navigator — wraps ChatRoomScreen with required route params
 // ---------------------------------------------------------------------------
@@ -201,12 +207,10 @@ describe('ChatRoomScreen', () => {
       await waitFor(() =>
         expect(screen.getByTestId('message-input-text-input')).toBeTruthy(),
       );
-
       fireEvent.changeText(
         screen.getByTestId('message-input-text-input'),
         'Hello team',
       );
-
       expect(screen.getByTestId('message-input-send')).toBeTruthy();
     });
 
@@ -219,18 +223,14 @@ describe('ChatRoomScreen', () => {
 
     it('dispatches a new message and clears the input on send', async () => {
       const {testStore} = renderScreen();
-
       await waitFor(() =>
         expect(screen.getByTestId('message-input-text-input')).toBeTruthy(),
       );
-
       fireEvent.changeText(
         screen.getByTestId('message-input-text-input'),
         'Test message',
       );
-
       fireEvent.press(screen.getByTestId('message-input-send'));
-
       await waitFor(() => {
         const state = testStore.getState();
         const messages = state.chat.messages['conv-test'] ?? [];
@@ -240,22 +240,17 @@ describe('ChatRoomScreen', () => {
 
     it('does not send when input is empty or whitespace', async () => {
       const {testStore} = renderScreen();
-
       await waitFor(() =>
         expect(screen.getByTestId('message-input-text-input')).toBeTruthy(),
       );
-
       // Voice button visible — no send button
       expect(screen.queryByTestId('message-input-send')).toBeNull();
-
       const initialMessages =
         testStore.getState().chat.messages['conv-test'] ?? [];
       const initialCount = initialMessages.length;
-
       await act(async () => {
         await new Promise(resolve => setTimeout(resolve, 100));
       });
-
       expect(
         (testStore.getState().chat.messages['conv-test'] ?? []).length,
       ).toBe(initialCount);

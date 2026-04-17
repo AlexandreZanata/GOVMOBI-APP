@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>4/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>1/4</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>4/6</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -162,22 +162,26 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -210,11 +214,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview Profile stack navigator — Profile and Settings screens.
  *
@@ -234,23 +234,23 @@ import React from 'react';
 import {Platform} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {type ProfileStackParamList} from './types';
-import {ProfileScreen} from '../screens/Profile/ProfileScreen';
-import {SettingsScreen} from '../screens/Profile/SettingsScreen';
+import {ProfileScreen} from '@screens/Profile/ProfileScreen';
+import {SettingsScreen} from '@screens/Profile/SettingsScreen';
 import {useTheme, designColors} from '../theme';
 &nbsp;
-const Stack = <span class="cstat-no" title="statement not covered" >createNativeStackNavigator&lt;ProfileStackParamList&gt;();</span>
+const Stack = createNativeStackNavigator&lt;ProfileStackParamList&gt;();
 &nbsp;
 // On iOS, 'default' is the native UINavigationController slide — it handles
 // both push and pop correctly. On Android, 'slide_from_right' set at the
 // navigator level is reversed automatically on pop by react-native-screens.
-const STACK_ANIMATION = <span class="cstat-no" title="statement not covered" >Platform.OS === 'ios' ? 'default' : 'slide_from_right';</span>
+const STACK_ANIMATION = Platform.OS === 'ios' ? 'default' : <span class="branch-1 cbranch-no" title="branch not covered" >'slide_from_right';</span>
 &nbsp;
 /**
  * Profile feature navigator with flash-free back-navigation.
  *
  * @returns The profile stack navigator element.
  */
-export const ProfileNavigator = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >()</span>: React.JSX.Element =&gt; {</span>
+export const ProfileNavigator = <span class="fstat-no" title="function not covered" >()</span>: React.JSX.Element =&gt; {
   const {design} = <span class="cstat-no" title="statement not covered" >useTheme();</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return (</span>
@@ -290,7 +290,7 @@ export const ProfileNavigator = <span class="cstat-no" title="statement not cove
   );
 };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >ProfileNavigator.displayName = 'ProfileNavigator';</span>
+ProfileNavigator.displayName = 'ProfileNavigator';
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -298,7 +298,7 @@ export const ProfileNavigator = <span class="cstat-no" title="statement not cove
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T12:30:28.449Z
+                at 2026-04-17T15:54:02.086Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

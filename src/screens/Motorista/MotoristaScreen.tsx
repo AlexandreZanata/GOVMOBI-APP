@@ -26,9 +26,10 @@ import type {CompositeNavigationProp} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useMotorista} from './useMotorista';
+import {useMotoristaRealtime} from './useMotoristaRealtime';
+import {NovaCorridaModal} from './components/NovaCorridaModal';
 import {createMotoristaStyles, MotoristaColors as C} from './MotoristaScreen.styles';
 import {useAppSelector} from '../../store';
-import {statusColor} from '@screens/Corridas/CorridasScreens.styles';
 import {useTheme} from '../../theme';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
 import {MotoristaIdleSheet} from './components/MotoristaIdleSheet';
@@ -71,6 +72,9 @@ export const MotoristaScreen = (): React.JSX.Element => {
     onAceitar,
     onRecusar,
   } = useMotorista();
+
+  // Realtime: location streaming + nova-corrida-disponivel modal
+  const {pendingOffer, dismissOffer} = useMotoristaRealtime(userLocation);
 
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [showCancelInput, setShowCancelInput] = useState(false);
@@ -149,6 +153,18 @@ export const MotoristaScreen = (): React.JSX.Element => {
     if (!activeCorrida) return;
     navigation.navigate('CorridaMensagens', {corridaId: activeCorrida.id});
   }, [activeCorrida, navigation]);
+
+  // ── Nova corrida offer handlers ──────────────────────────────────────────
+
+  const handleAcceptOffer = useCallback((corridaId: string) => {
+    dismissOffer();
+    void onAceitar(corridaId, {motoristaId: userId, veiculoId: 'veiculo-assigned'});
+  }, [dismissOffer, onAceitar, userId]);
+
+  const handleRefuseOffer = useCallback((corridaId: string) => {
+    dismissOffer();
+    void onRecusar(corridaId);
+  }, [dismissOffer, onRecusar]);
 
   // ── Map ─────────────────────────────────────────────────────────────────────
   const mapContent =
@@ -291,6 +307,16 @@ export const MotoristaScreen = (): React.JSX.Element => {
           sheetTranslate={sheetTranslate}
           showCancelInput={showCancelInput}
           showRecusaInput={showRecusaInput}
+        />
+      )}
+
+      {/* Nova corrida offer modal */}
+      {pendingOffer && (
+        <NovaCorridaModal
+          isLoading={isActionLoading}
+          offer={pendingOffer}
+          onAccept={handleAcceptOffer}
+          onRefuse={handleRefuseOffer}
         />
       )}
 

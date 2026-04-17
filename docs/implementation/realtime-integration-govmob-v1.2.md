@@ -75,7 +75,7 @@ Important token format rules:
 ### Client -> Server (commands)
 
 | Event               | Payload                                                                                          | Description                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+|---------------------|--------------------------------------------------------------------------------------------------|----------------------------------------------------------|
 | `assinar-corrida`   | `{ "corridaId": "uuid" }`                                                                        | Subscribes the socket to ride updates                    |
 | `ficar-disponivel`  | `{}`                                                                                             | Adds driver to broadcast pool (`motoristas-disponiveis`) |
 | `atualizar-posicao` | `{ "corridaId": "uuid", "lat": number, "lng": number, "velocidade": number, "heading": number }` | Sends telemetry (`heading` 0-359)                        |
@@ -84,7 +84,7 @@ Important token format rules:
 ### Server -> Client (emissions)
 
 | Event                     | Payload                                                     | Description                       |
-| ------------------------- | ----------------------------------------------------------- | --------------------------------- |
+|---------------------------|-------------------------------------------------------------|-----------------------------------|
 | `historico-mensagens`     | `[{ id, remetenteId, conteudo, timestamp }]`                | Sent after `assinar-corrida`      |
 | `posicao-atualizada`      | `{ motoristaId, lat, lng, velocidade, heading, timestamp }` | Room broadcast for live telemetry |
 | `nova-mensagem`           | `{ id, corridaId, remetenteId, conteudo, timestamp }`       | New chat message notification     |
@@ -117,7 +117,7 @@ Status names follow PascalCase:
 Push notifications are backend-driven for reliability.
 
 | Event               | Push Title        | Example Message                                   |
-| ------------------- | ----------------- | ------------------------------------------------- |
+|---------------------|-------------------|---------------------------------------------------|
 | `CorridaAceita`     | `Ride Accepted`   | `A driver accepted your ride and is on the way.`  |
 | `MotoristaChegando` | `Driver Arriving` | `Your driver is arriving at the pickup location.` |
 | `CorridaCancelada`  | `Ride Cancelled`  | `Your ride was interrupted.`                      |

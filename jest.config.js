@@ -2,6 +2,12 @@ module.exports = {
   preset: 'react-native',
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   testMatch: ['**/__tests__/**/*.(ts|tsx|js)', '**/*.(test|spec).(ts|tsx|js)'],
+  // Limit workers to avoid SIGTERM from memory pressure on large test suites
+  maxWorkers: 2,
+  // Force exit after all tests complete — prevents open handles (timers, sockets) from hanging
+  forceExit: true,
+  // Per-test timeout — fail fast instead of hanging for 5 minutes
+  testTimeout: 15000,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',

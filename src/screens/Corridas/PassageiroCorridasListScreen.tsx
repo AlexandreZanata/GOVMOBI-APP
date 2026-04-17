@@ -1,13 +1,16 @@
 /**
  * @fileoverview PassageiroCorridasListScreen — ride history for the USUARIO.
  *
- * Shows only completed/terminal rides (FINALIZADA, CANCELADA, RECUSADA).
- * Active ride tracking is handled on the Home (map) tab.
+ * Shows:
+ *   - Active corrida card (if any non-terminal ride exists)
+ *   - Request ride CTA (always visible for USUARIO)
+ *   - Completed/terminal ride history
  */
 import React, {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   Text,
   View,
   type ListRenderItem,
@@ -18,7 +21,7 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTheme} from '../../theme';
-import {createCorridasStyles} from './CorridasScreens.styles';
+import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import {createHistoricoStyles} from './HistoricoCorridas.styles';
 import {RideCard} from '@components/molecules/RideCard';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
@@ -30,8 +33,8 @@ type NavProp = NativeStackNavigationProp<PassageiroCorridasStackParamList>;
 const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
 
 /**
- * Passenger ride history screen.
- * Displays only terminal rides. Active ride tracking is on the Home tab.
+ * Passenger corridas screen.
+ * Shows active ride card, request CTA, and ride history.
  *
  * @returns JSX element for the PassageiroCorridasListScreen.
  */
@@ -48,6 +51,8 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
   const corridaHistory = useAppSelector(st => st.corrida.corridaHistory ?? []);
   const [isLoading] = useState(false);
 
+  const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
+
   const rides = useMemo<Corrida[]>(() => {
     const all: Corrida[] = [...corridaHistory];
     if (activeCorrida && TERMINAL_STATUSES.has(activeCorrida.status)) {
@@ -61,6 +66,11 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
     [navigation],
   );
 
+  const handleViewActive = useCallback(() => {
+    if (!activeCorrida) return;
+    navigation.navigate('AcompanharCorrida', {corridaId: activeCorrida.id});
+  }, [activeCorrida, navigation]);
+
   const renderRide: ListRenderItem<Corrida> = useCallback(
     ({item, index}) => (
       <RideCard
@@ -73,9 +83,56 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
     [handleViewDetail, rides.length],
   );
 
+  const ListHeader = useCallback(
+    () => (
+      <>
+        {/* Active ride card */}
+        {hasActiveRide && activeCorrida && (
+          <Pressable
+            accessibilityLabel={t('corridas.list.viewActive')}
+            accessibilityRole="button"
+            onPress={handleViewActive}
+            style={shared.card}
+            testID="active-corrida-card">
+            <View style={[shared.statusBadge, {backgroundColor: statusColor(activeCorrida.status, theme)}]}>
+              <Text style={shared.statusText}>{t(`corridas.status.${activeCorrida.status}`)}</Text>
+            </View>
+            <View style={shared.cardRow}>
+              <MaterialIcons name="trip-origin" size={16} color={theme.colors.success} style={shared.cardRowIcon} />
+              <Text style={shared.cardValue} numberOfLines={1}>
+                {`${activeCorrida.origemLat.toFixed(4)}, ${activeCorrida.origemLng.toFixed(4)}`}
+              </Text>
+            </View>
+            <View style={shared.cardRow}>
+              <MaterialIcons name="location-on" size={16} color={theme.colors.error} style={shared.cardRowIcon} />
+              <Text style={shared.cardValue} numberOfLines={1}>
+                {`${activeCorrida.destinoLat.toFixed(4)}, ${activeCorrida.destinoLng.toFixed(4)}`}
+              </Text>
+            </View>
+          </Pressable>
+        )}
+
+        {/* Request ride CTA — always visible */}
+        <Pressable
+          accessibilityLabel={t('passageiro.bottomSheet.cta')}
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('AcompanharCorrida', {corridaId: ''})}
+          style={[shared.actionButton, shared.actionButtonPrimary]}
+          testID="btn-request-ride">
+          <Text style={shared.actionButtonText}>{t('passageiro.bottomSheet.cta')}</Text>
+        </Pressable>
+
+        {rides.length > 0 && (
+          <Text style={s.headerTitle}>{t('corridas.history.title')}</Text>
+        )}
+      </>
+    ),
+    [activeCorrida, handleViewActive, hasActiveRide, navigation, rides.length, s, shared, t, theme],
+  );
+
   const ListEmpty = useCallback(
     () => (
-      <View style={s.emptyContainer} testID="history-empty">
+      <View style={s.emptyContainer} testID="corridas-empty">
         <MaterialIcons name="directions-car" size={56} color={theme.design.textTertiary} />
         <Text style={s.emptyTitle}>{t('corridas.history.empty.title')}</Text>
         <Text style={s.emptySubtitle}>{t('corridas.history.empty.subtitle')}</Text>
@@ -85,7 +142,7 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
   );
 
   return (
-    <View style={[s.root, {paddingTop: insets.top}]} testID="historico-screen">
+    <View style={[s.root, {paddingTop: insets.top}]} testID="passageiro-corridas-list-screen">
       <View style={s.header}>
         <Text style={s.headerTitle}>{t('corridas.history.title')}</Text>
         <Text style={s.headerSubtitle}>{t('corridas.history.subtitle')}</Text>
@@ -101,6 +158,7 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
           data={rides}
           keyExtractor={item => item.id}
           ListEmptyComponent={ListEmpty}
+          ListHeaderComponent={ListHeader}
           removeClippedSubviews
           renderItem={renderRide}
           showsVerticalScrollIndicator={false}

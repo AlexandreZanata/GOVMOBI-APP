@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.3% </span>
+                <span class="strong">92% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>21/23</span>
+                <span class='fraction'>23/25</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>18/20</span>
+                <span class='fraction'>21/24</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>7/7</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>18/18</span>
+                <span class='fraction'>19/19</span>
             </div>
         
             
@@ -226,7 +226,10 @@
 <a name='L161'></a><a href='#L161'>161</a>
 <a name='L162'></a><a href='#L162'>162</a>
 <a name='L163'></a><a href='#L163'>163</a>
-<a name='L164'></a><a href='#L164'>164</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -249,7 +252,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
@@ -261,7 +264,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-yes">24x</span>
@@ -271,12 +274,15 @@
 <span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">43x</span>
+<span class="cline-any cline-yes">43x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -388,7 +394,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview Redesigned ProfileScreen (Design_Prompt §4 Screen 3).
  *
@@ -407,7 +413,7 @@ import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
 import {useAppSelector} from '../../store';
-import {type ProfileStackParamList} from '../../navigation/types';
+import {type ProfileStackParamList} from '@navigation/types';
 import {useProfile} from './useProfile';
 import {createProfileStyles} from './ProfileScreens.styles';
 &nbsp;
@@ -434,6 +440,7 @@ export const ProfileScreen = (): React.JSX.Element =&gt; {
     useNavigation&lt;NativeStackNavigationProp&lt;ProfileStackParamList&gt;&gt;();
 &nbsp;
   const user = useAppSelector(state =&gt; state.auth.user);
+  const motoristaId = useAppSelector(state =&gt; state.auth.motoristaId);
   const {displayName, setDisplayName, isEditing, toggleEdit, saveProfile, signOut} =
     useProfile();
 &nbsp;
@@ -459,10 +466,12 @@ export const ProfileScreen = (): React.JSX.Element =&gt; {
           {user?.email ? (
             &lt;Text style={styles.heroEmail} testID="profile-email"&gt;{user.email}&lt;/Text&gt;
           ) : null}
-          {user?.role ? (
+          {user?.role || motoristaId ? (
             &lt;View style={styles.roleBadge} testID="profile-role-badge"&gt;
               &lt;Text style={styles.roleBadgeText}&gt;
-                {t(`common.role.${user.role}`, {defaultValue: user.role})}
+                {motoristaId
+                  ? <span class="branch-0 cbranch-no" title="branch not covered" >t('servidores.papeis.MOTORISTA')</span>
+                  : t(`common.role.${user!.role}`, {defaultValue: user!.role})}
               &lt;/Text&gt;
             &lt;/View&gt;
           ) : null}
@@ -496,7 +505,7 @@ export const ProfileScreen = (): React.JSX.Element =&gt; {
               style={styles.editButton}
               testID="profile-edit-toggle"&gt;
               &lt;MaterialIcons
-                color={isEditing ? design.amber500 : design.textTertiary}
+                color={isEditing ? design.blue500 : design.textTertiary}
                 name={isEditing ? 'check' : 'edit'}
                 size={20}
               /&gt;
@@ -559,7 +568,7 @@ ProfileScreen.displayName = 'ProfileScreen';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T12:30:28.449Z
+                at 2026-04-17T15:54:02.086Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

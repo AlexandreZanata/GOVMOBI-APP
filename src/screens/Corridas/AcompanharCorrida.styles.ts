@@ -131,6 +131,20 @@ export const createAcompanharStyles = (theme: Theme) => {
       marginTop: spacing[2],
     },
 
+    // ── Route row (compact, used in route card) ───────────────────────────────
+    routeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing[2],
+      marginBottom: spacing[2],
+    },
+
+    // ── Messages section wrapper ───────────────────────────────────────────────
+    messagesSection: {
+      flex: 1,
+      marginHorizontal: spacing[4],
+    },
+
     // ── Cancel input ───────────────────────────────────────────────────────────
     cancelInput: {
       ...typo.scale.bodyMd,

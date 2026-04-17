@@ -316,6 +316,11 @@
       "chegar": "Cheguei ao Local",
       "chegarSuccess": "Chegada confirmada no ponto de embarque."
     },
+    "novaCorridaModal": {
+      "title": "Nova Corrida Disponível",
+      "timerLabel": "segundos para responder",
+      "highPriority": "Alta Prioridade"
+    },
     "corridas": {
       "title": "Minhas Corridas",
       "subtitle": "Corridas disponíveis e histórico",

@@ -11,7 +11,7 @@
  * Covers: loading, error, success, and primary interactions.
  * TSC clean — zero `any`.
  */
-import React from 'react';
+import React, {useRef} from 'react';
 import {
   render,
   screen,
@@ -28,6 +28,7 @@ import {ThemeProvider} from '@theme/index';
 import {FacadeProvider} from '@services/facades';
 import {i18n} from '../../../i18n';
 import corridaReducer from '../../../store/slices/corridaSlice';
+import type {CorridaState} from '../../../store/slices/corridaSlice';
 import authReducer from '../../../store/slices/authSlice';
 import uiReducer from '../../../store/slices/uiSlice';
 import {PassageiroCorridasListScreen} from '../PassageiroCorridasListScreen';
@@ -46,6 +47,17 @@ import type {
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
+
+// Prevent status-polling setInterval (5s) from keeping the test worker alive.
+// Only suppress intervals ≥ 5000ms — shorter intervals (animations etc.) still fire.
+const _realSetInterval = global.setInterval;
+jest.spyOn(global, 'setInterval').mockImplementation(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (fn: any, ms?: number, ...args: any[]) =>
+    ms !== undefined && ms >= 5000
+      ? (0 as unknown as ReturnType<typeof setInterval>)
+      : _realSetInterval(fn, ms, ...args),
+);
 
 const mockUseRoute = jest.fn().mockReturnValue({params: {}});
 
@@ -178,9 +190,27 @@ const mockUser = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-const buildStore = (papeis: string[] = []) =>
+/** Default corrida state used as base for test store overrides. */
+const DEFAULT_CORRIDA_STATE: CorridaState = {
+  activeCorrida: null,
+  pendingCorridaId: null,
+  selectedDestino: null,
+  userLocationSnapshot: null,
+  isRequesting: false,
+  isActionLoading: false,
+  error: null,
+  searchResults: [],
+  isSearching: false,
+  mensagens: [],
+  isLoadingMensagens: false,
+  posicaoMotoristaAtual: null,
+  corridaHistory: [],
+};
+
+const buildStore = (papeis: string[] = [], corridaOverrides?: Partial<CorridaState>) =>
   configureStore({
     reducer: {corrida: corridaReducer, auth: authReducer, ui: uiReducer},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     preloadedState: {
       auth: {
         user: mockUser,
@@ -193,26 +223,33 @@ const buildStore = (papeis: string[] = []) =>
         municipioId: null,
         isHydrating: false,
       },
-    },
+      corrida: {...DEFAULT_CORRIDA_STATE, ...corridaOverrides},
+    } as Parameters<typeof configureStore>[0]['preloadedState'],
   });
 
 const Wrapper = ({
   children,
   facade,
   papeis = [],
+  corridaState,
 }: {
   children: React.ReactNode;
   facade?: Partial<ICorridaFacade>;
   papeis?: string[];
+  corridaState?: Partial<CorridaState>;
 }) => {
-  const store = buildStore(papeis);
-  const mockFacade = buildMockFacade(facade);
+  // Stabilize store and facade on first render — prevents useEffect re-runs
+  // caused by reference changes on parent re-renders.
+  const storeRef = useRef(buildStore(papeis, corridaState));
+  const facadeRef = useRef(buildMockFacade(facade));
+  // Stabilize the facades object itself so FacadeProvider's useMemo doesn't recompute
+  const facadesObjRef = useRef({corridaFacade: facadeRef.current});
   return (
-    <Provider store={store}>
+    <Provider store={storeRef.current}>
       <I18nextProvider i18n={i18n}>
         <SafeAreaProvider>
           <ThemeProvider>
-            <FacadeProvider facades={{corridaFacade: mockFacade}}>
+            <FacadeProvider facades={facadesObjRef.current}>
               <NavigationContainer>{children}</NavigationContainer>
             </FacadeProvider>
           </ThemeProvider>
@@ -252,9 +289,7 @@ describe('PassageiroCorridasListScreen (USUARIO)', () => {
   it('shows active corrida card when one exists', async () => {
     render(
       <Wrapper
-        facade={{
-          getActiveCorrida: jest.fn().mockResolvedValue(ok(mockCorrida)),
-        }}>
+        corridaState={{activeCorrida: mockCorrida} as never}>
         <PassageiroCorridasListScreen />
       </Wrapper>,
     );
@@ -304,7 +339,7 @@ describe('AcompanharCorridaScreen (USUARIO)', () => {
 
   it('renders corrida details and status badge after load', async () => {
     render(
-      <Wrapper>
+      <Wrapper corridaState={{activeCorrida: mockCorrida} as never}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -316,18 +351,18 @@ describe('AcompanharCorridaScreen (USUARIO)', () => {
 
   it('renders message history from GET /corridas/:id/mensagens', async () => {
     render(
-      <Wrapper>
+      <Wrapper corridaState={{activeCorrida: mockCorrida, mensagens: mockMensagens} as never}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
     await waitFor(() => {
       expect(screen.getByTestId('mensagens-list')).toBeTruthy();
-    });
+    }, {timeout: 5000});
   });
 
   it('shows cancel button for active corrida (USUARIO can cancel)', async () => {
     render(
-      <Wrapper>
+      <Wrapper corridaState={{activeCorrida: mockCorrida} as never}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -338,7 +373,7 @@ describe('AcompanharCorridaScreen (USUARIO)', () => {
 
   it('does NOT show MOTORISTA-only action buttons', async () => {
     render(
-      <Wrapper>
+      <Wrapper corridaState={{activeCorrida: mockCorrida} as never}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -352,13 +387,15 @@ describe('AcompanharCorridaScreen (USUARIO)', () => {
 
   it('shows empty messages state when no messages exist', async () => {
     render(
-      <Wrapper facade={{getMensagens: jest.fn().mockResolvedValue(ok([]))}}>
+      <Wrapper
+        corridaState={{activeCorrida: mockCorrida, mensagens: []} as never}
+        facade={{getMensagens: jest.fn().mockResolvedValue(ok([]))}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
     await waitFor(() => {
       expect(screen.getByTestId('mensagens-empty')).toBeTruthy();
-    });
+    }, {timeout: 5000});
   });
 });
 

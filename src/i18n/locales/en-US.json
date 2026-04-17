@@ -290,6 +290,11 @@
       "chegar": "Arrived at Pickup",
       "chegarSuccess": "Arrival confirmed at pickup point."
     },
+    "novaCorridaModal": {
+      "title": "New Ride Available",
+      "timerLabel": "seconds to respond",
+      "highPriority": "High Priority"
+    },
     "corridas": {
       "title": "My Rides",
       "subtitle": "Available rides and history",

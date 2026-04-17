@@ -2,8 +2,8 @@
  * @fileoverview Facade contract and implementation for the Pesquisa domain.
  *
  * Covers:
- *   GET /pesquisa/config            — map settings (Mapbox public token)
- *   GET /pesquisa/geocoding         — forward geocoding (text → coordinates)
+ *   GET /pesquisa/config — map settings (Mapbox public token)
+ *   GET /pesquisa/geocoding — forward geocoding (text → coordinates)
  *   GET /pesquisa/reverse-geocoding — reverse geocoding (coordinates → address)
  *
  * Auth: every request sends `Authorization: Bearer <token>` from the Redux store.

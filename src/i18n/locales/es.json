@@ -286,6 +286,11 @@
       "chegar": "Llegué al Punto",
       "chegarSuccess": "Llegada confirmada en el punto de recogida."
     },
+    "novaCorridaModal": {
+      "title": "Nuevo Viaje Disponible",
+      "timerLabel": "segundos para responder",
+      "highPriority": "Alta Prioridad"
+    },
     "corridas": {
       "title": "Mis Viajes",
       "subtitle": "Viajes disponibles e historial",
