@@ -10,6 +10,7 @@ Each file in this folder covers one domain end-to-end: API reference, file map, 
 | -------------------------------------------------------------- | ---------------------------- | ------------------- |
 | [`route-auth.md`](./route-auth.md)                             | Autenticação                 | `/auth`             |
 | [`route-corridas.md`](./route-corridas.md)                     | Corridas                     | `/corridas`         |
+| [`route-corridas-motorista.md`](./route-corridas-motorista.md) | Corridas (Motorista)         | `/corridas/*`       |
 | [`route-admin-shell.md`](./route-admin-shell.md)               | Layout / Navigation          | All `(admin)/*`     |
 | [`route-cargos.md`](./route-cargos.md)                         | Cargos                       | `/cargos`           |
 | [`route-lotacoes.md`](./route-lotacoes.md)                     | Lotações                     | `/lotacoes`         |
