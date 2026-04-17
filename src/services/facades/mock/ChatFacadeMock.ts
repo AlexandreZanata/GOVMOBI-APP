@@ -9,8 +9,8 @@ import {
 } from '../../../models';
 import {type IChatFacade, type UploadableFile} from '../ChatFacade';
 import {type FacadeError, type Result} from '../types';
-import {delay, mockId, shouldFail} from '../../mock/data/simulation';
-import {loadMockState, saveMockState} from '../../mock/data/storage';
+import {delay, mockId, shouldFail} from '@services/mock/data';
+import {loadMockState, saveMockState} from '@services/mock/data';
 
 export interface ChatStreamEventMap {
   message: Message;

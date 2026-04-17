@@ -2,9 +2,9 @@
  * @fileoverview Mock notification facade for frontend-only workflows.
  */
 import type {Notification} from '../../../models';
-import {type INotificationFacade} from '../NotificationFacade';
+import {type INotificationFacade} from '@services/facades';
 import {type FacadeError, type Result} from '../types';
-import {delay, shouldFail} from '../../mock/data/simulation';
+import {delay, shouldFail} from '@services/mock/data';
 
 const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});
 const fail = <T>(error: FacadeError): Result<T, FacadeError> => ({

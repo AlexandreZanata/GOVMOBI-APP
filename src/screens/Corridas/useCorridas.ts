@@ -22,14 +22,14 @@ import {
   setMensagens,
   setPendingCorridaId,
   updateCorridaStatus,
-} from '../../store/slices/corridaSlice';
-import {addToast} from '../../store/slices/uiSlice';
-import type {Corrida, CorridaMensagem} from '../../models/Corrida';
+} from '@store/slices/corridaSlice';
+import {addToast} from '@store/slices/uiSlice';
+import type {Corrida, CorridaMensagem} from '@models/Corrida';
 import type {
   AceitarCorridaInput,
   ConfirmarEmbarqueInput,
   FinalizarCorridaInput,
-} from '../../types/corrida';
+} from '../../types';
 
 /** Polling interval for GET /corridas/:id/status (ms). */
 const STATUS_POLL_INTERVAL_MS = 5_000;

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Input/filter types for the Frota domain (veículos + motoristas).
  */
-import {type MotoristaStatusOperacional} from '../models/Motorista';
+import {type MotoristaStatusOperacional} from '@models/Motorista';
 
 /** Filter params for the veículos list. */
 export interface VeiculosFilter {

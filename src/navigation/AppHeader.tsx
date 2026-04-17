@@ -14,7 +14,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme, type Theme} from '../theme';
-import {Text} from '../components/atoms/Text';
+import {Text} from '@components/atoms';
 
 export interface AppHeaderProps {
   title: string;

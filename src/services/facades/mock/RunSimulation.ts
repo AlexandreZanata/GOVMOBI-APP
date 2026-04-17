@@ -2,7 +2,7 @@
  * @fileoverview Timed run lifecycle simulation utilities.
  */
 import type {Run, CreateRunInput} from '../../../types';
-import {mockId} from '../../mock/data/simulation';
+import {mockId} from '@services/mock/data';
 
 /**
  * Produces a realistic incoming run payload.

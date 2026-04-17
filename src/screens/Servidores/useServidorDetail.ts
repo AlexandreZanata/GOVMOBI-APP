@@ -3,7 +3,7 @@
  */
 import {useEffect, useState} from 'react';
 import {type Servidor} from '../../models';
-import {useFacades} from '../../services/facades';
+import {useFacades} from '@services/facades';
 
 export interface ServidorDetailState {
   servidor: Servidor | null;

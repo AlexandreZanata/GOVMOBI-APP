@@ -13,7 +13,7 @@ import type {
   EnviarMensagemPayload,
   RealtimeConnectionStatus,
   RealtimeEvent,
-} from '../../types/realtime';
+} from '../../types';
 import {type FacadeError, type Result} from './types';
 
 interface RealtimeFacadeConfig {

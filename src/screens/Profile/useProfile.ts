@@ -3,9 +3,9 @@
  */
 import {useCallback, useState} from 'react';
 import {useAppDispatch, useAppSelector} from '../../store';
-import {logout, setUser} from '../../store/slices/authSlice';
-import {addToast} from '../../store/slices/uiSlice';
-import {useFacades} from '../../services/facades';
+import {logout, setUser} from '@store/slices/authSlice';
+import {addToast} from '@store/slices/uiSlice';
+import {useFacades} from '@services/facades';
 import {useTranslation} from 'react-i18next';
 
 export interface ProfileState {

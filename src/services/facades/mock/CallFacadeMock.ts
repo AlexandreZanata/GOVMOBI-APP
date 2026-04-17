@@ -1,11 +1,11 @@
 /**
  * @fileoverview Mock call facade with deterministic latency and failures.
  */
-import {CallStatus, type Call, type CallType} from '../../../models';
+import {CallStatus, type Call, type CallType} from '@models/Call';
 import {type ICallFacade} from '../CallFacade';
 import {type FacadeError, type Result} from '../types';
-import {delay, mockId, shouldFail} from '../../mock/data/simulation';
-import {loadMockState, saveMockState} from '../../mock/data/storage';
+import {delay, mockId, shouldFail} from '@services/mock/data';
+import {loadMockState, saveMockState} from '@services/mock/data';
 
 const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});
 const fail = <T>(error: FacadeError): Result<T, FacadeError> => ({

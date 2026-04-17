@@ -12,9 +12,9 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {type BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useTheme, type Theme} from '../theme';
-import {PassageiroScreen} from '../screens/Passageiro/PassageiroScreen';
+import {PassageiroScreen} from '@screens/Passageiro/PassageiroScreen';
 import {ProfileNavigator} from './ProfileNavigator';
-import {NotificationsScreen} from '../screens/Notifications/NotificationsScreen';
+import {NotificationsScreen} from '@screens/Notifications/NotificationsScreen';
 import {PassageiroCorridasNavigator} from './PassageiroCorridasNavigator';
 
 type PassageiroTabParamList = {

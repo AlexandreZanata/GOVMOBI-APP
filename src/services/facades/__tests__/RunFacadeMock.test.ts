@@ -2,7 +2,7 @@
  * @fileoverview Test suite for RunFacadeMock.
  */
 import {RunFacadeMock} from '../mock/RunFacadeMock';
-import {resetMockState} from '../../mock/data/storage';
+import {resetMockState} from '@services/mock/data';
 import type {CreateRunInput, Run} from '../../../types';
 
 const createInput: CreateRunInput = {

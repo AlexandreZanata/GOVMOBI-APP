@@ -2,7 +2,7 @@
  * @fileoverview Facade contract and implementation for the full corrida lifecycle.
  *
  * Covers all endpoints from route-corridas.md:
- *   POST /corridas                          — solicitar nova corrida (202 async)
+ *   POST /corridas — solicitar nova corrida (202 async)
  *   POST /corridas/:id/aceitar              — motorista aceita
  *   POST /corridas/:id/recusar              — motorista recusa
  *   POST /corridas/:id/iniciar-deslocamento — motorista inicia deslocamento
@@ -13,7 +13,7 @@
  *   GET  /corridas/:id/status               — status rápido (Redis)
  *   GET  /corridas/:id/mensagens            — histórico de mensagens
  */
-import type {Corrida, CorridaMensagem} from '../../models/Corrida';
+import type {Corrida, CorridaMensagem} from '@models/Corrida';
 import type {
   CreateCorridaInput,
   SolicitarCorridaInput,
@@ -27,7 +27,7 @@ import type {
   CorridaContexto,
   MapboxGeocodingResponse,
   SearchResult,
-} from '../../types/corrida';
+} from '../../types';
 import {type FacadeConfig, type FacadeError, type Result} from './types';
 import {ENV} from '../../config/env';
 

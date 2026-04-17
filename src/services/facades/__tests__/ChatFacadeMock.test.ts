@@ -2,7 +2,7 @@
  * @fileoverview Test suite for ChatFacadeMock.
  */
 import {ChatFacadeMock} from '../mock/ChatFacadeMock';
-import {resetMockState} from '../../mock/data/storage';
+import {resetMockState} from '@services/mock/data';
 
 describe('ChatFacadeMock', () => {
   beforeEach(async () => {

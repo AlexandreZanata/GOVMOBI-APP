@@ -18,7 +18,7 @@ import {useAppDispatch, useAppSelector} from '../store';
 import {
   setActiveCorrida,
   setPendingCorridaId,
-} from '../store/slices/corridaSlice';
+} from '@store/slices/corridaSlice';
 
 /**
  * Syncs corrida context on app foreground.

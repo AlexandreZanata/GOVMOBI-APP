@@ -8,8 +8,8 @@ import {
   type RunFilters,
 } from '../RunFacade';
 import {type FacadeError, type Result} from '../types';
-import {delay, shouldFail, mockId} from '../../mock/data/simulation';
-import {loadMockState, saveMockState} from '../../mock/data/storage';
+import {delay, shouldFail, mockId} from '@services/mock/data';
+import {loadMockState, saveMockState} from '@services/mock/data';
 import {
   createRunFromInput,
   scheduleRunLifecycle,
@@ -257,10 +257,8 @@ export class RunFacadeMock implements IRunFacade {
       if (filters?.status && run.status !== filters.status) {
         return false;
       }
-      if (filters?.agentId && run.assignment?.agentId !== filters.agentId) {
-        return false;
-      }
-      return true;
+      return !(filters?.agentId && run.assignment?.agentId !== filters.agentId);
+
     });
 
     return ok(filtered);

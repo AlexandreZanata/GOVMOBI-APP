@@ -13,10 +13,10 @@ const Constants = require('expo-constants').default as {
   expoConfig?: {version?: string; ios?: {buildNumber?: string}; android?: {versionCode?: number}};
 };
 import {useTheme} from '../../theme';
-import {Divider} from '../../components/atoms';
-import {AppHeader} from '../../components/organisms';
+import {Divider} from '@components/atoms';
+import {AppHeader} from '@components/organisms';
 import {useAppDispatch, useAppSelector} from '../../store';
-import {setLanguage} from '../../store/slices/uiSlice';
+import {setLanguage} from '@store/slices/uiSlice';
 import {type AppLanguage, availableLanguages, i18n} from '../../i18n';
 import {createProfileStyles} from './ProfileScreens.styles';
 

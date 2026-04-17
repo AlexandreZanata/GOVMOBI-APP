@@ -217,4 +217,67 @@ describe('PesquisaFacadeImpl', () => {
     expect(requestUrl).toContain('origemLat=-23.5505');
     expect(requestUrl).toContain('destinoLng=-46.636');
   });
+
+  it('maps reverse geocoding payload when API returns array', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      createResponse(200, [
+        {
+          placeName:
+            'Rua Santa Teresa 25, São Paulo - São Paulo, 01016-020, Brasil',
+          lng: -46.63326,
+          lat: -23.550112,
+        },
+      ]),
+    ) as typeof fetch;
+
+    const facade = new PesquisaFacadeImpl({
+      apiBaseUrl: 'http://localhost:3000',
+      mockMode: false,
+    });
+
+    const result = await facade.reverseGeocode({
+      lat: -23.5505,
+      lng: -46.6333,
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data?.address).toContain('Rua Santa Teresa 25');
+    expect(result.data?.lat).toBeCloseTo(-23.550112);
+    expect(result.data?.lng).toBeCloseTo(-46.63326);
+  });
+
+  it('maps route geometry when backend returns Feature shape', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      createResponse(200, {
+        geometry: {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              {lng: -46.6333, lat: -23.5505},
+              {lng: -46.6349, lat: -23.5513},
+              {lng: -46.636, lat: -23.553},
+            ],
+          },
+        },
+      }),
+    ) as typeof fetch;
+
+    const facade = new PesquisaFacadeImpl({
+      apiBaseUrl: 'http://localhost:3000',
+      mockMode: false,
+    });
+
+    const result = await facade.getRouteBetweenPoints({
+      origemLat: -23.5505,
+      origemLng: -46.6333,
+      destinoLat: -23.553,
+      destinoLng: -46.636,
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data?.geometry.coordinates).toHaveLength(3);
+    expect(result.data?.distanciaMetros).toBeGreaterThan(0);
+    expect(result.data?.duracaoSegundos).toBeGreaterThan(0);
+  });
 });

@@ -9,7 +9,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {useTheme, type Theme} from '../theme';
-import {Text} from '../components/atoms/Text';
+import {Text} from '@components/atoms';
 
 type TabIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 

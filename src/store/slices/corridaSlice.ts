@@ -7,9 +7,9 @@ import type {
   CorridaMensagem,
   CorridaStatus,
   Localizacao,
-} from '../../models/Corrida';
-import type {SearchResult} from '../../types/corrida';
-import type {Coordenada} from '../../models/Corrida';
+} from '@models/Corrida';
+import type {SearchResult} from '../../types';
+import type {Coordenada} from '@models/Corrida';
 
 /** Driver telemetry snapshot received from realtime updates. */
 export interface PosicaoMotorista {

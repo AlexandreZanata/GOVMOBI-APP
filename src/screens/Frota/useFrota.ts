@@ -3,9 +3,9 @@
  */
 import {useCallback, useEffect, useState} from 'react';
 import {type Motorista, type Veiculo} from '../../models';
-import {useFacades} from '../../services/facades';
+import {useFacades} from '@services/facades';
 import {type AtivoFilter} from '../Servidores/useServidoresList';
-import {type MotoristaStatusOperacional} from '../../models/Motorista';
+import {type MotoristaStatusOperacional} from '@models/Motorista';
 
 export type FrotaTab = 'veiculos' | 'motoristas';
 

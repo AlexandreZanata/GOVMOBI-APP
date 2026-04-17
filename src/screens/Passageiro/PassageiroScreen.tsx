@@ -41,7 +41,7 @@ import {
   createPassageiroStyles,
   PassageiroColors as C,
 } from './PassageiroScreen.styles';
-import type {SearchResult} from '../../types/corrida';
+import type {SearchResult} from '../../types';
 import {ENV} from '../../config/env';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {useFacades} from '@services/facades';
@@ -51,9 +51,9 @@ import {
   setIsActionLoading,
   setPendingCorridaId,
   updateCorridaStatus,
-} from '../../store/slices/corridaSlice';
-import {addToast} from '../../store/slices/uiSlice';
-import type {Corrida} from '../../models/Corrida';
+} from '@store/slices/corridaSlice';
+import {addToast} from '@store/slices/uiSlice';
+import type {Corrida} from '@models/Corrida';
 
 // Navigation types
 type PassageiroTabParamList = {
@@ -169,6 +169,33 @@ const TERMINAL_STATUSES = new Set<string>([
 ]);
 const STATUS_POLL_MS = 5000;
 
+const normalizeCorridaStatus = (status: string): Corrida['status'] => {
+  const normalized = status.trim().toLowerCase();
+
+  switch (normalized) {
+    case 'solicitada':
+    case 'aguardando_aceite':
+      return 'SOLICITADA';
+    case 'aceita':
+      return 'ACEITA';
+    case 'recusada':
+      return 'RECUSADA';
+    case 'em_deslocamento':
+    case 'em_rota':
+      return 'EM_DESLOCAMENTO';
+    case 'passageiro_embarcado':
+      return 'PASSAGEIRO_EMBARCADO';
+    case 'concluida':
+    case 'finalizada':
+      return 'FINALIZADA';
+    case 'cancelada':
+    case 'expirada':
+      return 'CANCELADA';
+    default:
+      return 'SOLICITADA';
+  }
+};
+
 // ── Destination pin ───────────────────────────────────────────────────────────
 const DestinationPin = (): React.JSX.Element => {
   const s = useMemo(() => createPassageiroStyles(), []);
@@ -209,6 +236,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const [activeRouteCoords, setActiveRouteCoords] = useState<
     [number, number][]
   >([]);
+  const activeRouteRequestRef = useRef(0);
 
   // ── Animations ──────────────────────────────────────────────────────────────
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -261,8 +289,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
     const poll = async (): Promise<void> => {
       const result = await corridaFacade.getCorridaStatus(targetId);
       if (result.data) {
-        dispatch(updateCorridaStatus(result.data.status as Corrida['status']));
-        if (TERMINAL_STATUSES.has(result.data.status)) {
+        const normalizedStatus = normalizeCorridaStatus(result.data.status);
+        dispatch(updateCorridaStatus(normalizedStatus));
+        if (TERMINAL_STATUSES.has(normalizedStatus)) {
           if (pollRef.current) {
             clearInterval(pollRef.current);
             pollRef.current = null;
@@ -315,11 +344,22 @@ export const PassageiroScreen = (): React.JSX.Element => {
 
   // ── Route line for active ride ──────────────────────────────────────────────
   useEffect(() => {
-    if (!activeCorrida || !hasActiveRide) {
+    if (
+      !activeCorrida ||
+      !hasActiveRide ||
+      !Number.isFinite(activeCorrida.origemLat) ||
+      !Number.isFinite(activeCorrida.origemLng) ||
+      !Number.isFinite(activeCorrida.destinoLat) ||
+      !Number.isFinite(activeCorrida.destinoLng)
+    ) {
       setActiveRouteCoords([]);
       return;
     }
+
     let cancelled = false;
+    const requestId = activeRouteRequestRef.current + 1;
+    activeRouteRequestRef.current = requestId;
+
     void (async () => {
       const result = await pesquisaFacade.getRouteBetweenPoints({
         origemLat: activeCorrida.origemLat,
@@ -327,17 +367,25 @@ export const PassageiroScreen = (): React.JSX.Element => {
         destinoLat: activeCorrida.destinoLat,
         destinoLng: activeCorrida.destinoLng,
       });
-      if (cancelled) return;
-      if (result.data?.geometry.coordinates?.length) {
-        setActiveRouteCoords(result.data.geometry.coordinates);
-      } else {
-        setActiveRouteCoords([]);
+      if (cancelled || requestId !== activeRouteRequestRef.current) return;
+      const coords = result.data?.geometry.coordinates;
+      if (coords && coords.length >= 2) {
+        setActiveRouteCoords(coords);
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [activeCorrida, activeCorrida?.id, hasActiveRide, pesquisaFacade]);
+  }, [
+    activeCorrida?.id,
+    activeCorrida?.origemLat,
+    activeCorrida?.origemLng,
+    activeCorrida?.destinoLat,
+    activeCorrida?.destinoLng,
+    hasActiveRide,
+    pesquisaFacade,
+  ]);
 
   // ── Cancel ride ─────────────────────────────────────────────────────────────
   const handleCancel = useCallback(() => {
@@ -1000,7 +1048,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
                 corridaId: activeCorrida.id,
               });
             }}
-            style={[styles.chatFab, {bottom: insets.bottom + 168}]}
+            style={[styles.chatFab, {bottom: insets.bottom + 108}]}
             testID="fab-chat">
             <MaterialIcons name="chat" size={22} color={C.textOnDark} />
           </TouchableOpacity>

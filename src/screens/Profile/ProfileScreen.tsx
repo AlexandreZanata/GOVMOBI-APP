@@ -16,7 +16,7 @@ import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
 import {useAppSelector} from '../../store';
-import {type ProfileStackParamList} from '../../navigation/types';
+import {type ProfileStackParamList} from '@navigation/types';
 import {useProfile} from './useProfile';
 import {createProfileStyles} from './ProfileScreens.styles';
 

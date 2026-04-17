@@ -13,10 +13,10 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../../theme';
-import {Skeleton, Text} from '../../components/atoms';
-import {NotificationItem} from '../../components/molecules';
+import {Skeleton, Text} from '@components/atoms';
+import {NotificationItem} from '@components/molecules';
 import {useAppDispatch, useAppSelector} from '../../store';
-import {markAllAsRead, markAsRead} from '../../store/slices/notificationsSlice';
+import {markAllAsRead, markAsRead} from '@store/slices/notificationsSlice';
 import {type Notification} from '../../models';
 import {createNotificationsStyles} from './NotificationsScreen.styles';
 

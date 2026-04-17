@@ -2,7 +2,7 @@
  * @fileoverview Type definitions for ride (corrida) operations.
  * Covers all action payloads from the /corridas API contract.
  */
-import type {Coordenada, Localizacao} from '../models/Corrida';
+import type {Coordenada, Localizacao} from '@models/Corrida';
 
 // ---------------------------------------------------------------------------
 // Legacy input (used by PassageiroScreen)

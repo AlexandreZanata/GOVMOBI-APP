@@ -11,10 +11,10 @@ import {
   setSearchResults,
   setSelectedDestino,
   setUserLocationSnapshot,
-} from '../../store/slices/corridaSlice';
-import {addToast} from '../../store/slices/uiSlice';
-import type {Coordenada} from '../../models/Corrida';
-import type {SearchResult} from '../../types/corrida';
+} from '@store/slices/corridaSlice';
+import {addToast} from '@store/slices/uiSlice';
+import type {Coordenada} from '@models/Corrida';
+import type {SearchResult} from '../../types';
 import type {PesquisaRouteResult} from '../../types/pesquisa';
 
 /** Camera region for the Mapbox map. */

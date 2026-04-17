@@ -2,7 +2,7 @@
  * @fileoverview Redux slice for websocket connection and audit-friendly realtime state.
  */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
-import type {RealtimeConnectionStatus} from '../../types/realtime';
+import type {RealtimeConnectionStatus} from '../../types';
 
 export interface RealtimeState {
   /** Current websocket connection status. */

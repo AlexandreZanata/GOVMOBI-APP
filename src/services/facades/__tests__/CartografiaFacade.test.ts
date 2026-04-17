@@ -1,7 +1,7 @@
 /**
  * @fileoverview Tests for CartografiaFacade request and payload parsing.
  */
-import {CartografiaFacadeImpl} from '../CartografiaFacade';
+import {CartografiaFacadeImpl} from '@services/facades';
 
 const createResponse = (status: number, payload: unknown): Response => {
   return {

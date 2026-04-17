@@ -26,7 +26,7 @@ import type {
   RealtimeConnectionStatus,
   RealtimeEvent,
   StatusCorridaAlteradoPayload,
-} from '../../types/realtime';
+} from '../../types';
 import type {FacadeError, Result} from '@services/facades';
 import type {IRealtimeFacade} from '@services/facades/RealtimeFacade';
 

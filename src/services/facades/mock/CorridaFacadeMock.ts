@@ -4,7 +4,7 @@
  * Simulates the full corrida lifecycle with realistic latency.
  * State is held in-memory — resets on app restart.
  */
-import type {Corrida, CorridaMensagem, CorridaStatus} from '../../../models/Corrida';
+import type {Corrida, CorridaMensagem, CorridaStatus} from '@models/Corrida';
 import type {
   SolicitarCorridaInput,
   SolicitarCorridaResponse,
@@ -16,10 +16,10 @@ import type {
   CorridaStatusResponse,
   CreateCorridaInput,
   SearchResult,
-} from '../../../types/corrida';
+} from '../../../types';
 import type {ICorridaFacade} from '../CorridaFacade';
 import type {FacadeError, Result} from '../types';
-import type {CorridaContexto} from '../../../types/corrida';
+import type {CorridaContexto} from '../../../types';
 
 // ---------------------------------------------------------------------------
 // Helpers

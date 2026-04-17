@@ -12,11 +12,11 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../theme';
-import {CorridasListScreen} from '../screens/Corridas/CorridasListScreen';
-import {CorridaDetalheScreen} from '../screens/Corridas/CorridaDetalheScreen';
-import {AcompanharCorridaScreen} from '../screens/Corridas/AcompanharCorridaScreen';
-import {SolicitarCorridaScreen} from '../screens/Corridas/SolicitarCorridaScreen';
-import {MotoristaCorridaScreen} from '../screens/Corridas/MotoristaCorridaScreen';
+import {CorridasListScreen} from '@screens/Corridas/CorridasListScreen';
+import {CorridaDetalheScreen} from '@screens/Corridas/CorridaDetalheScreen';
+import {AcompanharCorridaScreen} from '@screens/Corridas/AcompanharCorridaScreen';
+import {SolicitarCorridaScreen} from '@screens/Corridas/SolicitarCorridaScreen';
+import {MotoristaCorridaScreen} from '@screens/Corridas/MotoristaCorridaScreen';
 import type {CorridasStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<CorridasStackParamList>();

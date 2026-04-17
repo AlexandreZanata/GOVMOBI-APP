@@ -1,13 +1,13 @@
 /**
  * @fileoverview Mock implementation of Cartografia facade for MOCK_MODE.
  */
-import type {ICartografiaFacade} from '../CartografiaFacade';
+import type {ICartografiaFacade} from '@services/facades';
 import type {
   CalcularDistanciaInput,
   CalcularDistanciaResult,
   ValidarCoordenadaInput,
   ValidarCoordenadaResult,
-} from '../../../types/cartografia';
+} from '../../../types';
 import type {FacadeError, Result} from '../types';
 
 const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});

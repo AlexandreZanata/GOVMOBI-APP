@@ -10,7 +10,7 @@ import type {
   CalcularDistanciaResult,
   ValidarCoordenadaInput,
   ValidarCoordenadaResult,
-} from '../../types/cartografia';
+} from '../../types';
 import {type FacadeConfig, type FacadeError, type Result} from './types';
 import {ENV} from '../../config/env';
 

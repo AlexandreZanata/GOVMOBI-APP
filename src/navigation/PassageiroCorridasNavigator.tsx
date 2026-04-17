@@ -7,17 +7,17 @@
  *
  * Screens:
  *   PassageiroCorridasList — ride history (FINALIZADA, CANCELADA, RECUSADA)
- *   AcompanharCorrida      — real-time tracking (also reachable from Home tab)
- *   CorridaDetalhe         — full ride details (read-only)
+ *   AcompanharCorrida — real-time tracking (also reachable from Home tab)
+ *   CorridaDetalhe — full ride details (read-only)
  */
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../theme';
-import {PassageiroCorridasListScreen} from '../screens/Corridas/PassageiroCorridasListScreen';
-import {AcompanharCorridaScreen} from '../screens/Corridas/AcompanharCorridaScreen';
-import {CorridaDetalheScreen} from '../screens/Corridas/CorridaDetalheScreen';
-import {CorridaMensagensScreen} from '../screens/Corridas/CorridaMensagensScreen';
+import {PassageiroCorridasListScreen} from '@screens/Corridas/PassageiroCorridasListScreen';
+import {AcompanharCorridaScreen} from '@screens/Corridas/AcompanharCorridaScreen';
+import {CorridaDetalheScreen} from '@screens/Corridas/CorridaDetalheScreen';
+import {CorridaMensagensScreen} from '@screens/Corridas/CorridaMensagensScreen';
 import type {PassageiroCorridasStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<PassageiroCorridasStackParamList>();

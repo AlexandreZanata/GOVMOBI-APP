@@ -3,7 +3,7 @@
  */
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {type Servidor} from '../../models';
-import {useFacades} from '../../services/facades';
+import {useFacades} from '@services/facades';
 import {type ServidoresFilter} from '../../types/servidores';
 
 export type AtivoFilter = 'all' | 'active' | 'inactive';

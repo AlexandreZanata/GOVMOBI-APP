@@ -199,31 +199,48 @@ const toReverseGeocodingResult = (
 const toRouteGeometry = (
   payload: unknown,
 ): PesquisaRouteResult['geometry'] | null => {
-  if (
-    !isRecord(payload) ||
-    payload.type !== 'LineString' ||
-    !Array.isArray(payload.coordinates)
-  ) {
+  if (!isRecord(payload)) {
     return null;
   }
 
-  const coordinates = payload.coordinates
-    .filter(
-      (coord): coord is [number, number] =>
+  if (payload.type === 'Feature' && isRecord(payload.geometry)) {
+    return toRouteGeometry(payload.geometry);
+  }
+
+  if (payload.type !== 'LineString' || !Array.isArray(payload.coordinates)) {
+    return null;
+  }
+
+  const normalizedCoordinates = payload.coordinates
+    .map(coord => {
+      if (
         Array.isArray(coord) &&
         coord.length >= 2 &&
         Number.isFinite(Number(coord[0])) &&
-        Number.isFinite(Number(coord[1])),
-    )
-    .map(coord => [Number(coord[0]), Number(coord[1])] as [number, number]);
+        Number.isFinite(Number(coord[1]))
+      ) {
+        return [Number(coord[0]), Number(coord[1])] as [number, number];
+      }
 
-  if (coordinates.length < 2) {
+      if (isRecord(coord)) {
+        const lng = Number(coord.lng ?? coord.longitude);
+        const lat = Number(coord.lat ?? coord.latitude);
+        if (Number.isFinite(lng) && Number.isFinite(lat)) {
+          return [lng, lat] as [number, number];
+        }
+      }
+
+      return null;
+    })
+    .filter((coord): coord is [number, number] => coord !== null);
+
+  if (normalizedCoordinates.length < 2) {
     return null;
   }
 
   return {
     type: 'LineString',
-    coordinates,
+    coordinates: normalizedCoordinates,
   };
 };
 
@@ -238,7 +255,8 @@ const toPesquisaRouteResult = (
   const directGeometry =
     toRouteGeometry(unwrapped.geometry) ??
     toRouteGeometry(unwrapped.geometria) ??
-    toRouteGeometry(unwrapped.routeGeometry);
+    toRouteGeometry(unwrapped.routeGeometry) ??
+    toRouteGeometry(unwrapped.route);
   const routeSource =
     !directGeometry &&
     ((Array.isArray(unwrapped.routes) && unwrapped.routes.length > 0

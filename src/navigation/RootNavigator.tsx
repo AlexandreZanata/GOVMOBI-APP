@@ -13,7 +13,7 @@ import {type RootStackParamList} from './types';
 import {AuthNavigator} from './AuthNavigator';
 import {MainTabNavigator} from './MainTabNavigator';
 import {PassageiroNavigator} from './PassageiroNavigator';
-import {MotoristaScreen} from '../screens/Motorista/MotoristaScreen';
+import {MotoristaScreen} from '@screens/Motorista/MotoristaScreen';
 import {useAppSelector} from '../store';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

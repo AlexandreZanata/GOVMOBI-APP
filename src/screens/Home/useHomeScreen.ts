@@ -4,11 +4,7 @@
  */
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Animated} from 'react-native';
-import {
-  type Call,
-  type Message,
-  NotificationPriority,
-} from '../../models';
+import {type Call, type Message, NotificationPriority,} from '../../models';
 import {useAppSelector} from '../../store';
 
 // ---------------------------------------------------------------------------
@@ -132,8 +128,7 @@ export const useHomeScreen = (): HomeScreenState => {
     const messageItems: ActivityItem[] = Object.values(conversationsMap)
       .slice(0, 2)
       .flatMap(conv => {
-        const msgs = conv.lastMessageId ? [] : [];
-        return msgs;
+        return conv.lastMessageId ? [] : [];
       });
 
     return [...callItems, ...messageItems].slice(0, 5);

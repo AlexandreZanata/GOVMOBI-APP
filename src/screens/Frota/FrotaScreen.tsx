@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../../theme';
-import {Skeleton, Text} from '../../components/atoms';
-import {AppHeader} from '../../components/organisms';
+import {Skeleton, Text} from '@components/atoms';
+import {AppHeader} from '@components/organisms';
 import {type Motorista, type Veiculo} from '../../models';
-import {type MotoristaStatusOperacional} from '../../models/Motorista';
+import {type MotoristaStatusOperacional} from '@models/Motorista';
 import {type AtivoFilter} from '../Servidores/useServidoresList';
 import {useFrota, type FrotaTab} from './useFrota';
 import {createFrotaStyles} from './FrotaScreen.styles';

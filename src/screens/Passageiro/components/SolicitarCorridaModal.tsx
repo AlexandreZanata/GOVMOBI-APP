@@ -23,11 +23,11 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
-import {useTheme} from '../../../theme';
+import {useTheme} from '@theme/index';
 import {useFacades} from '@services/facades';
-import {useAppDispatch, useAppSelector} from '../../../store';
-import {setActiveCorrida, setPendingCorridaId} from '../../../store/slices/corridaSlice';
-import {addToast} from '../../../store/slices/uiSlice';
+import {useAppDispatch, useAppSelector} from '@store/index';
+import {setActiveCorrida, setPendingCorridaId} from '@store/slices/corridaSlice';
+import {addToast} from '@store/slices/uiSlice';
 import {PassageiroColors as C} from '../PassageiroScreen.styles';
 
 // ---------------------------------------------------------------------------

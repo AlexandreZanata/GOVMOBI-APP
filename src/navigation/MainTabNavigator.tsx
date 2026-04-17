@@ -4,11 +4,11 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {type MainTabParamList} from './types';
-import {BottomTabBar} from '../components/organisms';
+import {BottomTabBar} from '@components/organisms';
 import {ChatNavigator} from './ChatNavigator';
 import {CallsNavigator} from './CallsNavigator';
-import {HomeScreen} from '../screens/Home/HomeScreen';
-import {NotificationsScreen} from '../screens/Notifications/NotificationsScreen';
+import {HomeScreen} from '@screens/Home/HomeScreen';
+import {NotificationsScreen} from '@screens/Notifications/NotificationsScreen';
 import {ProfileNavigator} from './ProfileNavigator';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();

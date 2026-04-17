@@ -27,7 +27,7 @@ import {SettingsScreen} from '../SettingsScreen';
 import {i18n} from '../../../i18n';
 import authReducer from '../../../store/slices/authSlice';
 import uiReducer from '../../../store/slices/uiSlice';
-import {UserRole, UserStatus} from '../../../models';
+import {UserRole, UserStatus} from '@models/User';
 
 // ---------------------------------------------------------------------------
 // Mocks

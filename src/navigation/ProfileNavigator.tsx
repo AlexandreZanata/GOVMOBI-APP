@@ -17,8 +17,8 @@ import React from 'react';
 import {Platform} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {type ProfileStackParamList} from './types';
-import {ProfileScreen} from '../screens/Profile/ProfileScreen';
-import {SettingsScreen} from '../screens/Profile/SettingsScreen';
+import {ProfileScreen} from '@screens/Profile/ProfileScreen';
+import {SettingsScreen} from '@screens/Profile/SettingsScreen';
 import {useTheme, designColors} from '../theme';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();

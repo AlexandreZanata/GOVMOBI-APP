@@ -8,8 +8,8 @@ import {
   type LoginCredentials,
 } from '../AuthFacade';
 import {type FacadeError, type Result} from '../types';
-import {delay, shouldFail, mockId} from '../../mock/data/simulation';
-import {loadMockState, saveMockState} from '../../mock/data/storage';
+import {delay, shouldFail, mockId} from '@services/mock/data';
+import {loadMockState, saveMockState} from '@services/mock/data';
 import {UserRole, UserStatus, type User as ModelUser} from '../../../models';
 
 const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});
