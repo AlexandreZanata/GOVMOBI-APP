@@ -281,7 +281,15 @@
     },
     "idle": {
       "title": "Waiting for Rides",
-      "subtitle": "You will be notified when rides are available."
+      "subtitle": "You will be notified when rides are available.",
+      "connecting": "Connecting to server...",
+      "reconnecting": "Reconnecting..."
+    },
+    "realtime": {
+      "connected": "Online",
+      "connecting": "Connecting",
+      "disconnected": "Offline",
+      "error": "Connection error"
     },
     "activeRide": {
       "title": "Active Ride"

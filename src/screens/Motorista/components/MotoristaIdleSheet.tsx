@@ -6,6 +6,7 @@ import {Animated, Text, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.styles';
 import {useTheme} from '@theme/index';
+import {useAppSelector} from '../../../store';
 
 export interface MotoristaIdleSheetProps {
   /** Animated translateY value for the slide-up entrance. */
@@ -31,6 +32,18 @@ export const MotoristaIdleSheet = ({
   const {t} = useTranslation();
   const theme = useTheme();
   const styles = createMotoristaStyles(theme);
+  const connectionStatus = useAppSelector(s => s.realtime.connectionStatus);
+
+  const realtimeDotColor =
+    connectionStatus === 'connected'
+      ? C.success
+      : connectionStatus === 'connecting'
+        ? C.warning
+        : C.danger;
+
+  const realtimeLabel = t(`motorista.realtime.${connectionStatus}`, {
+    defaultValue: t('motorista.realtime.disconnected'),
+  });
 
   return (
     <Animated.View
@@ -45,6 +58,10 @@ export const MotoristaIdleSheet = ({
       <View style={styles.statusIndicatorRow}>
         <View style={[styles.statusDot, {backgroundColor: C.success}]} />
         <Text style={styles.statusLabel}>{t('motorista.status.disponivel')}</Text>
+      </View>
+      <View style={[styles.statusIndicatorRow, styles.realtimeStatusRow]} testID="realtime-status-row">
+        <View style={[styles.statusDot, {backgroundColor: realtimeDotColor}]} />
+        <Text style={styles.statusLabel}>{realtimeLabel}</Text>
       </View>
     </Animated.View>
   );

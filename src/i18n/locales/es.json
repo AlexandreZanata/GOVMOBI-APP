@@ -277,7 +277,15 @@
     },
     "idle": {
       "title": "Esperando Viajes",
-      "subtitle": "Recibirás notificaciones cuando haya viajes disponibles."
+      "subtitle": "Recibirás notificaciones cuando haya viajes disponibles.",
+      "connecting": "Conectando al servidor...",
+      "reconnecting": "Reconectando..."
+    },
+    "realtime": {
+      "connected": "En línea",
+      "connecting": "Conectando",
+      "disconnected": "Sin conexión",
+      "error": "Error de conexión"
     },
     "activeRide": {
       "title": "Viaje Activo"

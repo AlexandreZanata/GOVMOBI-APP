@@ -26,6 +26,7 @@ import type {CompositeNavigationProp} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {usePassageiro} from './usePassageiro';
+import {usePassageiroRealtime} from '../../hooks/usePassageiroRealtime';
 import {SolicitarCorridaModal} from './components/SolicitarCorridaModal';
 import {PassageiroSearchBar} from './components/PassageiroSearchBar';
 import {PassageiroSearchOverlay} from './components/PassageiroSearchOverlay';
@@ -154,6 +155,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const sheetTranslate = useRef(new Animated.Value(0)).current;
   const sheetAnimated = useRef(false);
   const searchBarTranslate = useRef(new Animated.Value(0)).current;
+
+  // ── Realtime subscription — ride room + status/position events ─────────────
+  usePassageiroRealtime();
 
   // ── Passageiro hook ─────────────────────────────────────────────────────────
   const {

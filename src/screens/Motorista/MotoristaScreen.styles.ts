@@ -189,6 +189,9 @@ export const createMotoristaStyles = (theme: Theme) => {
       gap: spacing[2],
       marginBottom: spacing[4],
     },
+    realtimeStatusRow: {
+      marginTop: spacing[1],
+    },
     statusDot: {
       width: 10,
       height: 10,

@@ -307,7 +307,15 @@
     },
     "idle": {
       "title": "Aguardando Corridas",
-      "subtitle": "Você receberá notificações quando houver corridas disponíveis."
+      "subtitle": "Você receberá notificações quando houver corridas disponíveis.",
+      "connecting": "Conectando ao servidor...",
+      "reconnecting": "Reconectando..."
+    },
+    "realtime": {
+      "connected": "Online",
+      "connecting": "Conectando",
+      "disconnected": "Offline",
+      "error": "Erro de conexão"
     },
     "activeRide": {
       "title": "Corrida Ativa"
