@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16% </span>
+                <span class="strong">72% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>4/25</span>
+                <span class='fraction'>18/25</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>4/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">62.5% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>5/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.66% </span>
+                <span class="strong">70.83% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>4/24</span>
+                <span class='fraction'>17/24</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -218,24 +218,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -243,8 +238,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -286,7 +286,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -340,16 +340,16 @@ const TOAST_TOKENS: Record&lt;Toast['type'], ToastColorTokens&gt; = {
  *
  * @returns Overlay toast organism.
  */
-export const GlobalToast = <span class="fstat-no" title="function not covered" >()</span>: React.JSX.Element | null =&gt; {
-  const theme = <span class="cstat-no" title="statement not covered" >useTheme();</span>
-  const insets = <span class="cstat-no" title="statement not covered" >useSafeAreaInsets();</span>
-  const dispatch = <span class="cstat-no" title="statement not covered" >useAppDispatch();</span>
-  const {t} = <span class="cstat-no" title="statement not covered" >useTranslation();</span>
-  const activeToast = <span class="cstat-no" title="statement not covered" >useAppSelector(<span class="fstat-no" title="function not covered" >st</span>ate =&gt; <span class="cstat-no" title="statement not covered" >state.ui.toasts[0] ?? null)</span>;</span>
+export const GlobalToast = (): React.JSX.Element | null =&gt; {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
+  const {t} = useTranslation();
+  const activeToast = useAppSelector(state =&gt; state.ui.toasts[0] ?? null);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!activeToast) {</span>
-<span class="cstat-no" title="statement not covered" >      return;</span>
+  useEffect(() =&gt; {
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (!activeToast) {
+      return;
     }
 &nbsp;
     const timer = <span class="cstat-no" title="statement not covered" >setTimeout(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
@@ -361,13 +361,13 @@ export const GlobalToast = <span class="fstat-no" title="function not covered" >
     };
   }, [activeToast, dispatch]);
 &nbsp;
-  const styles = <span class="cstat-no" title="statement not covered" >useMemo(</span>
-<span class="fstat-no" title="function not covered" >    ()</span> =&gt; <span class="cstat-no" title="statement not covered" >createStyles(theme, insets.top),</span>
+  const styles = useMemo(
+    () =&gt; createStyles(theme, insets.top),
     [insets.top, theme],
   );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (!activeToast) {</span>
-<span class="cstat-no" title="statement not covered" >    return null;</span>
+  <span class="missing-if-branch" title="else path not taken" >E</span>if (!activeToast) {
+    return null;
   }
 &nbsp;
   const tokens = <span class="cstat-no" title="statement not covered" >TOAST_TOKENS[activeToast.type];</span>
@@ -408,8 +408,8 @@ GlobalToast.displayName = 'GlobalToast';
  * @param topInset Device top safe area inset.
  * @returns React Native stylesheet for GlobalToast.
  */
-const createStyles = <span class="fstat-no" title="function not covered" >(t</span>heme: Theme, topInset: number) =&gt;
-<span class="cstat-no" title="statement not covered" >  StyleSheet.create({</span>
+const createStyles = (theme: Theme, topInset: number) =&gt;
+  StyleSheet.create({
     message: {
       flex: 1,
       marginRight: theme.spacing.md,
@@ -439,7 +439,7 @@ const createStyles = <span class="fstat-no" title="function not covered" >(t</sp
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T15:54:02.086Z
+                at 2026-04-17T18:34:43.360Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

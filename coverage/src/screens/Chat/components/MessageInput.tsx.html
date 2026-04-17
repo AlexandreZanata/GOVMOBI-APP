@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>16/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -245,7 +245,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -253,18 +253,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -275,8 +275,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -287,10 +287,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -352,7 +352,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React, {useCallback, useMemo, useRef} from 'react';
 import {
   Animated,
@@ -390,7 +390,7 @@ export interface MessageInputProps {
  * @param props - {@link MessageInputProps}
  * @returns The rendered input bar.
  */
-export const MessageInput = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
+export const MessageInput = ({
   value,
   onChangeText,
   onSend,
@@ -398,18 +398,18 @@ export const MessageInput = <span class="cstat-no" title="statement not covered"
   onVoiceNote,
   testID,
 }: MessageInputProps): React.JSX.Element =&gt; {
-  const {t} = <span class="cstat-no" title="statement not covered" >useTranslation();</span>
-  const theme = <span class="cstat-no" title="statement not covered" >useTheme();</span>
-  const styles = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >createChatStyles(theme),</span> [theme]);</span>
+  const {t} = useTranslation();
+  const theme = useTheme();
+  const styles = useMemo(() =&gt; createChatStyles(theme), [theme]);
 &nbsp;
-  const sendScale = <span class="cstat-no" title="statement not covered" >useRef(new Animated.Value(value.trim() ? 1 : 0)).current;</span>
-  const hasText = <span class="cstat-no" title="statement not covered" >value.trim().length &gt; 0;</span>
+  const sendScale = useRef(new Animated.Value(value.trim() ? 1 : 0)).current;
+  const hasText = value.trim().length &gt; 0;
 &nbsp;
   // Animate send button in/out as text changes
-  const prevHasText = <span class="cstat-no" title="statement not covered" >useRef(hasText);</span>
-<span class="cstat-no" title="statement not covered" >  if (prevHasText.current !== hasText) {</span>
-<span class="cstat-no" title="statement not covered" >    prevHasText.current = hasText;</span>
-<span class="cstat-no" title="statement not covered" >    Animated.timing(sendScale, {</span>
+  const prevHasText = useRef(hasText);
+  if (prevHasText.current !== hasText) {
+    prevHasText.current = hasText;
+    Animated.timing(sendScale, {
       toValue: hasText ? 1 : 0,
       duration: 150,
       easing: Easing.out(Easing.cubic),
@@ -420,8 +420,8 @@ export const MessageInput = <span class="cstat-no" title="statement not covered"
   /**
    * Handles the send button press with a brief scale animation.
    */
-  const handleSend = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >()</span>: void =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    Animated.sequence([</span>
+  const handleSend = useCallback((): void =&gt; {
+    Animated.sequence([
       Animated.timing(sendScale, {
         toValue: 0.85,
         duration: 80,
@@ -432,10 +432,10 @@ export const MessageInput = <span class="cstat-no" title="statement not covered"
         duration: 80,
         useNativeDriver: true,
       }),
-    ]).start(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >onSend())</span>;
+    ]).start(() =&gt; onSend());
   }, [onSend, sendScale]);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;View style={styles.inputBar} testID={testID}&gt;
       {/* Attachment button */}
       &lt;Pressable
@@ -497,7 +497,7 @@ export const MessageInput = <span class="cstat-no" title="statement not covered"
   );
 };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >MessageInput.displayName = 'MessageInput';</span>
+MessageInput.displayName = 'MessageInput';
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -505,7 +505,7 @@ export const MessageInput = <span class="cstat-no" title="statement not covered"
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T15:54:02.211Z
+                at 2026-04-17T18:34:43.516Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

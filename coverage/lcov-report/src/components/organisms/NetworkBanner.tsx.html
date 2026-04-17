@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">21.42% </span>
+                <span class="strong">92.85% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/14</span>
+                <span class='fraction'>13/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>1/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">23.07% </span>
+                <span class="strong">92.3% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/13</span>
+                <span class='fraction'>12/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -150,18 +150,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -183,7 +183,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -218,19 +218,19 @@ import {useTranslation} from 'react-i18next';
  *
  * @returns Banner organism when offline, otherwise null.
  */
-export const NetworkBanner = <span class="fstat-no" title="function not covered" >()</span>: React.JSX.Element | null =&gt; {
-  const theme = <span class="cstat-no" title="statement not covered" >useTheme();</span>
-  const insets = <span class="cstat-no" title="statement not covered" >useSafeAreaInsets();</span>
-  const {t} = <span class="cstat-no" title="statement not covered" >useTranslation();</span>
-  const isConnected = <span class="cstat-no" title="statement not covered" >useAppSelector(<span class="fstat-no" title="function not covered" >st</span>ate =&gt; <span class="cstat-no" title="statement not covered" >state.ui.isConnected)</span>;</span>
+export const NetworkBanner = (): React.JSX.Element | null =&gt; {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const {t} = useTranslation();
+  const isConnected = useAppSelector(state =&gt; state.ui.isConnected);
 &nbsp;
-  const styles = <span class="cstat-no" title="statement not covered" >useMemo(</span>
-<span class="fstat-no" title="function not covered" >    ()</span> =&gt; <span class="cstat-no" title="statement not covered" >createStyles(theme, insets.top),</span>
+  const styles = useMemo(
+    () =&gt; createStyles(theme, insets.top),
     [insets.top, theme],
   );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (isConnected) {</span>
-<span class="cstat-no" title="statement not covered" >    return null;</span>
+  <span class="missing-if-branch" title="else path not taken" >E</span>if (isConnected) {
+    return null;
   }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return (</span>
@@ -251,8 +251,8 @@ NetworkBanner.displayName = 'NetworkBanner';
  * @param topInset Device top safe area inset.
  * @returns React Native stylesheet for NetworkBanner.
  */
-const createStyles = <span class="fstat-no" title="function not covered" >(t</span>heme: Theme, topInset: number) =&gt;
-<span class="cstat-no" title="statement not covered" >  StyleSheet.create({</span>
+const createStyles = (theme: Theme, topInset: number) =&gt;
+  StyleSheet.create({
     container: {
       alignItems: 'center',
       backgroundColor: theme.colors.warning,
@@ -277,7 +277,7 @@ const createStyles = <span class="fstat-no" title="function not covered" >(t</sp
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T15:54:02.086Z
+                at 2026-04-17T18:34:43.360Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
