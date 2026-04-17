@@ -48,6 +48,10 @@ export interface MeResponse {
   email: string;
   nome: string;
   papeis: string[];
+  /** Present only for MOTORISTA users. UUID of the driver record. */
+  motoristaId?: string;
+  /** Present only for MOTORISTA users. UUID of the municipality. */
+  municipioId?: string;
 }
 
 export interface AuthSession {
@@ -85,8 +89,10 @@ export interface IAuthFacade {
   /**
    * Fetches the authenticated user's profile from the server.
    * Uses the stored access token. Call after login and on cold start.
+   * Returns the raw MeResponse so callers can access driver-specific fields
+   * (`motoristaId`, `municipioId`) for role-based routing.
    */
-  getMe(): Promise<Result<User, FacadeError>>;
+  getMe(): Promise<Result<MeResponse, FacadeError>>;
 
   /**
    * Indicates whether a valid token exists in secure storage.
@@ -252,7 +258,9 @@ export class AuthFacadeImpl implements IAuthFacade {
 
       // Fetch the full user profile from /auth/me using the new token.
       const meResult = await this.getMe();
-      const user = meResult.data ?? userFromJwt(decodeJwtPayload(tokens.accessToken));
+      const user = meResult.data
+        ? userFromMe(meResult.data)
+        : userFromJwt(decodeJwtPayload(tokens.accessToken));
 
       const session: AuthSession = {
         accessToken: tokens.accessToken,
@@ -354,13 +362,20 @@ export class AuthFacadeImpl implements IAuthFacade {
   /**
    * Fetches the authenticated user profile from GET /auth/me.
    * Requires a valid access token in SecureStore.
+   * Returns the raw MeResponse — callers map to User as needed.
    *
-   * @returns Full user profile from the server.
+   * @returns Raw MeResponse from the server.
    */
-  public async getMe(): Promise<Result<User, FacadeError>> {
+  public async getMe(): Promise<Result<MeResponse, FacadeError>> {
     if (this.mockMode) {
       await delay(120);
-      return ok(this.currentUser ?? createMockUser());
+      const user = this.currentUser ?? createMockUser();
+      return ok({
+        id: user.id,
+        email: user.email,
+        nome: user.fullName,
+        papeis: ['USUARIO'],
+      });
     }
 
     try {
@@ -382,9 +397,9 @@ export class AuthFacadeImpl implements IAuthFacade {
       }
 
       const me = (await response.json()) as MeResponse;
-      const user = userFromMe(me);
-      this.currentUser = user;
-      return ok(user);
+      // Keep currentUser in sync for getCurrentUser() calls
+      this.currentUser = userFromMe(me);
+      return ok(me);
     } catch {
       return fail(toFacadeError('Network error fetching user profile', 'NETWORK_ERROR'));
     }

@@ -12,6 +12,17 @@ export interface AuthState {
   error: string | null;
   /** Raw papeis array from the server, used for role-based routing. */
   papeis: string[];
+  /**
+   * Driver record UUID from GET /auth/me.
+   * Non-null only for users with a linked Motorista record.
+   * Used to distinguish driver routing from regular user routing.
+   */
+  motoristaId: string | null;
+  /**
+   * Municipality UUID from GET /auth/me.
+   * Non-null only for users with a linked Motorista record.
+   */
+  municipioId: string | null;
 }
 
 const initialState: AuthState = {
@@ -21,6 +32,8 @@ const initialState: AuthState = {
   isLoading: false,
   error: null,
   papeis: [],
+  motoristaId: null,
+  municipioId: null,
 };
 
 /**
@@ -45,6 +58,22 @@ const authSlice = createSlice({
      */
     setPapeis(state, action: PayloadAction<string[]>) {
       state.papeis = action.payload;
+    },
+
+    /**
+     * Stores the motoristaId from GET /auth/me.
+     * Non-null signals the user is a driver — routes to MotoristaNavigator.
+     */
+    setMotoristaId(state, action: PayloadAction<string | null>) {
+      state.motoristaId = action.payload;
+    },
+
+    /**
+     * Stores the municipioId from GET /auth/me.
+     * Used for municipality-scoped data fetching in the driver experience.
+     */
+    setMunicipioId(state, action: PayloadAction<string | null>) {
+      state.municipioId = action.payload;
     },
 
     /**
@@ -73,6 +102,8 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.error = null;
       state.papeis = [];
+      state.motoristaId = null;
+      state.municipioId = null;
     },
 
     /**
@@ -92,7 +123,7 @@ const authSlice = createSlice({
   },
 });
 
-export const {setUser, setPapeis, setToken, tokenRefreshed, logout, setLoading, setError} =
+export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setToken, tokenRefreshed, logout, setLoading, setError} =
   authSlice.actions;
 
 export default authSlice.reducer;

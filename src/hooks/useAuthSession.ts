@@ -21,7 +21,7 @@
 import {useEffect, useRef} from 'react';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
-import {logout, setToken, setUser, tokenRefreshed} from '@store/slices/authSlice';
+import {logout, setUser, tokenRefreshed, setPapeis, setMotoristaId, setMunicipioId} from '@store/slices/authSlice';
 import {addToast} from '@store/slices/uiSlice';
 import {useTranslation} from 'react-i18next';
 import {logger} from '@utils/logger';
@@ -162,7 +162,27 @@ export const useAuthSession = (): void => {
       if (!user) {
         const meResult = await authFacade.getMe();
         if (meResult.data) {
-          dispatch(setUser(meResult.data));
+          const me = meResult.data;
+          // Map MeResponse → User for Redux
+          const {UserRole: UR, UserStatus: US} = await import('../models');
+          const roleMap: Record<string, typeof UR[keyof typeof UR]> = {
+            ADMIN: UR.ADMIN,
+            USUARIO: UR.OFFICER,
+            MOTORISTA: UR.OFFICER,
+          };
+          const mappedUser = {
+            id: me.id,
+            fullName: me.nome,
+            email: me.email,
+            role: me.papeis.map(p => roleMap[p]).find(Boolean) ?? UR.OFFICER,
+            status: US.ACTIVE,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          dispatch(setUser(mappedUser));
+          dispatch(setPapeis(me.papeis));
+          dispatch(setMotoristaId(me.motoristaId ?? null));
+          dispatch(setMunicipioId(me.municipioId ?? null));
         } else {
           logger.warn('useAuthSession', 'getMe failed — ending session');
           dispatch(logout());

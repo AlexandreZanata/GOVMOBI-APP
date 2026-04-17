@@ -7,6 +7,8 @@ import authReducer, {
   logout,
   setLoading,
   setError,
+  setMotoristaId,
+  setMunicipioId,
   type AuthState,
 } from '../slices/authSlice';
 import {UserRole, UserStatus, type User} from '../../models';
@@ -50,6 +52,8 @@ describe('authSlice', () => {
         isLoading: false,
         error: 'previous error',
         papeis: [],
+        motoristaId: null,
+        municipioId: null,
       };
       const state = authReducer(stateWithError, setUser(mockUser));
       expect(state.error).toBeNull();
@@ -70,7 +74,7 @@ describe('authSlice', () => {
   });
 
   describe('logout', () => {
-    it('clears all auth state', () => {
+    it('clears all auth state including motoristaId and municipioId', () => {
       const loggedInState: AuthState = {
         user: mockUser,
         token: 'jwt-token-abc',
@@ -78,6 +82,8 @@ describe('authSlice', () => {
         isLoading: false,
         error: null,
         papeis: [],
+        motoristaId: 'moto-001',
+        municipioId: 'muni-001',
       };
       const state = authReducer(loggedInState, logout());
       expect(state.user).toBeNull();
@@ -85,6 +91,8 @@ describe('authSlice', () => {
       expect(state.isAuthenticated).toBe(false);
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
+      expect(state.motoristaId).toBeNull();
+      expect(state.municipioId).toBeNull();
     });
   });
 
@@ -102,6 +110,8 @@ describe('authSlice', () => {
         isLoading: true,
         error: null,
         papeis: [],
+        motoristaId: null,
+        municipioId: null,
       };
       const state = authReducer(loadingState, setLoading(false));
       expect(state.isLoading).toBe(false);
@@ -117,6 +127,8 @@ describe('authSlice', () => {
         isLoading: true,
         error: null,
         papeis: [],
+        motoristaId: null,
+        municipioId: null,
       };
       const state = authReducer(loadingState, setError('Invalid credentials'));
       expect(state.error).toBe('Invalid credentials');
@@ -131,9 +143,35 @@ describe('authSlice', () => {
         isLoading: false,
         error: 'some error',
         papeis: [],
+        motoristaId: null,
+        municipioId: null,
       };
       const state = authReducer(errorState, setError(null));
       expect(state.error).toBeNull();
+    });
+  });
+
+  describe('setMotoristaId', () => {
+    it('stores the motoristaId for driver routing', () => {
+      const state = authReducer(undefined, setMotoristaId('019d9be8-baa8-722c-b043-9152d7808e6d'));
+      expect(state.motoristaId).toBe('019d9be8-baa8-722c-b043-9152d7808e6d');
+    });
+
+    it('clears motoristaId when null is dispatched', () => {
+      const state = authReducer(undefined, setMotoristaId(null));
+      expect(state.motoristaId).toBeNull();
+    });
+  });
+
+  describe('setMunicipioId', () => {
+    it('stores the municipioId for driver routing', () => {
+      const state = authReducer(undefined, setMunicipioId('f0928929-373e-4614-9273-df3092039402'));
+      expect(state.municipioId).toBe('f0928929-373e-4614-9273-df3092039402');
+    });
+
+    it('clears municipioId when null is dispatched', () => {
+      const state = authReducer(undefined, setMunicipioId(null));
+      expect(state.municipioId).toBeNull();
     });
   });
 });

@@ -34,7 +34,7 @@ import {useTheme} from '../../theme';
 import {createLoginStyles} from './LoginScreen.styles';
 import {Text, Input, Icon} from '@components/atoms';
 import {useAppDispatch} from '../../store';
-import {setUser, setToken, setPapeis} from '@store/slices/authSlice';
+import {setUser, setToken, setPapeis, setMotoristaId, setMunicipioId} from '@store/slices/authSlice';
 import {addToast} from '@store/slices/uiSlice';
 import {useFacades} from '@services/facades';
 import {maskCpf, sanitizeCpf, isValidCpf} from '@utils/cpf';
@@ -145,12 +145,13 @@ export const LoginScreen = (): React.JSX.Element => {
     dispatch(setToken(result.data.accessToken));
     dispatch(setUser(result.data.user));
 
-    // Fetch papeis from /auth/me for role-based routing
+    // Fetch papeis + driver fields from /auth/me for role-based routing.
+    // motoristaId presence → driver experience; absence → passenger experience.
     const meResult = await authFacade.getMe();
     if (meResult.data) {
-      // MeResponse has papeis array — store for routing
-      const meRaw = meResult.data as unknown as {papeis?: string[]};
-      dispatch(setPapeis(meRaw.papeis ?? []));
+      dispatch(setPapeis(meResult.data.papeis ?? []));
+      dispatch(setMotoristaId(meResult.data.motoristaId ?? null));
+      dispatch(setMunicipioId(meResult.data.municipioId ?? null));
     }
   }, [cpf, senha, authFacade, dispatch, t, animatePress]);
 

@@ -59,12 +59,16 @@ jest.mock('@expo/vector-icons', () => ({
 
 // Mock facade — replaced per test via mockLoginImpl
 const mockLogin = jest.fn();
+const mockGetMe = jest.fn().mockResolvedValue({
+  data: {id: 'user-001', email: 'officer@govmobile.local', nome: 'Test Officer', papeis: ['USUARIO']},
+  error: null,
+});
 
 jest.mock('../../../services/facades', () => ({
   useFacades: () => ({
     authFacade: {
       login: mockLogin,
-      getMe: jest.fn().mockResolvedValue({data: null, error: null}),
+      getMe: mockGetMe,
     },
   }),
 }));
@@ -106,6 +110,8 @@ const buildStore = () =>
         isLoading: false,
         error: null,
         papeis: [],
+        motoristaId: null,
+        municipioId: null,
       },
       ui: {
         themeMode: 'light' as const,
@@ -140,6 +146,11 @@ const renderScreen = () => {
 describe('LoginScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Restore default getMe implementation after clearAllMocks resets it
+    mockGetMe.mockResolvedValue({
+      data: {id: 'user-001', email: 'officer@govmobile.local', nome: 'Test Officer', papeis: ['USUARIO']},
+      error: null,
+    });
   });
 
   // ── 1. Render ──────────────────────────────────────────────────────────────
@@ -284,6 +295,32 @@ describe('LoginScreen', () => {
           senha: 'secret123',
         }),
       );
+    });
+
+    it('dispatches motoristaId when getMe returns a driver response', async () => {
+      mockLogin.mockResolvedValue({data: mockSession, error: null});
+      mockGetMe.mockResolvedValueOnce({
+        data: {
+          id: '019d9be7-03c4-755a-8595-ceba6c8d8ead',
+          email: '1@a.com',
+          nome: 'user@1.com',
+          papeis: ['USUARIO'],
+          motoristaId: '019d9be8-baa8-722c-b043-9152d7808e6d',
+          municipioId: 'f0928929-373e-4614-9273-df3092039402',
+        },
+        error: null,
+      });
+
+      const {store} = renderScreen();
+      fireEvent.changeText(screen.getByTestId('login-cpf'), VALID_CPF);
+      fireEvent.changeText(screen.getByTestId('login-password'), 'secret123');
+      fireEvent.press(screen.getByTestId('login-submit'));
+
+      await waitFor(() => {
+        const state = store.getState().auth;
+        expect(state.motoristaId).toBe('019d9be8-baa8-722c-b043-9152d7808e6d');
+        expect(state.municipioId).toBe('f0928929-373e-4614-9273-df3092039402');
+      });
     });
   });
 

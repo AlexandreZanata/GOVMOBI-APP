@@ -1,11 +1,15 @@
 /**
  * @fileoverview Root navigator — switches between Auth, Passageiro, Motorista,
- * and legacy Main flows based on Redux auth state and user role (papeis).
+ * and legacy Main flows based on Redux auth state and user role.
  *
  * Role routing after login:
- *   - papeis includes "MOTORISTA" → MotoristaScreen
+ *   - motoristaId is non-null → MotoristaNavigator (driver experience)
  *   - papeis includes "USUARIO" or "ADMIN" → PassageiroNavigator
  *   - fallback → PassageiroNavigator (safe default)
+ *
+ * The `motoristaId` field from GET /auth/me is the authoritative signal for
+ * the driver experience. A user can have papeis: ["USUARIO"] but still be a
+ * driver if they have a linked Motorista record (motoristaId present).
  */
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -19,16 +23,22 @@ import {useAppSelector} from '../store';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /**
- * Derives the correct post-login destination from the user's `papeis` array.
+ * Derives the correct post-login destination from auth state.
  *
- * @param papeis - Array of role strings from the auth state user object.
+ * The `motoristaId` field is the authoritative driver signal — it is present
+ * in GET /auth/me only for users with a linked Motorista record, regardless
+ * of their `papeis` array.
+ *
+ * @param motoristaId - Driver record UUID from auth/me, or null.
+ * @param papeis - Array of role strings from the auth state.
  * @returns 'Motorista' | 'Passageiro' | 'Main'
  */
 const resolveRoleRoute = (
+  motoristaId: string | null | undefined,
   papeis: string[] | undefined,
 ): 'Motorista' | 'Passageiro' | 'Main' => {
+  if (motoristaId) return 'Motorista';
   if (!papeis || papeis.length === 0) return 'Passageiro';
-  if (papeis.includes('MOTORISTA')) return 'Motorista';
   if (papeis.includes('USUARIO') || papeis.includes('ADMIN')) return 'Passageiro';
   return 'Passageiro';
 };
@@ -44,13 +54,10 @@ const resolveRoleRoute = (
  */
 export const RootNavigator = (): React.JSX.Element => {
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
-  // papeis is stored on the raw user object from the server response.
-  // The User model uses `role` (mapped), but we need the raw papeis for routing.
-  // We store them in auth state via the MeResponse which includes papeis.
-  const userRole = useAppSelector(state => state.auth.user?.role);
   const papeis = useAppSelector(state => state.auth.papeis);
+  const motoristaId = useAppSelector(state => state.auth.motoristaId);
 
-  const roleRoute = resolveRoleRoute(papeis);
+  const roleRoute = resolveRoleRoute(motoristaId, papeis);
 
   return (
     <Stack.Navigator

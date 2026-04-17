@@ -163,10 +163,11 @@ export class AuthFacadeMock implements IAuthFacade {
 
   /**
    * Returns the authenticated mock user profile (mirrors GET /auth/me).
+   * Returns the raw MeResponse shape including driver fields when applicable.
    *
-   * @returns Authenticated user or UNAUTHORIZED error when no session exists.
+   * @returns Raw MeResponse or UNAUTHORIZED error when no session exists.
    */
-  public async getMe(): Promise<Result<ModelUser, FacadeError>> {
+  public async getMe(): Promise<Result<import('../AuthFacade').MeResponse, FacadeError>> {
     await delay(120);
     const state = await loadMockState();
     const user =
@@ -174,7 +175,12 @@ export class AuthFacadeMock implements IAuthFacade {
     if (!user) {
       return fail(toError('Not authenticated', 'UNAUTHORIZED'));
     }
-    return ok(this.mapUser(user));
+    return ok({
+      id: user.id,
+      email: user.email,
+      nome: user.fullName,
+      papeis: [user.role === 'ADMIN' ? 'ADMIN' : 'USUARIO'],
+    });
   }
 
   /**
