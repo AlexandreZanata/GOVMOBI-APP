@@ -387,6 +387,37 @@ export const createPassageiroStyles = () =>
       letterSpacing: 0.3,
     },
 
+    // ── Active ride banner (replaces bottom sheet when ride is in progress) ──
+    activeBanner: {
+      borderTopWidth: 3,
+      borderTopColor: C.interactive,
+    },
+    activeBannerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      gap: 12,
+    },
+    activeBannerDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    activeBannerText: {
+      flex: 1,
+    },
+    activeBannerTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: C.textDark,
+    },
+    activeBannerSubtitle: {
+      fontSize: 12,
+      color: C.textMuted,
+      marginTop: 2,
+    },
+
     // ── Layer 5: Search results overlay ─────────────────────────────────────
     searchOverlay: {
       position: 'absolute',

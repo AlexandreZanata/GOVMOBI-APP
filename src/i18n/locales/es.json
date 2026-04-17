@@ -262,6 +262,14 @@
     "subtitle": "Esperando viajes disponibles."
   },
   "corridas": {
+    "history": {
+      "title": "Historial de Viajes",
+      "subtitle": "Tus viajes anteriores",
+      "empty": {
+        "title": "Sin viajes aún",
+        "subtitle": "Tus viajes finalizados aparecerán aquí."
+      }
+    },
     "list": {
       "title": "Viajes",
       "viewActive": "Ver viaje activo",

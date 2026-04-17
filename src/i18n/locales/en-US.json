@@ -266,6 +266,14 @@
     "subtitle": "Waiting for available rides."
   },
   "corridas": {
+    "history": {
+      "title": "Ride History",
+      "subtitle": "Your previous rides",
+      "empty": {
+        "title": "No rides yet",
+        "subtitle": "Your completed rides will appear here."
+      }
+    },
     "list": {
       "title": "Rides",
       "viewActive": "View active ride",

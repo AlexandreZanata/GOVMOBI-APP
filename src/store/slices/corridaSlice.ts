@@ -49,6 +49,8 @@ export interface CorridaState {
   isLoadingMensagens: boolean;
   /** Last driver telemetry snapshot received over WebSocket. */
   posicaoMotoristaAtual: PosicaoMotorista | null;
+  /** Completed/terminal rides for the history tab. */
+  corridaHistory: Corrida[];
 }
 
 const initialState: CorridaState = {
@@ -64,6 +66,7 @@ const initialState: CorridaState = {
   mensagens: [],
   isLoadingMensagens: false,
   posicaoMotoristaAtual: null,
+  corridaHistory: [],
 };
 
 /**
@@ -189,6 +192,17 @@ const corridaSlice = createSlice({
     },
 
     /**
+     * Appends a terminal corrida to the ride history list.
+     * Avoids duplicates by checking the id.
+     */
+    addToHistory(state, action: PayloadAction<Corrida>) {
+      const exists = state.corridaHistory.some(r => r.id === action.payload.id);
+      if (!exists) {
+        state.corridaHistory.unshift(action.payload);
+      }
+    },
+
+    /**
      * Resets all corrida state (on logout or after ride completes).
      */
     resetCorrida() {
@@ -213,6 +227,7 @@ export const {
   addMensagem,
   setIsLoadingMensagens,
   setPosicaoMotoristaAtual,
+  addToHistory,
   resetCorrida,
 } = corridaSlice.actions;
 

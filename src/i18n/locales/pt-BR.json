@@ -292,6 +292,14 @@
     "subtitle": "Aguarde corridas disponíveis."
   },
   "corridas": {
+    "history": {
+      "title": "Histórico de Corridas",
+      "subtitle": "Suas corridas anteriores",
+      "empty": {
+        "title": "Nenhuma corrida ainda",
+        "subtitle": "Suas corridas finalizadas aparecerão aqui."
+      }
+    },
     "list": {
       "title": "Corridas",
       "viewActive": "Ver corrida ativa",

@@ -1,19 +1,13 @@
 /**
  * @fileoverview PassageiroCorridasNavigator — stack navigator for the USUARIO corridas tab.
  *
- * Scoped to the 5 endpoints available to USUARIO:
- *   POST /corridas                — via SolicitarCorridaModal on the dashboard
- *   POST /corridas/:id/cancelar   — action within AcompanharCorrida
- *   GET  /corridas/:id            — CorridaDetalhe screen
- *   GET  /corridas/:id/status     — polled by AcompanharCorrida
- *   GET  /corridas/:id/mensagens  — rendered within AcompanharCorrida
- *
- * Note: SolicitarCorrida is now a modal on PassageiroScreen (dashboard),
- * not a separate screen in this navigator.
+ * The Corridas tab now shows ride HISTORY only (terminal rides).
+ * Active ride tracking is handled on the Home tab via the ActiveRideBanner
+ * and AcompanharCorridaScreen, which is pushed from the PassageiroHome tab.
  *
  * Screens:
- *   PassageiroCorridasList — active corrida card or empty state
- *   AcompanharCorrida      — real-time tracking + messages + cancel
+ *   PassageiroCorridasList — ride history (FINALIZADA, CANCELADA, RECUSADA)
+ *   AcompanharCorrida      — real-time tracking (also reachable from Home tab)
  *   CorridaDetalhe         — full ride details (read-only)
  */
 import React from 'react';
@@ -28,9 +22,9 @@ import type {PassageiroCorridasStackParamList} from './types';
 const Stack = createNativeStackNavigator<PassageiroCorridasStackParamList>();
 
 /**
- * Stack navigator for the USUARIO corridas experience.
- * Does not include MOTORISTA-only screens.
- * Ride request is handled via SolicitarCorridaModal on the dashboard.
+ * Stack navigator for the USUARIO corridas tab.
+ * Root screen is the ride history list.
+ * AcompanharCorrida is also reachable from the Home tab banner.
  *
  * @returns JSX element for the PassageiroCorridasNavigator.
  */
@@ -41,24 +35,25 @@ export const PassageiroCorridasNavigator = (): React.JSX.Element => {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: {backgroundColor: theme.colors.primary},
-        headerTintColor: theme.colors.textInverse,
+        headerStyle: {backgroundColor: theme.design.navy800},
+        headerTintColor: theme.design.textOnDark,
         headerTitleStyle: theme.typography.scale.headingMd,
+        headerShown: false,
       }}>
       <Stack.Screen
         component={PassageiroCorridasListScreen}
         name="PassageiroCorridasList"
-        options={{title: t('corridas.list.title')}}
+        options={{title: t('corridas.history.title')}}
       />
       <Stack.Screen
         component={AcompanharCorridaScreen}
         name="AcompanharCorrida"
-        options={{title: t('corridas.acompanhar.title')}}
+        options={{title: t('corridas.acompanhar.title'), headerShown: true}}
       />
       <Stack.Screen
         component={CorridaDetalheScreen}
         name="CorridaDetalhe"
-        options={{title: t('corridas.detail.title')}}
+        options={{title: t('corridas.detail.title'), headerShown: true}}
       />
     </Stack.Navigator>
   );

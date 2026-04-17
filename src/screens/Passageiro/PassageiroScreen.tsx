@@ -36,6 +36,7 @@ import {
 } from './PassageiroScreen.styles';
 import type {SearchResult} from '../../types/corrida';
 import {ENV} from '../../config/env';
+import {useAppSelector} from '../../store';
 
 // Navigation type: PassageiroHome tab → PassageiroCorridas tab → AcompanharCorrida screen
 type PassageiroTabParamList = {
@@ -469,18 +470,19 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const ctaDisabled = isLocating || !hasDestination;
   const sheetPaddingBottom = 14;
 
-  // Navigate to AcompanharCorrida after successful ride request
+  // Active ride from Redux — non-terminal rides show the tracking banner
+  const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
+  const TERMINAL = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
+  const hasActiveRide =
+    activeCorrida !== null && !TERMINAL.has(activeCorrida.status);
+
+  // After a successful ride request, stay on Home tab — the banner appears here
   const handleRequestSuccess = useCallback(
-    (corridaId: string): void => {
+    (_corridaId: string): void => {
       onCloseRequestModal();
-      // Switch to the Corridas tab, then push AcompanharCorrida
-      navigation.navigate('PassageiroCorridas');
-      // Small delay to let the tab switch complete before pushing
-      setTimeout(() => {
-        navigation.navigate('AcompanharCorrida', {corridaId});
-      }, 100);
+      // No navigation needed — the ActiveRideBanner renders on this screen
     },
-    [navigation, onCloseRequestModal],
+    [onCloseRequestModal],
   );
 
   return (
@@ -639,105 +641,140 @@ export const PassageiroScreen = (): React.JSX.Element => {
         </Animated.View>
       )}
 
-      {/* Layer 4: Bottom sheet — white */}
-      <Animated.View
-        onLayout={onSheetLayout}
-        style={[
-          styles.bottomSheet,
-          {
-            paddingBottom: sheetPaddingBottom,
-            transform: [{translateY: sheetTranslate}],
-          },
-        ]}
-        testID="bottom-sheet">
-        {/* Drag handle */}
-        <View style={styles.dragHandle} />
-
-        {/* Header */}
-        <View style={styles.bottomSheetHeader}>
-          <View>
-            <Text style={styles.bottomSheetTitle}>
-              {t('passageiro.bottomSheet.title')}
-            </Text>
-            <Text style={styles.bottomSheetSubtitle}>
-              {t('passageiro.searchBar.placeholder')}
-            </Text>
-          </View>
-          <MaterialIcons name="expand-more" size={20} color={C.textMuted} />
-        </View>
-
-        {/* Destination detail row */}
-        <View style={styles.destinoRow}>
-          <View style={styles.destinoIconWrapper}>
-            <MaterialIcons name="location-on" size={20} color={C.interactive} />
-          </View>
-          <View style={styles.destinoTextBlock}>
-            <Text style={styles.destinoLabel}>
-              {t('passageiro.bottomSheet.destinoLabel')}
-            </Text>
-            <Text
-              style={
-                hasDestination ? styles.destinoValue : styles.destinoPlaceholder
-              }
-              testID="destino-value">
-              {selectedDestinoLabel ??
-                t('passageiro.bottomSheet.destinoPlaceholder')}
-            </Text>
-          </View>
-        </View>
-
-        {canPreviewRoute && (
-          <View style={styles.routeStatusWrap} testID="route-status">
-            {isRouting ? (
-              <View style={styles.routeLoadingRow}>
-                <ActivityIndicator
-                  color={C.interactive}
-                  size="small"
-                  testID="route-loading"
-                />
-                <Text style={styles.routeStatusText}>
-                  {t('pesquisa.route.loading')}
-                </Text>
-              </View>
-            ) : routeSummary ? (
-              <Text style={styles.routeSummaryText} testID="route-summary">
-                {routeSummary}
-              </Text>
-            ) : routeFeedback ? (
-              <Text style={styles.routeErrorText} testID="route-error">
-                {routeFeedback}
-              </Text>
-            ) : (
-              <Text style={styles.routeStatusText} testID="route-empty">
-                {t('pesquisa.route.empty')}
-              </Text>
-            )}
-          </View>
-        )}
-
-        {/* CTA */}
-        <Pressable
-          accessibilityLabel={
-            hasDestination
-              ? `${t('passageiro.bottomSheet.cta')} ${selectedDestinoLabel ?? ''}`
-              : t('passageiro.bottomSheet.cta')
-          }
-          accessibilityRole="button"
-          disabled={ctaDisabled}
-          onPress={onOpenRequestModal}
-          onPressIn={() => setCtaPressed(true)}
-          onPressOut={() => setCtaPressed(false)}
+      {/* Layer 4: Bottom sheet — white (hidden when active ride is in progress) */}
+      {!hasActiveRide && (
+        <Animated.View
+          onLayout={onSheetLayout}
           style={[
-            styles.ctaButton,
-            ctaPressed && styles.ctaButtonPressed,
-            ctaDisabled && styles.ctaButtonDisabled,
+            styles.bottomSheet,
+            {
+              paddingBottom: sheetPaddingBottom,
+              transform: [{translateY: sheetTranslate}],
+            },
           ]}
-          testID="cta-solicitar">
-          <Text style={styles.ctaButtonText}>
-            {t('passageiro.bottomSheet.cta')}
-          </Text>
+          testID="bottom-sheet">
+          {/* Drag handle */}
+          <View style={styles.dragHandle} />
+
+          {/* Header */}
+          <View style={styles.bottomSheetHeader}>
+            <View>
+              <Text style={styles.bottomSheetTitle}>
+                {t('passageiro.bottomSheet.title')}
+              </Text>
+              <Text style={styles.bottomSheetSubtitle}>
+                {t('passageiro.searchBar.placeholder')}
+              </Text>
+            </View>
+            <MaterialIcons name="expand-more" size={20} color={C.textMuted} />
+          </View>
+
+          {/* Destination detail row */}
+          <View style={styles.destinoRow}>
+            <View style={styles.destinoIconWrapper}>
+              <MaterialIcons name="location-on" size={20} color={C.interactive} />
+            </View>
+            <View style={styles.destinoTextBlock}>
+              <Text style={styles.destinoLabel}>
+                {t('passageiro.bottomSheet.destinoLabel')}
+              </Text>
+              <Text
+                style={
+                  hasDestination ? styles.destinoValue : styles.destinoPlaceholder
+                }
+                testID="destino-value">
+                {selectedDestinoLabel ??
+                  t('passageiro.bottomSheet.destinoPlaceholder')}
+              </Text>
+            </View>
+          </View>
+
+          {canPreviewRoute && (
+            <View style={styles.routeStatusWrap} testID="route-status">
+              {isRouting ? (
+                <View style={styles.routeLoadingRow}>
+                  <ActivityIndicator
+                    color={C.interactive}
+                    size="small"
+                    testID="route-loading"
+                  />
+                  <Text style={styles.routeStatusText}>
+                    {t('pesquisa.route.loading')}
+                  </Text>
+                </View>
+              ) : routeSummary ? (
+                <Text style={styles.routeSummaryText} testID="route-summary">
+                  {routeSummary}
+                </Text>
+              ) : routeFeedback ? (
+                <Text style={styles.routeErrorText} testID="route-error">
+                  {routeFeedback}
+                </Text>
+              ) : (
+                <Text style={styles.routeStatusText} testID="route-empty">
+                  {t('pesquisa.route.empty')}
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* CTA */}
+          <Pressable
+            accessibilityLabel={
+              hasDestination
+                ? `${t('passageiro.bottomSheet.cta')} ${selectedDestinoLabel ?? ''}`
+                : t('passageiro.bottomSheet.cta')
+            }
+            accessibilityRole="button"
+            disabled={ctaDisabled}
+            onPress={onOpenRequestModal}
+            onPressIn={() => setCtaPressed(true)}
+            onPressOut={() => setCtaPressed(false)}
+            style={[
+              styles.ctaButton,
+              ctaPressed && styles.ctaButtonPressed,
+              ctaDisabled && styles.ctaButtonDisabled,
+            ]}
+            testID="cta-solicitar">
+            <Text style={styles.ctaButtonText}>
+              {t('passageiro.bottomSheet.cta')}
+            </Text>
+          </Pressable>
+        </Animated.View>
+      )}
+
+      {/* Active ride banner — replaces bottom sheet when a ride is in progress */}
+      {hasActiveRide && activeCorrida && (
+        <Pressable
+          accessibilityLabel={t('corridas.acompanhar.title')}
+          accessibilityRole="button"
+          onPress={() => {
+            navigation.navigate('PassageiroCorridas');
+            setTimeout(() => {
+              navigation.navigate('AcompanharCorrida', {corridaId: activeCorrida.id});
+            }, 80);
+          }}
+          style={[
+            styles.bottomSheet,
+            styles.activeBanner,
+            {paddingBottom: sheetPaddingBottom},
+          ]}
+          testID="active-ride-banner">
+          <View style={styles.dragHandle} />
+          <View style={styles.activeBannerRow}>
+            <View style={[styles.activeBannerDot, {backgroundColor: C.interactive}]} />
+            <View style={styles.activeBannerText}>
+              <Text style={styles.activeBannerTitle}>
+                {t(`corridas.status.${activeCorrida.status}`)}
+              </Text>
+              <Text style={styles.activeBannerSubtitle} numberOfLines={1}>
+                {activeCorrida.motivoServico}
+              </Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={20} color={C.textMuted} />
+          </View>
         </Pressable>
-      </Animated.View>
+      )}
 
       {/* Ride request modal — slides up from bottom */}
       <SolicitarCorridaModal
