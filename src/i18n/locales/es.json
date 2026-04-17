@@ -260,7 +260,40 @@
   },
   "motorista": {
     "title": "Área del Conductor",
-    "subtitle": "Esperando viajes disponibles."
+    "subtitle": "Esperando viajes disponibles.",
+    "tabs": {
+      "home": "Inicio",
+      "corridas": "Viajes",
+      "notificacoes": "Alertas",
+      "perfil": "Perfil"
+    },
+    "map": {
+      "label": "Mapa",
+      "driverLocation": "Mi ubicación"
+    },
+    "status": {
+      "disponivel": "Disponible",
+      "emRota": "En Ruta"
+    },
+    "idle": {
+      "title": "Esperando Viajes",
+      "subtitle": "Recibirás notificaciones cuando haya viajes disponibles."
+    },
+    "activeRide": {
+      "title": "Viaje Activo"
+    },
+    "actions": {
+      "chegar": "Llegué al Punto",
+      "chegarSuccess": "Llegada confirmada en el punto de recogida."
+    },
+    "corridas": {
+      "title": "Mis Viajes",
+      "subtitle": "Viajes disponibles e historial",
+      "activeRide": "Viaje Activo",
+      "available": "Viajes Disponibles",
+      "noAvailable": "No hay viajes disponibles en este momento.",
+      "acceptRide": "Aceptar viaje"
+    }
   },
   "corridas": {
     "history": {

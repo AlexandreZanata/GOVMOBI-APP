@@ -105,6 +105,33 @@ export type CorridasStackParamList = {
 };
 
 // ---------------------------------------------------------------------------
+// Motorista Tab
+// ---------------------------------------------------------------------------
+
+export type MotoristaTabParamList = {
+  MotoristaHome: undefined;
+  MotoristaCorridas: undefined;
+  MotoristaNotificacoes: undefined;
+  MotoristaProfile: undefined;
+};
+
+// ---------------------------------------------------------------------------
+// Motorista Corridas Stack — full driver lifecycle
+// GET /corridas/contexto, GET /corridas, POST /corridas/:id/aceitar,
+// POST /corridas/:id/recusar, POST /corridas/:id/iniciar-deslocamento,
+// POST /corridas/:id/chegar, POST /corridas/:id/confirmar-embarque,
+// POST /corridas/:id/finalizar, POST /corridas/:id/cancelar,
+// GET /corridas/:id, GET /corridas/:id/status, GET /corridas/:id/mensagens
+// ---------------------------------------------------------------------------
+
+export type MotoristaCorridasStackParamList = {
+  MotoristaCorridasList: undefined;
+  MotoristaCorridaDetalhe: {corridaId: string};
+  MotoristaCorridaAction: {corridaId: string};
+  CorridaMensagens: {corridaId: string};
+};
+
+// ---------------------------------------------------------------------------
 // Root Stack
 // ---------------------------------------------------------------------------
 
@@ -112,5 +139,5 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
   Passageiro: NavigatorScreenParams<PassageiroStackParamList>;
-  Motorista: undefined;
+  Motorista: NavigatorScreenParams<MotoristaTabParamList>;
 };

@@ -13,7 +13,7 @@ import {type RootStackParamList} from './types';
 import {AuthNavigator} from './AuthNavigator';
 import {MainTabNavigator} from './MainTabNavigator';
 import {PassageiroNavigator} from './PassageiroNavigator';
-import {MotoristaScreen} from '@screens/Motorista/MotoristaScreen';
+import {MotoristaNavigator} from './MotoristaNavigator';
 import {useAppSelector} from '../store';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -62,7 +62,7 @@ export const RootNavigator = (): React.JSX.Element => {
       {!isAuthenticated ? (
         <Stack.Screen component={AuthNavigator} name="Auth" />
       ) : roleRoute === 'Motorista' ? (
-        <Stack.Screen component={MotoristaScreen} name="Motorista" />
+        <Stack.Screen component={MotoristaNavigator} name="Motorista" />
       ) : roleRoute === 'Passageiro' ? (
         <Stack.Screen component={PassageiroNavigator} name="Passageiro" />
       ) : (

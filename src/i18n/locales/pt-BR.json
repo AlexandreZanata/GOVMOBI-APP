@@ -290,7 +290,40 @@
   },
   "motorista": {
     "title": "Área do Motorista",
-    "subtitle": "Aguarde corridas disponíveis."
+    "subtitle": "Aguarde corridas disponíveis.",
+    "tabs": {
+      "home": "Início",
+      "corridas": "Corridas",
+      "notificacoes": "Alertas",
+      "perfil": "Perfil"
+    },
+    "map": {
+      "label": "Mapa",
+      "driverLocation": "Minha localização"
+    },
+    "status": {
+      "disponivel": "Disponível",
+      "emRota": "Em Rota"
+    },
+    "idle": {
+      "title": "Aguardando Corridas",
+      "subtitle": "Você receberá notificações quando houver corridas disponíveis."
+    },
+    "activeRide": {
+      "title": "Corrida Ativa"
+    },
+    "actions": {
+      "chegar": "Cheguei ao Local",
+      "chegarSuccess": "Chegada confirmada no ponto de embarque."
+    },
+    "corridas": {
+      "title": "Minhas Corridas",
+      "subtitle": "Corridas disponíveis e histórico",
+      "activeRide": "Corrida Ativa",
+      "available": "Corridas Disponíveis",
+      "noAvailable": "Nenhuma corrida disponível no momento.",
+      "acceptRide": "Aceitar corrida"
+    }
   },
   "corridas": {
     "history": {

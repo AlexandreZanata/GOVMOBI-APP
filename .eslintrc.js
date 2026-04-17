@@ -23,19 +23,12 @@ module.exports = {
       },
     },
     {
-      files: ['src/components/atoms/**/*.tsx'],
-      rules: {
-        'react-native/no-unused-styles': 'off',
-      },
-    },
-    {
-      files: ['src/components/molecules/**/*.tsx'],
-      rules: {
-        'react-native/no-unused-styles': 'off',
-      },
-    },
-    {
-      files: ['src/components/organisms/**/*.tsx'],
+      files: [
+        'src/components/atoms/**/*.tsx',
+        'src/components/molecules/**/*.tsx',
+        'src/components/organisms/**/*.tsx',
+        'src/navigation/**/*.tsx',
+      ],
       rules: {
         'react-native/no-unused-styles': 'off',
       },

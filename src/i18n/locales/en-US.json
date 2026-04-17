@@ -264,7 +264,40 @@
   },
   "motorista": {
     "title": "Driver Area",
-    "subtitle": "Waiting for available rides."
+    "subtitle": "Waiting for available rides.",
+    "tabs": {
+      "home": "Home",
+      "corridas": "Rides",
+      "notificacoes": "Alerts",
+      "perfil": "Profile"
+    },
+    "map": {
+      "label": "Map",
+      "driverLocation": "My location"
+    },
+    "status": {
+      "disponivel": "Available",
+      "emRota": "On Route"
+    },
+    "idle": {
+      "title": "Waiting for Rides",
+      "subtitle": "You will be notified when rides are available."
+    },
+    "activeRide": {
+      "title": "Active Ride"
+    },
+    "actions": {
+      "chegar": "Arrived at Pickup",
+      "chegarSuccess": "Arrival confirmed at pickup point."
+    },
+    "corridas": {
+      "title": "My Rides",
+      "subtitle": "Available rides and history",
+      "activeRide": "Active Ride",
+      "available": "Available Rides",
+      "noAvailable": "No rides available at the moment.",
+      "acceptRide": "Accept ride"
+    }
   },
   "corridas": {
     "history": {
