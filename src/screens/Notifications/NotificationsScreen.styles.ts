@@ -1,5 +1,8 @@
 import {StyleSheet} from 'react-native';
 import {type Theme} from '../../theme';
+import {createHistoricoStyles} from '@screens/Corridas/HistoricoCorridas.styles';
+
+export {createHistoricoStyles};
 
 // eslint-disable-next-line react-native/no-unused-styles
 export const createNotificationsStyles = (theme: Theme) =>
@@ -33,9 +36,9 @@ export const createNotificationsStyles = (theme: Theme) =>
       alignItems: 'center',
       backgroundColor: theme.colors.primary,
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingHorizontal: theme.spacing.lg,
-      paddingVertical: theme.spacing.md,
+      justifyContent: 'center',
+      paddingHorizontal: theme.spacing[5],
+      paddingVertical: theme.spacing[4],
     },
     contentArea: {
       backgroundColor: theme.colors.background,

@@ -18,7 +18,7 @@ import {NotificationItem} from '@components/molecules';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {markAllAsRead, markAsRead} from '@store/slices/notificationsSlice';
 import {type Notification} from '../../models';
-import {createNotificationsStyles} from './NotificationsScreen.styles';
+import {createNotificationsStyles, createHistoricoStyles} from './NotificationsScreen.styles';
 
 /** Formats a notification timestamp as a relative label. */
 const formatTimeLabel = (createdAt: string): string => {
@@ -38,10 +38,11 @@ export const NotificationsScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const styles = useMemo(() => createNotificationsStyles(theme), [theme]);
+  const hs = useMemo(() => createHistoricoStyles(theme), [theme]);
   const dispatch = useAppDispatch();
 
   const notifications = useAppSelector(state => state.notifications.notifications);
-  const unreadCount = useAppSelector(state => state.notifications.unreadCount);
+  const _unreadCount = useAppSelector(state => state.notifications.unreadCount);
 
   const isLoading = false;
   const isRefreshing = false;
@@ -52,7 +53,7 @@ export const NotificationsScreen = (): React.JSX.Element => {
     [dispatch],
   );
 
-  const handleMarkAllAsRead = useCallback(() => {
+  const _handleMarkAllAsRead = useCallback(() => {
     dispatch(markAllAsRead());
   }, [dispatch]);
 
@@ -87,23 +88,11 @@ export const NotificationsScreen = (): React.JSX.Element => {
 
   return (
     <SafeAreaView edges={['top']} style={styles.background}>
-      {/* Inline title row — no AppHeader */}
+      {/* Inline title row — same pattern as My Rides */}
       <View style={styles.titleRow}>
-        <Text variant="heading" color="textInverse">
+        <Text style={hs.headerTitle}>
           {t('navigation.titles.notifications')}
         </Text>
-        {unreadCount > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('notifications.markAllRead')}
-            onPress={handleMarkAllAsRead}
-            style={styles.markAllButton}
-            testID="mark-all-read">
-            <Text variant="caption" color="accent">
-              {t('notifications.markAllRead')}
-            </Text>
-          </Pressable>
-        ) : null}
       </View>
 
       {isLoading ? (

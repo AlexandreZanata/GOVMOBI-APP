@@ -117,6 +117,7 @@ export const createHistoricoStyles = (theme: Theme) => {
       backgroundColor: design.navy800,
       paddingHorizontal: spacing[5],
       paddingVertical: spacing[4],
+      alignItems: 'center',
     },
     contentArea: {
       flex: 1,
