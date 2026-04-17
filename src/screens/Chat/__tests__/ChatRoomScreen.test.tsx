@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  act,
   fireEvent,
   render,
   screen,
@@ -20,7 +19,13 @@ import chatReducer from '../../../store/slices/chatSlice';
 import callsReducer from '../../../store/slices/callsSlice';
 import notificationsReducer from '../../../store/slices/notificationsSlice';
 import uiReducer from '../../../store/slices/uiSlice';
-import {UserRole, UserStatus} from '@models/User';
+import {
+  MessageStatus,
+  MessageType,
+  UserRole,
+  UserStatus,
+  type Message,
+} from '../../../models';
 import {type ChatStackParamList} from '@navigation/types';
 
 // ---------------------------------------------------------------------------
@@ -60,20 +65,39 @@ jest.mock('@expo/vector-icons', () => ({
 }));
 
 // Mock facades — prevents real HTTP calls that would hang the test suite
+const mockGetMessages = jest.fn();
+const mockSendMessage = jest.fn();
+const mockChatFacade = {
+  getMessages: mockGetMessages,
+  sendMessage: mockSendMessage,
+};
+
 jest.mock('../../../services/facades', () => ({
   useFacades: () => ({
-    chatFacade: {
-      getMessages: jest.fn().mockResolvedValue({data: [], error: null}),
-      sendMessage: jest.fn().mockResolvedValue({data: null, error: null}),
-    },
+    chatFacade: mockChatFacade,
   }),
 }));
 
-// Prevent the 800ms send-status setTimeout from keeping the worker alive
-jest.spyOn(global, 'setTimeout').mockImplementation(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (fn: any) => { if (typeof fn === 'function') fn(); return 0 as unknown as ReturnType<typeof setTimeout>; },
-);
+const messageFixture = (overrides: Partial<Message> = {}): Message => ({
+  id: 'msg-001',
+  conversationId: 'conv-test',
+  senderId: 'user-002',
+  type: MessageType.TEXT,
+  status: MessageStatus.SENT,
+  content: 'Mensagem de teste',
+  createdAt: '2024-02-01T10:00:00.000Z',
+  updatedAt: '2024-02-01T10:00:00.000Z',
+  ...overrides,
+});
+
+const mockChatListSuccess = (
+  messages: Message[] = [messageFixture()],
+): void => {
+  mockGetMessages.mockResolvedValueOnce({
+    data: messages,
+    error: null,
+  });
+};
 
 // ---------------------------------------------------------------------------
 // Test navigator — wraps ChatRoomScreen with required route params
@@ -159,6 +183,18 @@ const renderScreen = () => {
 // ---------------------------------------------------------------------------
 
 describe('ChatRoomScreen', () => {
+  beforeEach(() => {
+    mockGetMessages.mockReset();
+    mockSendMessage.mockReset();
+    mockGetMessages.mockImplementation(
+      () =>
+        new Promise<{data: Message[]; error: null}>(() => {
+          // Keeps loading-state tests deterministic and avoids async updates
+        }),
+    );
+    mockSendMessage.mockResolvedValue({data: null, error: null});
+  });
+
   describe('loading state', () => {
     it('renders skeleton while messages are loading', () => {
       renderScreen();
@@ -178,6 +214,7 @@ describe('ChatRoomScreen', () => {
 
   describe('loaded state', () => {
     it('renders the message list after data loads', async () => {
+      mockChatListSuccess();
       renderScreen();
       await waitFor(
         () => expect(screen.getByTestId('message-list')).toBeTruthy(),
@@ -186,6 +223,7 @@ describe('ChatRoomScreen', () => {
     });
 
     it('renders mock messages in the list', async () => {
+      mockChatListSuccess();
       renderScreen();
       await waitFor(
         () => expect(screen.getByTestId('message-0')).toBeTruthy(),
@@ -194,6 +232,7 @@ describe('ChatRoomScreen', () => {
     });
 
     it('renders the conversation title in the header', async () => {
+      mockChatListSuccess();
       renderScreen();
       await waitFor(() =>
         expect(screen.getByText('Carlos Mendes')).toBeTruthy(),
@@ -248,9 +287,6 @@ describe('ChatRoomScreen', () => {
       const initialMessages =
         testStore.getState().chat.messages['conv-test'] ?? [];
       const initialCount = initialMessages.length;
-      await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      });
       expect(
         (testStore.getState().chat.messages['conv-test'] ?? []).length,
       ).toBe(initialCount);

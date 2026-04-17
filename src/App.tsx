@@ -1,7 +1,7 @@
 /**
  * @fileoverview Main application assembly module.
  */
-import React, {useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Provider} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
@@ -12,7 +12,10 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {StatusBar} from 'expo-status-bar';
 import {ThemeProvider} from './theme';
 import {designColors} from './theme';
-import {store, persistor, useAppSelector} from './store';
+import {store, persistor, useAppSelector, useAppDispatch} from './store';
+import {tokenRefreshed, logout} from '@store/slices/authSlice';
+import {AuthFacadeImpl} from '@services/facades';
+import {ENV} from './config/env';
 import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
 import {GlobalToast, NetworkBanner} from '@components/organisms';
@@ -47,13 +50,32 @@ AppStartupEffects.displayName = 'AppStartupEffects';
 const AppShell = (): React.JSX.Element => {
   const themeMode = useAppSelector(state => state.ui.themeMode);
   const token = useAppSelector(state => state.auth.token);
+  const dispatch = useAppDispatch();
 
   // Token getter for facades that need authenticated requests
   const getToken = useMemo(() => () => token, [token]);
 
+  /**
+   * Token refresher for the realtime transport's 401 recovery cycle.
+   * Per spec: refresh JWT → reconnect socket → re-emit assinar-corrida.
+   * The socket client calls this when the server rejects with 401.
+   * On success the new token is dispatched to Redux, which triggers
+   * useRealtimeSession to reconnect with the fresh credentials.
+   */
+  const refreshToken = useCallback(async (): Promise<string | null> => {
+    const authFacade = new AuthFacadeImpl({apiBaseUrl: ENV.apiUrl});
+    const result = await authFacade.refreshToken();
+    if (result.error || !result.data) {
+      dispatch(logout());
+      return null;
+    }
+    dispatch(tokenRefreshed(result.data.accessToken));
+    return result.data.accessToken;
+  }, [dispatch]);
+
   return (
     <ThemeProvider mode={themeMode}>
-      <FacadeProvider getToken={getToken}>
+      <FacadeProvider getToken={getToken} refreshToken={refreshToken}>
         <AppStartupEffects />
         {/*
          * Sets the Android system navigation bar (bottom) to navy800 — matching

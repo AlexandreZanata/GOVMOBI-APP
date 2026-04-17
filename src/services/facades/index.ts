@@ -42,11 +42,18 @@ export interface FacadeProviderProps {
   facades?: Partial<Facades>;
   /** Optional token getter — if omitted, facades read from Redux via store import. */
   getToken?: () => string | null;
+  /**
+   * Optional async token refresher for the realtime transport's 401 recovery.
+   * Called by the WebSocket client when the server rejects the connection with 401.
+   * Must return a fresh access token (already persisted to Redux), or null on failure.
+   */
+  refreshToken?: () => Promise<string | null>;
 }
 
 const createDefaultFacades = (
   config?: FacadeConfig,
   getToken?: () => string | null,
+  refreshToken?: () => Promise<string | null>,
 ): Facades => {
   const resolvedConfig: FacadeConfig = {
     ...config,
@@ -110,6 +117,8 @@ const createDefaultFacades = (
     cartografiaFacade: new CartografiaFacadeImpl({...resolvedConfig, getToken}),
     realtimeFacade: new RealtimeFacadeImpl({
       mockMode: resolvedConfig.mockMode,
+      wsBaseUrl: ENV.wsUrl,
+      refreshToken,
     }),
   };
 };
@@ -124,14 +133,15 @@ export const FacadeProvider = ({
   config,
   facades,
   getToken,
+  refreshToken,
 }: FacadeProviderProps): React.JSX.Element => {
   const resolvedFacades = useMemo(() => {
-    const defaults = createDefaultFacades(config, getToken);
+    const defaults = createDefaultFacades(config, getToken, refreshToken);
     return {
       ...defaults,
       ...facades,
     };
-  }, [config, facades, getToken]);
+  }, [config, facades, getToken, refreshToken]);
 
   return React.createElement(
     FacadeContext.Provider,

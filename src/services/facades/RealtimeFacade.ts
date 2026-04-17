@@ -5,6 +5,7 @@ import {ENV} from '../../config/env';
 import {
   DespachoWebSocketClient,
   type IDespachoWebSocketClient,
+  type TokenRefresher,
 } from '@services/websocket';
 import type {CorridaMensagem, CorridaStatus} from '@models/Corrida';
 import type {
@@ -20,6 +21,12 @@ interface RealtimeFacadeConfig {
   mockMode?: boolean;
   wsBaseUrl?: string;
   client?: IDespachoWebSocketClient;
+  /**
+   * Called when the server rejects the WebSocket handshake with 401.
+   * Must return a fresh access token, or null if the session cannot be recovered.
+   * Per spec: after refresh the client reconnects and re-emits `assinar-corrida`.
+   */
+  refreshToken?: TokenRefresher;
 }
 
 type RealtimeEventHandler = (event: RealtimeEvent) => void;
@@ -212,6 +219,13 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     this.client =
       config.client ??
       new DespachoWebSocketClient(config.wsBaseUrl ?? ENV.wsUrl);
+
+    // Wire the token refresher so the transport can recover from 401 errors
+    // without requiring the hook layer to intervene.
+    if (config.refreshToken) {
+      this.client.setTokenRefresher(config.refreshToken);
+    }
+
     this.registerTransportListeners();
   }
 

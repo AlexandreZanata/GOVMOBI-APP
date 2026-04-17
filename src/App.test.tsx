@@ -9,6 +9,11 @@ jest.mock('./hooks', () => ({
   useAuthSession: jest.fn(),
   useNetworkStatus: jest.fn(() => true),
   useNotifications: jest.fn(() => ({permissionGranted: false, fcmToken: null})),
+  useRealtimeSession: jest.fn(),
+}));
+
+jest.mock('./hooks/useCorridaContexto', () => ({
+  useCorridaContexto: jest.fn(),
 }));
 
 jest.mock('redux-persist/integration/react', () => ({

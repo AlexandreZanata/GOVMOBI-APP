@@ -1,5 +1,15 @@
 /**
  * @fileoverview Socket.io transport client for the GovMobile `/despacho` namespace.
+ *
+ * Authentication: per the realtime-integration-govmob-v1.2 spec, the JWT is
+ * passed in two ways simultaneously:
+ *   - `auth.token`  — raw token, no "Bearer " prefix (Socket.io auth handshake)
+ *   - `extraHeaders.Authorization` — "Bearer <token>" (HTTP upgrade header)
+ *
+ * Token rotation: when the server closes the connection with a 401 reason the
+ * client calls `onTokenExpired` (if registered), waits for a fresh token, then
+ * recreates the socket with the new credentials and re-subscribes to all
+ * previously joined ride rooms.
  */
 import {ENV} from '../../config/env';
 import {io, type Socket} from 'socket.io-client';
@@ -41,6 +51,12 @@ type EventHandler<T> = (payload: T) => void;
 export interface DespachoSocketFactory {
   (url: string, token: string): DespachoSocket;
 }
+
+/**
+ * Async callback invoked when the server rejects the connection with 401.
+ * Must return a fresh access token, or null if the session cannot be recovered.
+ */
+export type TokenRefresher = () => Promise<string | null>;
 
 /**
  * Transport contract consumed by the realtime facade.
@@ -163,6 +179,16 @@ export interface IDespachoWebSocketClient {
   onNovaCorridaDisponivel(
     handler: EventHandler<NovaCorridaDisponivelPayload>,
   ): () => void;
+
+  /**
+   * Registers a callback that is invoked when the server rejects the
+   * connection with a 401 Unauthorized reason. The callback must return a
+   * fresh access token (or null to abort). The client will then recreate the
+   * socket with the new token and re-subscribe to all active ride rooms.
+   *
+   * @param refresher - Async token refresh callback.
+   */
+  setTokenRefresher(refresher: TokenRefresher): void;
 }
 
 const createSocket: DespachoSocketFactory = (
@@ -171,7 +197,9 @@ const createSocket: DespachoSocketFactory = (
 ): DespachoSocket =>
   io(url, {
     transports: ['websocket'],
+    // Per spec: auth.token must NOT include "Bearer " prefix
     auth: {token},
+    // Per spec: HTTP upgrade header uses "Bearer " prefix
     extraHeaders: {
       Authorization: `Bearer ${token}`,
     },
@@ -181,6 +209,10 @@ const createSocket: DespachoSocketFactory = (
 
 /**
  * Singleton-like websocket client that encapsulates Socket.io specifics.
+ *
+ * Token rotation: when `connect_error` fires with a 401 description the client
+ * calls the registered `TokenRefresher`, then recreates the socket with the
+ * fresh credentials and re-subscribes to all previously joined ride rooms.
  */
 export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   private socket: DespachoSocket | null = null;
@@ -204,6 +236,11 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     EventHandler<NovaCorridaDisponivelPayload>
   >();
 
+  /** Registered token refresh callback — set by the facade after construction. */
+  private tokenRefresher: TokenRefresher | null = null;
+  /** Prevents concurrent 401-refresh cycles. */
+  private isHandling401 = false;
+
   /**
    * @param baseUrl - Base websocket URL.
    * @param socketFactory - Optional socket constructor for tests.
@@ -212,6 +249,11 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     private readonly baseUrl = ENV.wsUrl,
     private readonly socketFactory: DespachoSocketFactory = createSocket,
   ) {}
+
+  /** @inheritdoc */
+  public setTokenRefresher(refresher: TokenRefresher): void {
+    this.tokenRefresher = refresher;
+  }
 
   /** @inheritdoc */
   public connect(accessToken: string): void {
@@ -333,7 +375,10 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     }
 
     this.socket.on('connect', () => {
+      this.isHandling401 = false;
       this.connectedHandlers.forEach(handler => handler());
+      // Re-subscribe to all previously joined ride rooms after reconnect.
+      // Per spec: "Re-emit assinar-corrida to rejoin room state."
       this.subscribedCorridaIds.forEach(corridaId => {
         this.socket?.emit('assinar-corrida', {corridaId});
       });
@@ -344,6 +389,40 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     });
 
     this.socket.on('connect_error', error => {
+      // Detect 401 Unauthorized — Socket.io surfaces this as a connect_error
+      // with the message containing "401" or the description being "Unauthorized".
+      const is401 =
+        error.message?.includes('401') ||
+        (error as unknown as {description?: {status?: number}}).description
+          ?.status === 401;
+
+      if (is401 && this.tokenRefresher && !this.isHandling401) {
+        this.isHandling401 = true;
+        // Disable built-in reconnection while we handle the refresh manually.
+        if (this.socket) {
+          this.socket.io.opts.reconnection = false;
+        }
+        this.socket?.disconnect();
+
+        void this.tokenRefresher().then(freshToken => {
+          if (!freshToken) {
+            // Refresh failed — surface as a regular error so the facade can
+            // dispatch logout.
+            this.isHandling401 = false;
+            this.errorHandlers.forEach(handler => handler(error));
+            return;
+          }
+          // Recreate the socket with the fresh token and re-register listeners.
+          this.socket?.removeAllListeners();
+          this.socket = this.socketFactory(
+            `${this.baseUrl}/despacho`,
+            freshToken,
+          );
+          this.registerSocketListeners();
+        });
+        return;
+      }
+
       this.errorHandlers.forEach(handler => handler(error));
     });
 
