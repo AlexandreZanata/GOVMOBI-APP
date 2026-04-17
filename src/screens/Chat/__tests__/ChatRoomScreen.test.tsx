@@ -1,5 +1,11 @@
 import React from 'react';
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react-native';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {Provider} from 'react-redux';
@@ -99,6 +105,7 @@ const buildStore = () =>
         token: 'mock-token',
         isLoading: false,
         error: null,
+        papeis: [],
       },
       ui: {
         themeMode: 'light' as const,

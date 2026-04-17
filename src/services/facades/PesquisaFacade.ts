@@ -32,6 +32,8 @@ const fail = <T>(error: FacadeError): Result<T, FacadeError> => ({
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const REQUEST_TIMEOUT_MS = 10000;
+
 const unwrapEnvelopeData = (payload: unknown): unknown => {
   if (isRecord(payload) && 'data' in payload) {
     return payload.data;
@@ -47,9 +49,7 @@ const toPesquisaConfig = (payload: unknown): PesquisaConfig | null => {
 
   // Server returns any of these field names — accept all variants
   const token =
-    unwrapped.mapboxPublicToken ??
-    unwrapped.mapboxToken ??
-    unwrapped.token;
+    unwrapped.mapboxPublicToken ?? unwrapped.mapboxToken ?? unwrapped.token;
 
   if (typeof token === 'string' && token.trim().length > 0) {
     return {mapboxPublicToken: token.trim()};
@@ -58,27 +58,103 @@ const toPesquisaConfig = (payload: unknown): PesquisaConfig | null => {
   return null;
 };
 
-const toGeocodingResults = (payload: unknown): GeocodingResult[] => {
-  const unwrapped = unwrapEnvelopeData(payload);
-  if (!Array.isArray(unwrapped)) {
-    return [];
+const parseLngLatFromRecord = (
+  item: Record<string, unknown>,
+): {lat: number; lng: number} => {
+  if (Array.isArray(item.center) && item.center.length >= 2) {
+    const lng = Number(item.center[0]);
+    const lat = Number(item.center[1]);
+    return {lat, lng};
   }
 
-  return unwrapped
+  return {
+    lat: Number(item.lat ?? item.latitude ?? NaN),
+    lng: Number(item.lng ?? item.longitude ?? NaN),
+  };
+};
+
+const toGeocodingResultFromRecord = (
+  item: Record<string, unknown>,
+): GeocodingResult | null => {
+  const {lat, lng} = parseLngLatFromRecord(item);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+
+  const placeName = String(
+    item.placeName ??
+      item.place_name ??
+      item.text ??
+      item.name ??
+      item.display_name ??
+      item.formatted_address ??
+      item.address ??
+      '',
+  ).trim();
+
+  const address = String(
+    item.address ??
+      item.place_name ??
+      item.placeName ??
+      item.formatted_address ??
+      item.display_name ??
+      item.fullAddress ??
+      item.text ??
+      item.name ??
+      '',
+  ).trim();
+
+  const resolvedPlaceName = placeName || address;
+  const resolvedAddress = address || placeName;
+
+  if (!resolvedPlaceName || !resolvedAddress) {
+    return null;
+  }
+
+  return {
+    address: resolvedAddress,
+    placeName: resolvedPlaceName,
+    lat,
+    lng,
+  };
+};
+
+const toGeocodingResults = (payload: unknown): GeocodingResult[] => {
+  const unwrapped = unwrapEnvelopeData(payload);
+
+  const candidates = Array.isArray(unwrapped)
+    ? unwrapped
+    : isRecord(unwrapped) && Array.isArray(unwrapped.features)
+      ? unwrapped.features
+      : isRecord(unwrapped) && Array.isArray(unwrapped.results)
+        ? unwrapped.results
+        : [];
+
+  return candidates
     .filter((item): item is Record<string, unknown> => isRecord(item))
-    .map(item => ({
-      address: String(item.address ?? ''),
-      placeName: String(item.placeName ?? ''),
-      lat: Number(item.lat ?? NaN),
-      lng: Number(item.lng ?? NaN),
-    }))
-    .filter(
-      item =>
-        item.address.length > 0 &&
-        item.placeName.length > 0 &&
-        Number.isFinite(item.lat) &&
-        Number.isFinite(item.lng),
-    );
+    .map(toGeocodingResultFromRecord)
+    .filter((item): item is GeocodingResult => item !== null);
+};
+
+const fetchWithTimeout = async (
+  url: string,
+  init: Parameters<typeof fetch>[1],
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<Response> => {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error('REQUEST_TIMEOUT'));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([fetch(url, init), timeoutPromise]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
 };
 
 const toReverseGeocodingResult = (
@@ -199,11 +275,17 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
       }
 
       const payload = (await res.json()) as unknown;
-      console.info('[PesquisaFacade] /pesquisa/config raw payload:', JSON.stringify(payload));
+      console.info(
+        '[PesquisaFacade] /pesquisa/config raw payload:',
+        JSON.stringify(payload),
+      );
       const data = toPesquisaConfig(payload);
 
       if (!data) {
-        console.error('[PesquisaFacade] toPesquisaConfig returned null for payload:', JSON.stringify(payload));
+        console.error(
+          '[PesquisaFacade] toPesquisaConfig returned null for payload:',
+          JSON.stringify(payload),
+        );
         return fail({
           code: 'PARSE_ERROR',
           message: 'Invalid pesquisa config payload',
@@ -212,7 +294,10 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
 
       return ok(data);
     } catch (err) {
-      console.error('[PesquisaFacade] /pesquisa/config network exception:', err);
+      console.error(
+        '[PesquisaFacade] /pesquisa/config network exception:',
+        err,
+      );
       return fail({
         code: 'NETWORK_ERROR',
         message: 'Network error loading pesquisa config',
@@ -248,10 +333,14 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
         params.set('lng', String(proximity.lng));
       }
 
-      const res = await fetch(
-        `${this.apiBaseUrl}/pesquisa/geocoding?${params.toString()}`,
-        {headers: this.authHeaders()},
-      );
+      const requestUrl = `${this.apiBaseUrl}/pesquisa/geocoding?${params.toString()}`;
+      const res = await fetchWithTimeout(requestUrl, {
+        headers: this.authHeaders(),
+      });
+
+      console.info('[PesquisaFacade] /pesquisa/geocoding status:', res.status, {
+        query: normalizedQuery,
+      });
 
       if (res.status === 401) {
         return fail({
@@ -271,6 +360,8 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
       }
 
       if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        console.error('[PesquisaFacade] /pesquisa/geocoding error body:', body);
         return fail({
           code: 'NETWORK_ERROR',
           message: 'Geocoding request failed',
@@ -279,8 +370,20 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
       }
 
       const payload = (await res.json()) as unknown;
-      return ok(toGeocodingResults(payload));
-    } catch {
+      const parsed = toGeocodingResults(payload);
+      console.info(
+        '[PesquisaFacade] /pesquisa/geocoding parsed results:',
+        parsed.length,
+      );
+      return ok(parsed);
+    } catch (err) {
+      if (err instanceof Error && err.message === 'REQUEST_TIMEOUT') {
+        return fail({
+          code: 'NETWORK_ERROR',
+          message: 'Geocoding request timeout',
+          retryable: true,
+        });
+      }
       return fail({
         code: 'NETWORK_ERROR',
         message: 'Network error during geocoding',

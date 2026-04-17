@@ -83,6 +83,7 @@ const buildStore = (isAuthenticated: boolean) =>
         token: isAuthenticated ? 'mock-token' : null,
         isLoading: false,
         error: null,
+        papeis: [],
       },
     },
   });

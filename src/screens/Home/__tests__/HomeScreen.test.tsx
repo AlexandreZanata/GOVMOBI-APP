@@ -84,6 +84,7 @@ const buildStore = (overrides?: {unreadCount?: number}) =>
         token: 'mock-token',
         isLoading: false,
         error: null,
+        papeis: [],
       },
       notifications: {
         notifications: [],
@@ -130,9 +131,7 @@ describe('HomeScreen', () => {
 
     it('does not render quick action cards while loading', () => {
       renderScreen();
-      expect(
-        screen.queryByTestId('quick-action-newMessage'),
-      ).toBeNull();
+      expect(screen.queryByTestId('quick-action-newMessage')).toBeNull();
     });
   });
 
@@ -141,9 +140,7 @@ describe('HomeScreen', () => {
       renderScreen();
       await waitFor(
         () =>
-          expect(
-            screen.getByTestId('quick-action-newMessage'),
-          ).toBeTruthy(),
+          expect(screen.getByTestId('quick-action-newMessage')).toBeTruthy(),
         {timeout: 2000},
       );
 
@@ -179,9 +176,7 @@ describe('HomeScreen', () => {
       renderScreen();
       await waitFor(
         () =>
-          expect(
-            screen.getByTestId('section-recent-activity'),
-          ).toBeTruthy(),
+          expect(screen.getByTestId('section-recent-activity')).toBeTruthy(),
         {timeout: 2000},
       );
     });
@@ -189,10 +184,7 @@ describe('HomeScreen', () => {
     it('renders the announcements section after load', async () => {
       renderScreen();
       await waitFor(
-        () =>
-          expect(
-            screen.getByTestId('section-announcements'),
-          ).toBeTruthy(),
+        () => expect(screen.getByTestId('section-announcements')).toBeTruthy(),
         {timeout: 2000},
       );
     });

@@ -2,9 +2,24 @@
  * @fileoverview Redux slice for the full corrida lifecycle state.
  */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
-import type {Corrida, CorridaMensagem, CorridaStatus, Localizacao} from '../../models/Corrida';
+import type {
+  Corrida,
+  CorridaMensagem,
+  CorridaStatus,
+  Localizacao,
+} from '../../models/Corrida';
 import type {SearchResult} from '../../types/corrida';
 import type {Coordenada} from '../../models/Corrida';
+
+/** Driver telemetry snapshot received from realtime updates. */
+export interface PosicaoMotorista {
+  motoristaId: string;
+  lat: number;
+  lng: number;
+  velocidade: number;
+  heading: number;
+  timestamp: string;
+}
 
 export interface CorridaState {
   /** Currently active ride, if any. */
@@ -32,6 +47,8 @@ export interface CorridaState {
   mensagens: CorridaMensagem[];
   /** Whether messages are being loaded. */
   isLoadingMensagens: boolean;
+  /** Last driver telemetry snapshot received over WebSocket. */
+  posicaoMotoristaAtual: PosicaoMotorista | null;
 }
 
 const initialState: CorridaState = {
@@ -46,6 +63,7 @@ const initialState: CorridaState = {
   isSearching: false,
   mensagens: [],
   isLoadingMensagens: false,
+  posicaoMotoristaAtual: null,
 };
 
 /**
@@ -147,10 +165,27 @@ const corridaSlice = createSlice({
     },
 
     /**
+     * Appends a new live chat message to the active ride room.
+     */
+    addMensagem(state, action: PayloadAction<CorridaMensagem>) {
+      state.mensagens.push(action.payload);
+    },
+
+    /**
      * Toggles the messages loading state.
      */
     setIsLoadingMensagens(state, action: PayloadAction<boolean>) {
       state.isLoadingMensagens = action.payload;
+    },
+
+    /**
+     * Stores the latest live driver telemetry snapshot.
+     */
+    setPosicaoMotoristaAtual(
+      state,
+      action: PayloadAction<PosicaoMotorista | null>,
+    ) {
+      state.posicaoMotoristaAtual = action.payload;
     },
 
     /**
@@ -175,7 +210,9 @@ export const {
   setIsSearching,
   clearSearch,
   setMensagens,
+  addMensagem,
   setIsLoadingMensagens,
+  setPosicaoMotoristaAtual,
   resetCorrida,
 } = corridaSlice.actions;
 

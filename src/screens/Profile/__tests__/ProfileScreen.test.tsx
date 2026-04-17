@@ -112,6 +112,7 @@ const buildStore = (userOverride?: Partial<typeof MOCK_USER> | null) =>
         isAuthenticated: true,
         isLoading: false,
         error: null,
+        papeis: [],
       },
       ui: {
         themeMode: 'light' as const,

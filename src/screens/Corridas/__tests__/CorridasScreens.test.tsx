@@ -16,6 +16,7 @@ import {render, screen, fireEvent, waitFor, act} from '@testing-library/react-na
 import {Provider} from 'react-redux';
 import {configureStore} from '@reduxjs/toolkit';
 import {NavigationContainer} from '@react-navigation/native';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {I18nextProvider} from 'react-i18next';
 import {ThemeProvider} from '../../../theme';
 import {FacadeProvider} from '@services/facades';
@@ -31,6 +32,23 @@ import type {ICorridaFacade} from '../../../services/facades/CorridaFacade';
 import type {FacadeError, Result} from '../../../services/facades/types';
 import type {Corrida, CorridaMensagem} from '../../../models/Corrida';
 import type {SolicitarCorridaResponse, CorridaStatusResponse} from '../../../types/corrida';
+
+// ---------------------------------------------------------------------------
+// Module mocks
+// ---------------------------------------------------------------------------
+
+const mockUseRoute = jest.fn().mockReturnValue({params: {}});
+
+jest.mock('@react-navigation/native', () => {
+  const actual =
+    jest.requireActual<typeof import('@react-navigation/native')>(
+      '@react-navigation/native',
+    );
+  return {
+    ...actual,
+    useRoute: () => mockUseRoute(),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -142,11 +160,13 @@ const Wrapper = ({
   return (
     <Provider store={store}>
       <I18nextProvider i18n={i18n}>
-        <ThemeProvider>
-          <FacadeProvider facades={{corridaFacade: mockFacade}}>
-            <NavigationContainer>{children}</NavigationContainer>
-          </FacadeProvider>
-        </ThemeProvider>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <FacadeProvider facades={{corridaFacade: mockFacade}}>
+              <NavigationContainer>{children}</NavigationContainer>
+            </FacadeProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
       </I18nextProvider>
     </Provider>
   );
@@ -210,7 +230,7 @@ describe('PassageiroCorridasListScreen (USUARIO)', () => {
 
 describe('AcompanharCorridaScreen (USUARIO)', () => {
   beforeEach(() => {
-    jest.spyOn(require('@react-navigation/native'), 'useRoute').mockReturnValue({
+    mockUseRoute.mockReturnValue({
       params: {corridaId: 'corrida-test-001'},
     });
   });
@@ -293,7 +313,7 @@ describe('AcompanharCorridaScreen (USUARIO)', () => {
 
 describe('MotoristaCorridaScreen (MOTORISTA)', () => {
   beforeEach(() => {
-    jest.spyOn(require('@react-navigation/native'), 'useRoute').mockReturnValue({
+    mockUseRoute.mockReturnValue({
       params: {corridaId: 'corrida-test-001'},
     });
   });

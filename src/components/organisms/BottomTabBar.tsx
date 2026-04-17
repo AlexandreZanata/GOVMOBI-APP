@@ -28,6 +28,9 @@ const TAB_ICONS: Record<string, TabIconPair> = {
   ProfileTab: {active: 'person', inactive: 'person-outline'},
 };
 
+const TAB_ACTIVE_COLOR = '#1877F2';
+const TAB_INACTIVE_COLOR = '#A1A1AA';
+
 /**
  * Builds badge counts per main tab from Redux state.
  *
@@ -139,7 +142,7 @@ export const BottomTabBar = ({
             testID={`bottom-tab-${route.name}`}>
             <View style={styles.iconWrapper}>
               <MaterialIcons
-                color={isFocused ? '#1877F2' : '#A1A1AA'}
+                color={isFocused ? TAB_ACTIVE_COLOR : TAB_INACTIVE_COLOR}
                 name={isFocused ? icons.active : icons.inactive}
                 size={theme.typography.fontSize.xl}
               />
@@ -157,7 +160,7 @@ export const BottomTabBar = ({
             <Text
               style={[
                 styles.label,
-                {color: isFocused ? '#1877F2' : '#A1A1AA'},
+                isFocused ? styles.labelFocused : styles.labelUnfocused,
               ]}
               variant="caption">
               {label}
@@ -197,12 +200,12 @@ const createStyles = (theme: Theme, bottomInset: number) =>
       lineHeight: 12,
     },
     container: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: theme.colors.white,
       borderTopWidth: 0,
       flexDirection: 'row',
       paddingBottom: bottomInset > 0 ? bottomInset : theme.spacing.md,
       paddingTop: theme.spacing.sm,
-      shadowColor: '#000000',
+      shadowColor: theme.colors.black,
       shadowOffset: {width: 0, height: -2},
       shadowOpacity: 0.08,
       shadowRadius: 12,
@@ -215,6 +218,12 @@ const createStyles = (theme: Theme, bottomInset: number) =>
     },
     label: {
       marginTop: 2,
+    },
+    labelFocused: {
+      color: TAB_ACTIVE_COLOR,
+    },
+    labelUnfocused: {
+      color: TAB_INACTIVE_COLOR,
     },
     tab: {
       alignItems: 'center',

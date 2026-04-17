@@ -38,7 +38,11 @@ jest.mock('react-native-safe-area-context', () => {
   const ctx = React.createContext({top: 0, right: 0, bottom: 0, left: 0});
   return {
     SafeAreaProvider: ({children}: {children: React.ReactNode}) =>
-      React.createElement(ctx.Provider, {value: {top: 0, right: 0, bottom: 0, left: 0}}, children),
+      React.createElement(
+        ctx.Provider,
+        {value: {top: 0, right: 0, bottom: 0, left: 0}},
+        children,
+      ),
     SafeAreaView: ({children}: {children: React.ReactNode}) =>
       React.createElement(React.Fragment, null, children),
     useSafeAreaInsets: () => ({top: 0, right: 0, bottom: 0, left: 0}),
@@ -98,6 +102,7 @@ const buildStore = () =>
         isAuthenticated: false,
         isLoading: false,
         error: null,
+        papeis: [],
       },
       ui: {
         themeMode: 'light' as const,
@@ -186,10 +191,7 @@ describe('LoginScreen', () => {
 
     it('shows password required error when CPF is filled but password is empty', async () => {
       renderScreen();
-      fireEvent.changeText(
-        screen.getByTestId('login-cpf'),
-        VALID_CPF,
-      );
+      fireEvent.changeText(screen.getByTestId('login-cpf'), VALID_CPF);
       fireEvent.press(screen.getByTestId('login-submit'));
       await waitFor(() =>
         expect(screen.getByText(i18n.t('auth.passwordRequired'))).toBeTruthy(),

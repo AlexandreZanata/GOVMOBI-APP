@@ -99,7 +99,9 @@ export const usePassageiro = (): PassageiroState => {
 
   const searchResults = useAppSelector(state => state.corrida.searchResults);
   const isSearching = useAppSelector(state => state.corrida.isSearching);
-  const selectedDestino = useAppSelector(state => state.corrida.selectedDestino);
+  const selectedDestino = useAppSelector(
+    state => state.corrida.selectedDestino,
+  );
 
   const [userLocation, setUserLocation] = useState<Coordenada | null>(null);
   const [isLocating, setIsLocating] = useState(true);
@@ -114,6 +116,7 @@ export const usePassageiro = (): PassageiroState => {
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestSearchRequestIdRef = useRef(0);
   const userLocationRef = useRef<Coordenada | null>(null);
+  const lastSearchErrorAtRef = useRef(0);
 
   useEffect(() => {
     userLocationRef.current = userLocation;
@@ -167,7 +170,8 @@ export const usePassageiro = (): PassageiroState => {
       try {
         // expo-location is used for GPS
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const Location = require('expo-location') as typeof import('expo-location');
+        const Location =
+          require('expo-location') as typeof import('expo-location');
 
         const {status} = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
@@ -288,10 +292,31 @@ export const usePassageiro = (): PassageiroState => {
           dispatch(setSearchResults(mapped));
         } else {
           dispatch(setSearchResults([]));
+
+          if (result.error) {
+            const now = Date.now();
+            if (now - lastSearchErrorAtRef.current > 2000) {
+              lastSearchErrorAtRef.current = now;
+              const message =
+                result.error.code === 'UNAUTHORIZED'
+                  ? t('pesquisa.geocoding.unauthorized')
+                  : result.error.code === 'RATE_LIMITED'
+                    ? t('pesquisa.geocoding.rateLimited')
+                    : t('pesquisa.geocoding.error');
+
+              dispatch(
+                addToast({
+                  id: `geocode-error-${now}`,
+                  message,
+                  type: 'error',
+                }),
+              );
+            }
+          }
         }
       }, SEARCH_DEBOUNCE_MS);
     },
-    [pesquisaFacade, dispatch],
+    [pesquisaFacade, dispatch, t],
   );
 
   const onSelectResult = useCallback(
@@ -384,7 +409,10 @@ export const usePassageiro = (): PassageiroState => {
     isSearching,
     selectedDestinoLabel: selectedDestino?.placeName ?? null,
     selectedDestinoCoords: selectedDestino
-      ? {latitude: selectedDestino.latitude, longitude: selectedDestino.longitude}
+      ? {
+          latitude: selectedDestino.latitude,
+          longitude: selectedDestino.longitude,
+        }
       : null,
     isRequestModalOpen,
     mapboxToken,

@@ -16,7 +16,12 @@ import {store, persistor, useAppSelector} from './store';
 import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
 import {GlobalToast, NetworkBanner} from './components/organisms';
-import {useAuthSession, useNetworkStatus, useNotifications} from './hooks';
+import {
+  useAuthSession,
+  useNetworkStatus,
+  useNotifications,
+  useRealtimeSession,
+} from './hooks';
 import {FacadeProvider} from './services/facades';
 
 /**
@@ -34,22 +39,21 @@ const AppShell = (): React.JSX.Element => {
   useNetworkStatus();
   useNotifications();
   useAuthSession();
+  useRealtimeSession();
 
   return (
     <ThemeProvider mode={themeMode}>
       <FacadeProvider getToken={getToken}>
         {/*
-          * Sets the Android system navigation bar (bottom) to navy800 — matching
-          * the top status bar color seen in the design. On iOS this has no effect
-          * (iOS doesn't expose navigation bar color control).
-          * style="light" keeps the status bar icons white on the dark background.
-          */}
+         * Sets the Android system navigation bar (bottom) to navy800 — matching
+         * the top status bar color seen in the design. On iOS this has no effect
+         * (iOS doesn't expose navigation bar color control).
+         * style="light" keeps the status bar icons white on the dark background.
+         */}
         <StatusBar
           style="light"
           backgroundColor={designColors.navy800}
           translucent={false}
-          navigationBarColor={designColors.navy800}
-          navigationBarHidden={false}
         />
         <View style={styles.container}>
           <NavigationContainer>

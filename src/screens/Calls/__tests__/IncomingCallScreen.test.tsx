@@ -1,5 +1,11 @@
 import React from 'react';
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react-native';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {Provider} from 'react-redux';
@@ -25,14 +31,21 @@ jest.mock('react-native-safe-area-context', () => {
   const Ctx = React.createContext({top: 0, right: 0, bottom: 0, left: 0});
   return {
     SafeAreaProvider: ({children}: {children: React.ReactNode}) =>
-      React.createElement(Ctx.Provider, {value: {top: 0, right: 0, bottom: 0, left: 0}}, children),
+      React.createElement(
+        Ctx.Provider,
+        {value: {top: 0, right: 0, bottom: 0, left: 0}},
+        children,
+      ),
     SafeAreaConsumer: Ctx.Consumer,
     SafeAreaInsetsContext: Ctx,
     SafeAreaView: ({children}: {children: React.ReactNode}) =>
       React.createElement(React.Fragment, null, children),
     useSafeAreaInsets: () => ({top: 0, right: 0, bottom: 0, left: 0}),
     useSafeAreaFrame: () => ({x: 0, y: 0, width: 390, height: 844}),
-    initialWindowMetrics: {frame: {x: 0, y: 0, width: 390, height: 844}, insets: {top: 0, right: 0, bottom: 0, left: 0}},
+    initialWindowMetrics: {
+      frame: {x: 0, y: 0, width: 390, height: 844},
+      insets: {top: 0, right: 0, bottom: 0, left: 0},
+    },
   };
 });
 
@@ -43,14 +56,22 @@ const MOCK_INCOMING_CALL = {
   initiatorId: 'user-002',
   participants: [
     {
-      id: 'cp-001', userId: 'user-002', callId: 'call-test-001',
-      displayName: 'Carlos Mendes', departmentName: 'Field Operations',
-      createdAt: '2024-01-15T00:00:00Z', updatedAt: '2024-01-15T00:00:00Z',
+      id: 'cp-001',
+      userId: 'user-002',
+      callId: 'call-test-001',
+      displayName: 'Carlos Mendes',
+      departmentName: 'Field Operations',
+      createdAt: '2024-01-15T00:00:00Z',
+      updatedAt: '2024-01-15T00:00:00Z',
     },
     {
-      id: 'cp-002', userId: 'user-001', callId: 'call-test-001',
-      displayName: 'Ana Silva', departmentName: 'Field Operations',
-      createdAt: '2024-01-15T00:00:00Z', updatedAt: '2024-01-15T00:00:00Z',
+      id: 'cp-002',
+      userId: 'user-001',
+      callId: 'call-test-001',
+      displayName: 'Ana Silva',
+      departmentName: 'Field Operations',
+      createdAt: '2024-01-15T00:00:00Z',
+      updatedAt: '2024-01-15T00:00:00Z',
     },
   ],
   createdAt: '2024-01-15T09:00:00Z',
@@ -61,16 +82,29 @@ const Stack = createNativeStackNavigator<CallsStackParamList>();
 
 const buildStore = () =>
   configureStore({
-    reducer: {auth: authReducer, chat: chatReducer, calls: callsReducer, notifications: notificationsReducer, ui: uiReducer},
+    reducer: {
+      auth: authReducer,
+      chat: chatReducer,
+      calls: callsReducer,
+      notifications: notificationsReducer,
+      ui: uiReducer,
+    },
     preloadedState: {
       auth: {
         isAuthenticated: true,
         user: {
-          id: 'user-001', fullName: 'Ana Silva', email: 'ana@govmobile.gov',
-          role: UserRole.OFFICER, status: UserStatus.ACTIVE,
-          createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
+          id: 'user-001',
+          fullName: 'Ana Silva',
+          email: 'ana@govmobile.gov',
+          role: UserRole.OFFICER,
+          status: UserStatus.ACTIVE,
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
         },
-        token: 'mock-token', isLoading: false, error: null,
+        token: 'mock-token',
+        isLoading: false,
+        error: null,
+        papeis: [],
       },
       calls: {
         callHistory: [],
@@ -78,7 +112,13 @@ const buildStore = () =>
         incomingCall: MOCK_INCOMING_CALL,
         callStatus: CallStatus.INCOMING,
       },
-      ui: {themeMode: 'light' as const, language: 'en-US' as const, isConnected: true, globalLoading: false, toasts: []},
+      ui: {
+        themeMode: 'light' as const,
+        language: 'en-US' as const,
+        isConnected: true,
+        globalLoading: false,
+        toasts: [],
+      },
     },
   });
 
@@ -91,8 +131,16 @@ const renderScreen = () => {
         <I18nextProvider i18n={i18n}>
           <NavigationContainer>
             <Stack.Navigator screenOptions={{headerShown: false}}>
-              <Stack.Screen component={IncomingCallScreen} name="IncomingCall" initialParams={{callId: 'call-test-001'}} />
-              <Stack.Screen component={ActiveCallScreen} name="ActiveCall" initialParams={{callId: 'call-test-001'}} />
+              <Stack.Screen
+                component={IncomingCallScreen}
+                name="IncomingCall"
+                initialParams={{callId: 'call-test-001'}}
+              />
+              <Stack.Screen
+                component={ActiveCallScreen}
+                name="ActiveCall"
+                initialParams={{callId: 'call-test-001'}}
+              />
               <Stack.Screen component={() => null} name="CallHistory" />
             </Stack.Navigator>
           </NavigationContainer>
@@ -189,18 +237,37 @@ describe('IncomingCallScreen', () => {
     it('dispatches incoming call after 3s delay', async () => {
       jest.useFakeTimers();
       const store = configureStore({
-        reducer: {auth: authReducer, chat: chatReducer, calls: callsReducer, notifications: notificationsReducer, ui: uiReducer},
+        reducer: {
+          auth: authReducer,
+          chat: chatReducer,
+          calls: callsReducer,
+          notifications: notificationsReducer,
+          ui: uiReducer,
+        },
         preloadedState: {
           auth: {
             isAuthenticated: true,
             user: {
-              id: 'user-001', fullName: 'Ana Silva', email: 'ana@govmobile.gov',
-              role: UserRole.OFFICER, status: UserStatus.ACTIVE,
-              createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
+              id: 'user-001',
+              fullName: 'Ana Silva',
+              email: 'ana@govmobile.gov',
+              role: UserRole.OFFICER,
+              status: UserStatus.ACTIVE,
+              createdAt: '2024-01-01T00:00:00Z',
+              updatedAt: '2024-01-01T00:00:00Z',
             },
-            token: 'mock-token', isLoading: false, error: null,
+            token: 'mock-token',
+            isLoading: false,
+            error: null,
+            papeis: [],
           },
-          ui: {themeMode: 'light' as const, language: 'en-US' as const, isConnected: true, globalLoading: false, toasts: []},
+          ui: {
+            themeMode: 'light' as const,
+            language: 'en-US' as const,
+            isConnected: true,
+            globalLoading: false,
+            toasts: [],
+          },
         },
       });
 

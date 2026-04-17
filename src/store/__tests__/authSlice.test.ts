@@ -49,6 +49,7 @@ describe('authSlice', () => {
         isAuthenticated: false,
         isLoading: false,
         error: 'previous error',
+        papeis: [],
       };
       const state = authReducer(stateWithError, setUser(mockUser));
       expect(state.error).toBeNull();
@@ -76,6 +77,7 @@ describe('authSlice', () => {
         isAuthenticated: true,
         isLoading: false,
         error: null,
+        papeis: [],
       };
       const state = authReducer(loggedInState, logout());
       expect(state.user).toBeNull();
@@ -99,6 +101,7 @@ describe('authSlice', () => {
         isAuthenticated: false,
         isLoading: true,
         error: null,
+        papeis: [],
       };
       const state = authReducer(loadingState, setLoading(false));
       expect(state.isLoading).toBe(false);
@@ -113,6 +116,7 @@ describe('authSlice', () => {
         isAuthenticated: false,
         isLoading: true,
         error: null,
+        papeis: [],
       };
       const state = authReducer(loadingState, setError('Invalid credentials'));
       expect(state.error).toBe('Invalid credentials');
@@ -126,6 +130,7 @@ describe('authSlice', () => {
         isAuthenticated: false,
         isLoading: false,
         error: 'some error',
+        papeis: [],
       };
       const state = authReducer(errorState, setError(null));
       expect(state.error).toBeNull();

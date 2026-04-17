@@ -18,6 +18,7 @@ import {
   CartografiaFacadeImpl,
   type ICartografiaFacade,
 } from './CartografiaFacade';
+import {RealtimeFacadeImpl, type IRealtimeFacade} from './RealtimeFacade';
 import {type FacadeConfig} from './types';
 import {ENV} from '../../config/env';
 
@@ -32,6 +33,7 @@ export interface Facades {
   corridaFacade: ICorridaFacade;
   pesquisaFacade: IPesquisaFacade;
   cartografiaFacade: ICartografiaFacade;
+  realtimeFacade: IRealtimeFacade;
 }
 
 export interface FacadeProviderProps {
@@ -91,6 +93,7 @@ const createDefaultFacades = (
       })(),
       pesquisaFacade: new PesquisaFacadeMock(),
       cartografiaFacade: new CartografiaFacadeMock(),
+      realtimeFacade: new RealtimeFacadeImpl({mockMode: true}),
     };
   }
 
@@ -105,6 +108,9 @@ const createDefaultFacades = (
     corridaFacade: new CorridaFacadeImpl(resolvedConfig),
     pesquisaFacade: new PesquisaFacadeImpl({...resolvedConfig, getToken}),
     cartografiaFacade: new CartografiaFacadeImpl({...resolvedConfig, getToken}),
+    realtimeFacade: new RealtimeFacadeImpl({
+      mockMode: resolvedConfig.mockMode,
+    }),
   };
 };
 
@@ -158,3 +164,4 @@ export * from './FrotaFacade';
 export * from './CorridaFacade';
 export * from './PesquisaFacade';
 export * from './CartografiaFacade';
+export * from './RealtimeFacade';

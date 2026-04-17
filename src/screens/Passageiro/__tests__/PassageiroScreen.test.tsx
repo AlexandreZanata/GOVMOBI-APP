@@ -8,7 +8,7 @@ import {Provider} from 'react-redux';
 import {configureStore} from '@reduxjs/toolkit';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {I18nextProvider} from 'react-i18next';
-import i18n from '../../../i18n';
+import {i18n} from '../../../i18n';
 import {ThemeProvider} from '../../../theme';
 import {FacadeProvider} from '../../../services/facades';
 import {PassageiroScreen} from '../PassageiroScreen';
@@ -17,7 +17,6 @@ import authReducer from '../../../store/slices/authSlice';
 import uiReducer from '../../../store/slices/uiSlice';
 import type {ICorridaFacade} from '../../../services/facades/CorridaFacade';
 import type {FacadeError, Result} from '../../../services/facades/types';
-import type {Corrida} from '../../../models/Corrida';
 import type {SearchResult} from '../../../types/corrida';
 
 // ---------------------------------------------------------------------------
@@ -43,7 +42,9 @@ jest.mock('@expo/vector-icons', () => {
 });
 
 jest.mock('expo-location', () => ({
-  requestForegroundPermissionsAsync: jest.fn().mockResolvedValue({status: 'granted'}),
+  requestForegroundPermissionsAsync: jest
+    .fn()
+    .mockResolvedValue({status: 'granted'}),
   getCurrentPositionAsync: jest.fn().mockResolvedValue({
     coords: {latitude: -15.7801, longitude: -47.9292},
   }),
@@ -53,11 +54,25 @@ jest.mock('expo-location', () => ({
 jest.mock('@rnmapbox/maps', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const mockReact = require('react') as typeof import('react');
-  const MockMapView = ({children, testID}: {children?: unknown; testID?: string}) =>
-    mockReact.createElement('View', {testID: testID ?? 'mapbox-map'}, children as mockReact.ReactNode);
+  const MockMapView = ({
+    children,
+    testID,
+  }: {
+    children?: unknown;
+    testID?: string;
+  }) =>
+    mockReact.createElement(
+      'View',
+      {testID: testID ?? 'mapbox-map'},
+      children as React.ReactNode,
+    );
   const MockCamera = () => null;
   const MockPointAnnotation = ({children}: {children?: unknown}) =>
-    mockReact.createElement('View', {testID: 'point-annotation'}, children as mockReact.ReactNode);
+    mockReact.createElement(
+      'View',
+      {testID: 'point-annotation'},
+      children as React.ReactNode,
+    );
   return {
     default: {setAccessToken: jest.fn()},
     MapView: MockMapView,
@@ -74,32 +89,35 @@ const mockSearchResults: SearchResult[] = [
   {
     id: 'place.1',
     placeName: 'Prefeitura Municipal de Sorriso',
-    address: 'Prefeitura Municipal de Sorriso - Avenida Porto Alegre - Centro, Sorriso - MT, Brasil',
+    address:
+      'Prefeitura Municipal de Sorriso - Avenida Porto Alegre - Centro, Sorriso - MT, Brasil',
     coordinates: {latitude: -12.5444, longitude: -55.7208},
   },
   {
     id: 'place.2',
     placeName: 'Secretaria Municipal de Educação',
-    address: 'Secretaria Municipal de Educação - Avenida Tancredo Neves - Centro Sul, Sorriso - MT, Brasil',
-    coordinates: {latitude: -12.5500, longitude: -55.7250},
+    address:
+      'Secretaria Municipal de Educação - Avenida Tancredo Neves - Centro Sul, Sorriso - MT, Brasil',
+    coordinates: {latitude: -12.55, longitude: -55.725},
   },
 ];
 
 const createMockCorridaFacade = (
   overrides: Partial<ICorridaFacade> = {},
-): ICorridaFacade => ({
-  createCorrida: jest.fn().mockResolvedValue({
-    data: {id: 'corrida-1', status: 'AGUARDANDO'} as Corrida,
-    error: null,
-  } as Result<Corrida, FacadeError>),
-  cancelCorrida: jest.fn().mockResolvedValue({data: true, error: null}),
-  getActiveCorrida: jest.fn().mockResolvedValue({data: null, error: null}),
-  searchLocations: jest.fn().mockResolvedValue({
-    data: mockSearchResults,
-    error: null,
-  } as Result<SearchResult[], FacadeError>),
-  ...overrides,
-});
+): ICorridaFacade =>
+  ({
+    createCorrida: jest.fn().mockResolvedValue({
+      data: {corridaId: 'corrida-1', status: 'SOLICITADA'},
+      error: null,
+    } as Result<unknown, FacadeError>),
+    cancelCorrida: jest.fn().mockResolvedValue({data: true, error: null}),
+    getActiveCorrida: jest.fn().mockResolvedValue({data: null, error: null}),
+    searchLocations: jest.fn().mockResolvedValue({
+      data: mockSearchResults,
+      error: null,
+    } as Result<SearchResult[], FacadeError>),
+    ...overrides,
+  }) as unknown as ICorridaFacade;
 
 const buildStore = () =>
   configureStore({
@@ -157,7 +175,9 @@ describe('PassageiroScreen', () => {
       expect(getByTestId('destino-value')).toBeTruthy();
     });
 
-    expect(getByTestId('destino-value').props.children).toBe('Selecione um destino');
+    expect(getByTestId('destino-value').props.children).toBe(
+      'Selecione um destino',
+    );
   });
 
   it('opens search overlay when search bar is focused', async () => {
@@ -204,7 +224,9 @@ describe('PassageiroScreen', () => {
       timeout: 1000,
     });
 
-    const firstResult = await findByTestId(`search-result-${mockSearchResults[0].id}`);
+    const firstResult = await findByTestId(
+      `search-result-${mockSearchResults[0].id}`,
+    );
     await act(async () => {
       fireEvent.press(firstResult);
     });
@@ -230,7 +252,9 @@ describe('PassageiroScreen', () => {
       timeout: 1000,
     });
 
-    const firstResult = await findByTestId(`search-result-${mockSearchResults[0].id}`);
+    const firstResult = await findByTestId(
+      `search-result-${mockSearchResults[0].id}`,
+    );
     await act(async () => {
       fireEvent.press(firstResult);
     });
