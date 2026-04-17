@@ -3,12 +3,12 @@
  *
  * Authentication: per the realtime-integration-govmob-v1.2 spec, the JWT is
  * passed in two ways simultaneously:
- *   - `auth.token`  — raw token, no "Bearer " prefix (Socket.io auth handshake)
+ *   - `auth.token` — raw token, no "Bearer" prefix (Socket.io auth handshake)
  *   - `extraHeaders.Authorization` — "Bearer <token>" (HTTP upgrade header)
  *
- * Token rotation: when the server closes the connection with a 401 reason the
+ * Token rotation: when the server closes the connection with a 401 reason, the
  * client calls `onTokenExpired` (if registered), waits for a fresh token, then
- * recreates the socket with the new credentials and re-subscribes to all
+ * recreates the socket with the new credentials, and re-subscribes to all
  * previously joined ride rooms.
  */
 import {ENV} from '../../config/env';
@@ -54,7 +54,7 @@ export interface DespachoSocketFactory {
 
 /**
  * Async callback invoked when the server rejects the connection with 401.
- * Must return a fresh access token, or null if the session cannot be recovered.
+ * Must return a fresh access token or null if the session cannot be recovered.
  */
 export type TokenRefresher = () => Promise<string | null>;
 
@@ -109,7 +109,7 @@ export interface IDespachoWebSocketClient {
   enviarMensagem(payload: EnviarMensagemPayload): void;
 
   /**
-   * Registers a socket connected handler.
+   * Registers a socket-connected handler.
    *
    * @param handler - Connected callback.
    * @returns Unsubscribe callback.
@@ -117,7 +117,7 @@ export interface IDespachoWebSocketClient {
   onConnected(handler: ConnectionHandler): () => void;
 
   /**
-   * Registers a socket disconnected handler.
+   * Registers a socket-disconnected handler.
    *
    * @param handler - Disconnected callback.
    * @returns Unsubscribe callback.
@@ -181,7 +181,7 @@ export interface IDespachoWebSocketClient {
   ): () => void;
 
   /**
-   * Registers a callback that is invoked when the server rejects the
+   * Registers a callback invoked when the server rejects the
    * connection with a 401 Unauthorized reason. The callback must return a
    * fresh access token (or null to abort). The client will then recreate the
    * socket with the new token and re-subscribe to all active ride rooms.
@@ -197,9 +197,9 @@ const createSocket: DespachoSocketFactory = (
 ): DespachoSocket =>
   io(url, {
     transports: ['websocket'],
-    // Per spec: auth.token must NOT include "Bearer " prefix
+    // Per spec: auth.token must NOT include "Bearer" prefix
     auth: {token},
-    // Per spec: HTTP upgrade header uses "Bearer " prefix
+    // Per spec: HTTP upgrade header uses "Bearer" prefix
     extraHeaders: {
       Authorization: `Bearer ${token}`,
     },
@@ -210,9 +210,9 @@ const createSocket: DespachoSocketFactory = (
 /**
  * Singleton-like websocket client that encapsulates Socket.io specifics.
  *
- * Token rotation: when `connect_error` fires with a 401 description the client
+ * Token rotation: when `connect_error` fires with a 401 description, the client
  * calls the registered `TokenRefresher`, then recreates the socket with the
- * fresh credentials and re-subscribes to all previously joined ride rooms.
+ * fresh credentials, and re-subscribes to all previously joined ride rooms.
  */
 export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   private socket: DespachoSocket | null = null;
@@ -377,7 +377,7 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     this.socket.on('connect', () => {
       this.isHandling401 = false;
       this.connectedHandlers.forEach(handler => handler());
-      // Re-subscribe to all previously joined ride rooms after reconnect.
+      // Re-subscribe to all previously joined ride rooms after reconnection.
       // Per spec: "Re-emit assinar-corrida to rejoin room state."
       this.subscribedCorridaIds.forEach(corridaId => {
         this.socket?.emit('assinar-corrida', {corridaId});

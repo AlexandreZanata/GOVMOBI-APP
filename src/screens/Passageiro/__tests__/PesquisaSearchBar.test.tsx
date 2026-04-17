@@ -16,11 +16,13 @@ import {i18n} from '../../../i18n';
 import {FacadeProvider} from '@services/facades';
 import type {IPesquisaFacade} from '@services/facades';
 import type {ICorridaFacade} from '@services/facades';
+import type {IRealtimeFacade} from '@services/facades';
 import type {GeocodingResult} from '../../../types/pesquisa';
 import type {FacadeError, Result} from '@services/facades';
 import corridaReducer from '../../../store/slices/corridaSlice';
 import uiReducer from '../../../store/slices/uiSlice';
 import authReducer from '../../../store/slices/authSlice';
+import realtimeReducer from '../../../store/slices/realtimeSlice';
 import {PassageiroScreen} from '../PassageiroScreen';
 
 // ---------------------------------------------------------------------------
@@ -86,6 +88,7 @@ const makeStore = () =>
       corrida: corridaReducer,
       ui: uiReducer,
       auth: authReducer,
+      realtime: realtimeReducer,
     },
   });
 
@@ -129,6 +132,22 @@ const makeCorridaMock = (): ICorridaFacade =>
     searchLocations: jest.fn().mockResolvedValue({data: [], error: null}),
   }) as unknown as ICorridaFacade;
 
+const makeRealtimeMock = (): IRealtimeFacade =>
+  ({
+    connect: jest.fn().mockResolvedValue({data: 'connected', error: null}),
+    disconnect: jest.fn(),
+    subscribeToCorrida: jest.fn().mockResolvedValue({data: true, error: null}),
+    setDriverAvailable: jest.fn().mockResolvedValue({data: true, error: null}),
+    updateDriverPosition: jest
+      .fn()
+      .mockResolvedValue({data: true, error: null}),
+    sendCorridaMessage: jest.fn().mockResolvedValue({data: true, error: null}),
+    onEvent: jest.fn(() => () => undefined),
+    onConnectionStatusChange: jest.fn(() => () => undefined),
+    mapCorridaStatus: jest.fn(() => null),
+    normalizeCorridaMensagem: jest.fn(payload => payload),
+  }) as unknown as IRealtimeFacade;
+
 const renderScreen = (pesquisaMock: IPesquisaFacade) => {
   const store = makeStore();
   return render(
@@ -138,6 +157,7 @@ const renderScreen = (pesquisaMock: IPesquisaFacade) => {
           facades={{
             pesquisaFacade: pesquisaMock,
             corridaFacade: makeCorridaMock(),
+            realtimeFacade: makeRealtimeMock(),
           }}>
           <NavigationContainer>
             <PassageiroScreen />

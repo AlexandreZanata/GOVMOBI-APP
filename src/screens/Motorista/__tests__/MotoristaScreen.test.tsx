@@ -16,8 +16,10 @@ import {FacadeProvider} from '@services/facades';
 import {MotoristaScreen} from '../MotoristaScreen';
 import corridaReducer from '@store/slices/corridaSlice';
 import authReducer from '@store/slices/authSlice';
+import realtimeReducer from '@store/slices/realtimeSlice';
 import uiReducer from '@store/slices/uiSlice';
 import type {ICorridaFacade} from '@services/facades/CorridaFacade';
+import type {IRealtimeFacade} from '@services/facades/RealtimeFacade';
 import type {FacadeError, Result} from '@services/facades/types';
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
 import type {
@@ -45,7 +47,7 @@ const makeCorrida = (overrides: Partial<Corrida> = {}): Corrida => ({
   veiculoId: null,
   origemLat: -15.78,
   origemLng: -47.93,
-  destinoLat: -15.80,
+  destinoLat: -15.8,
   destinoLng: -47.95,
   motivoServico: 'Visita técnica',
   status: 'SOLICITADA',
@@ -55,31 +57,85 @@ const makeCorrida = (overrides: Partial<Corrida> = {}): Corrida => ({
 });
 
 /** Minimal mock facade — override per test. */
-const makeMockFacade = (overrides: Partial<ICorridaFacade> = {}): ICorridaFacade => ({
-  solicitarCorrida: async (_i: SolicitarCorridaInput): Promise<Result<SolicitarCorridaResponse, FacadeError>> => ok({corridaId: 'c1', status: 'SOLICITADA'}),
-  createCorrida: async (_i: CreateCorridaInput): Promise<Result<SolicitarCorridaResponse, FacadeError>> => ok({corridaId: 'c1', status: 'SOLICITADA'}),
-  aceitarCorrida: async (_id: string, _i: AceitarCorridaInput): Promise<Result<Corrida, FacadeError>> => ok(makeCorrida({status: 'ACEITA'})),
-  recusarCorrida: async (_id: string, _i: RecusarCorridaInput): Promise<Result<Corrida, FacadeError>> => ok(makeCorrida({status: 'RECUSADA'})),
-  iniciarDeslocamento: async (_id: string): Promise<Result<Corrida, FacadeError>> => ok(makeCorrida({status: 'EM_DESLOCAMENTO'})),
-  confirmarEmbarque: async (_id: string, _i: ConfirmarEmbarqueInput): Promise<Result<Corrida, FacadeError>> => ok(makeCorrida({status: 'PASSAGEIRO_EMBARCADO'})),
-  finalizarCorrida: async (_id: string, _i: FinalizarCorridaInput): Promise<Result<Corrida, FacadeError>> => ok(makeCorrida({status: 'FINALIZADA'})),
-  cancelarCorrida: async (_id: string, _i: CancelarCorridaInput): Promise<Result<Corrida, FacadeError>> => ok(makeCorrida({status: 'CANCELADA'})),
-  getCorrida: async (_id: string): Promise<Result<Corrida, FacadeError>> => ok(makeCorrida()),
-  getCorridaStatus: async (_id: string): Promise<Result<CorridaStatusResponse, FacadeError>> => ok({id: 'c1', status: 'SOLICITADA'}),
-  getMensagens: async (_id: string): Promise<Result<CorridaMensagem[], FacadeError>> => ok([]),
-  searchLocations: async (_q: string): Promise<Result<SearchResult[], FacadeError>> => ok([]),
-  cancelCorrida: async (_id: string, _r: string): Promise<Result<boolean, FacadeError>> => ok(true),
-  getActiveCorrida: async (): Promise<Result<Corrida | null, FacadeError>> => ok(null),
-  getContexto: async (): Promise<Result<CorridaContexto, FacadeError>> => ok({
-    usuario: {id: 'u1', email: 'driver@gov.br', papeis: ['MOTORISTA'], nome: 'Driver'},
-    corridaAtiva: null,
-  }),
+const makeMockFacade = (
+  overrides: Partial<ICorridaFacade> = {},
+): ICorridaFacade => ({
+  solicitarCorrida: async (
+    _i: SolicitarCorridaInput,
+  ): Promise<Result<SolicitarCorridaResponse, FacadeError>> =>
+    ok({corridaId: 'c1', status: 'SOLICITADA'}),
+  createCorrida: async (
+    _i: CreateCorridaInput,
+  ): Promise<Result<SolicitarCorridaResponse, FacadeError>> =>
+    ok({corridaId: 'c1', status: 'SOLICITADA'}),
+  aceitarCorrida: async (
+    _id: string,
+    _i: AceitarCorridaInput,
+  ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'ACEITA'})),
+  recusarCorrida: async (
+    _id: string,
+    _i: RecusarCorridaInput,
+  ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'RECUSADA'})),
+  iniciarDeslocamento: async (
+    _id: string,
+  ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'EM_DESLOCAMENTO'})),
+  confirmarEmbarque: async (
+    _id: string,
+    _i: ConfirmarEmbarqueInput,
+  ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'PASSAGEIRO_EMBARCADO'})),
+  finalizarCorrida: async (
+    _id: string,
+    _i: FinalizarCorridaInput,
+  ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'FINALIZADA'})),
+  cancelarCorrida: async (
+    _id: string,
+    _i: CancelarCorridaInput,
+  ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'CANCELADA'})),
+  getCorrida: async (_id: string): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida()),
+  getCorridaStatus: async (
+    _id: string,
+  ): Promise<Result<CorridaStatusResponse, FacadeError>> =>
+    ok({id: 'c1', status: 'SOLICITADA'}),
+  getMensagens: async (
+    _id: string,
+  ): Promise<Result<CorridaMensagem[], FacadeError>> => ok([]),
+  searchLocations: async (
+    _q: string,
+  ): Promise<Result<SearchResult[], FacadeError>> => ok([]),
+  cancelCorrida: async (
+    _id: string,
+    _r: string,
+  ): Promise<Result<boolean, FacadeError>> => ok(true),
+  getActiveCorrida: async (): Promise<Result<Corrida | null, FacadeError>> =>
+    ok(null),
+  getContexto: async (): Promise<Result<CorridaContexto, FacadeError>> =>
+    ok({
+      usuario: {
+        id: 'u1',
+        email: 'driver@gov.br',
+        papeis: ['MOTORISTA'],
+        nome: 'Driver',
+      },
+      corridaAtiva: null,
+    }),
   ...overrides,
 });
 
 const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
   configureStore({
-    reducer: {corrida: corridaReducer, auth: authReducer, ui: uiReducer},
+    reducer: {
+      corrida: corridaReducer,
+      auth: authReducer,
+      realtime: realtimeReducer,
+      ui: uiReducer,
+    },
     preloadedState: {
       auth: {
         user: {
@@ -119,19 +175,37 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
     },
   });
 
+const makeRealtimeFacade = (): IRealtimeFacade =>
+  ({
+    connect: jest.fn().mockResolvedValue({data: 'connected', error: null}),
+    disconnect: jest.fn(),
+    subscribeToCorrida: jest.fn().mockResolvedValue({data: true, error: null}),
+    setDriverAvailable: jest.fn().mockResolvedValue({data: true, error: null}),
+    updateDriverPosition: jest
+      .fn()
+      .mockResolvedValue({data: true, error: null}),
+    sendCorridaMessage: jest.fn().mockResolvedValue({data: true, error: null}),
+    onEvent: jest.fn(() => () => undefined),
+    onConnectionStatusChange: jest.fn(() => () => undefined),
+    mapCorridaStatus: jest.fn(() => null),
+    normalizeCorridaMensagem: jest.fn((payload: CorridaMensagem) => payload),
+  }) as unknown as IRealtimeFacade;
+
 const Wrapper = ({
   store,
   facade,
+  realtimeFacade,
   children,
 }: {
   store: ReturnType<typeof makeStore>;
   facade: ICorridaFacade;
+  realtimeFacade: IRealtimeFacade;
   children: React.ReactNode;
 }) => (
   <Provider store={store}>
     <I18nextProvider i18n={i18n}>
       <ThemeProvider>
-        <FacadeProvider facades={{corridaFacade: facade}}>
+        <FacadeProvider facades={{corridaFacade: facade, realtimeFacade}}>
           <NavigationContainer>{children}</NavigationContainer>
         </FacadeProvider>
       </ThemeProvider>
@@ -145,9 +219,10 @@ describe('MotoristaScreen', () => {
   it('renders the idle sheet when no active ride', async () => {
     const store = makeStore();
     const facade = makeMockFacade();
+    const realtimeFacade = makeRealtimeFacade();
 
     const {getByTestId} = render(
-      <Wrapper store={store} facade={facade}>
+      <Wrapper store={store} facade={facade} realtimeFacade={realtimeFacade}>
         <MotoristaScreen />
       </Wrapper>,
     );
@@ -164,16 +239,22 @@ describe('MotoristaScreen', () => {
   it('renders the active ride sheet when a SOLICITADA ride is in Redux', async () => {
     const corrida = makeCorrida({status: 'SOLICITADA'});
     const store = makeStore({activeCorrida: corrida});
+    const realtimeFacade = makeRealtimeFacade();
     const facade = makeMockFacade({
       getContexto: async () =>
         ok({
-          usuario: {id: 'u1', email: 'driver@gov.br', papeis: ['MOTORISTA'], nome: 'Driver'},
+          usuario: {
+            id: 'u1',
+            email: 'driver@gov.br',
+            papeis: ['MOTORISTA'],
+            nome: 'Driver',
+          },
           corridaAtiva: corrida,
         }),
     });
 
     const {getByTestId} = render(
-      <Wrapper store={store} facade={facade}>
+      <Wrapper store={store} facade={facade} realtimeFacade={realtimeFacade}>
         <MotoristaScreen />
       </Wrapper>,
     );
@@ -188,23 +269,33 @@ describe('MotoristaScreen', () => {
   it('calls aceitarCorrida when Aceitar button is pressed', async () => {
     const corrida = makeCorrida({status: 'SOLICITADA'});
     const store = makeStore({activeCorrida: corrida});
-    const aceitarMock = jest.fn().mockResolvedValue(ok(makeCorrida({status: 'ACEITA'})));
+    const aceitarMock = jest
+      .fn()
+      .mockResolvedValue(ok(makeCorrida({status: 'ACEITA'})));
+    const realtimeFacade = makeRealtimeFacade();
     const facade = makeMockFacade({
       aceitarCorrida: aceitarMock,
       getContexto: async () =>
         ok({
-          usuario: {id: 'u1', email: 'driver@gov.br', papeis: ['MOTORISTA'], nome: 'Driver'},
+          usuario: {
+            id: 'u1',
+            email: 'driver@gov.br',
+            papeis: ['MOTORISTA'],
+            nome: 'Driver',
+          },
           corridaAtiva: corrida,
         }),
     });
 
     const {getByTestId} = render(
-      <Wrapper store={store} facade={facade}>
+      <Wrapper store={store} facade={facade} realtimeFacade={realtimeFacade}>
         <MotoristaScreen />
       </Wrapper>,
     );
 
-    await waitFor(() => expect(getByTestId('btn-aceitar')).toBeTruthy(), {timeout: 3000});
+    await waitFor(() => expect(getByTestId('btn-aceitar')).toBeTruthy(), {
+      timeout: 3000,
+    });
 
     await act(async () => {
       fireEvent.press(getByTestId('btn-aceitar'));
@@ -220,9 +311,10 @@ describe('MotoristaScreen', () => {
     const corrida = makeCorrida({status: 'FINALIZADA'});
     const store = makeStore({activeCorrida: corrida});
     const facade = makeMockFacade();
+    const realtimeFacade = makeRealtimeFacade();
 
     const {getByTestId} = render(
-      <Wrapper store={store} facade={facade}>
+      <Wrapper store={store} facade={facade} realtimeFacade={realtimeFacade}>
         <MotoristaScreen />
       </Wrapper>,
     );
@@ -236,9 +328,10 @@ describe('MotoristaScreen', () => {
     const corrida = makeCorrida({status: 'ACEITA', motoristaId: 'driver-001'});
     const store = makeStore({activeCorrida: corrida});
     const facade = makeMockFacade();
+    const realtimeFacade = makeRealtimeFacade();
 
     const {getByTestId} = render(
-      <Wrapper store={store} facade={facade}>
+      <Wrapper store={store} facade={facade} realtimeFacade={realtimeFacade}>
         <MotoristaScreen />
       </Wrapper>,
     );
@@ -249,12 +342,16 @@ describe('MotoristaScreen', () => {
   });
 
   it('shows the Finalizar button when ride is PASSAGEIRO_EMBARCADO', async () => {
-    const corrida = makeCorrida({status: 'PASSAGEIRO_EMBARCADO', motoristaId: 'driver-001'});
+    const corrida = makeCorrida({
+      status: 'PASSAGEIRO_EMBARCADO',
+      motoristaId: 'driver-001',
+    });
     const store = makeStore({activeCorrida: corrida});
     const facade = makeMockFacade();
+    const realtimeFacade = makeRealtimeFacade();
 
     const {getByTestId} = render(
-      <Wrapper store={store} facade={facade}>
+      <Wrapper store={store} facade={facade} realtimeFacade={realtimeFacade}>
         <MotoristaScreen />
       </Wrapper>,
     );
@@ -267,9 +364,10 @@ describe('MotoristaScreen', () => {
   it('shows the map fallback when Mapbox is not installed', async () => {
     const store = makeStore();
     const facade = makeMockFacade();
+    const realtimeFacade = makeRealtimeFacade();
 
     const {getByTestId} = render(
-      <Wrapper store={store} facade={facade}>
+      <Wrapper store={store} facade={facade} realtimeFacade={realtimeFacade}>
         <MotoristaScreen />
       </Wrapper>,
     );
