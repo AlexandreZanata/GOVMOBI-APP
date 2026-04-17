@@ -90,27 +90,25 @@ const transition = (corrida: Corrida, status: CorridaStatus, patch?: Partial<Cor
  * Simulated latency: 200–400ms per operation.
  */
 export class CorridaFacadeMock implements ICorridaFacade {
-  /** @inheritdoc */
   public async solicitarCorrida(
     input: SolicitarCorridaInput,
   ): Promise<Result<SolicitarCorridaResponse, FacadeError>> {
     await delay(300);
     const corrida = makeCorrida(input);
     store.set(corrida.id, corrida);
-    return ok({corridaId: corrida.id, status: 'SOLICITADA'});
+    return ok({corridaId: corrida.id});
   }
 
-  /** @inheritdoc */
   public async createCorrida(
     input: CreateCorridaInput,
   ): Promise<Result<SolicitarCorridaResponse, FacadeError>> {
     return this.solicitarCorrida({
-      passageiroId: 'passageiro-mock-001',
+      passageiroId: input.passageiroId,
       origemLat: input.origem.latitude,
       origemLng: input.origem.longitude,
       destinoLat: input.destino.latitude,
       destinoLng: input.destino.longitude,
-      motivoServico: input.origem.endereco,
+      motivoServico: input.motivoServico,
     });
   }
 
@@ -124,7 +122,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
     if (corrida.status !== 'SOLICITADA') return fail(toError('Corrida já aceita', 'CONFLICT'));
     const updated = transition(corrida, 'ACEITA', {
-      motoristaId: input.motoristaId,
+      motoristaId: 'mock-motorista',
       veiculoId: input.veiculoId,
     });
     store.set(corridaId, updated);
@@ -152,6 +150,19 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(200);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
+    const updated = transition(corrida, 'EM_DESLOCAMENTO');
+    store.set(corridaId, updated);
+    return ok(updated);
+  }
+
+  /** @inheritdoc */
+  public async chegarAoLocal(
+    corridaId: string,
+  ): Promise<Result<Corrida, FacadeError>> {
+    await delay(200);
+    const corrida = store.get(corridaId);
+    if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
+    // Backend keeps the same status but emits MotoristaChegando event
     const updated = transition(corrida, 'EM_DESLOCAMENTO');
     store.set(corridaId, updated);
     return ok(updated);
@@ -255,11 +266,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     corridaId: string,
     reason: string,
   ): Promise<Result<boolean, FacadeError>> {
-    const result = await this.cancelarCorrida(corridaId, {
-      solicitanteId: 'passageiro-mock-001',
-      motivo: reason,
-      tipoSolicitante: 'passageiro',
-    });
+    const result = await this.cancelarCorrida(corridaId, {motivo: reason});
     if (result.error) return fail(result.error);
     return ok(true);
   }

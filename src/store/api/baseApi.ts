@@ -5,9 +5,9 @@
  *   1. Every request attaches `Authorization: Bearer <accessToken>` from Redux.
  *   2. On a 401 response the wrapper calls `POST /auth/refresh` with the
  *      refresh token in `Authorization: Bearer <refreshToken>` (per API spec).
- *   3. If refresh succeeds the new access token is stored in Redux and the
+ *   3. If refresh succeeds, the new access token is stored in Redux and the
  *      original request is retried exactly once.
- *   4. If refresh fails (401 again or network error) the session is cleared
+ *   4. If refresh fails (401 again or network error), the session is cleared
  *      and the user is redirected to the Auth flow via `logout()`.
  *
  * The mutex (`isRefreshing`) prevents concurrent requests from each
@@ -182,7 +182,7 @@ const baseQueryWithReauth: BaseQueryFn<
 
     resolveWaiters(tokens.accessToken);
 
-    // Retry the original request once with the new token.
+    // Retry the original request at once with the new token.
     result = await rawBaseQuery(args, api, extraOptions);
     return result;
   } catch {

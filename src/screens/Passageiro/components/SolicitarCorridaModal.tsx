@@ -120,12 +120,12 @@ export const SolicitarCorridaModal = ({
       return;
     }
 
-    // Guard: passageiroId is required by the API — block if user session not ready
-    if (!userId) {
+    // Guard: user location is required
+    if (!userLocation) {
       dispatch(
         addToast({
-          id: `no-user-${Date.now()}`,
-          message: t('errors.sessionExpired'),
+          id: `no-location-${Date.now()}`,
+          message: t('passageiro.errors.locationRequired'),
           type: 'warning',
         }),
       );
@@ -134,8 +134,8 @@ export const SolicitarCorridaModal = ({
 
     setIsSubmitting(true);
 
-    const origemLat = userLocation?.latitude ?? -16.6869;
-    const origemLng = userLocation?.longitude ?? -49.2648;
+    const origemLat = userLocation.latitude;
+    const origemLng = userLocation.longitude;
 
     const result = await corridaFacade.solicitarCorrida({
       passageiroId: userId,
@@ -155,7 +155,6 @@ export const SolicitarCorridaModal = ({
         code: result.error.code,
         status: result.error.statusCode,
         message: result.error.message,
-        passageiroId: userId,
         origemLat,
         origemLng,
         destinoLat: selectedDestino.latitude,
@@ -194,7 +193,8 @@ export const SolicitarCorridaModal = ({
 
     const {corridaId} = result.data;
 
-    // Seed Redux so AcompanharCorrida renders immediately without a GET
+    // Seed Redux immediately so AcompanharCorrida renders without waiting for a GET.
+    // passageiroId comes from the auth store (the server already knows it from JWT).
     dispatch(setPendingCorridaId(corridaId));
     dispatch(
       setActiveCorrida({

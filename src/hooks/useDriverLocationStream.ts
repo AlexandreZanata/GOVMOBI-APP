@@ -111,6 +111,7 @@ export const useDriverLocationStream = (): void => {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!isMotorista || connectionStatus !== 'connected') return;
+    console.log('[useDriverLocationStream] connectionStatus=connected — emitting ficar-disponivel');
     void realtimeFacade.setDriverAvailable();
   }, [isMotorista, connectionStatus, realtimeFacade]);
 

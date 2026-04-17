@@ -2,7 +2,7 @@
  * @fileoverview Redux slice for websocket connection and audit-friendly realtime state.
  */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
-import type {RealtimeConnectionStatus} from '../../types';
+import type {RealtimeConnectionStatus, NovaCorridaDisponivelPayload} from '../../types';
 
 export interface RealtimeState {
   /** Current websocket connection status. */
@@ -17,6 +17,12 @@ export interface RealtimeState {
   lastEventAt: string | null;
   /** Driver-only queue of available ride offer IDs. */
   availableCorridaIds: string[];
+  /**
+   * Pending ride offer for the driver — set by the app-level event listener
+   * so the modal appears regardless of which screen the driver is on.
+   * Cleared when the driver accepts, refuses, or the timer expires.
+   */
+  pendingOffer: NovaCorridaDisponivelPayload | null;
 }
 
 const initialState: RealtimeState = {
@@ -26,6 +32,7 @@ const initialState: RealtimeState = {
   lastEventType: null,
   lastEventAt: null,
   availableCorridaIds: [],
+  pendingOffer: null,
 };
 
 /**
@@ -73,12 +80,23 @@ const realtimeSlice = createSlice({
     },
 
     /**
-     * Tracks a driver-only new ride offer.
+     * Tracks a driver-only new ride offer and stores the full payload
+     * so the modal can be shown from any screen.
      */
     addAvailableCorrida(state, action: PayloadAction<string>) {
       if (!state.availableCorridaIds.includes(action.payload)) {
         state.availableCorridaIds.unshift(action.payload);
       }
+    },
+
+    /**
+     * Sets the pending ride offer payload for the driver modal.
+     */
+    setPendingOffer(
+      state,
+      action: PayloadAction<NovaCorridaDisponivelPayload | null>,
+    ) {
+      state.pendingOffer = action.payload;
     },
 
     /**
@@ -96,6 +114,7 @@ export const {
   addRealtimeSubscription,
   markRealtimeEvent,
   addAvailableCorrida,
+  setPendingOffer,
   resetRealtime,
 } = realtimeSlice.actions;
 

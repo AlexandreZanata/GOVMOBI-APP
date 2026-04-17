@@ -17,6 +17,10 @@ import type {
 } from '../../types';
 import {type FacadeError, type Result} from './types';
 
+const TAG = '[RealtimeFacade]';
+const rtLog = (...a: unknown[]) => console.log(TAG, ...a);
+const rtWarn = (...a: unknown[]) => console.warn(TAG, ...a);
+
 interface RealtimeFacadeConfig {
   mockMode?: boolean;
   wsBaseUrl?: string;
@@ -236,11 +240,13 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     accessToken: string,
   ): Promise<Result<RealtimeConnectionStatus, FacadeError>> {
     if (!accessToken.trim()) {
+      rtWarn('connect() — missing access token, aborting');
       return fail(
         toError('Missing realtime access token', 'AUTH_REQUIRED', false),
       );
     }
 
+    rtLog(`connect() — mockMode=${String(this.config.mockMode)} wsUrl="${this.config.wsBaseUrl ?? ENV.wsUrl}" token="${accessToken.slice(0, 20)}..."`);
     this.emitConnectionStatus('connecting', null);
 
     if (this.config.mockMode) {
@@ -352,16 +358,19 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
 
   private registerTransportListeners(): void {
     this.client.onConnected(() => {
+      rtLog('transport → connected');
       this.isConnected = true;
       this.emitConnectionStatus('connected', null);
     });
 
     this.client.onDisconnected(() => {
+      rtWarn('transport → disconnected');
       this.isConnected = false;
       this.emitConnectionStatus('disconnected', null);
     });
 
     this.client.onError(error => {
+      rtWarn(`transport → error: ${error.message}`);
       this.isConnected = false;
       this.emitConnectionStatus(
         'error',
@@ -382,10 +391,12 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     });
 
     this.client.onStatusCorridaAlterado(payload => {
+      rtLog('facade → status-corrida-alterado dispatching to', this.eventHandlers.size, 'handlers');
       this.emitEvent({type: 'status-corrida-alterado', payload});
     });
 
     this.client.onNovaCorridaDisponivel(payload => {
+      rtLog('facade → nova-corrida-disponivel dispatching to', this.eventHandlers.size, 'handlers');
       this.emitEvent({type: 'nova-corrida-disponivel', payload});
     });
   }

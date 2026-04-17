@@ -1,7 +1,7 @@
 /**
  * @fileoverview Main application assembly module.
  */
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo, useRef} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Provider} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
@@ -54,15 +54,19 @@ const AppShell = (): React.JSX.Element => {
   const token = useAppSelector(state => state.auth.token);
   const dispatch = useAppDispatch();
 
-  // Token getter for facades that need authenticated requests
-  const getToken = useMemo(() => () => token, [token]);
+  // Keep a ref to the latest token so the getter stays stable across token
+  // rotations. A new function reference would cause FacadeProvider to recreate
+  // all facades (including RealtimeFacadeImpl), destroying active WebSocket
+  // subscriptions and preventing drivers from receiving nova-corrida-disponivel.
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+
+  // Stable getter — never changes reference, always returns the latest token.
+  const getToken = useCallback(() => tokenRef.current, []);
 
   /**
    * Token refresher for the realtime transport's 401 recovery cycle.
    * Per spec: refresh JWT → reconnect socket → re-emit assinar-corrida.
-   * The socket client calls this when the server rejects with 401.
-   * On success the new token is dispatched to Redux, which triggers
-   * useRealtimeSession to reconnect with the fresh credentials.
    */
   const refreshToken = useCallback(async (): Promise<string | null> => {
     const authFacade = new AuthFacadeImpl({apiBaseUrl: ENV.apiUrl});
@@ -79,12 +83,6 @@ const AppShell = (): React.JSX.Element => {
     <ThemeProvider mode={themeMode}>
       <FacadeProvider getToken={getToken} refreshToken={refreshToken}>
         <AppStartupEffects />
-        {/*
-         * Sets the Android system navigation bar (bottom) to navy800 — matching
-         * the top status bar color seen in the design. On iOS this has no effect
-         * (iOS doesn't expose navigation bar color control).
-         * style="light" keeps the status bar icons white on the dark background.
-         */}
         <StatusBar
           style="light"
           backgroundColor={designColors.navy800}

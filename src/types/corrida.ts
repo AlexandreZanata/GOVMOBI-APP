@@ -1,24 +1,35 @@
 /**
  * @fileoverview Type definitions for ride (corrida) operations.
- * Covers all action payloads from the /corridas API contract.
+ *
+ * Body payloads are aligned exactly with the backend controller — only fields
+ * the API reads from the request body are included. Fields derived from the
+ * JWT on the server (passageiroId, motoristaId, solicitanteId, tipoSolicitante)
+ * are NOT sent in the body and are NOT present in these types.
  */
 import type {Coordenada, Localizacao} from '@models/Corrida';
 
 // ---------------------------------------------------------------------------
-// Legacy input (used by PassageiroScreen)
+// Legacy input (used by PassageiroScreen createCorrida helper)
 // ---------------------------------------------------------------------------
 
-/** Input for creating a new ride request (legacy — uses Localizacao objects). */
+/** Input for creating a new ride request using Localizacao objects. */
 export interface CreateCorridaInput {
+  passageiroId: string;
   origem: Localizacao;
   destino: Localizacao;
+  motivoServico: string;
 }
 
 // ---------------------------------------------------------------------------
-// API action payloads (aligned with route-corridas.md)
+// API action payloads — body-only fields
 // ---------------------------------------------------------------------------
 
-/** POST /corridas — request a new ride. */
+/**
+ * POST /corridas body.
+ * The backend DTO requires passageiroId as @IsUUID('7') for validation,
+ * but the controller ignores it and uses user.id from the JWT instead.
+ * We send the authenticated user's ID to satisfy the validator.
+ */
 export interface SolicitarCorridaInput {
   passageiroId: string;
   origemLat: number;
@@ -29,37 +40,46 @@ export interface SolicitarCorridaInput {
   observacoes?: string;
 }
 
-/** POST /corridas/:id/aceitar — driver accepts a ride. */
+/**
+ * POST /corridas/:id/aceitar body.
+ * motoristaId is derived from JWT (user.motoristaId) on the server.
+ */
 export interface AceitarCorridaInput {
-  motoristaId: string;
   veiculoId: string;
 }
 
-/** POST /corridas/:id/recusar — driver refuses a ride. */
+/**
+ * POST /corridas/:id/recusar body.
+ * motoristaId is derived from JWT (user.motoristaId) on the server.
+ */
 export interface RecusarCorridaInput {
-  motoristaId: string;
   motivo?: string;
 }
 
-/** POST /corridas/:id/confirmar-embarque — driver confirms passenger boarded. */
+/**
+ * POST /corridas/:id/confirmar-embarque body.
+ * motoristaId is derived from JWT (user.motoristaId) on the server.
+ */
 export interface ConfirmarEmbarqueInput {
-  motoristaId: string;
   posicaoLat: number;
   posicaoLng: number;
 }
 
-/** POST /corridas/:id/finalizar — driver completes the ride. */
+/**
+ * POST /corridas/:id/finalizar body.
+ * motoristaId is derived from JWT (user.motoristaId) on the server.
+ */
 export interface FinalizarCorridaInput {
-  motoristaId: string;
   posicaoFinalLat: number;
   posicaoFinalLng: number;
 }
 
-/** POST /corridas/:id/cancelar — cancel an active ride. */
+/**
+ * POST /corridas/:id/cancelar body.
+ * solicitanteId and tipoSolicitante are derived from JWT on the server.
+ */
 export interface CancelarCorridaInput {
-  solicitanteId: string;
   motivo: string;
-  tipoSolicitante: 'passageiro' | 'motorista' | 'admin';
 }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +89,6 @@ export interface CancelarCorridaInput {
 /** Response from POST /corridas (202 Accepted). */
 export interface SolicitarCorridaResponse {
   corridaId: string;
-  status: 'SOLICITADA';
 }
 
 /** Response from GET /corridas/:id/status (Redis-optimised). */
@@ -79,7 +98,7 @@ export interface CorridaStatusResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Geocoding / search (used by PassageiroScreen)
+// Geocoding / search
 // ---------------------------------------------------------------------------
 
 /** Mapbox geocoding result item. */
@@ -110,22 +129,13 @@ export interface SearchResult {
 // GET /corridas/contexto — mobile state sync
 // ---------------------------------------------------------------------------
 
-/**
- * Normalized response from GET /corridas/contexto.
- * The raw API returns nested origem/destino objects and lowercase status;
- * the facade normalizes these to the flat Corrida model before returning.
- */
+/** Normalized response from GET /corridas/contexto. */
 export interface CorridaContexto {
-  /** Authenticated user summary. */
   usuario: {
     id: string;
     email: string;
     papeis: string[];
     nome: string;
   };
-  /**
-   * Active corrida normalized to the app's Corrida model, or null if none.
-   * Status is uppercased (e.g. 'SOLICITADA') to match CorridaStatus enum.
-   */
   corridaAtiva: import('../models/Corrida').Corrida | null;
 }

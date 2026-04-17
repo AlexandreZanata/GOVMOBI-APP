@@ -71,9 +71,14 @@ export interface StatusCorridaAlteradoPayload {
 /** Driver-only new ride offer payload. */
 export interface NovaCorridaDisponivelPayload {
   corridaId: string;
-  origem: Record<string, unknown>;
-  destino: Record<string, unknown>;
-  prioridade: number;
+  /** Optional human-readable message from the dispatcher. */
+  mensagem?: string;
+  /** Optional origin coordinates (may not be present in all server versions). */
+  origem?: Record<string, unknown>;
+  /** Optional destination coordinates (may not be present in all server versions). */
+  destino?: Record<string, unknown>;
+  /** Optional priority level. */
+  prioridade?: number;
 }
 
 /** Unified event envelope consumed by hooks and facades. */

@@ -51,14 +51,18 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
   const corridaHistory = useAppSelector(st => st.corrida.corridaHistory ?? []);
   const [isLoading] = useState(false);
 
-  const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
+  const hasActiveRide =
+    activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
 
   const rides = useMemo<Corrida[]>(() => {
     const all: Corrida[] = [...corridaHistory];
     if (activeCorrida && TERMINAL_STATUSES.has(activeCorrida.status)) {
       if (!all.find(r => r.id === activeCorrida.id)) all.unshift(activeCorrida);
     }
-    return all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return all.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   }, [activeCorrida, corridaHistory]);
 
   const handleViewDetail = useCallback(
@@ -94,17 +98,33 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
             onPress={handleViewActive}
             style={shared.card}
             testID="active-corrida-card">
-            <View style={[shared.statusBadge, {backgroundColor: statusColor(activeCorrida.status, theme)}]}>
-              <Text style={shared.statusText}>{t(`corridas.status.${activeCorrida.status}`)}</Text>
+            <View
+              style={[
+                shared.statusBadge,
+                {backgroundColor: statusColor(activeCorrida.status, theme)},
+              ]}>
+              <Text style={shared.statusText}>
+                {t(`corridas.status.${activeCorrida.status}`)}
+              </Text>
             </View>
             <View style={shared.cardRow}>
-              <MaterialIcons name="trip-origin" size={16} color={theme.colors.success} style={shared.cardRowIcon} />
+              <MaterialIcons
+                name="trip-origin"
+                size={16}
+                color={theme.colors.success}
+                style={shared.cardRowIcon}
+              />
               <Text style={shared.cardValue} numberOfLines={1}>
                 {`${activeCorrida.origemLat.toFixed(4)}, ${activeCorrida.origemLng.toFixed(4)}`}
               </Text>
             </View>
             <View style={shared.cardRow}>
-              <MaterialIcons name="location-on" size={16} color={theme.colors.error} style={shared.cardRowIcon} />
+              <MaterialIcons
+                name="location-on"
+                size={16}
+                color={theme.colors.error}
+                style={shared.cardRowIcon}
+              />
               <Text style={shared.cardValue} numberOfLines={1}>
                 {`${activeCorrida.destinoLat.toFixed(4)}, ${activeCorrida.destinoLng.toFixed(4)}`}
               </Text>
@@ -116,10 +136,14 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
         <Pressable
           accessibilityLabel={t('passageiro.bottomSheet.cta')}
           accessibilityRole="button"
-          onPress={() => navigation.navigate('AcompanharCorrida', {corridaId: ''})}
+          onPress={() =>
+            navigation.navigate('AcompanharCorrida', {corridaId: ''})
+          }
           style={[shared.actionButton, shared.actionButtonPrimary]}
           testID="btn-request-ride">
-          <Text style={shared.actionButtonText}>{t('passageiro.bottomSheet.cta')}</Text>
+          <Text style={shared.actionButtonText}>
+            {t('passageiro.bottomSheet.cta')}
+          </Text>
         </Pressable>
 
         {rides.length > 0 && (
@@ -127,15 +151,31 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
         )}
       </>
     ),
-    [activeCorrida, handleViewActive, hasActiveRide, navigation, rides.length, s, shared, t, theme],
+    [
+      activeCorrida,
+      handleViewActive,
+      hasActiveRide,
+      navigation,
+      rides.length,
+      s,
+      shared,
+      t,
+      theme,
+    ],
   );
 
   const ListEmpty = useCallback(
     () => (
       <View style={s.emptyContainer} testID="corridas-empty">
-        <MaterialIcons name="directions-car" size={56} color={theme.design.textTertiary} />
+        <MaterialIcons
+          name="directions-car"
+          size={56}
+          color={theme.design.textTertiary}
+        />
         <Text style={s.emptyTitle}>{t('corridas.history.empty.title')}</Text>
-        <Text style={s.emptySubtitle}>{t('corridas.history.empty.subtitle')}</Text>
+        <Text style={s.emptySubtitle}>
+          {t('corridas.history.empty.subtitle')}
+        </Text>
       </View>
     ),
     [s, t, theme],
@@ -144,8 +184,14 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
   const isEmpty = !isLoading && rides.length === 0 && !hasActiveRide;
 
   return (
-    <SafeAreaView edges={['top']} style={[s.root, {backgroundColor: theme.colors.primary}]} testID="passageiro-corridas-list-screen">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+    <SafeAreaView
+      edges={['top']}
+      style={[s.root, {backgroundColor: theme.colors.primary}]}
+      testID="passageiro-corridas-list-screen">
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.primary}
+      />
 
       {/* Dark blue title header */}
       <View style={s.titleRow}>
@@ -159,12 +205,13 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
             <ActivityIndicator color={theme.design.blue500} size="large" />
           </View>
         ) : isEmpty ? (
-          <View style={s.centeredFill} testID="corridas-empty">
-            <Text style={s.emptySubtitle}>{t('corridas.history.empty.subtitle')}</Text>
-          </View>
+          <ListEmpty />
         ) : (
           <FlatList
-            contentContainerStyle={[s.listContent, rides.length === 0 && s.listContentEmpty]}
+            contentContainerStyle={[
+              s.listContent,
+              rides.length === 0 && s.listContentEmpty,
+            ]}
             data={rides}
             keyExtractor={item => item.id}
             ListHeaderComponent={ListHeader}

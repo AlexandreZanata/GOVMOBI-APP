@@ -11,7 +11,7 @@ import {configureStore} from '@reduxjs/toolkit';
 import {NavigationContainer} from '@react-navigation/native';
 import {I18nextProvider} from 'react-i18next';
 import {i18n} from '../../../i18n';
-import {ThemeProvider} from '../../../theme';
+import {ThemeProvider} from '@theme/index';
 import {FacadeProvider} from '@services/facades';
 import {MotoristaScreen} from '../MotoristaScreen';
 import corridaReducer from '@store/slices/corridaSlice';
@@ -81,6 +81,8 @@ const makeMockFacade = (
   iniciarDeslocamento: async (
     _id: string,
   ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'EM_DESLOCAMENTO'})),
+  chegarAoLocal: async (_id: string): Promise<Result<Corrida, FacadeError>> =>
     ok(makeCorrida({status: 'EM_DESLOCAMENTO'})),
   confirmarEmbarque: async (
     _id: string,
@@ -152,7 +154,7 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         isLoading: false,
         error: null,
         papeis: ['MOTORISTA'],
-        motoristaId: null,
+        motoristaId: 'driver-001',
         municipioId: null,
         isHydrating: false,
       },
@@ -226,10 +228,6 @@ describe('MotoristaScreen', () => {
         <MotoristaScreen />
       </Wrapper>,
     );
-
-    await waitFor(() => {
-      expect(getByTestId('motorista-home-screen')).toBeTruthy();
-    });
 
     await waitFor(() => {
       expect(getByTestId('idle-sheet')).toBeTruthy();

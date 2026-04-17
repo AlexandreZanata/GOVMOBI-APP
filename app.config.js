@@ -71,7 +71,7 @@ module.exports = {
     scheme: 'govmobile',
     extra: {
       apiUrl: process.env.API_URL ?? 'http://172.19.2.116:3000',
-      wsUrl: process.env.WS_URL ?? 'ws://172.19.2.116:3000',
+      wsUrl: process.env.WS_URL ?? 'http://172.19.2.116:3000',
       appEnv: process.env.APP_ENV ?? 'development',
       mockMode: process.env.MOCK_MODE === 'true',
       mapboxAccessToken: MAPBOX_ACCESS_TOKEN,

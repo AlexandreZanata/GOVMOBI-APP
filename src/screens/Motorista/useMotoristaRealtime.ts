@@ -7,12 +7,13 @@
  * This hook is responsible for:
  *  - Subscribing to the active ride room (`assinar-corrida`) when a ride
  *    becomes active so the driver receives ride-scoped events.
- *  - Listening for `nova-corrida-disponivel` and surfacing the offer via local
- *    state so the screen can render the accept/refuse modal.
+ *  - Surfacing the pending ride offer from Redux so the screen can render
+ *    the accept/refuse modal (offer is set by the app-level useRealtimeSession).
  */
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect} from 'react';
 import {useFacades} from '@services/facades';
-import {useAppSelector} from '../../store';
+import {useAppDispatch, useAppSelector} from '../../store';
+import {setPendingOffer} from '@store/slices/realtimeSlice';
 import type {NovaCorridaDisponivelPayload} from '../../types';
 import type {Coordenada} from '@models/Corrida';
 
@@ -30,8 +31,8 @@ export interface MotoristaRealtimeState {
  * Manages the driver's screen-level realtime concerns.
  *
  * GPS telemetry and ficar-disponivel are handled at app level by
- * `useDriverLocationStream` — this hook only manages ride room subscription
- * and the nova-corrida-disponivel modal trigger.
+ * `useDriverLocationStream`. The pending offer is stored in Redux by
+ * `useRealtimeSession` (always mounted) so it survives tab navigation.
  *
  * @param _userLocation - Unused here; kept for API compatibility with MotoristaScreen.
  * @returns {@link MotoristaRealtimeState} — pending offer and dismiss handler.
@@ -41,12 +42,14 @@ export const useMotoristaRealtime = (
   _userLocation: Coordenada | null,
 ): MotoristaRealtimeState => {
   const {realtimeFacade} = useFacades();
+  const dispatch = useAppDispatch();
 
   const isMotorista = useAppSelector(s => s.auth.papeis.includes('MOTORISTA'));
   const connectionStatus = useAppSelector(s => s.realtime.connectionStatus);
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
 
-  const [pendingOffer, setPendingOffer] = useState<NovaCorridaDisponivelPayload | null>(null);
+  // Read pending offer from Redux — set by the always-mounted useRealtimeSession.
+  const pendingOffer = useAppSelector(s => s.realtime.pendingOffer);
 
   // ---------------------------------------------------------------------------
   // Subscribe to active ride room when a ride becomes active.
@@ -59,23 +62,18 @@ export const useMotoristaRealtime = (
   }, [activeCorrida, isMotorista, connectionStatus, realtimeFacade]);
 
   // ---------------------------------------------------------------------------
-  // Listen for nova-corrida-disponivel — show the accept/refuse modal.
+  // Clear the pending offer when the driver gets an active ride
+  // (they accepted it — no need to keep showing the modal).
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (!isMotorista) return;
-
-    const unsubscribe = realtimeFacade.onEvent(event => {
-      if (event.type === 'nova-corrida-disponivel') {
-        setPendingOffer(event.payload);
-      }
-    });
-
-    return unsubscribe;
-  }, [isMotorista, realtimeFacade]);
+    if (activeCorrida && !TERMINAL_STATUSES.has(activeCorrida.status)) {
+      dispatch(setPendingOffer(null));
+    }
+  }, [activeCorrida, dispatch]);
 
   const dismissOffer = useCallback(() => {
-    setPendingOffer(null);
-  }, []);
+    dispatch(setPendingOffer(null));
+  }, [dispatch]);
 
   return {pendingOffer, dismissOffer};
 };

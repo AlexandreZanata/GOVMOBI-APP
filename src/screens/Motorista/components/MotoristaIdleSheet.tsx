@@ -6,7 +6,7 @@ import {Animated, Text, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.styles';
 import {useTheme} from '@theme/index';
-import {useAppSelector} from '../../../store';
+import {useAppSelector} from '@store/index';
 
 export interface MotoristaIdleSheetProps {
   /** Animated translateY value for the slide-up entrance. */

@@ -1,15 +1,12 @@
 /**
  * @fileoverview Socket.io transport client for the GovMobile `/despacho` namespace.
  *
- * Authentication: per the realtime-integration-govmob-v1.2 spec, the JWT is
- * passed in two ways simultaneously:
- *   - `auth.token` — raw token, no "Bearer" prefix (Socket.io auth handshake)
+ * Auth: JWT sent two ways simultaneously —
+ *   - `auth.token`  — raw token, no "Bearer" prefix (Socket.io handshake)
  *   - `extraHeaders.Authorization` — "Bearer <token>" (HTTP upgrade header)
  *
- * Token rotation: when the server closes the connection with a 401 reason, the
- * client calls `onTokenExpired` (if registered), waits for a fresh token, then
- * recreates the socket with the new credentials, and re-subscribes to all
- * previously joined ride rooms.
+ * All emits and received events are logged to Metro / Logcat so connection
+ * issues can be diagnosed without a debugger.
  */
 import {ENV} from '../../config/env';
 import {io, type Socket} from 'socket.io-client';
@@ -23,6 +20,19 @@ import type {
   PosicaoAtualizadaPayload,
   StatusCorridaAlteradoPayload,
 } from '../../types';
+
+// ---------------------------------------------------------------------------
+// Inline logger — console so output appears in Metro / Logcat without
+// importing the app logger (avoids circular deps at transport level).
+// ---------------------------------------------------------------------------
+const TAG = '[WS/Despacho]';
+const wsLog = (...a: unknown[]) => console.log(TAG, ...a);
+const wsWarn = (...a: unknown[]) => console.warn(TAG, ...a);
+const wsErr = (...a: unknown[]) => console.error(TAG, ...a);
+
+// ---------------------------------------------------------------------------
+// Socket.io typed interfaces
+// ---------------------------------------------------------------------------
 
 interface DespachoServerToClientEvents {
   'historico-mensagens': (payload: HistoricoMensagemPayload[]) => void;
@@ -52,167 +62,62 @@ export interface DespachoSocketFactory {
   (url: string, token: string): DespachoSocket;
 }
 
-/**
- * Async callback invoked when the server rejects the connection with 401.
- * Must return a fresh access token or null if the session cannot be recovered.
- */
+/** Async callback invoked when the server rejects the connection with 401. */
 export type TokenRefresher = () => Promise<string | null>;
+
+// ---------------------------------------------------------------------------
+// Contract
+// ---------------------------------------------------------------------------
 
 /**
  * Transport contract consumed by the realtime facade.
  */
 export interface IDespachoWebSocketClient {
-  /**
-   * Opens the websocket connection.
-   *
-   * @param accessToken - Current JWT access token.
-   * @returns Void when listeners are registered.
-   */
   connect(accessToken: string): void;
-
-  /**
-   * Closes the websocket connection and removes listeners.
-   *
-   * @returns Void.
-   */
   disconnect(): void;
-
-  /**
-   * Subscribes to ride room updates.
-   *
-   * @param payload - Ride room payload.
-   * @returns Void.
-   */
   assinarCorrida(payload: AssinarCorridaPayload): void;
-
-  /**
-   * Broadcasts driver availability.
-   *
-   * @returns Void.
-   */
   ficarDisponivel(): void;
-
-  /**
-   * Sends driver telemetry.
-   *
-   * @param payload - Telemetry payload.
-   * @returns Void.
-   */
   atualizarPosicao(payload: AtualizarPosicaoPayload): void;
-
-  /**
-   * Sends a persistent chat message.
-   *
-   * @param payload - Ride message payload.
-   * @returns Void.
-   */
   enviarMensagem(payload: EnviarMensagemPayload): void;
-
-  /**
-   * Registers a socket-connected handler.
-   *
-   * @param handler - Connected callback.
-   * @returns Unsubscribe callback.
-   */
   onConnected(handler: ConnectionHandler): () => void;
-
-  /**
-   * Registers a socket-disconnected handler.
-   *
-   * @param handler - Disconnected callback.
-   * @returns Unsubscribe callback.
-   */
   onDisconnected(handler: ConnectionHandler): () => void;
-
-  /**
-   * Registers a transport error handler.
-   *
-   * @param handler - Error callback.
-   * @returns Unsubscribe callback.
-   */
   onError(handler: ErrorHandler): () => void;
-
-  /**
-   * Registers a ride history handler.
-   *
-   * @param handler - Event callback.
-   * @returns Unsubscribe callback.
-   */
-  onHistoricoMensagens(
-    handler: EventHandler<HistoricoMensagemPayload[]>,
-  ): () => void;
-
-  /**
-   * Registers a live position handler.
-   *
-   * @param handler - Event callback.
-   * @returns Unsubscribe callback.
-   */
-  onPosicaoAtualizada(
-    handler: EventHandler<PosicaoAtualizadaPayload>,
-  ): () => void;
-
-  /**
-   * Registers a new message handler.
-   *
-   * @param handler - Event callback.
-   * @returns Unsubscribe callback.
-   */
+  onHistoricoMensagens(handler: EventHandler<HistoricoMensagemPayload[]>): () => void;
+  onPosicaoAtualizada(handler: EventHandler<PosicaoAtualizadaPayload>): () => void;
   onNovaMensagem(handler: EventHandler<NovaMensagemPayload>): () => void;
-
-  /**
-   * Registers a ride status handler.
-   *
-   * @param handler - Event callback.
-   * @returns Unsubscribe callback.
-   */
-  onStatusCorridaAlterado(
-    handler: EventHandler<StatusCorridaAlteradoPayload>,
-  ): () => void;
-
-  /**
-   * Registers a new ride offer handler.
-   *
-   * @param handler - Event callback.
-   * @returns Unsubscribe callback.
-   */
-  onNovaCorridaDisponivel(
-    handler: EventHandler<NovaCorridaDisponivelPayload>,
-  ): () => void;
-
-  /**
-   * Registers a callback invoked when the server rejects the
-   * connection with a 401 Unauthorized reason. The callback must return a
-   * fresh access token (or null to abort). The client will then recreate the
-   * socket with the new token and re-subscribe to all active ride rooms.
-   *
-   * @param refresher - Async token refresh callback.
-   */
+  onStatusCorridaAlterado(handler: EventHandler<StatusCorridaAlteradoPayload>): () => void;
+  onNovaCorridaDisponivel(handler: EventHandler<NovaCorridaDisponivelPayload>): () => void;
   setTokenRefresher(refresher: TokenRefresher): void;
 }
 
-const createSocket: DespachoSocketFactory = (
-  url: string,
-  token: string,
-): DespachoSocket =>
-  io(url, {
-    transports: ['websocket'],
-    // Per spec: auth.token must NOT include "Bearer" prefix
+// ---------------------------------------------------------------------------
+// Socket factory
+// ---------------------------------------------------------------------------
+
+const createSocket: DespachoSocketFactory = (url, token): DespachoSocket => {
+  wsLog(`createSocket → url="${url}" token="${token.slice(0, 20)}..."`);
+  return io(url, {
+    // Start with polling so the HTTP handshake succeeds first, then upgrade.
+    // Using websocket-only fails silently on Android when the server is on a
+    // local network IP and the upgrade is blocked by a proxy or firewall.
+    transports: ['polling', 'websocket'],
     auth: {token},
-    // Per spec: HTTP upgrade header uses "Bearer" prefix
-    extraHeaders: {
-      Authorization: `Bearer ${token}`,
-    },
+    extraHeaders: {Authorization: `Bearer ${token}`},
     reconnection: true,
     reconnectionAttempts: Infinity,
+    reconnectionDelay: 2000,
+    reconnectionDelayMax: 10000,
+    timeout: 10000,
   });
+};
+
+// ---------------------------------------------------------------------------
+// Implementation
+// ---------------------------------------------------------------------------
 
 /**
- * Singleton-like websocket client that encapsulates Socket.io specifics.
- *
- * Token rotation: when `connect_error` fires with a 401 description, the client
- * calls the registered `TokenRefresher`, then recreates the socket with the
- * fresh credentials, and re-subscribes to all previously joined ride rooms.
+ * WebSocket transport client for the `/despacho` namespace.
+ * Logs every emit and received event to Metro / Logcat.
  */
 export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   private socket: DespachoSocket | null = null;
@@ -220,46 +125,39 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   private readonly connectedHandlers = new Set<ConnectionHandler>();
   private readonly disconnectedHandlers = new Set<ConnectionHandler>();
   private readonly errorHandlers = new Set<ErrorHandler>();
-  private readonly historicoHandlers = new Set<
-    EventHandler<HistoricoMensagemPayload[]>
-  >();
-  private readonly posicaoHandlers = new Set<
-    EventHandler<PosicaoAtualizadaPayload>
-  >();
-  private readonly mensagemHandlers = new Set<
-    EventHandler<NovaMensagemPayload>
-  >();
-  private readonly statusHandlers = new Set<
-    EventHandler<StatusCorridaAlteradoPayload>
-  >();
-  private readonly novaCorridaHandlers = new Set<
-    EventHandler<NovaCorridaDisponivelPayload>
-  >();
+  private readonly historicoHandlers = new Set<EventHandler<HistoricoMensagemPayload[]>>();
+  private readonly posicaoHandlers = new Set<EventHandler<PosicaoAtualizadaPayload>>();
+  private readonly mensagemHandlers = new Set<EventHandler<NovaMensagemPayload>>();
+  private readonly statusHandlers = new Set<EventHandler<StatusCorridaAlteradoPayload>>();
+  private readonly novaCorridaHandlers = new Set<EventHandler<NovaCorridaDisponivelPayload>>();
 
-  /** Registered token refresh callback — set by the facade after construction. */
   private tokenRefresher: TokenRefresher | null = null;
-  /** Prevents concurrent 401-refresh cycles. */
   private isHandling401 = false;
 
-  /**
-   * @param baseUrl - Base websocket URL.
-   * @param socketFactory - Optional socket constructor for tests.
-   */
   constructor(
     private readonly baseUrl = ENV.wsUrl,
     private readonly socketFactory: DespachoSocketFactory = createSocket,
-  ) {}
+  ) {
+    wsLog(`instance created — baseUrl="${baseUrl}"`);
+  }
 
-  /** @inheritdoc */
   public setTokenRefresher(refresher: TokenRefresher): void {
     this.tokenRefresher = refresher;
   }
 
-  /** @inheritdoc */
   public connect(accessToken: string): void {
     if (this.socket?.connected) {
+      wsLog('connect() — already connected, skipping');
       return;
     }
+    wsLog(`connect() → "${this.baseUrl}/despacho" token="${accessToken.slice(0, 20)}..."`);
+
+    // Pre-check: verify the server is reachable before opening the socket.
+    // A plain HTTP GET to the base URL will fail fast if the IP is wrong or
+    // the device is on a different network.
+    fetch(`${this.baseUrl}/health`, {method: 'GET'})
+      .then(res => wsLog(`pre-check OK — status=${res.status}`))
+      .catch(e => wsErr(`pre-check FAILED — server "${this.baseUrl}" unreachable: ${String(e)}\n→ Make sure the device and the backend are on the same network and the IP is correct.`));
 
     this.socket?.removeAllListeners();
     this.socket?.disconnect();
@@ -267,183 +165,159 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     this.registerSocketListeners();
   }
 
-  /** @inheritdoc */
   public disconnect(): void {
+    wsLog('disconnect()');
     this.socket?.removeAllListeners();
     this.socket?.disconnect();
     this.socket = null;
   }
 
-  /** @inheritdoc */
   public assinarCorrida(payload: AssinarCorridaPayload): void {
+    wsLog('EMIT assinar-corrida →', JSON.stringify(payload));
     this.subscribedCorridaIds.add(payload.corridaId);
     this.socket?.emit('assinar-corrida', payload);
   }
 
-  /** @inheritdoc */
   public ficarDisponivel(): void {
+    wsLog('EMIT ficar-disponivel → {}');
     this.socket?.emit('ficar-disponivel', {});
   }
 
-  /** @inheritdoc */
   public atualizarPosicao(payload: AtualizarPosicaoPayload): void {
+    if (payload.corridaId) {
+      wsLog('EMIT atualizar-posicao →', JSON.stringify(payload));
+    }
     this.socket?.emit('atualizar-posicao', payload);
   }
 
-  /** @inheritdoc */
   public enviarMensagem(payload: EnviarMensagemPayload): void {
+    wsLog('EMIT enviar-mensagem →', JSON.stringify(payload));
     this.socket?.emit('enviar-mensagem', payload);
   }
 
-  /** @inheritdoc */
   public onConnected(handler: ConnectionHandler): () => void {
     this.connectedHandlers.add(handler);
-    return () => {
-      this.connectedHandlers.delete(handler);
-    };
+    return () => { this.connectedHandlers.delete(handler); };
   }
 
-  /** @inheritdoc */
   public onDisconnected(handler: ConnectionHandler): () => void {
     this.disconnectedHandlers.add(handler);
-    return () => {
-      this.disconnectedHandlers.delete(handler);
-    };
+    return () => { this.disconnectedHandlers.delete(handler); };
   }
 
-  /** @inheritdoc */
   public onError(handler: ErrorHandler): () => void {
     this.errorHandlers.add(handler);
-    return () => {
-      this.errorHandlers.delete(handler);
-    };
+    return () => { this.errorHandlers.delete(handler); };
   }
 
-  /** @inheritdoc */
-  public onHistoricoMensagens(
-    handler: EventHandler<HistoricoMensagemPayload[]>,
-  ): () => void {
+  public onHistoricoMensagens(handler: EventHandler<HistoricoMensagemPayload[]>): () => void {
     this.historicoHandlers.add(handler);
-    return () => {
-      this.historicoHandlers.delete(handler);
-    };
+    return () => { this.historicoHandlers.delete(handler); };
   }
 
-  /** @inheritdoc */
-  public onPosicaoAtualizada(
-    handler: EventHandler<PosicaoAtualizadaPayload>,
-  ): () => void {
+  public onPosicaoAtualizada(handler: EventHandler<PosicaoAtualizadaPayload>): () => void {
     this.posicaoHandlers.add(handler);
-    return () => {
-      this.posicaoHandlers.delete(handler);
-    };
+    return () => { this.posicaoHandlers.delete(handler); };
   }
 
-  /** @inheritdoc */
-  public onNovaMensagem(
-    handler: EventHandler<NovaMensagemPayload>,
-  ): () => void {
+  public onNovaMensagem(handler: EventHandler<NovaMensagemPayload>): () => void {
     this.mensagemHandlers.add(handler);
-    return () => {
-      this.mensagemHandlers.delete(handler);
-    };
+    return () => { this.mensagemHandlers.delete(handler); };
   }
 
-  /** @inheritdoc */
-  public onStatusCorridaAlterado(
-    handler: EventHandler<StatusCorridaAlteradoPayload>,
-  ): () => void {
+  public onStatusCorridaAlterado(handler: EventHandler<StatusCorridaAlteradoPayload>): () => void {
     this.statusHandlers.add(handler);
-    return () => {
-      this.statusHandlers.delete(handler);
-    };
+    return () => { this.statusHandlers.delete(handler); };
   }
 
-  /** @inheritdoc */
-  public onNovaCorridaDisponivel(
-    handler: EventHandler<NovaCorridaDisponivelPayload>,
-  ): () => void {
+  public onNovaCorridaDisponivel(handler: EventHandler<NovaCorridaDisponivelPayload>): () => void {
     this.novaCorridaHandlers.add(handler);
-    return () => {
-      this.novaCorridaHandlers.delete(handler);
-    };
+    return () => { this.novaCorridaHandlers.delete(handler); };
   }
 
   private registerSocketListeners(): void {
-    if (!this.socket) {
-      return;
-    }
+    if (!this.socket) return;
 
     this.socket.on('connect', () => {
+      wsLog(`EVENT connect — socketId="${this.socket?.id}"`);
       this.isHandling401 = false;
-      this.connectedHandlers.forEach(handler => handler());
+      this.connectedHandlers.forEach(h => h());
       // Re-subscribe to all previously joined ride rooms after reconnection.
-      // Per spec: "Re-emit assinar-corrida to rejoin room state."
       this.subscribedCorridaIds.forEach(corridaId => {
+        wsLog(`RE-EMIT assinar-corrida (reconnect) → corridaId="${corridaId}"`);
         this.socket?.emit('assinar-corrida', {corridaId});
       });
     });
 
-    this.socket.on('disconnect', () => {
-      this.disconnectedHandlers.forEach(handler => handler());
+    this.socket.on('disconnect', reason => {
+      wsWarn(`EVENT disconnect — reason="${reason}"`);
+      this.disconnectedHandlers.forEach(h => h());
     });
 
     this.socket.on('connect_error', error => {
-      // Detect 401 Unauthorized — Socket.io surfaces this as a connect_error
-      // with the message containing "401" or the description being "Unauthorized".
-      const is401 =
-        error.message?.includes('401') ||
-        (error as unknown as {description?: {status?: number}}).description
-          ?.status === 401;
+      const desc = (
+        error as unknown as {description?: {status?: number; message?: string}}
+      ).description;
+      wsErr(
+        `EVENT connect_error — message="${error.message}"`,
+        'description=', JSON.stringify(desc ?? {}),
+        'full_error=', String(error),
+      );
+
+      const is401 = error.message?.includes('401') || desc?.status === 401;
+      const is403 = error.message?.includes('403') || desc?.status === 403;
 
       if (is401 && this.tokenRefresher && !this.isHandling401) {
+        wsWarn('401 detected — attempting token refresh');
         this.isHandling401 = true;
-        // Disable built-in reconnection while we handle the refresh manually.
-        if (this.socket) {
-          this.socket.io.opts.reconnection = false;
-        }
+        if (this.socket) this.socket.io.opts.reconnection = false;
         this.socket?.disconnect();
 
         void this.tokenRefresher().then(freshToken => {
           if (!freshToken) {
-            // Refresh failed — surface as a regular error so the facade can
-            // dispatch logout.
+            wsErr('Token refresh failed — surfacing error to handlers');
             this.isHandling401 = false;
-            this.errorHandlers.forEach(handler => handler(error));
+            this.errorHandlers.forEach(h => h(error));
             return;
           }
-          // Recreate the socket with the fresh token and re-register listeners.
+          wsLog('Token refreshed — recreating socket');
           this.socket?.removeAllListeners();
-          this.socket = this.socketFactory(
-            `${this.baseUrl}/despacho`,
-            freshToken,
-          );
+          this.socket = this.socketFactory(`${this.baseUrl}/despacho`, freshToken);
           this.registerSocketListeners();
         });
         return;
       }
 
-      this.errorHandlers.forEach(handler => handler(error));
+      if (is403) {
+        wsErr('403 Forbidden — user does not have permission to access /despacho namespace');
+      }
+
+      this.errorHandlers.forEach(h => h(error));
     });
 
     this.socket.on('historico-mensagens', payload => {
-      this.historicoHandlers.forEach(handler => handler(payload));
+      wsLog(`EVENT historico-mensagens — ${payload.length} msgs`);
+      this.historicoHandlers.forEach(h => h(payload));
     });
 
+    // posicao-atualizada is high-frequency — skip logging to avoid noise
     this.socket.on('posicao-atualizada', payload => {
-      this.posicaoHandlers.forEach(handler => handler(payload));
+      this.posicaoHandlers.forEach(h => h(payload));
     });
 
     this.socket.on('nova-mensagem', payload => {
-      this.mensagemHandlers.forEach(handler => handler(payload));
+      wsLog('EVENT nova-mensagem →', JSON.stringify(payload));
+      this.mensagemHandlers.forEach(h => h(payload));
     });
 
     this.socket.on('status-corrida-alterado', payload => {
-      this.statusHandlers.forEach(handler => handler(payload));
+      wsLog('EVENT status-corrida-alterado →', JSON.stringify(payload));
+      this.statusHandlers.forEach(h => h(payload));
     });
 
     this.socket.on('nova-corrida-disponivel', payload => {
-      this.novaCorridaHandlers.forEach(handler => handler(payload));
+      wsLog('EVENT nova-corrida-disponivel →', JSON.stringify(payload));
+      this.novaCorridaHandlers.forEach(h => h(payload));
     });
   }
 }

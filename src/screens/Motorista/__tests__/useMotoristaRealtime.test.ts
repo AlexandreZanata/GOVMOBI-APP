@@ -10,28 +10,30 @@
  */
 import {act, renderHook} from '@testing-library/react-native';
 import {useMotoristaRealtime} from '../useMotoristaRealtime';
+import {setPendingOffer} from '@store/slices/realtimeSlice';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
-const mockSubscribeToCorrida = jest.fn().mockResolvedValue({data: true, error: null});
-
-let capturedEventHandler: ((event: unknown) => void) | null = null;
-
-const mockOnEvent = jest.fn((handler: (event: unknown) => void) => {
-  capturedEventHandler = handler;
-  return () => { capturedEventHandler = null; };
-});
+const mockSubscribeToCorrida = jest
+  .fn()
+  .mockResolvedValue({data: true, error: null});
+const mockDispatch = jest.fn();
 
 const mockRealtimeFacade = {
   subscribeToCorrida: mockSubscribeToCorrida,
-  onEvent: mockOnEvent,
 };
 
 let mockPapeis: string[] = ['MOTORISTA'];
 let mockConnectionStatus = 'connected';
 let mockActiveCorrida: {id: string; status: string} | null = null;
+let mockPendingOffer: {
+  corridaId: string;
+  origem: Record<string, unknown>;
+  destino: Record<string, unknown>;
+  prioridade: number;
+} | null = null;
 
 jest.mock('@services/facades', () => ({
   useFacades: () => ({realtimeFacade: mockRealtimeFacade}),
@@ -41,9 +43,13 @@ jest.mock('../../../store', () => ({
   useAppSelector: (selector: (s: unknown) => unknown) =>
     selector({
       auth: {papeis: mockPapeis},
-      realtime: {connectionStatus: mockConnectionStatus},
+      realtime: {
+        connectionStatus: mockConnectionStatus,
+        pendingOffer: mockPendingOffer,
+      },
       corrida: {activeCorrida: mockActiveCorrida},
     }),
+  useAppDispatch: () => mockDispatch,
 }));
 
 // ---------------------------------------------------------------------------
@@ -56,38 +62,45 @@ describe('useMotoristaRealtime', () => {
     mockPapeis = ['MOTORISTA'];
     mockConnectionStatus = 'connected';
     mockActiveCorrida = null;
-    capturedEventHandler = null;
+    mockPendingOffer = null;
   });
 
-  it('sets pendingOffer when nova-corrida-disponivel is received', () => {
+  it('reads pendingOffer from redux state', () => {
+    const offer = {
+      corridaId: 'corrida-123',
+      origem: {},
+      destino: {},
+      prioridade: 1,
+    };
+    mockPendingOffer = offer;
     const {result} = renderHook(() => useMotoristaRealtime(null));
-    const offer = {corridaId: 'corrida-123', origem: {}, destino: {}, prioridade: 1};
-
-    act(() => {
-      capturedEventHandler?.({type: 'nova-corrida-disponivel', payload: offer});
-    });
-
     expect(result.current.pendingOffer).toEqual(offer);
   });
 
   it('dismissOffer clears pendingOffer', () => {
+    const offer = {
+      corridaId: 'corrida-456',
+      origem: {},
+      destino: {},
+      prioridade: 1,
+    };
+    mockPendingOffer = offer;
     const {result} = renderHook(() => useMotoristaRealtime(null));
-    const offer = {corridaId: 'corrida-456', origem: {}, destino: {}, prioridade: 1};
-
-    act(() => {
-      capturedEventHandler?.({type: 'nova-corrida-disponivel', payload: offer});
-    });
     expect(result.current.pendingOffer).not.toBeNull();
 
-    act(() => { result.current.dismissOffer(); });
-    expect(result.current.pendingOffer).toBeNull();
+    act(() => {
+      result.current.dismissOffer();
+    });
+    expect(mockDispatch).toHaveBeenCalledWith(setPendingOffer(null));
   });
 
   it('emits assinar-corrida when active ride becomes available', async () => {
     mockActiveCorrida = {id: 'ride-789', status: 'ACEITA'};
     renderHook(() => useMotoristaRealtime(null));
     await act(async () => {});
-    expect(mockSubscribeToCorrida).toHaveBeenCalledWith({corridaId: 'ride-789'});
+    expect(mockSubscribeToCorrida).toHaveBeenCalledWith({
+      corridaId: 'ride-789',
+    });
   });
 
   it('does NOT emit assinar-corrida for terminal rides', async () => {
@@ -97,9 +110,11 @@ describe('useMotoristaRealtime', () => {
     expect(mockSubscribeToCorrida).not.toHaveBeenCalled();
   });
 
-  it('does NOT listen for events for non-driver roles', () => {
+  it('does NOT emit assinar-corrida for non-driver roles', async () => {
     mockPapeis = ['USUARIO'];
+    mockActiveCorrida = {id: 'ride-100', status: 'ACEITA'};
     renderHook(() => useMotoristaRealtime(null));
-    expect(mockOnEvent).not.toHaveBeenCalled();
+    await act(async () => {});
+    expect(mockSubscribeToCorrida).not.toHaveBeenCalled();
   });
 });

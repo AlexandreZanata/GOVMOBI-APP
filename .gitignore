@@ -20,3 +20,6 @@ build/
 
 # Expo local state
 .expo/
+
+# Backend (local development only — not part of the mobile app repo)
+govmob-backend/

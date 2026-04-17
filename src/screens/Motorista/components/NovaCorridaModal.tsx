@@ -134,7 +134,7 @@ export const NovaCorridaModal = ({
           </View>
 
           {/* Priority badge — only for high-priority offers */}
-          {offer.prioridade > 1 && (
+          {(offer.prioridade ?? 0) > 1 && (
             <View style={styles.priorityBadge}>
               <MaterialIcons
                 name="priority-high"

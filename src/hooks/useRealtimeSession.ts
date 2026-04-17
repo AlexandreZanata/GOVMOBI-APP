@@ -17,6 +17,7 @@ import {
   resetRealtime,
   setRealtimeConnectionStatus,
   setRealtimeError,
+  setPendingOffer,
 } from '@store/slices/realtimeSlice';
 import type {
   AssinarCorridaPayload,
@@ -121,7 +122,10 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
           break;
         }
         case 'nova-corrida-disponivel':
+          console.log('[useRealtimeSession] nova-corrida-disponivel received →', JSON.stringify(event.payload));
           dispatch(addAvailableCorrida(event.payload.corridaId));
+          // Store the full payload in Redux so the modal renders on any screen
+          dispatch(setPendingOffer(event.payload));
           break;
       }
     });
@@ -142,24 +146,22 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
     let cancelled = false;
 
     const connect = async (): Promise<void> => {
+      console.log('[useRealtimeSession] connecting — isAuthenticated=true token_prefix=', token.slice(0, 20));
       const result = await realtimeFacade.connect(token);
-      if (!result.error || cancelled) {
-        return;
+      if (cancelled) return;
+      if (result.error) {
+        console.error('[useRealtimeSession] connect failed →', JSON.stringify(result.error));
+        logger.warn('useRealtimeSession', 'Realtime connect failed', result.error);
+        handleConnectionStatus('error', result.error.message);
+      } else {
+        console.log('[useRealtimeSession] connect dispatched — status=', result.data);
       }
-
-      logger.warn(
-        'useRealtimeSession',
-        'Realtime connect failed',
-        result.error,
-      );
-      handleConnectionStatus('error', result.error.message);
     };
 
     void connect();
 
     return () => {
       cancelled = true;
-      realtimeFacade.disconnect();
     };
   }, [
     dispatch,

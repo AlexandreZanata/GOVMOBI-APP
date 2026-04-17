@@ -124,6 +124,7 @@ export const useMotorista = (): MotoristaState => {
   const userId = useAppSelector(s => s.auth.user?.id ?? '');
 
   const isMotorista = papeis.includes('MOTORISTA');
+  const motoristaId = useAppSelector(s => s.auth.motoristaId ?? '');
 
   const [userLocation, setUserLocation] = useState<Coordenada | null>(null);
   const [isLocating, setIsLocating] = useState(true);
@@ -413,7 +414,7 @@ export const useMotorista = (): MotoristaState => {
     async (corridaId: string, motivo?: string): Promise<void> => {
       await withAction(
         async () => {
-          const r = await corridaFacade.recusarCorrida(corridaId, {motoristaId: userId, motivo});
+          const r = await corridaFacade.recusarCorrida(corridaId, {motivo});
           if (r.error) throw new Error(r.error.message);
           return r.data;
         },
@@ -428,7 +429,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.recusarFailed',
       );
     },
-    [corridaFacade, dispatch, t, userId, withAction],
+    [corridaFacade, dispatch, t, motoristaId, withAction],
   );
 
   /**
@@ -456,8 +457,6 @@ export const useMotorista = (): MotoristaState => {
 
   /**
    * Notifies arrival at pickup (POST /corridas/:id/chegar).
-   * The backend maps this to the same state transition as iniciar-deslocamento
-   * with an arrival flag. We call iniciarDeslocamento as the facade method.
    *
    * @param corridaId - Ride UUID.
    */
@@ -465,7 +464,7 @@ export const useMotorista = (): MotoristaState => {
     async (corridaId: string): Promise<void> => {
       await withAction(
         async () => {
-          const r = await corridaFacade.iniciarDeslocamento(corridaId);
+          const r = await corridaFacade.chegarAoLocal(corridaId);
           if (r.error) throw new Error(r.error.message);
           return r.data;
         },
@@ -500,7 +499,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.embarqueFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, motoristaId, t, withAction],
   );
 
   /**
@@ -528,7 +527,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.finalizarFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, motoristaId, t, withAction],
   );
 
   /**
@@ -541,11 +540,7 @@ export const useMotorista = (): MotoristaState => {
     async (corridaId: string, motivo: string): Promise<void> => {
       await withAction(
         async () => {
-          const r = await corridaFacade.cancelarCorrida(corridaId, {
-            solicitanteId: userId,
-            motivo,
-            tipoSolicitante: 'motorista',
-          });
+          const r = await corridaFacade.cancelarCorrida(corridaId, {motivo});
           if (r.error) {
             throw new Error(
               r.error.code === 'BAD_REQUEST'
@@ -566,7 +561,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.cancelarFailed',
       );
     },
-    [corridaFacade, dispatch, t, userId, withAction],
+    [corridaFacade, dispatch, motoristaId, t, userId, withAction],
   );
 
   /**
