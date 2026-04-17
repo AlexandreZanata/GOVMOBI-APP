@@ -250,6 +250,7 @@
     "acompanhar": {"title": "Seguir Viaje"},
     "solicitar": {
       "title": "Solicitar Viaje",
+      "modalTitle": "Detalles del Viaje",
       "destino": "Destino seleccionado",
       "motivoLabel": "Motivo del Servicio",
       "motivoPlaceholder": "Ej: Visita técnica a la obra",

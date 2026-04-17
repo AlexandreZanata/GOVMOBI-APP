@@ -318,6 +318,7 @@
     },
     "solicitar": {
       "title": "Solicitar Corrida",
+      "modalTitle": "Detalhes da Corrida",
       "destino": "Destino selecionado",
       "motivoLabel": "Motivo do Serviço",
       "motivoPlaceholder": "Ex: Visita técnica ao canteiro de obras",

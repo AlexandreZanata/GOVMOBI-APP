@@ -62,7 +62,9 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
   }, [activeCorrida, navigation]);
 
   const handleRequestRide = useCallback(() => {
-    navigation.navigate('SolicitarCorrida');
+    // Ride request is now handled via the modal on the dashboard (PassageiroHome tab).
+    // The list screen only shows history — navigate back to home tab.
+    navigation.getParent()?.navigate('PassageiroHome');
   }, [navigation]);
 
   const badgeColor = activeCorrida

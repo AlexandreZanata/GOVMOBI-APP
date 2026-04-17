@@ -14,6 +14,10 @@ import {ServidoresFacadeImpl, type IServidoresFacade} from './ServidoresFacade';
 import {FrotaFacadeImpl, type IFrotaFacade} from './FrotaFacade';
 import {CorridaFacadeImpl, type ICorridaFacade} from './CorridaFacade';
 import {PesquisaFacadeImpl, type IPesquisaFacade} from './PesquisaFacade';
+import {
+  CartografiaFacadeImpl,
+  type ICartografiaFacade,
+} from './CartografiaFacade';
 import {type FacadeConfig} from './types';
 import {ENV} from '../../config/env';
 
@@ -27,6 +31,7 @@ export interface Facades {
   frotaFacade: IFrotaFacade;
   corridaFacade: ICorridaFacade;
   pesquisaFacade: IPesquisaFacade;
+  cartografiaFacade: ICartografiaFacade;
 }
 
 export interface FacadeProviderProps {
@@ -37,7 +42,10 @@ export interface FacadeProviderProps {
   getToken?: () => string | null;
 }
 
-const createDefaultFacades = (config?: FacadeConfig, getToken?: () => string | null): Facades => {
+const createDefaultFacades = (
+  config?: FacadeConfig,
+  getToken?: () => string | null,
+): Facades => {
   const resolvedConfig: FacadeConfig = {
     ...config,
     mockMode: config?.mockMode ?? ENV.mockMode,
@@ -46,17 +54,26 @@ const createDefaultFacades = (config?: FacadeConfig, getToken?: () => string | n
 
   if (resolvedConfig.mockMode) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const {AuthFacadeMock} = require('./mock/AuthFacadeMock') as typeof import('./mock/AuthFacadeMock');
+    const {AuthFacadeMock} =
+      require('./mock/AuthFacadeMock') as typeof import('./mock/AuthFacadeMock');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const {ChatFacadeMock} = require('./mock/ChatFacadeMock') as typeof import('./mock/ChatFacadeMock');
+    const {ChatFacadeMock} =
+      require('./mock/ChatFacadeMock') as typeof import('./mock/ChatFacadeMock');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const {CallFacadeMock} = require('./mock/CallFacadeMock') as typeof import('./mock/CallFacadeMock');
+    const {CallFacadeMock} =
+      require('./mock/CallFacadeMock') as typeof import('./mock/CallFacadeMock');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const {NotificationFacadeMock} = require('./mock/NotificationFacadeMock') as typeof import('./mock/NotificationFacadeMock');
+    const {NotificationFacadeMock} =
+      require('./mock/NotificationFacadeMock') as typeof import('./mock/NotificationFacadeMock');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const {RunFacadeMock} = require('./mock/RunFacadeMock') as typeof import('./mock/RunFacadeMock');
+    const {RunFacadeMock} =
+      require('./mock/RunFacadeMock') as typeof import('./mock/RunFacadeMock');
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const {PesquisaFacadeMock} = require('./mock/PesquisaFacadeMock') as typeof import('./mock/PesquisaFacadeMock');
+    const {PesquisaFacadeMock} =
+      require('./mock/PesquisaFacadeMock') as typeof import('./mock/PesquisaFacadeMock');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CartografiaFacadeMock} =
+      require('./mock/CartografiaFacadeMock') as typeof import('./mock/CartografiaFacadeMock');
 
     return {
       authFacade: new AuthFacadeMock(),
@@ -67,8 +84,13 @@ const createDefaultFacades = (config?: FacadeConfig, getToken?: () => string | n
       servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
       frotaFacade: new FrotaFacadeImpl(resolvedConfig),
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      corridaFacade: (() => { const {CorridaFacadeMock} = require('./mock/CorridaFacadeMock') as typeof import('./mock/CorridaFacadeMock'); return new CorridaFacadeMock(); })(),
+      corridaFacade: (() => {
+        const {CorridaFacadeMock} =
+          require('./mock/CorridaFacadeMock') as typeof import('./mock/CorridaFacadeMock');
+        return new CorridaFacadeMock() as unknown as ICorridaFacade;
+      })(),
       pesquisaFacade: new PesquisaFacadeMock(),
+      cartografiaFacade: new CartografiaFacadeMock(),
     };
   }
 
@@ -82,6 +104,7 @@ const createDefaultFacades = (config?: FacadeConfig, getToken?: () => string | n
     frotaFacade: new FrotaFacadeImpl(resolvedConfig),
     corridaFacade: new CorridaFacadeImpl(resolvedConfig),
     pesquisaFacade: new PesquisaFacadeImpl({...resolvedConfig, getToken}),
+    cartografiaFacade: new CartografiaFacadeImpl({...resolvedConfig, getToken}),
   };
 };
 
@@ -134,3 +157,4 @@ export * from './ServidoresFacade';
 export * from './FrotaFacade';
 export * from './CorridaFacade';
 export * from './PesquisaFacade';
+export * from './CartografiaFacade';

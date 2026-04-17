@@ -7,3 +7,4 @@ export * from './CallFacadeMock';
 export * from './NotificationFacadeMock';
 export * from './RunFacadeMock';
 export * from './RunSimulation';
+export * from './CartografiaFacadeMock';

@@ -2,17 +2,17 @@
  * @fileoverview PassageiroCorridasNavigator — stack navigator for the USUARIO corridas tab.
  *
  * Scoped to the 5 endpoints available to USUARIO:
- *   POST /corridas                — SolicitarCorrida screen
+ *   POST /corridas                — via SolicitarCorridaModal on the dashboard
  *   POST /corridas/:id/cancelar   — action within AcompanharCorrida
  *   GET  /corridas/:id            — CorridaDetalhe screen
  *   GET  /corridas/:id/status     — polled by AcompanharCorrida
  *   GET  /corridas/:id/mensagens  — rendered within AcompanharCorrida
  *
- * MOTORISTA-only screens (MotoristaCorridaAction) are intentionally absent.
+ * Note: SolicitarCorrida is now a modal on PassageiroScreen (dashboard),
+ * not a separate screen in this navigator.
  *
  * Screens:
- *   PassageiroCorridasList — active corrida card or empty state + request CTA
- *   SolicitarCorrida       — ride request form
+ *   PassageiroCorridasList — active corrida card or empty state
  *   AcompanharCorrida      — real-time tracking + messages + cancel
  *   CorridaDetalhe         — full ride details (read-only)
  */
@@ -21,7 +21,6 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../theme';
 import {PassageiroCorridasListScreen} from '../screens/Corridas/PassageiroCorridasListScreen';
-import {SolicitarCorridaScreen} from '../screens/Corridas/SolicitarCorridaScreen';
 import {AcompanharCorridaScreen} from '../screens/Corridas/AcompanharCorridaScreen';
 import {CorridaDetalheScreen} from '../screens/Corridas/CorridaDetalheScreen';
 import type {PassageiroCorridasStackParamList} from './types';
@@ -31,6 +30,7 @@ const Stack = createNativeStackNavigator<PassageiroCorridasStackParamList>();
 /**
  * Stack navigator for the USUARIO corridas experience.
  * Does not include MOTORISTA-only screens.
+ * Ride request is handled via SolicitarCorridaModal on the dashboard.
  *
  * @returns JSX element for the PassageiroCorridasNavigator.
  */
@@ -49,11 +49,6 @@ export const PassageiroCorridasNavigator = (): React.JSX.Element => {
         component={PassageiroCorridasListScreen}
         name="PassageiroCorridasList"
         options={{title: t('corridas.list.title')}}
-      />
-      <Stack.Screen
-        component={SolicitarCorridaScreen}
-        name="SolicitarCorrida"
-        options={{title: t('corridas.solicitar.title')}}
       />
       <Stack.Screen
         component={AcompanharCorridaScreen}

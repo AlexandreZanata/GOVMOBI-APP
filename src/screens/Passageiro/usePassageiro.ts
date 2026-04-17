@@ -7,14 +7,13 @@ import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {
   clearSearch,
-  setCorridaError,
-  setIsRequesting,
   setIsSearching,
   setSearchResults,
   setSelectedDestino,
+  setUserLocationSnapshot,
 } from '../../store/slices/corridaSlice';
 import {addToast} from '../../store/slices/uiSlice';
-import type {Coordenada, Localizacao} from '../../models/Corrida';
+import type {Coordenada} from '../../models/Corrida';
 import type {SearchResult} from '../../types/corrida';
 
 /** Camera region for the Mapbox map. */
@@ -46,8 +45,8 @@ export interface PassageiroState {
   selectedDestinoLabel: string | null;
   /** Selected destination coordinates. */
   selectedDestinoCoords: Coordenada | null;
-  /** Whether a ride request is being submitted. */
-  isRequesting: boolean;
+  /** Whether the ride request modal is open. */
+  isRequestModalOpen: boolean;
   /**
    * Mapbox public token fetched from GET /pesquisa/config.
    * Null while loading; empty string signals a fetch failure.
@@ -61,8 +60,13 @@ export interface PassageiroState {
   onSearchChange: (text: string) => void;
   /** Selects a search result as the destination. */
   onSelectResult: (result: SearchResult) => void;
-  /** Submits the ride request. */
-  onSolicitarCorrida: () => void;
+  /**
+   * Opens the ride request modal.
+   * Validates that a destination is selected first.
+   */
+  onOpenRequestModal: () => void;
+  /** Closes the ride request modal without submitting. */
+  onCloseRequestModal: () => void;
   /** Increments map zoom. */
   onZoomIn: () => void;
   /** Decrements map zoom. */
@@ -91,12 +95,11 @@ const DEFAULT_REGION: MapRegion = {
 export const usePassageiro = (): PassageiroState => {
   const {t} = useTranslation();
   const dispatch = useAppDispatch();
-  const {corridaFacade, pesquisaFacade} = useFacades();
+  const {pesquisaFacade} = useFacades();
 
   const searchResults = useAppSelector(state => state.corrida.searchResults);
   const isSearching = useAppSelector(state => state.corrida.isSearching);
   const selectedDestino = useAppSelector(state => state.corrida.selectedDestino);
-  const isRequesting = useAppSelector(state => state.corrida.isRequesting);
 
   const [userLocation, setUserLocation] = useState<Coordenada | null>(null);
   const [isLocating, setIsLocating] = useState(true);
@@ -104,6 +107,7 @@ export const usePassageiro = (): PassageiroState => {
   const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   /** null = loading, string = resolved (may be empty on error) */
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
 
@@ -300,6 +304,9 @@ export const usePassageiro = (): PassageiroState => {
           placeName: result.placeName,
         }),
       );
+      // Snapshot current GPS so the modal has it without re-requesting
+      dispatch(setUserLocationSnapshot(userLocationRef.current));
+
       setIsSearchOpen(false);
       setSearchQuery('');
       dispatch(clearSearch());
@@ -315,10 +322,10 @@ export const usePassageiro = (): PassageiroState => {
   );
 
   // ---------------------------------------------------------------------------
-  // Ride request
+  // Request modal
   // ---------------------------------------------------------------------------
 
-  const onSolicitarCorrida = useCallback(async (): Promise<void> => {
+  const onOpenRequestModal = useCallback((): void => {
     if (!selectedDestino) {
       dispatch(
         addToast({
@@ -329,56 +336,12 @@ export const usePassageiro = (): PassageiroState => {
       );
       return;
     }
+    setIsRequestModalOpen(true);
+  }, [dispatch, selectedDestino, t]);
 
-    if (!userLocation) {
-      dispatch(
-        addToast({
-          id: `corrida-no-loc-${Date.now()}`,
-          message: t('passageiro.errors.locationRequired'),
-          type: 'warning',
-        }),
-      );
-      return;
-    }
-
-    dispatch(setIsRequesting(true));
-    dispatch(setCorridaError(null));
-
-    const origem: Localizacao = {
-      latitude: userLocation.latitude,
-      longitude: userLocation.longitude,
-      endereco: t('passageiro.currentLocation'),
-    };
-
-    const destino: Localizacao = {
-      latitude: selectedDestino.latitude,
-      longitude: selectedDestino.longitude,
-      endereco: selectedDestino.endereco,
-    };
-
-    const result = await corridaFacade.createCorrida({origem, destino});
-
-    dispatch(setIsRequesting(false));
-
-    if (result.error) {
-      dispatch(setCorridaError(result.error.message));
-      dispatch(
-        addToast({
-          id: `corrida-error-${Date.now()}`,
-          message: t('passageiro.errors.requestFailed'),
-          type: 'error',
-        }),
-      );
-    } else {
-      dispatch(
-        addToast({
-          id: `corrida-success-${Date.now()}`,
-          message: t('passageiro.requestSuccess'),
-          type: 'success',
-        }),
-      );
-    }
-  }, [corridaFacade, dispatch, selectedDestino, t, userLocation]);
+  const onCloseRequestModal = useCallback((): void => {
+    setIsRequestModalOpen(false);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Map controls
@@ -423,13 +386,14 @@ export const usePassageiro = (): PassageiroState => {
     selectedDestinoCoords: selectedDestino
       ? {latitude: selectedDestino.latitude, longitude: selectedDestino.longitude}
       : null,
-    isRequesting,
+    isRequestModalOpen,
     mapboxToken,
     onOpenSearch,
     onCloseSearch,
     onSearchChange,
     onSelectResult,
-    onSolicitarCorrida,
+    onOpenRequestModal,
+    onCloseRequestModal,
     onZoomIn,
     onZoomOut,
     onCenterOnUser,

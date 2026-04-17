@@ -254,6 +254,7 @@
     "acompanhar": {"title": "Track Ride"},
     "solicitar": {
       "title": "Request Ride",
+      "modalTitle": "Ride Details",
       "destino": "Selected destination",
       "motivoLabel": "Service Reason",
       "motivoPlaceholder": "e.g. Technical visit to construction site",

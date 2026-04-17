@@ -4,6 +4,7 @@
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import type {Corrida, CorridaMensagem, CorridaStatus, Localizacao} from '../../models/Corrida';
 import type {SearchResult} from '../../types/corrida';
+import type {Coordenada} from '../../models/Corrida';
 
 export interface CorridaState {
   /** Currently active ride, if any. */
@@ -12,6 +13,11 @@ export interface CorridaState {
   pendingCorridaId: string | null;
   /** Selected destination for the next ride. */
   selectedDestino: (Localizacao & {placeName: string}) | null;
+  /**
+   * Snapshot of the user's GPS location at the time they selected a destination.
+   * Used by SolicitarCorridaModal so it doesn't need to re-request GPS.
+   */
+  userLocationSnapshot: Coordenada | null;
   /** Whether a ride request is being submitted. */
   isRequesting: boolean;
   /** Whether a lifecycle action (aceitar/recusar/etc.) is in progress. */
@@ -32,6 +38,7 @@ const initialState: CorridaState = {
   activeCorrida: null,
   pendingCorridaId: null,
   selectedDestino: null,
+  userLocationSnapshot: null,
   isRequesting: false,
   isActionLoading: false,
   error: null,
@@ -80,6 +87,13 @@ const corridaSlice = createSlice({
       action: PayloadAction<(Localizacao & {placeName: string}) | null>,
     ) {
       state.selectedDestino = action.payload;
+    },
+
+    /**
+     * Stores a snapshot of the user's GPS location for use by the request modal.
+     */
+    setUserLocationSnapshot(state, action: PayloadAction<Coordenada | null>) {
+      state.userLocationSnapshot = action.payload;
     },
 
     /**
@@ -153,6 +167,7 @@ export const {
   setPendingCorridaId,
   updateCorridaStatus,
   setSelectedDestino,
+  setUserLocationSnapshot,
   setIsRequesting,
   setIsActionLoading,
   setCorridaError,

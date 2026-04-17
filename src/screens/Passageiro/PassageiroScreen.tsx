@@ -24,13 +24,36 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
+import {useNavigation} from '@react-navigation/native';
+import type {CompositeNavigationProp} from '@react-navigation/native';
+import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {usePassageiro} from './usePassageiro';
+import {SolicitarCorridaModal} from './components/SolicitarCorridaModal';
 import {
   createPassageiroStyles,
   PassageiroColors as C,
 } from './PassageiroScreen.styles';
 import type {SearchResult} from '../../types/corrida';
 import {ENV} from '../../config/env';
+
+// Navigation type: PassageiroHome tab → PassageiroCorridas tab → AcompanharCorrida screen
+type PassageiroTabParamList = {
+  PassageiroHome: undefined;
+  PassageiroCorridas: undefined;
+  PassageiroNotificacoes: undefined;
+  PassageiroProfile: undefined;
+};
+type PassageiroCorridasStackParamList = {
+  PassageiroCorridasList: undefined;
+  AcompanharCorrida: {corridaId: string};
+  CorridaDetalhe: {corridaId: string};
+  SolicitarCorrida: undefined;
+};
+type PassageiroScreenNavProp = CompositeNavigationProp<
+  BottomTabNavigationProp<PassageiroTabParamList, 'PassageiroHome'>,
+  NativeStackNavigationProp<PassageiroCorridasStackParamList>
+>;
 
 // ── Mapbox lazy-load ─────────────────────────────────────────────────────────
 type MapboxModule = {
@@ -118,6 +141,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createPassageiroStyles(), []);
+  const navigation = useNavigation<PassageiroScreenNavProp>();
 
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [ctaPressed, setCtaPressed] = useState(false);
@@ -143,13 +167,14 @@ export const PassageiroScreen = (): React.JSX.Element => {
     isSearching,
     selectedDestinoLabel,
     selectedDestinoCoords,
-    isRequesting,
+    isRequestModalOpen,
     mapboxToken,
     onOpenSearch,
     onCloseSearch,
     onSearchChange,
     onSelectResult,
-    onSolicitarCorrida,
+    onOpenRequestModal,
+    onCloseRequestModal,
     onCenterOnUser,
   } = usePassageiro();
 
@@ -348,8 +373,22 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const fabTop = searchBandHeight + 12;
   const overlayTop = searchBandHeight + 8;
   const hasDestination = !!selectedDestinoLabel;
-  const ctaDisabled = isRequesting || isLocating || !hasDestination;
+  const ctaDisabled = isLocating || !hasDestination;
   const sheetPaddingBottom = 14;
+
+  // Navigate to AcompanharCorrida after successful ride request
+  const handleRequestSuccess = useCallback(
+    (corridaId: string): void => {
+      onCloseRequestModal();
+      // Switch to the Corridas tab, then push AcompanharCorrida
+      navigation.navigate('PassageiroCorridas');
+      // Small delay to let the tab switch complete before pushing
+      setTimeout(() => {
+        navigation.navigate('AcompanharCorrida', {corridaId});
+      }, 100);
+    },
+    [navigation, onCloseRequestModal],
+  );
 
   return (
     <View style={styles.container} testID="passageiro-screen"
@@ -561,7 +600,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
           }
           accessibilityRole="button"
           disabled={ctaDisabled}
-          onPress={onSolicitarCorrida}
+          onPress={onOpenRequestModal}
           onPressIn={() => setCtaPressed(true)}
           onPressOut={() => setCtaPressed(false)}
           style={[
@@ -570,15 +609,18 @@ export const PassageiroScreen = (): React.JSX.Element => {
             ctaDisabled && styles.ctaButtonDisabled,
           ]}
           testID="cta-solicitar">
-          {isRequesting ? (
-            <ActivityIndicator color={C.surfaceCard} size="small" />
-          ) : (
-            <Text style={styles.ctaButtonText}>
-              {t('passageiro.bottomSheet.cta')}
-            </Text>
-          )}
+          <Text style={styles.ctaButtonText}>
+            {t('passageiro.bottomSheet.cta')}
+          </Text>
         </Pressable>
       </Animated.View>
+
+      {/* Ride request modal — slides up from bottom */}
+      <SolicitarCorridaModal
+        onClose={onCloseRequestModal}
+        onSuccess={handleRequestSuccess}
+        visible={isRequestModalOpen}
+      />
     </View>
   );
 };
