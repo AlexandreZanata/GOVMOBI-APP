@@ -40,6 +40,18 @@ const C = {
   accentShadow: '#F5C842',
   pulseBg: 'rgba(39,110,241,0.15)',
   transparent: 'transparent',
+  // search bar container states
+  searchContainerDefault: 'rgba(255,255,255,0.15)',
+  searchContainerDefaultBorder: 'rgba(255,255,255,0.25)',
+  searchContainerFocused: 'rgba(255,255,255,0.22)',
+  searchContainerFocusedBorder: 'rgba(255,255,255,0.50)',
+  searchContainerFilled: 'rgba(255,255,255,0.18)',
+  searchContainerFilledBorder: 'rgba(255,255,255,0.35)',
+  searchClearBtn: 'rgba(255,255,255,0.12)',
+  // modal backdrop
+  backdropOverlay: 'rgba(9,9,11,0.55)',
+  // error input background
+  errorInputBg: '#FFF5F5',
 } as const;
 
 export const PassageiroColors = C;
@@ -130,6 +142,7 @@ export const createPassageiroStyles = () =>
     // bleeds under the status bar, giving the "status bar tinted" effect.
     searchBarWrapper: {
       position: 'absolute',
+      top: 0,
       left: 0,
       right: 0,
       zIndex: 10,
@@ -146,21 +159,21 @@ export const createPassageiroStyles = () =>
     },
     searchBarContainer: {
       height: 54,
-      backgroundColor: 'rgba(255,255,255,0.15)',
+      backgroundColor: C.searchContainerDefault,
       borderRadius: 14,
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.25)',
+      borderColor: C.searchContainerDefaultBorder,
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 12,
     },
     searchBarContainerFocused: {
-      backgroundColor: 'rgba(255,255,255,0.22)',
-      borderColor: 'rgba(255,255,255,0.50)',
+      backgroundColor: C.searchContainerFocused,
+      borderColor: C.searchContainerFocusedBorder,
     },
     searchBarContainerFilled: {
-      backgroundColor: 'rgba(255,255,255,0.18)',
-      borderColor: 'rgba(255,255,255,0.35)',
+      backgroundColor: C.searchContainerFilled,
+      borderColor: C.searchContainerFilledBorder,
     },
     searchBarLeftIcon: {
       width: 34,
@@ -182,7 +195,7 @@ export const createPassageiroStyles = () =>
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: 'rgba(255,255,255,0.12)',
+      backgroundColor: C.searchClearBtn,
       alignItems: 'center',
       justifyContent: 'center',
     },

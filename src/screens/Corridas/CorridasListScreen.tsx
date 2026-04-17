@@ -6,7 +6,6 @@
  */
 import React, {useCallback, useEffect, useMemo} from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
@@ -125,12 +124,12 @@ export const CorridasListScreen = (): React.JSX.Element => {
               </View>
             </View>
 
-            <View style={[styles.cardRow, {marginBottom: 0}]}>
+            <View style={styles.cardRowLast}>
               <MaterialIcons
                 name="chevron-right"
                 size={20}
                 color={theme.colors.textMuted}
-                style={{marginLeft: 'auto'}}
+                style={styles.chevronRight}
               />
             </View>
           </Pressable>
@@ -148,7 +147,8 @@ export const CorridasListScreen = (): React.JSX.Element => {
                 style={[
                   styles.actionButton,
                   styles.actionButtonPrimary,
-                  {marginTop: theme.spacing[6], width: '100%'},
+                  styles.fullWidthButton,
+                  {marginTop: theme.spacing[6]},
                 ]}
                 testID="btn-request-ride">
                 <Text style={styles.actionButtonText}>{t('corridas.list.requestRide')}</Text>

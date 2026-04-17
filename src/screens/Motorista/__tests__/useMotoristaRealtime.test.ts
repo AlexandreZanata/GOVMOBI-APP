@@ -20,7 +20,7 @@ const mockSubscribeToCorrida = jest.fn().mockResolvedValue({data: true, error: n
 const mockUpdateDriverPosition = jest.fn().mockResolvedValue({data: true, error: null});
 
 let capturedEventHandler: ((event: unknown) => void) | null = null;
-let capturedStatusHandler: ((status: string) => void) | null = null;
+let _capturedStatusHandler: ((status: string) => void) | null = null;
 
 const mockOnEvent = jest.fn((handler: (event: unknown) => void) => {
   capturedEventHandler = handler;
@@ -28,8 +28,8 @@ const mockOnEvent = jest.fn((handler: (event: unknown) => void) => {
 });
 
 const mockOnConnectionStatusChange = jest.fn((handler: (status: string) => void) => {
-  capturedStatusHandler = handler;
-  return () => { capturedStatusHandler = null; };
+  _capturedStatusHandler = handler;
+  return () => { _capturedStatusHandler = null; };
 });
 
 const mockRealtimeFacade = {
@@ -69,7 +69,7 @@ describe('useMotoristaRealtime', () => {
     mockConnectionStatus = 'connected';
     mockActiveCorrida = null;
     capturedEventHandler = null;
-    capturedStatusHandler = null;
+    _capturedStatusHandler = null;
     jest.useFakeTimers();
   });
 

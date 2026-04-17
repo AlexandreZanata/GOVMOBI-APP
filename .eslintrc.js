@@ -17,7 +17,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/*.test.ts', '**/*.test.tsx', '**/__tests__/**/*.{ts,tsx}'],
+      files: ['**/*.test.ts', '**/*.test.tsx', '**/__tests__/**/*.{ts,tsx}', 'src/__mocks__/**/*.{ts,tsx}'],
       env: {
         jest: true,
       },

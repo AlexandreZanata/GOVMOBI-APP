@@ -2,7 +2,7 @@
  * @fileoverview PassageiroSearchBar — floating dark-navy search bar for the passenger home screen.
  */
 import React from 'react';
-import {Animated, Pressable, Text, TextInput, View} from 'react-native';
+import {Animated, Pressable, TextInput, View} from 'react-native';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {
@@ -51,7 +51,7 @@ export const PassageiroSearchBar = ({
     <Animated.View
       style={[
         styles.searchBarWrapper,
-        {top: 0, paddingTop, transform: [{translateY: searchBarTranslate}]},
+        {paddingTop, transform: [{translateY: searchBarTranslate}]},
       ]}
       testID="search-bar-wrapper">
       <View

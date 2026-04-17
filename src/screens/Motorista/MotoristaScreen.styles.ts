@@ -32,6 +32,8 @@ export const MotoristaColors = {
   textMuted: '#8A94A6',
   /** Dark text. */
   textDark: '#0B1623',
+  /** Shadow color for bottom sheets. */
+  shadowDark: '#0A1628',
 } as const;
 
 /**
@@ -159,7 +161,7 @@ export const createMotoristaStyles = (theme: Theme) => {
       paddingTop: spacing[5],
       zIndex: 20,
       // Shadow only upward — avoids the top-edge line on Android elevation
-      shadowColor: '#0A1628',
+      shadowColor: C.shadowDark,
       shadowOffset: {width: 0, height: -4},
       shadowOpacity: 0.12,
       shadowRadius: 10,

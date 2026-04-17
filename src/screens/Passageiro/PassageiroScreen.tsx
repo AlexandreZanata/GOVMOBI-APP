@@ -13,7 +13,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Pressable,
   StatusBar,
   TouchableOpacity,
   View,
@@ -236,7 +235,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
       setDestinoAddress(destRes.data?.address ?? t('corridas.detail.addressUnavailable'));
     })();
     return () => { cancelled = true; };
-  }, [activeCorrida?.id, hasActiveRide, pesquisaFacade, t]);
+  }, [activeCorrida, hasActiveRide, pesquisaFacade, t]);
 
   // ── Route line for active ride ──────────────────────────────────────────────
   useEffect(() => {
@@ -260,10 +259,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
       if (coords && coords.length >= 2) setActiveRouteCoords(coords);
     })();
     return () => { cancelled = true; };
-  }, [
-    activeCorrida?.id, activeCorrida?.origemLat, activeCorrida?.origemLng,
-    activeCorrida?.destinoLat, activeCorrida?.destinoLng, hasActiveRide, pesquisaFacade,
-  ]);
+  }, [activeCorrida, hasActiveRide, pesquisaFacade]);
 
   // ── Cancel ride ─────────────────────────────────────────────────────────────
   const handleCancel = useCallback(() => {

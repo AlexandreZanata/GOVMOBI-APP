@@ -238,7 +238,7 @@ export const SolicitarCorridaModal = ({
     userLocation,
   ]);
 
-  const styles = createStyles(insets.bottom);
+  const sheetPaddingBottom = insets.bottom > 0 ? insets.bottom : 8;
 
   return (
     <Modal
@@ -261,7 +261,7 @@ export const SolicitarCorridaModal = ({
         pointerEvents="box-none"
         style={styles.keyboardView}>
         <Animated.View
-          style={[styles.sheet, {transform: [{translateY: slideAnim}]}]}
+          style={[styles.sheet, {paddingBottom: sheetPaddingBottom}, {transform: [{translateY: slideAnim}]}]}
           testID="solicitar-modal">
 
           {/* Drag handle */}
@@ -361,8 +361,7 @@ export const SolicitarCorridaModal = ({
             )}
           </Pressable>
 
-          {/* Safe area spacer */}
-          <View style={{height: insets.bottom > 0 ? insets.bottom : 8}} />
+          {/* Safe area spacer handled via paddingBottom on sheet */}
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
@@ -375,131 +374,130 @@ SolicitarCorridaModal.displayName = 'SolicitarCorridaModal';
 // Styles — use PassageiroColors to stay consistent with the dashboard
 // ---------------------------------------------------------------------------
 
-const createStyles = (bottomInset: number) =>
-  StyleSheet.create({
-    backdrop: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(9,9,11,0.55)',
-    },
-    keyboardView: {
-      flex: 1,
-      justifyContent: 'flex-end',
-    },
-    sheet: {
-      backgroundColor: C.surfaceCard,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      paddingHorizontal: 20,
-      paddingTop: 0,
-      paddingBottom: bottomInset > 0 ? bottomInset : 8,
-      shadowColor: C.shadow,
-      shadowOffset: {width: 0, height: -6},
-      shadowOpacity: 0.14,
-      shadowRadius: 24,
-      elevation: 20,
-    },
-    handle: {
-      alignSelf: 'center',
-      width: 36,
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: C.handleLight,
-      marginTop: 10,
-      marginBottom: 16,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      marginBottom: 14,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: C.textDark,
-      letterSpacing: -0.3,
-    },
-    subtitle: {
-      fontSize: 13,
-      color: C.textMuted,
-      marginTop: 3,
-      maxWidth: 260,
-    },
-    closeBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: C.closeBg,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 2,
-    },
-    divider: {
-      height: 1,
-      backgroundColor: C.dividerLight,
-      marginBottom: 18,
-    },
-    fieldGroup: {
-      marginBottom: 16,
-    },
-    fieldLabel: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: C.textMid,
-      marginBottom: 8,
-      letterSpacing: 0.1,
-    },
-    textInput: {
-      backgroundColor: C.surfaceSubtle,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: C.dividerLight,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      fontSize: 15,
-      color: C.textDark,
-    },
-    textInputMultiline: {
-      minHeight: 88,
-      textAlignVertical: 'top',
-    },
-    textInputShort: {
-      minHeight: 60,
-      textAlignVertical: 'top',
-    },
-    textInputError: {
-      borderColor: C.errorRed,
-      backgroundColor: '#FFF5F5',
-    },
-    errorText: {
-      fontSize: 12,
-      color: C.errorRed,
-      marginTop: 5,
-    },
-    submitBtn: {
-      height: 54,
-      backgroundColor: C.interactive,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 4,
-      shadowColor: C.interactive,
-      shadowOffset: {width: 0, height: 4},
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 6,
-    },
-    submitBtnPressed: {
-      backgroundColor: C.interactivePress,
-      transform: [{scale: 0.98}],
-    },
-    submitBtnDisabled: {
-      opacity: 0.45,
-    },
-    submitBtnText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: C.surfaceCard,
-      letterSpacing: 0.3,
-    },
-  });
+const styles = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: C.backdropOverlay,
+  },
+  keyboardView: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: C.surfaceCard,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    shadowColor: C.shadow,
+    shadowOffset: {width: 0, height: -6},
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    elevation: 20,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: C.handleLight,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: C.textDark,
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: C.textMuted,
+    marginTop: 3,
+    maxWidth: 260,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: C.closeBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: C.dividerLight,
+    marginBottom: 18,
+  },
+  fieldGroup: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: C.textMid,
+    marginBottom: 8,
+    letterSpacing: 0.1,
+  },
+  textInput: {
+    backgroundColor: C.surfaceSubtle,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.dividerLight,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: C.textDark,
+  },
+  textInputMultiline: {
+    minHeight: 88,
+    textAlignVertical: 'top',
+  },
+  textInputShort: {
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  textInputError: {
+    borderColor: C.errorRed,
+    backgroundColor: C.errorInputBg,
+    borderWidth: 2,
+  },
+  errorText: {
+    fontSize: 12,
+    color: C.errorRed,
+    marginTop: 5,
+  },
+  submitBtn: {
+    height: 54,
+    backgroundColor: C.interactive,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    shadowColor: C.interactive,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  submitBtnPressed: {
+    backgroundColor: C.interactivePress,
+    transform: [{scale: 0.98}],
+  },
+  submitBtnDisabled: {
+    opacity: 0.45,
+  },
+  submitBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: C.surfaceCard,
+    letterSpacing: 0.3,
+  },
+});
