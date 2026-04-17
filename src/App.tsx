@@ -26,6 +26,7 @@ import {
   useRealtimeSession,
 } from './hooks';
 import {useCorridaContexto} from './hooks/useCorridaContexto';
+import {useDriverLocationStream} from './hooks/useDriverLocationStream';
 import {FacadeProvider} from '@services/facades';
 
 /**
@@ -37,6 +38,7 @@ const AppStartupEffects = (): null => {
   useAuthSession();
   useRealtimeSession();
   useCorridaContexto();
+  useDriverLocationStream();
   return null;
 };
 

@@ -11,11 +11,12 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  StatusBar,
   Text,
   View,
   type ListRenderItem,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useNavigation} from '@react-navigation/native';
@@ -41,7 +42,6 @@ const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
 export const PassageiroCorridasListScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
 
   const shared = useMemo(() => createCorridasStyles(theme), [theme]);
@@ -141,32 +141,42 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
     [s, t, theme],
   );
 
+  const isEmpty = !isLoading && rides.length === 0 && !hasActiveRide;
+
   return (
-    <View style={[s.root, {paddingTop: insets.top}]} testID="passageiro-corridas-list-screen">
-      <View style={s.header}>
+    <SafeAreaView edges={['top']} style={[s.root, {backgroundColor: theme.colors.primary}]} testID="passageiro-corridas-list-screen">
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+
+      {/* Dark blue title header */}
+      <View style={s.titleRow}>
         <Text style={s.headerTitle}>{t('corridas.history.title')}</Text>
-        <Text style={s.headerSubtitle}>{t('corridas.history.subtitle')}</Text>
       </View>
 
-      {isLoading ? (
-        <View style={shared.emptyContainer}>
-          <ActivityIndicator color={theme.design.blue500} size="large" />
-        </View>
-      ) : (
-        <FlatList
-          contentContainerStyle={[s.listContent, rides.length === 0 && s.listContentEmpty]}
-          data={rides}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={ListEmpty}
-          ListHeaderComponent={ListHeader}
-          removeClippedSubviews
-          renderItem={renderRide}
-          showsVerticalScrollIndicator={false}
-          testID="historico-list"
-          windowSize={5}
-        />
-      )}
-    </View>
+      {/* White content area */}
+      <View style={s.contentArea}>
+        {isLoading ? (
+          <View style={s.centeredFill}>
+            <ActivityIndicator color={theme.design.blue500} size="large" />
+          </View>
+        ) : isEmpty ? (
+          <View style={s.centeredFill} testID="corridas-empty">
+            <Text style={s.emptySubtitle}>{t('corridas.history.empty.subtitle')}</Text>
+          </View>
+        ) : (
+          <FlatList
+            contentContainerStyle={[s.listContent, rides.length === 0 && s.listContentEmpty]}
+            data={rides}
+            keyExtractor={item => item.id}
+            ListHeaderComponent={ListHeader}
+            removeClippedSubviews
+            renderItem={renderRide}
+            showsVerticalScrollIndicator={false}
+            testID="historico-list"
+            windowSize={5}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 };
 

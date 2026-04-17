@@ -9,7 +9,7 @@
   1. Screen mounts → `useEffect` fires `pesquisaFacade.getPesquisaConfig()`
   2. Token arrives → stored in `mapboxToken` state
   3. `useEffect` in screen calls `MapboxGL.setAccessToken(mapboxToken)`
-  4. Map renders with server-issued token
+  4. Map renders with a server-issued token
 
 ### 2. **GET /pesquisa/geocoding** — Forward Geocoding
 - **Facade**: `PesquisaFacadeImpl.geocodeAddress(input)`
@@ -48,7 +48,7 @@
 - `PesquisaFacadeImpl` now attaches `Authorization: Bearer <token>` to all requests
 
 ### Issue 3: Home/Work Shortcuts in Idle State
-**Root cause**: UI showed placeholder shortcuts instead of prompting user to type.
+**Root cause**: UI showed placeholder shortcuts instead of prompting the user to type.
 
 **Fix**:
 - Replaced shortcuts with "type at least 3 characters" hint (`pesquisa.geocoding.minChars`)
@@ -62,17 +62,17 @@
 
 ## 📁 Files Modified
 
-| File | Change |
-|------|--------|
-| `src/types/pesquisa.ts` | Domain types for all 3 endpoints |
-| `src/services/facades/PesquisaFacade.ts` | Facade contract + impl with auth headers |
-| `src/services/facades/mock/PesquisaFacadeMock.ts` | Mock impl for `MOCK_MODE` |
-| `src/services/facades/index.ts` | Registered `pesquisaFacade` in provider |
-| `src/screens/Passageiro/usePassageiro.ts` | Fetch config on mount, use `geocodeAddress` with proximity |
-| `src/screens/Passageiro/PassageiroScreen.tsx` | Token-driven Mapbox init, removed shortcuts |
-| `src/App.tsx` | Pass `getToken` to `FacadeProvider` |
-| `src/i18n/locales/{pt-BR,en-US,es}.json` | Added `pesquisa` namespace strings |
-| `src/screens/Passageiro/__tests__/PesquisaSearchBar.test.tsx` | POC tests (6 scenarios) |
+| File                                                          | Change                                                     |
+|---------------------------------------------------------------|------------------------------------------------------------|
+| `src/types/pesquisa.ts`                                       | Domain types for all 3 endpoints                           |
+| `src/services/facades/PesquisaFacade.ts`                      | Facade contract + impl with auth headers                   |
+| `src/services/facades/mock/PesquisaFacadeMock.ts`             | Mock impl for `MOCK_MODE`                                  |
+| `src/services/facades/index.ts`                               | Registered `pesquisaFacade` in provider                    |
+| `src/screens/Passageiro/usePassageiro.ts`                     | Fetch config on mount, use `geocodeAddress` with proximity |
+| `src/screens/Passageiro/PassageiroScreen.tsx`                 | Token-driven Mapbox init, removed shortcuts                |
+| `src/App.tsx`                                                 | Pass `getToken` to `FacadeProvider`                        |
+| `src/i18n/locales/{pt-BR,en-US,es}.json`                      | Added `pesquisa` namespace strings                         |
+| `src/screens/Passageiro/__tests__/PesquisaSearchBar.test.tsx` | POC tests (6 scenarios)                                    |
 
 ---
 
