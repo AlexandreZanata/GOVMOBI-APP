@@ -154,7 +154,7 @@ export const usePassageiro = (): PassageiroState => {
   const canPreviewRoute =
     papeis.length === 0 ||
     papeis.includes('USUARIO') ||
-    papeis.includes('MOTORISTA');
+    papeis.includes('ADMIN');
 
   useEffect(() => {
     userLocationRef.current = userLocation;

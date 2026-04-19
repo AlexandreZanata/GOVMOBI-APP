@@ -34,7 +34,7 @@ module.exports = {
       },
     },
   ],
-  ignorePatterns: ['node_modules/**', 'dist/**', 'build/**', '.expo/**'],
+  ignorePatterns: ['node_modules/**', 'dist/**', 'build/**', '.expo/**', 'govmob-backend/**'],
   rules: {
     'react-hooks/exhaustive-deps': 'warn',
     'react-hooks/rules-of-hooks': 'error',

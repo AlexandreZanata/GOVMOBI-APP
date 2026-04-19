@@ -32,7 +32,6 @@ import {createMotoristaStyles, MotoristaColors as C} from './MotoristaScreen.sty
 import {createHistoricoStyles} from '@screens/Corridas/HistoricoCorridas.styles';
 import {useAppSelector} from '../../store';
 import {useTheme} from '../../theme';
-import {useFacades} from '@services/facades';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
 import {MotoristaIdleSheet} from './components/MotoristaIdleSheet';
 import {MotoristaTerminalSheet} from './components/MotoristaTerminalSheet';
@@ -58,20 +57,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
   const hs = useMemo(() => createHistoricoStyles(theme), [theme]);
   const navigation = useNavigation<MotoristaNavProp>();
 
-  const motoristaId = useAppSelector(s => s.auth.motoristaId ?? '');
   const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
-
-  // Fetch available vehicles on mount so we can pass a real veiculoId when accepting
-  const {frotaFacade} = useFacades();
-  const [selectedVeiculoId, setSelectedVeiculoId] = useState<string>('');
-  useEffect(() => {
-    frotaFacade.listVeiculos().then(result => {
-      if (result.data) {
-        const active = result.data.find(v => v.ativo);
-        if (active) setSelectedVeiculoId(active.id);
-      }
-    });
-  }, [frotaFacade]);
 
   const {
     userLocation,
@@ -128,8 +114,9 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   const handleAceitar = useCallback(() => {
     if (!activeCorrida) return;
-    void onAceitar(activeCorrida.id, {veiculoId: selectedVeiculoId});
-  }, [activeCorrida, onAceitar, selectedVeiculoId]);
+    // motoristaId and veiculoId are resolved inside onAceitar from auth state + API
+    void onAceitar(activeCorrida.id, {motoristaId: '', veiculoId: ''});
+  }, [activeCorrida, onAceitar]);
 
   const handleRecusar = useCallback(() => {
     if (!activeCorrida) return;
@@ -182,8 +169,8 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   const handleAcceptOffer = useCallback((corridaId: string) => {
     dismissOffer();
-    void onAceitar(corridaId, {veiculoId: selectedVeiculoId});
-  }, [dismissOffer, onAceitar, selectedVeiculoId]);
+    void onAceitar(corridaId, {motoristaId: '', veiculoId: ''});
+  }, [dismissOffer, onAceitar]);
 
   const handleRefuseOffer = useCallback((corridaId: string) => {
     dismissOffer();

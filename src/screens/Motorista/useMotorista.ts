@@ -112,19 +112,18 @@ export interface MotoristaState {
 export const useMotorista = (): MotoristaState => {
   const {t} = useTranslation();
   const dispatch = useAppDispatch();
-  const {corridaFacade} = useFacades();
+  const {corridaFacade, frotaFacade} = useFacades();
 
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
   const isActionLoading = useAppSelector(s => s.corrida.isActionLoading);
   const error = useAppSelector(s => s.corrida.error);
   const mensagens = useAppSelector(s => s.corrida.mensagens);
   const isLoadingMensagens = useAppSelector(s => s.corrida.isLoadingMensagens);
-  const papeis = useAppSelector(s => s.auth.papeis);
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
-  const userId = useAppSelector(s => s.auth.user?.id ?? '');
-
-  const isMotorista = papeis.includes('MOTORISTA');
   const motoristaId = useAppSelector(s => s.auth.motoristaId ?? '');
+
+  // Driver = user with a non-null motoristaId from /auth/me
+  const isMotorista = !!motoristaId;
 
   const [userLocation, setUserLocation] = useState<Coordenada | null>(null);
   const [isLocating, setIsLocating] = useState(true);
@@ -375,20 +374,37 @@ export const useMotorista = (): MotoristaState => {
 
   /**
    * Accepts a dispatched ride (POST /corridas/:id/aceitar).
+   * Fetches the driver's first active vehicle at call time to ensure
+   * a valid veiculoId is always sent to the API.
    *
    * @param corridaId - Ride UUID.
-   * @param input - Driver and vehicle IDs.
+   * @param input - Optional pre-resolved input (veiculoId). If veiculoId is
+   *   empty the method fetches it from GET /frota/veiculos.
    */
   const onAceitar = useCallback(
     async (corridaId: string, input: AceitarCorridaInput): Promise<void> => {
       await withAction(
         async () => {
-          const r = await corridaFacade.aceitarCorrida(corridaId, input);
+          // Resolve veiculoId — fetch from API if not already provided
+          let veiculoId = input.veiculoId;
+          if (!veiculoId) {
+            const veiculosResult = await frotaFacade.listVeiculos();
+            const firstActive = veiculosResult.data?.find(v => v.ativo);
+            if (!firstActive) {
+              throw new Error(t('corridas.errors.noVehicleAvailable'));
+            }
+            veiculoId = firstActive.id;
+          }
+
+          const r = await corridaFacade.aceitarCorrida(corridaId, {
+            motoristaId,
+            veiculoId,
+          });
           if (r.error) {
             throw new Error(
               r.error.code === 'CONFLICT'
                 ? t('corridas.errors.jaAceita')
-                : t('corridas.errors.aceitarFailed'),
+                : r.error.message,
             );
           }
           return r.data;
@@ -401,7 +417,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.aceitarFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, frotaFacade, motoristaId, dispatch, t, withAction],
   );
 
   /**
@@ -429,7 +445,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.recusarFailed',
       );
     },
-    [corridaFacade, dispatch, t, motoristaId, withAction],
+    [corridaFacade, dispatch, t, withAction],
   );
 
   /**
@@ -499,7 +515,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.embarqueFailed',
       );
     },
-    [corridaFacade, dispatch, motoristaId, t, withAction],
+    [corridaFacade, dispatch, t, withAction],
   );
 
   /**
@@ -527,7 +543,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.finalizarFailed',
       );
     },
-    [corridaFacade, dispatch, motoristaId, t, withAction],
+    [corridaFacade, dispatch, t, withAction],
   );
 
   /**
@@ -561,7 +577,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.cancelarFailed',
       );
     },
-    [corridaFacade, dispatch, motoristaId, t, userId, withAction],
+    [corridaFacade, dispatch, t, withAction],
   );
 
   /**

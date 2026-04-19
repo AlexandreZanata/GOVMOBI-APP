@@ -42,9 +42,12 @@ export interface SolicitarCorridaInput {
 
 /**
  * POST /corridas/:id/aceitar body.
- * motoristaId is derived from JWT (user.motoristaId) on the server.
+ * The backend DTO requires motoristaId as @IsUUID('7') for validation,
+ * but the controller ignores it and uses user.motoristaId from the JWT.
+ * We send both fields to satisfy the validator.
  */
 export interface AceitarCorridaInput {
+  motoristaId: string;
   veiculoId: string;
 }
 

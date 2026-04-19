@@ -76,10 +76,12 @@ export const useCorridas = (corridaId?: string): CorridasState => {
   const mensagens = useAppSelector(s => s.corrida.mensagens);
   const isLoadingMensagens = useAppSelector(s => s.corrida.isLoadingMensagens);
   const papeis = useAppSelector(s => s.auth.papeis);
+  const motoristaId = useAppSelector(s => s.auth.motoristaId);
 
-  const isMotorista = papeis.includes('MOTORISTA');
+  // Driver = user with a non-null motoristaId from /auth/me
+  const isMotorista = !!motoristaId;
   const isAdmin = papeis.includes('ADMIN');
-  const isPassageiro = !isMotorista || papeis.includes('USUARIO');
+  const isPassageiro = !isMotorista;
 
   // ---------------------------------------------------------------------------
   // Status polling
@@ -200,10 +202,9 @@ export const useCorridas = (corridaId?: string): CorridasState => {
 
   const onRecusar = useCallback(
     async (id: string, motivo?: string): Promise<void> => {
-      const motoristaId = 'current-user'; // resolved from auth in real impl
       await withAction(
         async () => {
-          const r = await corridaFacade.recusarCorrida(id, {motoristaId, motivo});
+          const r = await corridaFacade.recusarCorrida(id, {motivo});
           if (r.error) throw new Error(r.error.message);
           return r.data;
         },
@@ -274,14 +275,9 @@ export const useCorridas = (corridaId?: string): CorridasState => {
 
   const onCancelar = useCallback(
     async (id: string, motivo: string): Promise<void> => {
-      const tipoSolicitante = isAdmin ? 'admin' : isMotorista ? 'motorista' : 'passageiro';
       await withAction(
         async () => {
-          const r = await corridaFacade.cancelarCorrida(id, {
-            solicitanteId: 'current-user',
-            motivo,
-            tipoSolicitante,
-          });
+          const r = await corridaFacade.cancelarCorrida(id, {motivo});
           if (r.error) {
             const msg = r.error.code === 'BAD_REQUEST'
               ? t('corridas.errors.jaFinalizada')
@@ -298,7 +294,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.cancelarFailed',
       );
     },
-    [corridaFacade, dispatch, isAdmin, isMotorista, t, withAction],
+    [corridaFacade, dispatch, t, withAction],
   );
 
   return {

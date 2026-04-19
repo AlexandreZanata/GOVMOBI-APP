@@ -36,7 +36,8 @@ const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
 export const useDriverLocationStream = (): void => {
   const {realtimeFacade} = useFacades();
 
-  const isMotorista = useAppSelector(s => s.auth.papeis.includes('MOTORISTA'));
+  // Driver = user with a non-null motoristaId from /auth/me
+  const isMotorista = useAppSelector(s => !!s.auth.motoristaId);
   const connectionStatus = useAppSelector(s => s.realtime.connectionStatus);
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
 

@@ -62,7 +62,8 @@
     "node_modules",
     "babel.config.js",
     "metro.config.js",
-    "jest.config.js"
+    "jest.config.js",
+    "govmob-backend"
   ],
   "extends": "expo/tsconfig.base"
 }

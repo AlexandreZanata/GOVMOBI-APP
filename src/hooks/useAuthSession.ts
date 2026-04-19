@@ -156,7 +156,6 @@ export const useAuthSession = (): void => {
     const roleMap: Record<string, typeof UR[keyof typeof UR]> = {
       ADMIN: UR.ADMIN,
       USUARIO: UR.OFFICER,
-      MOTORISTA: UR.OFFICER,
     };
     dispatch(setUser({
       id: me.id,
