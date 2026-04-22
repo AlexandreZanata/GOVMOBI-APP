@@ -270,26 +270,26 @@ Incremental implementation of the full ride lifecycle for both roles. Each phase
     - Render with `visible={showMotoristaModal}`, `motoristaId={activeCorrida?.motoristaId ?? null}`, `veiculoId={activeCorrida?.veiculoId ?? null}`, `onDismiss={() => setShowMotoristaModal(false)}`
     - _Requirements: 24.2, 24.4, 24.5_
 
-- [ ] 22. DespachoWebSocket `estado-operacional` and `reconexao-concluida` listeners
-  - [ ] 22.1 Extend `DespachoServerToClientEvents` and `IDespachoWebSocketClient` in `src/services/websocket/DespachoWebSocket.ts`
+- [x] 22. DespachoWebSocket `estado-operacional` and `reconexao-concluida` listeners
+  - [x] 22.1 Extend `DespachoServerToClientEvents` and `IDespachoWebSocketClient` in `src/services/websocket/DespachoWebSocket.ts`
     - Add `'estado-operacional': (payload: {status: string}) => void` to `DespachoServerToClientEvents`
     - Add `'reconexao-concluida': (payload: ReconexaoConcluida) => void` to `DespachoServerToClientEvents` (import or inline the `ReconexaoConcluida` type from `src/types/realtime.ts`)
     - Add `onEstadoOperacional(handler: EventHandler<{status: string}>): () => void` to `IDespachoWebSocketClient`
     - Add `onReconexaoConcluida(handler: EventHandler<ReconexaoConcluida>): () => void` to `IDespachoWebSocketClient`
     - _Requirements: 25.1, 25.2_
-  - [ ] 22.2 Implement the new handlers in `DespachoWebSocketClient`
+  - [x] 22.2 Implement the new handlers in `DespachoWebSocketClient`
     - Add `estadoOperacionalHandlers` Set and `reconexaoConcluida` Set as private class fields
     - Implement `onEstadoOperacional` and `onReconexaoConcluida` methods following the same pattern as existing `on*` methods
     - In `registerSocketListeners()`, add `socket.on('estado-operacional', ...)` forwarding to `estadoOperacionalHandlers`
     - In `registerSocketListeners()`, add `socket.on('reconexao-concluida', ...)` forwarding to `reconexaoConcluida` handlers
     - _Requirements: 25.3, 25.4_
-  - [ ] 22.3 Wire new events through `RealtimeFacadeImpl` in `src/services/facades/RealtimeFacade.ts`
+  - [x] 22.3 Wire new events through `RealtimeFacadeImpl` in `src/services/facades/RealtimeFacade.ts`
     - In `registerTransportListeners()`, add `client.onEstadoOperacional(payload => this.emitEvent({type: 'estado-operacional', payload}))`
     - Add `client.onReconexaoConcluida(payload => this.emitEvent({type: 'reconexao-concluida', payload}))`
     - Ensure the `RealtimeEvent` union in `src/types/realtime.ts` includes `estado-operacional` and `reconexao-concluida` event types
     - _Requirements: 25.5_
 
-- [ ] 23. ESLint false-positive fixes
+- [-] 23. ESLint false-positive fixes
   - [ ] 23.1 Suppress `react-native/no-unused-styles` in `src/screens/Passageiro/components/MotoristaInfoModal.tsx`
     - Add `/* eslint-disable react-native/no-unused-styles */` at the top of the file (styles are used but ESLint cannot detect usage through `React.useMemo`)
     - _Requirements: 26.1_

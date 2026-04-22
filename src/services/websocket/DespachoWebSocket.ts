@@ -18,6 +18,7 @@ import type {
   NovaCorridaDisponivelPayload,
   NovaMensagemPayload,
   PosicaoAtualizadaPayload,
+  ReconexaoConcluida,
   StatusCorridaAlteradoPayload,
 } from '../../types';
 
@@ -40,6 +41,8 @@ interface DespachoServerToClientEvents {
   'nova-mensagem': (payload: NovaMensagemPayload) => void;
   'status-corrida-alterado': (payload: StatusCorridaAlteradoPayload) => void;
   'nova-corrida-disponivel': (payload: NovaCorridaDisponivelPayload) => void;
+  'estado-operacional': (payload: {status: string}) => void;
+  'reconexao-concluida': (payload: ReconexaoConcluida) => void;
 }
 
 interface DespachoClientToServerEvents {
@@ -87,6 +90,8 @@ export interface IDespachoWebSocketClient {
   onNovaMensagem(handler: EventHandler<NovaMensagemPayload>): () => void;
   onStatusCorridaAlterado(handler: EventHandler<StatusCorridaAlteradoPayload>): () => void;
   onNovaCorridaDisponivel(handler: EventHandler<NovaCorridaDisponivelPayload>): () => void;
+  onEstadoOperacional(handler: EventHandler<{status: string}>): () => void;
+  onReconexaoConcluida(handler: EventHandler<ReconexaoConcluida>): () => void;
   setTokenRefresher(refresher: TokenRefresher): void;
 }
 
@@ -130,6 +135,8 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   private readonly mensagemHandlers = new Set<EventHandler<NovaMensagemPayload>>();
   private readonly statusHandlers = new Set<EventHandler<StatusCorridaAlteradoPayload>>();
   private readonly novaCorridaHandlers = new Set<EventHandler<NovaCorridaDisponivelPayload>>();
+  private readonly estadoOperacionalHandlers = new Set<EventHandler<{status: string}>>();
+  private readonly reconexaoConcluídaHandlers = new Set<EventHandler<ReconexaoConcluida>>();
 
   private tokenRefresher: TokenRefresher | null = null;
   private isHandling401 = false;
@@ -233,6 +240,16 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     return () => { this.novaCorridaHandlers.delete(handler); };
   }
 
+  public onEstadoOperacional(handler: EventHandler<{status: string}>): () => void {
+    this.estadoOperacionalHandlers.add(handler);
+    return () => { this.estadoOperacionalHandlers.delete(handler); };
+  }
+
+  public onReconexaoConcluida(handler: EventHandler<ReconexaoConcluida>): () => void {
+    this.reconexaoConcluídaHandlers.add(handler);
+    return () => { this.reconexaoConcluídaHandlers.delete(handler); };
+  }
+
   private registerSocketListeners(): void {
     if (!this.socket) return;
 
@@ -316,6 +333,16 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     this.socket.on('nova-corrida-disponivel', payload => {
       wsLog('EVENT nova-corrida-disponivel →', JSON.stringify(payload));
       this.novaCorridaHandlers.forEach(h => h(payload));
+    });
+
+    this.socket.on('estado-operacional', payload => {
+      wsLog('EVENT estado-operacional →', JSON.stringify(payload));
+      this.estadoOperacionalHandlers.forEach(h => h(payload));
+    });
+
+    this.socket.on('reconexao-concluida', payload => {
+      wsLog('EVENT reconexao-concluida →', JSON.stringify(payload));
+      this.reconexaoConcluídaHandlers.forEach(h => h(payload));
     });
   }
 }

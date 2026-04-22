@@ -398,6 +398,16 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
       rtLog('facade → nova-corrida-disponivel dispatching to', this.eventHandlers.size, 'handlers');
       this.emitEvent({type: 'nova-corrida-disponivel', payload});
     });
+
+    this.client.onEstadoOperacional(payload => {
+      rtLog('facade → estado-operacional →', JSON.stringify(payload));
+      this.emitEvent({type: 'estado-operacional', payload: payload as {status: import('@models/Motorista').MotoristaStatusOperacional}});
+    });
+
+    this.client.onReconexaoConcluida(payload => {
+      rtLog('facade → reconexao-concluida →', JSON.stringify(payload));
+      this.emitEvent({type: 'reconexao-concluida', payload});
+    });
   }
 
   private emitEvent(event: RealtimeEvent): void {
