@@ -315,8 +315,8 @@ Incremental implementation of the full ride lifecycle for both roles. Each phase
     - Apply the same fix to `en-US.json` and `es.json` which have the same duplicate
     - _Requirements: 27.3_
 
-- [ ] 25. `usePassageiroRealtime` — `historico-mensagens` handler
-  - [ ] 25.1 Add `historico-mensagens` case to the `onEvent` handler in `src/hooks/usePassageiroRealtime.ts`
+- [x] 25. `usePassageiroRealtime` — `historico-mensagens` handler
+  - [x] 25.1 Add `historico-mensagens` case to the `onEvent` handler in `src/hooks/usePassageiroRealtime.ts`
     - Import `setMensagens` from `@store/slices/corridaSlice` (add to existing import)
     - In the `switch` block, add `case 'historico-mensagens':` that maps each item in `event.payload` through `realtimeFacade.normalizeCorridaMensagem` and dispatches `setMensagens(normalizedMessages)`
     - _Requirements: 28.1, 6.5_

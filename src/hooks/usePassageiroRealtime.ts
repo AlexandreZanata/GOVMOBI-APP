@@ -14,6 +14,7 @@ import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
 import {
   setDriverPosition,
+  setMensagens,
   updateCorridaStatus,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
@@ -77,6 +78,13 @@ export const usePassageiroRealtime = (): void => {
         case 'status-corrida-alterado': {
           const mapped = realtimeFacade.mapCorridaStatus(event.payload.status) ?? normalizeStatus(event.payload.status);
           dispatch(updateCorridaStatus(mapped as Corrida['status']));
+          break;
+        }
+        case 'historico-mensagens': {
+          const normalizedMessages = event.payload.map(item =>
+            realtimeFacade.normalizeCorridaMensagem(item),
+          );
+          dispatch(setMensagens(normalizedMessages));
           break;
         }
         case 'posicao-atualizada': {
