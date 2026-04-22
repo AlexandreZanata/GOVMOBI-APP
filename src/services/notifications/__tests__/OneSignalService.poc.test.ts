@@ -33,7 +33,7 @@ jest.mock('react-native-onesignal', () => ({
 }));
 
 jest.mock('@config/env', () => ({
-  ENV: {ONESIGNAL_APP_ID: 'test-app-id-1234'},
+  ENV: {ONESIGNAL_APP_ID: '8723fa88-19eb-4f95-8478-50ba9c1b5d90'},
 }));
 
 jest.mock('@utils/logger', () => ({
@@ -65,7 +65,7 @@ describe('initOneSignal', () => {
   it('calls setAppId with the configured App ID', () => {
     const result = initOneSignal();
     expect(result).toBe(true);
-    expect(mockSetAppId).toHaveBeenCalledWith('test-app-id-1234');
+    expect(mockSetAppId).toHaveBeenCalledWith('8723fa88-19eb-4f95-8478-50ba9c1b5d90');
   });
 
   it('returns false on web platform', () => {

@@ -130,7 +130,8 @@ export const useMotorista = (): MotoristaState => {
   const mensagens = useAppSelector(s => s.corrida.mensagens);
   const isLoadingMensagens = useAppSelector(s => s.corrida.isLoadingMensagens);
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
-  const motoristaId = useAppSelector(s => s.auth.motoristaId ?? '');  const statusOperacional = useAppSelector(s => s.auth.statusOperacional);
+  const motoristaId = useAppSelector(s => s.auth.motoristaId ?? '');
+  const statusOperacional = useAppSelector(s => s.auth.statusOperacional);
   const locationCurrent = useAppSelector(s => s.location.current);
   const locationLastKnown = useAppSelector(s => s.location.lastKnown);
   const locationFixStatus = useAppSelector(s => s.location.fixStatus);
@@ -429,7 +430,7 @@ export const useMotorista = (): MotoristaState => {
     async (corridaId: string, motivo?: string): Promise<void> => {
       await withAction(
         async () => {
-          const r = await corridaFacade.recusarCorrida(corridaId, {motivo});
+          const r = await corridaFacade.recusarCorrida(corridaId, {motoristaId, motivo});
           if (r.error) throw new Error(r.error.message);
           return r.data;
         },
@@ -577,7 +578,11 @@ export const useMotorista = (): MotoristaState => {
     async (corridaId: string, motivo: string): Promise<void> => {
       await withAction(
         async () => {
-          const r = await corridaFacade.cancelarCorrida(corridaId, {motivo});
+          const r = await corridaFacade.cancelarCorrida(corridaId, {
+            motivo,
+            solicitanteId: motoristaId,
+            tipoSolicitante: 'MOTORISTA',
+          });
           if (r.error) {
             throw new Error(
               r.error.code === 'INVALID_STATE_TRANSITION'

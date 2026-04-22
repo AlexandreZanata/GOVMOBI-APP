@@ -82,7 +82,7 @@ module.exports = {
       mockMode: process.env.MOCK_MODE === 'true',
       mapboxAccessToken: MAPBOX_ACCESS_TOKEN,
       mapboxSecretToken: MAPBOX_SECRET_TOKEN,
-      oneSignalAppId: process.env.ONESIGNAL_APP_ID ?? 'd6247b88-6e87-4695-ac0f-396993ede8ba',
+      oneSignalAppId: process.env.ONESIGNAL_APP_ID ?? '',
     },
   },
 };

@@ -2,9 +2,9 @@
  * @fileoverview Facade for the full corrida lifecycle.
  *
  * Every method sends only the fields the backend reads from the request body.
- * Fields derived from the JWT on the server (passageiroId, motoristaId,
- * solicitanteId, tipoSolicitante) are never sent — the backend extracts them
- * from the Bearer token via @CurrentUser().
+ * Fields derived from the JWT on the server (passageiroId) are never sent.
+ * Fields like motoristaId, solicitanteId, and tipoSolicitante ARE required
+ * in the request body for the relevant endpoints.
  *
  * Endpoints:
  *   POST /corridas                          — solicitar (202 async)
@@ -55,19 +55,20 @@ const toError = (message: string, code = 'INTERNAL_ERROR', statusCode?: number):
  */
 const normalizeStatus = (status: string): Corrida['status'] => {
   switch (status.trim().toLowerCase()) {
-    case 'solicitada':       return 'SOLICITADA';
-    case 'aguardando_aceite': return 'AGUARDANDO_ACEITE';
-    case 'aceita':           return 'ACEITA';
-    case 'recusada':         return 'RECUSADA';
+    case 'solicitada':       return 'solicitada';
+    case 'aguardando_aceite': return 'aguardando_aceite';
+    case 'aceita':           return 'aceita';
+    case 'recusada':         return 'cancelada'; // backend recusada maps to cancelada in app model
     case 'em_rota':
-    case 'em_deslocamento':  return 'EM_ROTA';    case 'passageiro_embarcado': return 'PASSAGEIRO_EMBARCADO';
-    case 'passageiro_a_bordo':   return 'PASSAGEIRO_A_BORDO';
+    case 'em_deslocamento':  return 'em_rota';
+    case 'passageiro_embarcado':
+    case 'passageiro_a_bordo':   return 'passageiro_a_bordo';
     case 'concluida':
-    case 'finalizada':       return 'CONCLUIDA';
-    case 'avaliada':         return 'AVALIADA';
-    case 'cancelada':        return 'CANCELADA';
-    case 'expirada':         return 'EXPIRADA';
-    default:                 return 'SOLICITADA';
+    case 'finalizada':       return 'concluida';
+    case 'avaliada':         return 'avaliada';
+    case 'cancelada':        return 'cancelada';
+    case 'expirada':         return 'expirada';
+    default:                 return 'solicitada';
   }
 };
 
@@ -459,7 +460,9 @@ export class CorridaFacadeImpl implements ICorridaFacade {
 
   /** @inheritdoc @deprecated */
   public async cancelCorrida(corridaId: string, reason: string): Promise<Result<boolean, FacadeError>> {
-    const result = await this.cancelarCorrida(corridaId, {motivo: reason});
+    // Deprecated — caller must migrate to cancelarCorrida with solicitanteId + tipoSolicitante.
+    // This stub satisfies the interface but will fail at runtime without a valid solicitanteId.
+    const result = await this.cancelarCorrida(corridaId, {motivo: reason, solicitanteId: '', tipoSolicitante: 'PASSAGEIRO'});
     if (result.error) return fail(result.error);
     return ok(true);
   }

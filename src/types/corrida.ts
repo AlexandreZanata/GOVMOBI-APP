@@ -48,9 +48,10 @@ export interface AceitarCorridaInput {
 
 /**
  * POST /corridas/:id/recusar body.
- * motoristaId is derived from JWT (user.motoristaId) on the server.
+ * Backend requires motoristaId as a UUID in the request body.
  */
 export interface RecusarCorridaInput {
+  motoristaId: string;
   motivo?: string;
 }
 
@@ -76,10 +77,12 @@ export interface FinalizarCorridaInput {
 
 /**
  * POST /corridas/:id/cancelar body.
- * solicitanteId and tipoSolicitante are derived from JWT on the server.
+ * Backend requires solicitanteId (UUID) and tipoSolicitante in the request body.
  */
 export interface CancelarCorridaInput {
   motivo: string;
+  solicitanteId: string;
+  tipoSolicitante: 'MOTORISTA' | 'PASSAGEIRO';
 }
 
 /**
