@@ -503,6 +503,25 @@
       "cancelarFailed": "Não foi possível cancelar a corrida."
     }
   },
+  "avaliacoes": {
+    "admin": {
+      "title": "Avaliações",
+      "empty": "Nenhuma avaliação encontrada.",
+      "errorMessage": "Não foi possível carregar as avaliações.",
+      "retry": "Tentar novamente",
+      "notaLabel": "Nota",
+      "comentarioLabel": "Comentário",
+      "createdAtLabel": "Data"
+    },
+    "minhaNota": {
+      "title": "Minha Nota",
+      "mediaLabel": "Média",
+      "totalLabel": "Total de avaliações",
+      "errorMessage": "Não foi possível carregar sua nota.",
+      "retry": "Tentar novamente",
+      "noRatingsYet": "Você ainda não possui avaliações."
+    }
+  },
   "pesquisa": {
     "geocoding": {
       "minChars": "Digite pelo menos 3 caracteres",

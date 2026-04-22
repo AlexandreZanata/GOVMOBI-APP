@@ -32,24 +32,24 @@ Implements the two missing rating screens: an ADMIN-only list of all system rati
     - Simulated delay 150–300 ms on both methods; zero `any` types
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [-] 4. Wire `AvaliacoesFacade` into `src/services/facades/index.ts`
-  - [ ] 4.1 Add `avaliacoesFacade: IAvaliacoesFacade` to the `Facades` interface
-  - [ ] 4.2 In the mock branch of `createDefaultFacades`, require and instantiate `AvaliacoesFacadeMock`
+- [x] 4. Wire `AvaliacoesFacade` into `src/services/facades/index.ts`
+  - [x] 4.1 Add `avaliacoesFacade: IAvaliacoesFacade` to the `Facades` interface
+  - [x] 4.2 In the mock branch of `createDefaultFacades`, require and instantiate `AvaliacoesFacadeMock`
     - Follow the same `require('./mock/AvaliacoesFacadeMock')` pattern used for `FrotaFacadeMock`
-  - [ ] 4.3 In the real branch, instantiate `AvaliacoesFacadeImpl({...resolvedConfig, getToken})`
-  - [ ] 4.4 Add `export * from './AvaliacoesFacade';` at the bottom of `index.ts`
+  - [x] 4.3 In the real branch, instantiate `AvaliacoesFacadeImpl({...resolvedConfig, getToken})`
+  - [x] 4.4 Add `export * from './AvaliacoesFacade';` at the bottom of `index.ts`
   - _Requirements: 2.6, 2.7_
 
-- [ ] 5. i18n strings
-  - [ ] 5.1 Add `avaliacoes.admin` namespace to `src/i18n/locales/pt-BR.json`
+- [x] 5. i18n strings
+  - [x] 5.1 Add `avaliacoes.admin` namespace to `src/i18n/locales/pt-BR.json`
     - Keys: `title`, `empty`, `errorMessage`, `retry`, `notaLabel`, `comentarioLabel`, `createdAtLabel`
     - _Requirements: 8.1_
-  - [ ] 5.2 Add `avaliacoes.minhaNota` namespace to `src/i18n/locales/pt-BR.json`
+  - [x] 5.2 Add `avaliacoes.minhaNota` namespace to `src/i18n/locales/pt-BR.json`
     - Keys: `title`, `mediaLabel`, `totalLabel`, `errorMessage`, `retry`, `noRatingsYet`
     - _Requirements: 8.2_
-  - [ ] 5.3 Mirror both namespaces in `src/i18n/locales/en-US.json`
+  - [x] 5.3 Mirror both namespaces in `src/i18n/locales/en-US.json`
     - _Requirements: 8.3_
-  - [ ] 5.4 Mirror both namespaces in `src/i18n/locales/es.json`
+  - [x] 5.4 Mirror both namespaces in `src/i18n/locales/es.json`
     - _Requirements: 8.3_
 
 - [ ] 6. `AdminAvaliacoesScreen`

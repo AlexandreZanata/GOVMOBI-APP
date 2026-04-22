@@ -456,6 +456,25 @@
       "cancelarFailed": "No se pudo cancelar el viaje."
     }
   },
+  "avaliacoes": {
+    "admin": {
+      "title": "Calificaciones",
+      "empty": "No se encontraron calificaciones.",
+      "errorMessage": "No se pudieron cargar las calificaciones.",
+      "retry": "Reintentar",
+      "notaLabel": "Calificación",
+      "comentarioLabel": "Comentario",
+      "createdAtLabel": "Fecha"
+    },
+    "minhaNota": {
+      "title": "Mi Calificación",
+      "mediaLabel": "Promedio",
+      "totalLabel": "Total de calificaciones",
+      "errorMessage": "No se pudo cargar tu calificación.",
+      "retry": "Reintentar",
+      "noRatingsYet": "Aún no tienes calificaciones."
+    }
+  },
   "pesquisa": {
     "geocoding": {
       "minChars": "Escribe al menos 3 caracteres",

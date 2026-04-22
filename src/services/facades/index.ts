@@ -19,6 +19,10 @@ import {
   type ICartografiaFacade,
 } from './CartografiaFacade';
 import {RealtimeFacadeImpl, type IRealtimeFacade} from './RealtimeFacade';
+import {
+  AvaliacoesFacadeImpl,
+  type IAvaliacoesFacade,
+} from './AvaliacoesFacade';
 import {type FacadeConfig} from './types';
 import {ENV} from '../../config/env';
 
@@ -34,6 +38,7 @@ export interface Facades {
   pesquisaFacade: IPesquisaFacade;
   cartografiaFacade: ICartografiaFacade;
   realtimeFacade: IRealtimeFacade;
+  avaliacoesFacade: IAvaliacoesFacade;
 }
 
 export interface FacadeProviderProps {
@@ -106,6 +111,12 @@ const createDefaultFacades = (
       pesquisaFacade: new PesquisaFacadeMock(),
       cartografiaFacade: new CartografiaFacadeMock(),
       realtimeFacade: new RealtimeFacadeImpl({mockMode: true}),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      avaliacoesFacade: (() => {
+        const {AvaliacoesFacadeMock} =
+          require('./mock/AvaliacoesFacadeMock') as typeof import('./mock/AvaliacoesFacadeMock');
+        return new AvaliacoesFacadeMock();
+      })(),
     };
   }
 
@@ -125,6 +136,7 @@ const createDefaultFacades = (
       wsBaseUrl: ENV.wsUrl,
       refreshToken,
     }),
+    avaliacoesFacade: new AvaliacoesFacadeImpl({...resolvedConfig, getToken}),
   };
 };
 
@@ -180,3 +192,4 @@ export * from './CorridaFacade';
 export * from './PesquisaFacade';
 export * from './CartografiaFacade';
 export * from './RealtimeFacade';
+export * from './AvaliacoesFacade';

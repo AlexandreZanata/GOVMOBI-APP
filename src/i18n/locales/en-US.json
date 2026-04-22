@@ -465,6 +465,25 @@
       "cancelarFailed": "Could not cancel the ride."
     }
   },
+  "avaliacoes": {
+    "admin": {
+      "title": "Ratings",
+      "empty": "No ratings found.",
+      "errorMessage": "Could not load ratings.",
+      "retry": "Retry",
+      "notaLabel": "Rating",
+      "comentarioLabel": "Comment",
+      "createdAtLabel": "Date"
+    },
+    "minhaNota": {
+      "title": "My Rating",
+      "mediaLabel": "Average",
+      "totalLabel": "Total ratings",
+      "errorMessage": "Could not load your rating.",
+      "retry": "Retry",
+      "noRatingsYet": "You have no ratings yet."
+    }
+  },
   "pesquisa": {
     "geocoding": {
       "minChars": "Type at least 3 characters",
