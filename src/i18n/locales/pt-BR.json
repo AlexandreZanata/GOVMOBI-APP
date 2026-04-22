@@ -447,7 +447,10 @@
       "submit": "Enviar Avaliação",
       "skipLabel": "Pular avaliação",
       "alreadyRated": "Você já avaliou esta corrida.",
-      "deadlinePassed": "O prazo para avaliação expirou."
+      "deadlinePassed": "O prazo para avaliação expirou.",
+      "validationError": "Dados inválidos. Verifique sua avaliação.",
+      "forbidden": "Você não tem permissão para avaliar esta corrida.",
+      "notFound": "Corrida não encontrada."
     },
     "status": {
       "solicitada": "Solicitada",

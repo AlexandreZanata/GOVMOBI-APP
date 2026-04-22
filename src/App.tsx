@@ -1,6 +1,9 @@
 /**
  * @fileoverview Main application assembly module.
  */
+// Must be the first import — patches TurboModuleRegistry.getEnforcing so
+// optional native modules (OneSignal) fail silently instead of logging ERROR.
+import './polyfills/turboModuleGuard';
 import React, {useCallback, useMemo, useRef} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Provider} from 'react-redux';

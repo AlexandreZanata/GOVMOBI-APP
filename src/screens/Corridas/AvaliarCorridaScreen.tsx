@@ -147,10 +147,21 @@ export const AvaliarCorridaScreen = (): React.JSX.Element => {
         comentario: comentario.trim() || undefined,
       });
       if (result.error) {
-        if (result.error.code === 'CONFLICT') {
-          Alert.alert(t('corridas.avaliar.alreadyRated'));
-        } else {
-          Alert.alert(t('errors.unknownError'));
+        switch (result.error.code) {
+          case 'CONFLICT':
+            Alert.alert(t('corridas.avaliar.alreadyRated'));
+            break;
+          case 'VALIDATION_ERROR':
+            Alert.alert(t('corridas.avaliar.validationError'), result.error.message);
+            return; // stay on screen so user can fix
+          case 'FORBIDDEN':
+            Alert.alert(t('corridas.avaliar.forbidden'));
+            break;
+          case 'NOT_FOUND':
+            Alert.alert(t('corridas.avaliar.notFound'));
+            break;
+          default:
+            Alert.alert(t('errors.unknownError'), result.error.message);
         }
         navigation.replace('PassageiroCorridasList');
         return;
