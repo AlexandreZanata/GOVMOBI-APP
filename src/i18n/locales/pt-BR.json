@@ -474,6 +474,8 @@
     },
     "terminal": {
       "FINALIZADA": "Corrida finalizada com sucesso.",
+      "CONCLUIDA": "Corrida concluída com sucesso.",
+      "AVALIADA": "Corrida avaliada.",
       "CANCELADA": "Corrida cancelada.",
       "RECUSADA": "Corrida recusada.",
       "EXPIRADA": "Corrida expirada — nenhum motorista disponível."

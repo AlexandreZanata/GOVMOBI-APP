@@ -429,6 +429,8 @@
     "mensagens": {"title": "Mensajes", "empty": "Sin mensajes aún.", "inputPlaceholder": "Escribe un mensaje..."},
     "terminal": {
       "FINALIZADA": "Viaje finalizado con éxito.",
+      "CONCLUIDA": "Viaje completado con éxito.",
+      "AVALIADA": "Viaje calificado.",
       "CANCELADA": "Viaje cancelado.",
       "RECUSADA": "Viaje rechazado.",
       "EXPIRADA": "Viaje expirado — ningún conductor disponible."

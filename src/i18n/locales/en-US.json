@@ -438,6 +438,8 @@
     "mensagens": {"title": "Messages", "empty": "No messages yet.", "inputPlaceholder": "Type a message..."},
     "terminal": {
       "FINALIZADA": "Ride completed successfully.",
+      "CONCLUIDA": "Ride completed successfully.",
+      "AVALIADA": "Ride rated.",
       "CANCELADA": "Ride cancelled.",
       "RECUSADA": "Ride refused.",
       "EXPIRADA": "Ride expired — no driver available."
