@@ -38,6 +38,7 @@ import type {
   SolicitarCorridaInput,
   SearchResult,
 } from '../../../types';
+import type {MotoristaStatusOperacional} from '@models/Motorista';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -177,8 +178,8 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         motoristaId: 'driver-001',
         municipioId: null,
         isHydrating: false,
-        statusOperacional: 'DISPONIVEL',
-      },
+        statusOperacional: 'DISPONIVEL' as MotoristaStatusOperacional,
+      } satisfies ReturnType<typeof authReducer>,
       corrida: {
         activeCorrida: null,
         pendingCorridaId: null,
