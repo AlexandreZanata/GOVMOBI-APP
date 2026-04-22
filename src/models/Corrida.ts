@@ -1,91 +1,74 @@
 /**
  * @fileoverview Domain model for ride requests (corridas).
+ *
+ * All status values match the backend enum exactly (lowercase).
  */
 
 /**
  * Status of a ride request in its lifecycle.
  *
  * State machine (backend-authoritative):
- *   SOLICITADA → AGUARDANDO_ACEITE → ACEITA → EM_ROTA → CONCLUIDA → AVALIADA
- *   Any non-terminal state → CANCELADA (role-restricted)
- *   AGUARDANDO_ACEITE → EXPIRADA (system)
+ *   solicitada → aguardando_aceite → aceita → em_rota → concluida → avaliada
+ *   Any non-terminal state → cancelada (role-restricted)
+ *   aguardando_aceite → expirada (system)
  *
- * Terminal states: CONCLUIDA, AVALIADA, CANCELADA, EXPIRADA — no further transitions.
- * EM_ROTA is NOT cancellable (passenger already boarded).
+ * Terminal states: concluida, avaliada, cancelada, expirada
  */
 export type CorridaStatus =
-  | 'SOLICITADA'
-  | 'AGUARDANDO_ACEITE'
-  | 'ACEITA'
-  | 'RECUSADA'
-  | 'EM_DESLOCAMENTO'   // app-side alias for EM_ROTA
-  | 'EM_ROTA'           // backend canonical name
-  | 'PASSAGEIRO_EMBARCADO'
-  | 'PASSAGEIRO_A_BORDO'  // driver confirmed passenger is in the vehicle
-  | 'FINALIZADA'        // app-side alias for CONCLUIDA
-  | 'CONCLUIDA'         // backend canonical name
-  | 'CANCELADA'
-  | 'EXPIRADA'          // system-generated terminal state
-  | 'AVALIADA';
+  | 'solicitada'
+  | 'aguardando_aceite'
+  | 'aceita'
+  | 'em_rota'
+  | 'passageiro_a_bordo'
+  | 'concluida'
+  | 'avaliada'
+  | 'cancelada'
+  | 'expirada';
 
 const VALID_STATUSES: ReadonlySet<CorridaStatus> = new Set([
-  'SOLICITADA',
-  'AGUARDANDO_ACEITE',
-  'ACEITA',
-  'RECUSADA',
-  'EM_DESLOCAMENTO',
-  'EM_ROTA',
-  'PASSAGEIRO_EMBARCADO',
-  'PASSAGEIRO_A_BORDO',
-  'FINALIZADA',
-  'CONCLUIDA',
-  'CANCELADA',
-  'EXPIRADA',
-  'AVALIADA',
+  'solicitada',
+  'aguardando_aceite',
+  'aceita',
+  'em_rota',
+  'passageiro_a_bordo',
+  'concluida',
+  'avaliada',
+  'cancelada',
+  'expirada',
 ]);
 
 /**
  * Statuses from which a ride CAN be cancelled.
- * EM_ROTA / EM_DESLOCAMENTO / PASSAGEIRO_EMBARCADO are NOT cancellable.
+ * em_rota is NOT cancellable (passenger already boarded).
  * Terminal states are also not cancellable.
  */
 export const CANCELLABLE_STATUSES: ReadonlySet<CorridaStatus> = new Set([
-  'SOLICITADA',
-  'AGUARDANDO_ACEITE',
-  'ACEITA',
+  'solicitada',
+  'aguardando_aceite',
+  'aceita',
 ]);
 
 /** Terminal states — no further transitions possible. */
 export const TERMINAL_STATUSES: ReadonlySet<CorridaStatus> = new Set([
-  'FINALIZADA',
-  'CONCLUIDA',
-  'CANCELADA',
-  'EXPIRADA',
-  'AVALIADA',
+  'concluida',
+  'avaliada',
+  'cancelada',
+  'expirada',
 ]);
 
 /**
  * Returns true if the ride can be cancelled from the given status.
- * Enforces the backend rule: EM_ROTA is NOT cancellable.
- *
- * @param status - Current ride status.
- * @returns Whether cancellation is allowed.
  */
 export const podeSerCancelada = (status: CorridaStatus): boolean =>
   CANCELLABLE_STATUSES.has(status);
 
 /**
- * Maps unknown string values to the closest known CorridaStatus,
- * or returns the value as-is if it is already a valid CorridaStatus.
+ * Normalizes any backend status string to a valid CorridaStatus.
+ * Handles case variations by lowercasing.
  */
 export function normalizeStatus(value: string): CorridaStatus {
-  if (VALID_STATUSES.has(value as CorridaStatus)) {
-    return value as CorridaStatus;
-  }
-  const upper = value.toUpperCase();
-  if (VALID_STATUSES.has(upper as CorridaStatus)) {
-    return upper as CorridaStatus;
-  }
+  const lower = value.toLowerCase() as CorridaStatus;
+  if (VALID_STATUSES.has(lower)) return lower;
   return value as CorridaStatus;
 }
 

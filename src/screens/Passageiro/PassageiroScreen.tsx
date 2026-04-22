@@ -24,6 +24,7 @@ import {useNavigation} from '@react-navigation/native';
 import type {CompositeNavigationProp} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {type NavigatorScreenParams} from '@react-navigation/native';
 import {usePassageiro} from './usePassageiro';
 import {usePassageiroRealtime} from '../../hooks/usePassageiroRealtime';
 import {SolicitarCorridaModal} from './components/SolicitarCorridaModal';
@@ -46,12 +47,12 @@ import {
 import {addToast} from '@store/slices/uiSlice';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
 import type {Corrida} from '@models/Corrida';
-import {TERMINAL_STATUSES as CORRIDA_TERMINAL_STATUSES} from '@models/Corrida';
+import {TERMINAL_STATUSES as CORRIDA_TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
 
 // ── Navigation types ──────────────────────────────────────────────────────────
 type PassageiroTabParamList = {
   PassageiroHome: undefined;
-  PassageiroCorridas: undefined;
+  PassageiroCorridas: NavigatorScreenParams<PassageiroCorridasStackParamList>;
   PassageiroNotificacoes: undefined;
   PassageiroProfile: undefined;
 };
@@ -85,31 +86,6 @@ const activeRouteLineStyle = {
 
 const TERMINAL_STATUSES = CORRIDA_TERMINAL_STATUSES;
 const STATUS_POLL_MS = 5000;
-
-const normalizeCorridaStatus = (status: string): Corrida['status'] => {
-  switch (status.trim().toLowerCase()) {
-    case 'solicitada':
-    case 'aguardando_aceite':
-      return 'SOLICITADA';
-    case 'aceita':
-      return 'ACEITA';
-    case 'recusada':
-      return 'RECUSADA';
-    case 'em_deslocamento':
-    case 'em_rota':
-      return 'EM_DESLOCAMENTO';
-    case 'passageiro_embarcado':
-      return 'PASSAGEIRO_EMBARCADO';
-    case 'concluida':
-    case 'finalizada':
-      return 'FINALIZADA';
-    case 'cancelada':
-    case 'expirada':
-      return 'CANCELADA';
-    default:
-      return 'SOLICITADA';
-  }
-};
 
 // ── Destination pin ───────────────────────────────────────────────────────────
 import {createPassageiroStyles} from './PassageiroScreen.styles';
@@ -211,7 +187,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
 
   // Auto-show when ride is accepted and driver is assigned
   useEffect(() => {
-    if (activeCorrida?.status === 'ACEITA' && activeCorrida.motoristaId != null) {
+    if (activeCorrida?.status === 'aceita' && activeCorrida.motoristaId != null) {
       setShowMotoristaModal(true);
     }
   }, [activeCorrida?.status, activeCorrida?.motoristaId]);
@@ -232,7 +208,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     const poll = async (): Promise<void> => {
       const result = await corridaFacade.getCorridaStatus(targetId);
       if (result.data) {
-        const normalized = normalizeCorridaStatus(result.data.status);
+        const normalized = normalizeStatus(result.data.status);
         dispatch(updateCorridaStatus(normalized));
         if (TERMINAL_STATUSES.has(normalized)) {
           if (pollRef.current) {
@@ -558,7 +534,10 @@ export const PassageiroScreen = (): React.JSX.Element => {
           onCancel={handleCancel}
           onCancelMotivoChange={setCancelMotivo}
           onHideCancelInput={() => { setShowCancelInput(false); setCancelMotivo(''); }}
-          onOpenMessages={() => navigation.navigate('CorridaMensagens', {corridaId: activeCorrida.id})}
+          onOpenMessages={() => navigation.navigate('PassageiroCorridas', {
+            screen: 'CorridaMensagens',
+            params: {corridaId: activeCorrida.id},
+          })}
           onShowCancelInput={() => setShowCancelInput(true)}
           origemAddress={origemAddress}
           paddingBottom={sheetPaddingBottom}

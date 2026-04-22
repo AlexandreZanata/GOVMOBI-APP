@@ -31,7 +31,7 @@ import type {Corrida} from '@models/Corrida';
 
 type NavProp = NativeStackNavigationProp<PassageiroCorridasStackParamList>;
 
-const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
+const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
 
 /**
  * Passenger corridas screen.
@@ -49,6 +49,7 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
 
   const activeCorrida = useAppSelector(st => st.corrida.activeCorrida);
   const corridaHistory = useAppSelector(st => st.corrida.corridaHistory ?? []);
+  const papeis = useAppSelector(st => st.auth.papeis);
   const [isLoading] = useState(false);
 
   const hasActiveRide =
@@ -194,8 +195,17 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
       />
 
       {/* Dark blue title header */}
-      <View style={s.titleRow}>
+      <View style={[s.titleRow, {flexDirection: 'row', justifyContent: 'space-between'}]}>
         <Text style={s.headerTitle}>{t('corridas.history.title')}</Text>
+        {papeis.includes('ADMIN') && (
+          <Pressable
+            accessibilityLabel={t('avaliacoes.admin.title')}
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('AdminAvaliacoes')}
+            testID="btn-admin-avaliacoes">
+            <MaterialIcons name="star" size={24} color={theme.design.textOnDark} />
+          </Pressable>
+        )}
       </View>
 
       {/* White content area */}

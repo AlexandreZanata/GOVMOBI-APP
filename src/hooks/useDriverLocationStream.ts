@@ -27,7 +27,7 @@ import type {Coordenada} from '@models/Corrida';
 /** Telemetry emit interval in milliseconds. */
 const TELEMETRY_INTERVAL_MS = 1_000;
 
-const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
+const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
 
 /**
  * Acquires GPS and streams `atualizar-posicao` every 1 second while the driver is
@@ -174,7 +174,7 @@ export const useDriverLocationStream = (): void => {
       }
 
       // Skip when driver is offline or off-duty
-      if (!status || status === 'AFASTADO') return;
+      if (!status || status === 'OFFLINE') return;
 
       const hasActiveRide = corrida && !TERMINAL_STATUSES.has(corrida.status);
 

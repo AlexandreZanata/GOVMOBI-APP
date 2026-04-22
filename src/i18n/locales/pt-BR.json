@@ -431,19 +431,15 @@
       "deadlinePassed": "O prazo para avaliação expirou."
     },
     "status": {
-      "SOLICITADA": "Solicitada",
-      "ACEITA": "Aceita",
-      "RECUSADA": "Recusada",
-      "EM_DESLOCAMENTO": "Em Deslocamento",
-      "EM_ROTA": "Em Rota",
-      "PASSAGEIRO_EMBARCADO": "Passageiro Embarcado",
-      "PASSAGEIRO_A_BORDO": "Passageiro a Bordo",
-      "FINALIZADA": "Finalizada",
-      "CANCELADA": "Cancelada",
-      "AGUARDANDO_ACEITE": "Aguardando Aceite",
-      "AVALIADA": "Avaliada",
-      "CONCLUIDA": "Concluída",
-      "EXPIRADA": "Expirada"
+      "solicitada": "Solicitada",
+      "aguardando_aceite": "Aguardando Aceite",
+      "aceita": "Aceita",
+      "em_rota": "Em Rota",
+      "passageiro_a_bordo": "Passageiro a Bordo",
+      "concluida": "Concluída",
+      "avaliada": "Avaliada",
+      "cancelada": "Cancelada",
+      "expirada": "Expirada"
     },
     "actions": {
       "title": "Ações",
@@ -475,12 +471,10 @@
       "inputPlaceholder": "Digite uma mensagem..."
     },
     "terminal": {
-      "FINALIZADA": "Corrida finalizada com sucesso.",
-      "CONCLUIDA": "Corrida concluída com sucesso.",
-      "AVALIADA": "Corrida avaliada.",
-      "CANCELADA": "Corrida cancelada.",
-      "RECUSADA": "Corrida recusada.",
-      "EXPIRADA": "Corrida expirada — nenhum motorista disponível."
+      "concluida": "Corrida concluída com sucesso.",
+      "avaliada": "Corrida avaliada.",
+      "cancelada": "Corrida cancelada.",
+      "expirada": "Corrida expirada — nenhum motorista disponível."
     },
     "success": {
       "aceita": "Corrida aceita com sucesso.",

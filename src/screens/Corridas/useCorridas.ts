@@ -25,7 +25,7 @@ import {
 } from '@store/slices/corridaSlice';
 import {addToast} from '@store/slices/uiSlice';
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
-import {podeSerCancelada} from '@models/Corrida';
+import {podeSerCancelada, normalizeStatus} from '@models/Corrida';
 import type {
   AceitarCorridaInput,
   ConfirmarEmbarqueInput,
@@ -97,9 +97,9 @@ export const useCorridas = (corridaId?: string): CorridasState => {
     const poll = async (): Promise<void> => {
       const result = await corridaFacade.getCorridaStatus(targetId);
       if (result.data) {
-        dispatch(updateCorridaStatus(result.data.status as Corrida['status']));
+        dispatch(updateCorridaStatus(normalizeStatus(result.data.status)));
         // Stop polling on any terminal state
-        const terminal = new Set(['FINALIZADA', 'CONCLUIDA', 'CANCELADA', 'EXPIRADA', 'AVALIADA']);
+        const terminal = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
         if (terminal.has(result.data.status)) {
           if (pollRef.current) {
             clearInterval(pollRef.current);

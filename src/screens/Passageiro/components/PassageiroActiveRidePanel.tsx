@@ -43,7 +43,7 @@ export interface PassageiroActiveRidePanelProps {
   onOpenMessages: () => void;
 }
 
-const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA', 'CONCLUIDA', 'AVALIADA', 'EXPIRADA']);
+const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
 const FAB_GAP = 16;
 
 /**

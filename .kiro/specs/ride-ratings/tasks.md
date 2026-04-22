@@ -52,8 +52,8 @@ Implements the two missing rating screens: an ADMIN-only list of all system rati
   - [x] 5.4 Mirror both namespaces in `src/i18n/locales/es.json`
     - _Requirements: 8.3_
 
-- [ ] 6. `AdminAvaliacoesScreen`
-  - [ ] 6.1 Create `src/screens/Corridas/AdminAvaliacoesScreen.tsx`
+- [x] 6. `AdminAvaliacoesScreen`
+  - [x] 6.1 Create `src/screens/Corridas/AdminAvaliacoesScreen.tsx`
     - On mount: call `avaliacoesFacade.listAvaliacoes()`; show `ActivityIndicator` while loading
     - On success: render `FlatList` of `Avaliacao` items — each row shows `nota` (stars via `MaterialIcons`), `comentario` (if present), `createdAt` (formatted)
     - On error: show localized `t('avaliacoes.admin.errorMessage')` + retry `Pressable`
@@ -62,8 +62,8 @@ Implements the two missing rating screens: an ADMIN-only list of all system rati
     - Co-locate `useAdminAvaliacoes.ts` hook (fetch logic + retry state) and `AdminAvaliacoes.styles.ts` in the same folder
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.7, 4.8_
 
-- [ ] 7. `MinhaNotaScreen`
-  - [ ] 7.1 Create `src/screens/Motorista/MinhaNotaScreen.tsx`
+- [x] 7. `MinhaNotaScreen`
+  - [x] 7.1 Create `src/screens/Motorista/MinhaNotaScreen.tsx`
     - On mount: call `avaliacoesFacade.getMinhaAvaliacaoSummary()`; show `ActivityIndicator` while loading
     - On success: display `mediaNotas` formatted to 1 decimal place and `totalAvaliacoes`
     - When `totalAvaliacoes === 0`: show `t('avaliacoes.minhaNota.noRatingsYet')` instead of the summary
@@ -72,43 +72,43 @@ Implements the two missing rating screens: an ADMIN-only list of all system rati
     - Co-locate `useMinhaAvaliacaoSummary.ts` hook and `MinhaNotaScreen.styles.ts`
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.6, 5.7_
 
-- [ ] 8. Navigation wiring
-  - [ ] 8.1 Add `AdminAvaliacoes: undefined` to `PassageiroCorridasStackParamList` in `src/navigation/types.ts`
+- [x] 8. Navigation wiring
+  - [x] 8.1 Add `AdminAvaliacoes: undefined` to `PassageiroCorridasStackParamList` in `src/navigation/types.ts`
     - _Requirements: 6.1_
-  - [ ] 8.2 Add `MinhaNota: undefined` to `MotoristaCorridasStackParamList` in `src/navigation/types.ts`
+  - [x] 8.2 Add `MinhaNota: undefined` to `MotoristaCorridasStackParamList` in `src/navigation/types.ts`
     - _Requirements: 6.3_
-  - [ ] 8.3 Register `AdminAvaliacoesScreen` in `src/navigation/PassageiroCorridasNavigator.tsx`
+  - [x] 8.3 Register `AdminAvaliacoesScreen` in `src/navigation/PassageiroCorridasNavigator.tsx`
     - Add `<Stack.Screen component={AdminAvaliacoesScreen} name="AdminAvaliacoes" options={{title: t('avaliacoes.admin.title'), headerShown: true}} />`
     - _Requirements: 6.2, 6.5_
-  - [ ] 8.4 Register `MinhaNotaScreen` in `src/navigation/MotoristaCorridasNavigator.tsx`
+  - [x] 8.4 Register `MinhaNotaScreen` in `src/navigation/MotoristaCorridasNavigator.tsx`
     - Add `<Stack.Screen component={MinhaNotaScreen} name="MinhaNota" options={{title: t('avaliacoes.minhaNota.title'), headerShown: true}} />`
     - _Requirements: 6.4, 6.6_
 
-- [ ] 9. Navigation entry points
-  - [ ] 9.1 Add entry point to `AdminAvaliacoesScreen` from `src/screens/Corridas/PassageiroCorridasListScreen.tsx`
+- [x] 9. Navigation entry points
+  - [x] 9.1 Add entry point to `AdminAvaliacoesScreen` from `src/screens/Corridas/PassageiroCorridasListScreen.tsx`
     - Add a header right button or list header row that calls `navigation.navigate('AdminAvaliacoes')`
     - Gate visibility with `papeis.includes('ADMIN')` via `useAppSelector(s => s.auth.papeis)`
     - _Requirements: 7.1, 4.6_
-  - [ ] 9.2 Add entry point to `MinhaNotaScreen` from `src/screens/Motorista/MotoristaCorridasListScreen.tsx`
+  - [x] 9.2 Add entry point to `MinhaNotaScreen` from `src/screens/Motorista/MotoristaCorridasListScreen.tsx`
     - Add a header right button or list header row that calls `navigation.navigate('MinhaNota')`
     - Gate visibility with `papeis.includes('MOTORISTA')` via `useAppSelector(s => s.auth.papeis)`
     - _Requirements: 7.2, 5.5_
 
-- [ ] 10. POC tests
-  - [ ] 10.1 Create `src/screens/Corridas/__tests__/AdminAvaliacoesScreen.poc.test.tsx`
+- [x] 10. POC tests
+  - [x] 10.1 Create `src/screens/Corridas/__tests__/AdminAvaliacoesScreen.poc.test.tsx`
     - Test: renders `ActivityIndicator` while `listAvaliacoes` is pending
     - Test: renders error message and retry button when `listAvaliacoes` returns an error; pressing retry calls the facade again
     - Test: renders list items when `listAvaliacoes` returns 3 fixtures
     - _Requirements: 9.1_
-  - [ ] 10.2 Create `src/screens/Motorista/__tests__/MinhaNotaScreen.poc.test.tsx`
+  - [x] 10.2 Create `src/screens/Motorista/__tests__/MinhaNotaScreen.poc.test.tsx`
     - Test: renders `ActivityIndicator` while `getMinhaAvaliacaoSummary` is pending
     - Test: renders error message and retry button when facade returns an error; pressing retry calls the facade again
     - Test: renders `mediaNotas` (1 decimal) and `totalAvaliacoes` on success
     - _Requirements: 9.2_
-  - [ ] 10.3 Create `src/services/facades/__tests__/avaliacoesFacade.poc.test.ts`
+  - [x] 10.3 Create `src/services/facades/__tests__/avaliacoesFacade.poc.test.ts`
     - Property test: every item returned by `AvaliacoesFacadeMock.listAvaliacoes()` has `nota` in `[1, 5]`
     - _Requirements: 9.3, 9.4_
 
-- [ ] 11. Final checkpoint
+- [x] 11. Final checkpoint
   - Run `tsc --noEmit` across all new and modified files; confirm zero errors
   - Confirm zero hardcoded strings and zero hardcoded style values in new screens

@@ -8,6 +8,7 @@ import {useTranslation} from 'react-i18next';
 import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.styles';
 import {useTheme} from '@theme/index';
 import type {Corrida} from '@models/Corrida';
+import {normalizeStatus} from '@models/Corrida';
 
 export interface MotoristaTerminalSheetProps {
   /** The terminal corrida. */
@@ -36,6 +37,8 @@ export const MotoristaTerminalSheet = ({
   const {t} = useTranslation();
   const theme = useTheme();
   const styles = createMotoristaStyles(theme);
+  const status = normalizeStatus(corrida.status);
+  const isCompleted = status === 'concluida';
 
   return (
     <Animated.View
@@ -48,12 +51,12 @@ export const MotoristaTerminalSheet = ({
       <View style={styles.dragHandle} />
       <View style={styles.terminalContainer}>
         <MaterialIcons
-          name={corrida.status === 'FINALIZADA' ? 'check-circle' : 'cancel'}
+          name={isCompleted ? 'check-circle' : 'cancel'}
           size={48}
-          color={corrida.status === 'FINALIZADA' ? C.success : C.danger}
+          color={isCompleted ? C.success : C.danger}
         />
         <Text style={styles.terminalText}>
-          {t(`corridas.terminal.${corrida.status}`)}
+          {t(`corridas.terminal.${status}`)}
         </Text>
       </View>
     </Animated.View>

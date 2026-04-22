@@ -127,9 +127,8 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
   }
 
   const isTerminal =
-    activeCorrida.status === 'FINALIZADA' ||
-    activeCorrida.status === 'CANCELADA' ||
-    activeCorrida.status === 'RECUSADA';
+    activeCorrida.status === 'concluida' ||
+    activeCorrida.status === 'cancelada';
 
   return (
     <View style={[styles.container, {paddingBottom: insets.bottom}]} testID="motorista-screen">
@@ -173,7 +172,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
           <View testID="action-section">
             <Text style={styles.sectionHeader}>{t('corridas.actions.title')}</Text>
 
-            {activeCorrida.status === 'SOLICITADA' && (
+            {activeCorrida.status === 'solicitada' && (
               <>
                 <Pressable
                   accessibilityLabel={t('corridas.actions.aceitar')}
@@ -222,7 +221,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
               </>
             )}
 
-            {activeCorrida.status === 'ACEITA' && (
+            {activeCorrida.status === 'aceita' && (
               <Pressable
                 accessibilityLabel={t('corridas.actions.iniciarDeslocamento')}
                 accessibilityRole="button"
@@ -238,7 +237,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
               </Pressable>
             )}
 
-            {activeCorrida.status === 'EM_DESLOCAMENTO' && (
+            {activeCorrida.status === 'em_rota' && (
               <Pressable
                 accessibilityLabel={t('corridas.actions.confirmarEmbarque')}
                 accessibilityRole="button"
@@ -254,7 +253,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
               </Pressable>
             )}
 
-            {activeCorrida.status === 'PASSAGEIRO_EMBARCADO' && (
+            {activeCorrida.status === 'passageiro_a_bordo' && (
               <Pressable
                 accessibilityLabel={t('corridas.actions.finalizar')}
                 accessibilityRole="button"
@@ -285,9 +284,9 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
         {isTerminal && (
           <View style={styles.terminalContainer} testID="terminal-state">
             <MaterialIcons
-              name={activeCorrida.status === 'FINALIZADA' ? 'check-circle' : 'cancel'}
+              name={activeCorrida.status === 'concluida' ? 'check-circle' : 'cancel'}
               size={48}
-              color={activeCorrida.status === 'FINALIZADA' ? theme.colors.success : theme.colors.error}
+              color={activeCorrida.status === 'concluida' ? theme.colors.success : theme.colors.error}
             />
             <Text style={styles.emptyTitle}>{t(`corridas.terminal.${activeCorrida.status}`)}</Text>
           </View>

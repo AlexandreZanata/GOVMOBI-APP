@@ -33,7 +33,7 @@ import type {Corrida} from '@models/Corrida';
 
 type NavProp = NativeStackNavigationProp<MotoristaCorridasStackParamList>;
 
-const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
+const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
 
 /**
  * Driver corridas list screen.
@@ -51,6 +51,7 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
 
   const {activeCorrida, availableRides, isLoadingRides, onRefreshRides} = useMotorista();
   const corridaHistory = useAppSelector(st => st.corrida.corridaHistory ?? []);
+  const papeis = useAppSelector(st => st.auth.papeis);
 
   const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
 
@@ -197,8 +198,17 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
 
       {/* Dark blue title header — mirrors NotificationsScreen */}
-      <View style={s.titleRow}>
+      <View style={[s.titleRow, {flexDirection: 'row', justifyContent: 'space-between'}]}>
         <Text style={s.headerTitle}>{t('motorista.corridas.title')}</Text>
+        {papeis.includes('MOTORISTA') && (
+          <Pressable
+            accessibilityLabel={t('avaliacoes.minhaNota.title')}
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('MinhaNota')}
+            testID="btn-minha-nota">
+            <MaterialIcons name="star" size={24} color={theme.design.textOnDark} />
+          </Pressable>
+        )}
       </View>
 
       {/* White content area */}

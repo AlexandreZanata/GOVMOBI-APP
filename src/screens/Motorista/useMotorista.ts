@@ -228,7 +228,7 @@ export const useMotorista = (): MotoristaState => {
       // Since the facade contract exposes getActiveCorrida, we call it here
       // and supplement with the contexto data.
       const result = await corridaFacade.getActiveCorrida();
-      if (result.data && result.data.status === 'SOLICITADA') {
+      if (result.data && result.data.status === 'solicitada') {
         setAvailableRides([result.data]);
       } else if (!result.data) {
         setAvailableRides([]);
@@ -311,7 +311,7 @@ export const useMotorista = (): MotoristaState => {
    */
   const onToggleStatus = useCallback(async (): Promise<void> => {
     const next: MotoristaStatusOperacional =
-      statusOperacional === 'DISPONIVEL' || statusOperacional === 'EM_ROTA'
+      statusOperacional === 'DISPONIVEL' || statusOperacional === 'EM_CORRIDA'
         ? 'OFFLINE'
         : 'DISPONIVEL';
 

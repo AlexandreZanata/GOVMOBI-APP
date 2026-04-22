@@ -59,7 +59,7 @@ const seedMensagens = (corridaId: string): CorridaMensagem[] => [
 
 const makeCorrida = (
   input: SolicitarCorridaInput,
-  status: CorridaStatus = 'SOLICITADA',
+  status: CorridaStatus = 'solicitada',
 ): Corrida => ({
   id: uuid(),
   passageiroId: 'passageiro-mock-001',
@@ -121,8 +121,8 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(250);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    if (corrida.status !== 'SOLICITADA') return fail(toError('Corrida já aceita', 'CONFLICT'));
-    const updated = transition(corrida, 'ACEITA', {
+    if (corrida.status !== 'solicitada') return fail(toError('Corrida já aceita', 'CONFLICT'));
+    const updated = transition(corrida, 'aceita', {
       motoristaId: 'mock-motorista',
     });
     store.set(corridaId, updated);
@@ -138,7 +138,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(200);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    const updated = transition(corrida, 'RECUSADA');
+    const updated = transition(corrida, 'cancelada');
     store.set(corridaId, updated);
     return ok(updated);
   }
@@ -150,7 +150,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(200);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    const updated = transition(corrida, 'EM_DESLOCAMENTO');
+    const updated = transition(corrida, 'em_rota');
     store.set(corridaId, updated);
     return ok(updated);
   }
@@ -162,13 +162,11 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(200);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    // Backend keeps the same status but emits MotoristaChegando event
-    const updated = transition(corrida, 'EM_DESLOCAMENTO');
+    const updated = transition(corrida, 'em_rota');
     store.set(corridaId, updated);
     return ok(updated);
   }
 
-  /** @inheritdoc */
   public async confirmarEmbarque(
     corridaId: string,
     _input: ConfirmarEmbarqueInput,
@@ -176,7 +174,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(200);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    const updated = transition(corrida, 'PASSAGEIRO_EMBARCADO');
+    const updated = transition(corrida, 'passageiro_a_bordo');
     store.set(corridaId, updated);
     return ok(updated);
   }
@@ -186,7 +184,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(200);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    const updated = transition(corrida, 'PASSAGEIRO_A_BORDO');
+    const updated = transition(corrida, 'passageiro_a_bordo');
     store.set(corridaId, updated);
     return ok(updated);
   }
@@ -199,7 +197,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(250);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    const updated = transition(corrida, 'FINALIZADA');
+    const updated = transition(corrida, 'concluida');
     store.set(corridaId, updated);
     return ok(updated);
   }
@@ -213,8 +211,8 @@ export class CorridaFacadeMock implements ICorridaFacade {
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
 
-    // Enforce backend state machine: EM_ROTA / PASSAGEIRO_EMBARCADO → 409
-    if (corrida.status === 'EM_DESLOCAMENTO' || corrida.status === 'EM_ROTA' || corrida.status === 'PASSAGEIRO_EMBARCADO' || corrida.status === 'PASSAGEIRO_A_BORDO') {
+    // em_rota is not cancellable
+    if (corrida.status === 'em_rota') {
       return fail({
         code: 'INVALID_STATE_TRANSITION',
         message: 'Corrida em andamento não pode ser cancelada.',
@@ -223,11 +221,10 @@ export class CorridaFacadeMock implements ICorridaFacade {
     }
     // Terminal states → 409
     if (
-      corrida.status === 'FINALIZADA' ||
-      corrida.status === 'CONCLUIDA' ||
-      corrida.status === 'CANCELADA' ||
-      corrida.status === 'EXPIRADA' ||
-      corrida.status === 'AVALIADA'
+      corrida.status === 'concluida' ||
+      corrida.status === 'cancelada' ||
+      corrida.status === 'expirada' ||
+      corrida.status === 'avaliada'
     ) {
       return fail({
         code: 'INVALID_STATE_TRANSITION',
@@ -236,7 +233,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
       });
     }
 
-    const updated = transition(corrida, 'CANCELADA');
+    const updated = transition(corrida, 'cancelada');
     store.set(corridaId, updated);
     return ok(updated);
   }
@@ -307,12 +304,10 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(150);
     const active = [...store.values()].find(
       c =>
-        c.status !== 'FINALIZADA' &&
-        c.status !== 'CONCLUIDA' &&
-        c.status !== 'CANCELADA' &&
-        c.status !== 'EXPIRADA' &&
-        c.status !== 'AVALIADA' &&
-        c.status !== 'RECUSADA',
+        c.status !== 'concluida' &&
+        c.status !== 'cancelada' &&
+        c.status !== 'expirada' &&
+        c.status !== 'avaliada',
     );
     return ok(active ?? null);
   }
@@ -322,12 +317,10 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(150);
     const active = [...store.values()].find(
       c =>
-        c.status !== 'FINALIZADA' &&
-        c.status !== 'CONCLUIDA' &&
-        c.status !== 'CANCELADA' &&
-        c.status !== 'EXPIRADA' &&
-        c.status !== 'AVALIADA' &&
-        c.status !== 'RECUSADA',
+        c.status !== 'concluida' &&
+        c.status !== 'cancelada' &&
+        c.status !== 'expirada' &&
+        c.status !== 'avaliada',
     );
     return ok({
       usuario: {
@@ -348,7 +341,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     }
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    const updated = transition(corrida, 'AVALIADA');
+    const updated = transition(corrida, 'avaliada');
     store.set(corridaId, updated);
     return ok(updated);
   }

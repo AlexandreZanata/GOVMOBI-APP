@@ -15,11 +15,12 @@ import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setPendingOffer} from '@store/slices/realtimeSlice';
 import {setStatusOperacional} from '@store/slices/authSlice';
+import {setActiveCorrida, addToHistory} from '@store/slices/corridaSlice';
 import type {NovaCorridaDisponivelPayload} from '../../types';
 import type {Coordenada} from '@models/Corrida';
 import type {MotoristaStatusOperacional} from '@models/Motorista';
 
-const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
+const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
 
 /** State and commands exposed by `useMotoristaRealtime`. */
 export interface MotoristaRealtimeState {
@@ -86,11 +87,14 @@ export const useMotoristaRealtime = (
     if (!activeCorrida) return;
 
     if (TERMINAL_STATUSES.has(activeCorrida.status)) {
-      // Ride reached terminal status — re-enter dispatch queue
+      // Ride reached terminal status — re-enter dispatch queue and reset UI
       if (isMotorista && connectionStatus === 'connected') {
         void realtimeFacade.setDriverAvailable();
         dispatch(setStatusOperacional('DISPONIVEL'));
       }
+      // Clear activeCorrida so the terminal sheet disappears and idle sheet shows
+      dispatch(addToHistory(activeCorrida));
+      dispatch(setActiveCorrida(null));
     } else {
       // Active non-terminal ride — clear pending offer
       dispatch(setPendingOffer(null));

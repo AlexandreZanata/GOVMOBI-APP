@@ -26,7 +26,7 @@ import {
 } from '@store/slices/corridaSlice';
 import {addToast} from '@store/slices/uiSlice';
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
-import {podeSerCancelada} from '@models/Corrida';
+import {podeSerCancelada, normalizeStatus} from '@models/Corrida';
 
 /** Polling interval for GET /corridas/:id/status (ms). */
 const STATUS_POLL_INTERVAL_MS = 5_000;
@@ -96,10 +96,11 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
     const poll = async (): Promise<void> => {
       const result = await corridaFacade.getCorridaStatus(targetId);
       if (result.data) {
-        dispatch(updateCorridaStatus(result.data.status as Corrida['status']));
+        const normalized = normalizeStatus(result.data.status);
+        dispatch(updateCorridaStatus(normalized));
         // Stop polling on any terminal state
-        const terminal = new Set(['FINALIZADA', 'CONCLUIDA', 'CANCELADA', 'EXPIRADA', 'AVALIADA']);
-        if (terminal.has(result.data.status)) {
+        const terminal = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
+        if (terminal.has(normalized)) {
           if (pollRef.current) {
             clearInterval(pollRef.current);
             pollRef.current = null;

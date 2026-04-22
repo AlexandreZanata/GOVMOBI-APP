@@ -19,6 +19,7 @@ import {AcompanharCorridaScreen} from '@screens/Corridas/AcompanharCorridaScreen
 import {CorridaDetalheScreen} from '@screens/Corridas/CorridaDetalheScreen';
 import {CorridaMensagensScreen} from '@screens/Corridas/CorridaMensagensScreen';
 import {AvaliarCorridaScreen} from '@screens/Corridas/AvaliarCorridaScreen';
+import {AdminAvaliacoesScreen} from '@screens/Corridas/AdminAvaliacoesScreen';
 import type {PassageiroCorridasStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<PassageiroCorridasStackParamList>();
@@ -66,6 +67,11 @@ export const PassageiroCorridasNavigator = (): React.JSX.Element => {
         component={AvaliarCorridaScreen}
         name="AvaliarCorrida"
         options={{title: t('corridas.avaliar.title'), headerShown: true}}
+      />
+      <Stack.Screen
+        component={AdminAvaliacoesScreen}
+        name="AdminAvaliacoes"
+        options={{title: t('avaliacoes.admin.title'), headerShown: true}}
       />
     </Stack.Navigator>
   );

@@ -91,6 +91,7 @@ export type PassageiroCorridasStackParamList = {
   AcompanharCorrida: {corridaId: string};
   CorridaMensagens: {corridaId: string};
   AvaliarCorrida: {corridaId: string};
+  AdminAvaliacoes: undefined;
 };
 
 // ---------------------------------------------------------------------------
@@ -131,6 +132,7 @@ export type MotoristaCorridasStackParamList = {
   MotoristaCorridaAction: {corridaId: string};
   CorridaMensagens: {corridaId: string};
   VeiculoAssociation: undefined;
+  MinhaNota: undefined;
 };
 
 // ---------------------------------------------------------------------------

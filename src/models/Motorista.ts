@@ -6,7 +6,7 @@
 export type CnhCategoria = 'A' | 'AB' | 'B' | 'C' | 'D' | 'E';
 
 /** Operational status of a driver. */
-export type MotoristaStatusOperacional = 'DISPONIVEL' | 'EM_ROTA' | 'EM_CORRIDA' | 'AFASTADO' | 'OFFLINE';
+export type MotoristaStatusOperacional = 'DISPONIVEL' | 'EM_CORRIDA' | 'OFFLINE';
 
 /**
  * Driver linked to a Servidor. Soft-delete via PATCH /desativar.

@@ -69,18 +69,18 @@ const normalizeTimestamp = (value: string | number): string => {
 const mapRideStatus = (status: string): CorridaStatus | null => {
   switch (status) {
     case 'NovaCorridaDisponivel':
-      return 'SOLICITADA';
+      return 'solicitada';
     case 'CorridaAceita':
-      return 'ACEITA';
+      return 'aceita';
     case 'DeslocamentoIniciado':
     case 'MotoristaChegando':
-      return 'EM_ROTA';
+      return 'em_rota';
     case 'EmbarqueConfirmado':
-      return 'PASSAGEIRO_EMBARCADO';
+      return 'em_rota';
     case 'CorridaConcluida':
-      return 'CONCLUIDA';
+      return 'concluida';
     case 'CorridaCancelada':
-      return 'CANCELADA';
+      return 'cancelada';
     default:
       return null;
   }

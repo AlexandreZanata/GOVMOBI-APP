@@ -28,7 +28,7 @@ import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import {createAcompanharStyles} from './AcompanharCorrida.styles';
 import type {CorridaMensagem} from '@models/Corrida';
-import {podeSerCancelada, TERMINAL_STATUSES} from '@models/Corrida';
+import {podeSerCancelada, TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
 import {useAppSelector} from '../../store';
 
@@ -77,7 +77,9 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
   }, [corridaId]);
 
   useEffect(() => {
-    if (activeCorrida?.status === 'FINALIZADA' || activeCorrida?.status === 'CONCLUIDA') {
+    if (!activeCorrida) return;
+    const status = normalizeStatus(activeCorrida.status);
+    if (status === 'concluida') {
       navigation.navigate('AvaliarCorrida', {corridaId: activeCorrida.id});
     }
   }, [activeCorrida?.status, activeCorrida?.id, navigation]);
@@ -124,11 +126,8 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
   const badgeColor = statusColor(activeCorrida.status, theme);
   const isTerminal = TERMINAL_STATUSES.has(activeCorrida.status);
   const canCancel = podeSerCancelada(activeCorrida.status);
-  // EM_ROTA / PASSAGEIRO_EMBARCADO: ride in progress, cannot cancel
-  const showCancelNotAllowed =
-    activeCorrida.status === 'EM_DESLOCAMENTO' ||
-    activeCorrida.status === 'EM_ROTA' ||
-    activeCorrida.status === 'PASSAGEIRO_EMBARCADO';
+  // em_rota / passageiro_a_bordo: ride in progress, cannot cancel
+  const showCancelNotAllowed = activeCorrida.status === 'em_rota' || activeCorrida.status === 'passageiro_a_bordo';
 
   return (
     <View style={[s.root, {paddingTop: insets.top}]} testID="acompanhar-screen">

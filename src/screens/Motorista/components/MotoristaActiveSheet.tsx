@@ -67,19 +67,18 @@ export interface MotoristaActiveSheetProps {
  *
  * State machine:
  *   SOLICITADA / AGUARDANDO_ACEITE → Aceitar + Recusar
- *   ACEITA                         → Iniciar Deslocamento + Confirmar Embarque
- *   EM_ROTA / EM_DESLOCAMENTO      → Chegar ao Local + Confirmar Embarque
- *   PASSAGEIRO_EMBARCADO           → Passageiro a Bordo
- *   PASSAGEIRO_A_BORDO             → Finalizar (only)
+ *   aceita              → Iniciar Deslocamento (→ em_rota)
+ *   em_rota             → Confirmar Embarque (→ passageiro_a_bordo)
+ *   passageiro_a_bordo  → Finalizar (→ concluida)
  */
 const getVisibleActions = (status: Corrida['status']) => ({
-  showAceitar:             status === 'SOLICITADA' || status === 'AGUARDANDO_ACEITE',
-  showRecusar:             status === 'SOLICITADA' || status === 'AGUARDANDO_ACEITE',
-  showIniciarDeslocamento: status === 'ACEITA',
-  showChegar:              status === 'EM_ROTA' || status === 'EM_DESLOCAMENTO',
-  showConfirmarEmbarque:   status === 'ACEITA' || status === 'EM_ROTA' || status === 'EM_DESLOCAMENTO',
-  showPassageiroABordo:    status === 'PASSAGEIRO_EMBARCADO',
-  showFinalizar:           status === 'PASSAGEIRO_A_BORDO',
+  showAceitar:             status === 'solicitada' || status === 'aguardando_aceite',
+  showRecusar:             status === 'solicitada' || status === 'aguardando_aceite',
+  showIniciarDeslocamento: status === 'aceita',
+  showChegar:              false,
+  showConfirmarEmbarque:   status === 'em_rota',
+  showPassageiroABordo:    false,
+  showFinalizar:           status === 'passageiro_a_bordo',
 });
 
 /**
