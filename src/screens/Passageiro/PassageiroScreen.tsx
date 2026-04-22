@@ -200,7 +200,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     ) {
       setShowMotoristaModal(true);
     }
-  }, [activeCorrida?.status, activeCorrida?.motoristaId]);
+  }, [activeCorrida?.id, activeCorrida?.status, activeCorrida?.motoristaId]);
 
   // Auto-hide when ride reaches a terminal status
   useEffect(() => {

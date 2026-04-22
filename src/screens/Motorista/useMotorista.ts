@@ -403,7 +403,6 @@ export const useMotorista = (): MotoristaState => {
         data => {
           if (data) dispatch(setActiveCorrida(data));
           setAvailableRides(prev => prev.filter(c => c.id !== corridaId));
-          dispatch(addToast({id: `aceitar-${Date.now()}`, message: t('corridas.success.aceita'), type: 'success'}));
         },
         'corridas.errors.aceitarFailed',
       );
@@ -431,7 +430,6 @@ export const useMotorista = (): MotoristaState => {
             dispatch(addToHistory(data));
           }
           setAvailableRides(prev => prev.filter(c => c.id !== corridaId));
-          dispatch(addToast({id: `recusar-${Date.now()}`, message: t('corridas.success.recusada'), type: 'info'}));
         },
         'corridas.errors.recusarFailed',
       );
@@ -454,12 +452,11 @@ export const useMotorista = (): MotoristaState => {
         },
         data => {
           if (data) dispatch(setActiveCorrida(data));
-          dispatch(addToast({id: `desl-${Date.now()}`, message: t('corridas.success.emDeslocamento'), type: 'success'}));
         },
         'corridas.errors.deslocamentoFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   /**
@@ -477,12 +474,11 @@ export const useMotorista = (): MotoristaState => {
         },
         data => {
           if (data) dispatch(setActiveCorrida(data));
-          dispatch(addToast({id: `chegar-${Date.now()}`, message: t('motorista.actions.chegarSuccess'), type: 'success'}));
         },
         'corridas.errors.deslocamentoFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   /**
@@ -501,12 +497,11 @@ export const useMotorista = (): MotoristaState => {
         },
         data => {
           if (data) dispatch(setActiveCorrida(data));
-          dispatch(addToast({id: `emb-${Date.now()}`, message: t('corridas.success.embarcado'), type: 'success'}));
         },
         'corridas.errors.embarqueFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   /**
@@ -523,12 +518,11 @@ export const useMotorista = (): MotoristaState => {
         },
         data => {
           if (data) dispatch(setActiveCorrida(data));
-          dispatch(addToast({id: `pab-${Date.now()}`, message: t('corridas.success.passageiroABordo'), type: 'success'}));
         },
         'corridas.errors.passageiroABordoFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   /**
@@ -551,12 +545,11 @@ export const useMotorista = (): MotoristaState => {
             dispatch(addToHistory(data));
           }
           dispatch(setPendingCorridaId(null));
-          dispatch(addToast({id: `fin-${Date.now()}`, message: t('corridas.success.finalizada'), type: 'success'}));
         },
         'corridas.errors.finalizarFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   /**
@@ -589,7 +582,6 @@ export const useMotorista = (): MotoristaState => {
             dispatch(addToHistory(data));
           }
           dispatch(setPendingCorridaId(null));
-          dispatch(addToast({id: `cancel-${Date.now()}`, message: t('corridas.success.cancelada'), type: 'info'}));
         },
         'corridas.errors.cancelarFailed',
       );
