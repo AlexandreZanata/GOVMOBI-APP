@@ -1,8 +1,9 @@
 /**
  * @fileoverview PassageiroActiveRidePanel — bottom sheet shown when a ride is active.
  * Shows status, addresses, cancel section, and chat FAB.
+ * Chat FAB is positioned dynamically above the sheet, matching the motorista pattern.
  */
-import React from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,6 +11,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
@@ -34,8 +36,6 @@ export interface PassageiroActiveRidePanelProps {
   cancelMotivo: string;
   /** Whether the cancel input is visible. */
   showCancelInput: boolean;
-  /** Bottom offset for the chat FAB. */
-  chatFabBottom: number;
   onCancelMotivoChange: (text: string) => void;
   onShowCancelInput: () => void;
   onHideCancelInput: () => void;
@@ -43,10 +43,13 @@ export interface PassageiroActiveRidePanelProps {
   onOpenMessages: () => void;
 }
 
-const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
+const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA', 'CONCLUIDA', 'AVALIADA', 'EXPIRADA']);
+const FAB_GAP = 16;
 
 /**
  * Active ride panel for the passenger home screen.
+ * The chat FAB is positioned dynamically above the sheet using onLayout,
+ * matching the exact same pattern as MotoristaScreen.
  *
  * @param props - {@link PassageiroActiveRidePanelProps}
  * @returns JSX element for the active ride panel.
@@ -59,7 +62,6 @@ export const PassageiroActiveRidePanel = ({
   destinoAddress,
   cancelMotivo,
   showCancelInput,
-  chatFabBottom,
   onCancelMotivoChange,
   onShowCancelInput,
   onHideCancelInput,
@@ -71,9 +73,19 @@ export const PassageiroActiveRidePanel = ({
   const isTerminal = TERMINAL_STATUSES.has(corrida.status);
   const canCancel = !isTerminal;
 
+  // Measure sheet height to position the chat FAB above it — same as motorista
+  const [sheetHeight, setSheetHeight] = useState(0);
+  const onSheetLayout = useCallback((event: LayoutChangeEvent) => {
+    const h = event.nativeEvent.layout.height;
+    if (h > 0) setSheetHeight(h);
+  }, []);
+
+  const chatFabBottom = sheetHeight > 0 ? sheetHeight + FAB_GAP : 80;
+
   return (
     <>
       <View
+        onLayout={onSheetLayout}
         style={[styles.bottomSheet, styles.activeBanner, {paddingBottom}]}
         testID="active-ride-panel">
         <View style={styles.dragHandle} />
@@ -159,16 +171,18 @@ export const PassageiroActiveRidePanel = ({
           ))}
       </View>
 
-      {/* Chat FAB */}
-      <TouchableOpacity
-        accessibilityLabel={t('corridas.mensagens.title')}
-        accessibilityRole="button"
-        activeOpacity={0.8}
-        onPress={onOpenMessages}
-        style={[styles.chatFab, {bottom: chatFabBottom}]}
-        testID="fab-chat">
-        <MaterialIcons name="chat" size={22} color={C.textOnDark} />
-      </TouchableOpacity>
+      {/* Chat FAB — positioned dynamically above the sheet, same as motorista */}
+      {!isTerminal && (
+        <TouchableOpacity
+          accessibilityLabel={t('corridas.mensagens.title')}
+          accessibilityRole="button"
+          activeOpacity={0.8}
+          onPress={onOpenMessages}
+          style={[styles.chatFab, {bottom: chatFabBottom}]}
+          testID="fab-chat">
+          <MaterialIcons name="chat" size={22} color={C.textOnDark} />
+        </TouchableOpacity>
+      )}
     </>
   );
 };

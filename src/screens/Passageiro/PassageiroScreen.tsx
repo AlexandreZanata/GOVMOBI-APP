@@ -533,7 +533,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
       {hasActiveRide && activeCorrida && (
         <PassageiroActiveRidePanel
           cancelMotivo={cancelMotivo}
-          chatFabBottom={insets.bottom + 108}
           corrida={activeCorrida}
           destinoAddress={destinoAddress}
           isActionLoading={isActionLoading}

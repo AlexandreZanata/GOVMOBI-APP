@@ -134,15 +134,6 @@ describe('CorridaFacadeMock.avaliarCorrida', () => {
   });
 
   it('succeeds for valid nota values 1-5', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const {CorridaFacadeMock} = require('../mock/CorridaFacadeMock');
-    const mock = new CorridaFacadeMock();
-    const solicitarResult = await mock.solicitarCorrida({
-      origemLat: -15.78, origemLng: -47.93,
-      destinoLat: -15.80, destinoLng: -47.95,
-      motivoServico: 'Test',
-    });
-    const corridaId = solicitarResult.data!.corridaId;
 
     // Test each valid nota — re-create mock each time since status transitions to AVALIADA
     for (const nota of [1, 2, 3, 4, 5]) {

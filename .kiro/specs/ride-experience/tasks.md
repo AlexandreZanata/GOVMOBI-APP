@@ -258,3 +258,88 @@ Incremental implementation of the full ride lifecycle for both roles. Each phase
 - `driverPosition` in `corridaSlice` is the canonical field for the live driver marker; `posicaoMotoristaAtual` is the legacy field — both coexist until a cleanup pass
 - The `useRideReconnection` hook must be mounted at app level (alongside `useRealtimeSession`) so it survives tab navigation
 - `FrotaFacadeMock` must be wired into the `index.ts` mock branch so mock mode works end-to-end without a backend
+
+- [ ] 21. MotoristaInfoModal integration in PassageiroScreen
+  - [ ] 21.1 Add `showMotoristaModal` state and auto-show useEffect in `src/screens/Passageiro/PassageiroScreen.tsx`
+    - Add `const [showMotoristaModal, setShowMotoristaModal] = useState<boolean>(false)`
+    - Add `useEffect` watching `activeCorrida?.status` and `activeCorrida?.motoristaId`: when status === `'ACEITA'` and `motoristaId` is non-null, call `setShowMotoristaModal(true)`
+    - Add a second `useEffect` watching `activeCorrida?.status`: when status is in `TERMINAL_STATUSES`, call `setShowMotoristaModal(false)`
+    - _Requirements: 24.1, 24.3_
+  - [ ] 21.2 Render `<MotoristaInfoModal>` inside `PassageiroScreen`
+    - Import `MotoristaInfoModal` from `'./components/MotoristaInfoModal'`
+    - Render with `visible={showMotoristaModal}`, `motoristaId={activeCorrida?.motoristaId ?? null}`, `veiculoId={activeCorrida?.veiculoId ?? null}`, `onDismiss={() => setShowMotoristaModal(false)}`
+    - _Requirements: 24.2, 24.4, 24.5_
+
+- [ ] 22. DespachoWebSocket `estado-operacional` and `reconexao-concluida` listeners
+  - [ ] 22.1 Extend `DespachoServerToClientEvents` and `IDespachoWebSocketClient` in `src/services/websocket/DespachoWebSocket.ts`
+    - Add `'estado-operacional': (payload: {status: string}) => void` to `DespachoServerToClientEvents`
+    - Add `'reconexao-concluida': (payload: ReconexaoConcluida) => void` to `DespachoServerToClientEvents` (import or inline the `ReconexaoConcluida` type from `src/types/realtime.ts`)
+    - Add `onEstadoOperacional(handler: EventHandler<{status: string}>): () => void` to `IDespachoWebSocketClient`
+    - Add `onReconexaoConcluida(handler: EventHandler<ReconexaoConcluida>): () => void` to `IDespachoWebSocketClient`
+    - _Requirements: 25.1, 25.2_
+  - [ ] 22.2 Implement the new handlers in `DespachoWebSocketClient`
+    - Add `estadoOperacionalHandlers` Set and `reconexaoConcluida` Set as private class fields
+    - Implement `onEstadoOperacional` and `onReconexaoConcluida` methods following the same pattern as existing `on*` methods
+    - In `registerSocketListeners()`, add `socket.on('estado-operacional', ...)` forwarding to `estadoOperacionalHandlers`
+    - In `registerSocketListeners()`, add `socket.on('reconexao-concluida', ...)` forwarding to `reconexaoConcluida` handlers
+    - _Requirements: 25.3, 25.4_
+  - [ ] 22.3 Wire new events through `RealtimeFacadeImpl` in `src/services/facades/RealtimeFacade.ts`
+    - In `registerTransportListeners()`, add `client.onEstadoOperacional(payload => this.emitEvent({type: 'estado-operacional', payload}))`
+    - Add `client.onReconexaoConcluida(payload => this.emitEvent({type: 'reconexao-concluida', payload}))`
+    - Ensure the `RealtimeEvent` union in `src/types/realtime.ts` includes `estado-operacional` and `reconexao-concluida` event types
+    - _Requirements: 25.5_
+
+- [ ] 23. ESLint false-positive fixes
+  - [ ] 23.1 Suppress `react-native/no-unused-styles` in `src/screens/Passageiro/components/MotoristaInfoModal.tsx`
+    - Add `/* eslint-disable react-native/no-unused-styles */` at the top of the file (styles are used but ESLint cannot detect usage through `React.useMemo`)
+    - _Requirements: 26.1_
+  - [ ] 23.2 Fix inline style warning in `src/screens/Corridas/CorridaMensagensScreen.tsx`
+    - Extract `const bottomPad = insets.bottom > 0 ? insets.bottom : 12` before the return statement
+    - Replace `{paddingBottom: insets.bottom > 0 ? insets.bottom : 12}` with `{paddingBottom: bottomPad}` in the `inputRow` style array
+    - Add `/* eslint-disable react-native/no-unused-styles */` at the top of the file if the unused-styles lint errors persist
+    - _Requirements: 26.2_
+
+- [ ] 24. Missing i18n keys for Req 27
+  - [ ] 24.1 Add `corridas.mensagens.inputPlaceholder` to all three locale files
+    - `src/i18n/locales/pt-BR.json`: add `"inputPlaceholder": "Digite uma mensagem..."` under `corridas.mensagens`
+    - `src/i18n/locales/en-US.json`: add `"inputPlaceholder": "Type a message..."` under `corridas.mensagens`
+    - `src/i18n/locales/es.json`: add `"inputPlaceholder": "Escribe un mensaje..."` under `corridas.mensagens`
+    - _Requirements: 27.1, 21.1, 21.2_
+  - [ ] 24.2 Add `motorista.info` namespace to all three locale files
+    - `pt-BR.json`: add `"info": { "title": "Informações do Motorista", "cnhLabel": "CNH", "cnhCategoriaLabel": "Categoria CNH", "veiculoLabel": "Veículo", "placaLabel": "Placa", "anoLabel": "Ano" }` under `motorista`
+    - `en-US.json`: add `"info": { "title": "Driver Information", "cnhLabel": "Driver License", "cnhCategoriaLabel": "License Category", "veiculoLabel": "Vehicle", "placaLabel": "Plate", "anoLabel": "Year" }` under `motorista`
+    - `es.json`: add `"info": { "title": "Información del Conductor", "cnhLabel": "Licencia", "cnhCategoriaLabel": "Categoría de Licencia", "veiculoLabel": "Vehículo", "placaLabel": "Placa", "anoLabel": "Año" }` under `motorista`
+    - _Requirements: 27.2, 21.1, 21.2_
+  - [ ] 24.3 Fix duplicate `corridas.status.EM_ROTA` key in `src/i18n/locales/pt-BR.json`
+    - Remove the second `"EM_ROTA"` entry under `corridas.status` (keep the first one)
+    - Apply the same fix to `en-US.json` and `es.json` which have the same duplicate
+    - _Requirements: 27.3_
+
+- [ ] 25. `usePassageiroRealtime` — `historico-mensagens` handler
+  - [ ] 25.1 Add `historico-mensagens` case to the `onEvent` handler in `src/hooks/usePassageiroRealtime.ts`
+    - Import `setMensagens` from `@store/slices/corridaSlice` (add to existing import)
+    - In the `switch` block, add `case 'historico-mensagens':` that maps each item in `event.payload` through `realtimeFacade.normalizeCorridaMensagem` and dispatches `setMensagens(normalizedMessages)`
+    - _Requirements: 28.1, 6.5_
+
+- [ ] 26. `CONCLUIDA` status support verification
+  - [ ] 26.1 Verify `CorridaStatus` union and `normalizeStatus` in `src/models/Corrida.ts`
+    - Confirm `'CONCLUIDA'` is present in the `CorridaStatus` union type (it is — no change needed)
+    - Confirm `normalizeStatus` handles `'concluida'` → `'CONCLUIDA'` via the `toUpperCase()` path (it does — no change needed)
+    - If either is missing, add the necessary entry
+    - _Requirements: 29.1_
+  - [ ] 26.2 Verify `AcompanharCorridaScreen` navigates on `CONCLUIDA`
+    - Confirm the `useEffect` in `src/screens/Corridas/AcompanharCorridaScreen.tsx` already checks `status === 'FINALIZADA' || status === 'CONCLUIDA'` (it does — no change needed)
+    - If the check is missing, add `activeCorrida?.status === 'CONCLUIDA'` to the navigation condition
+    - _Requirements: 29.2, 4.1_
+
+- [ ] 27. `FrotaFacadeMock` wiring verification
+  - [ ] 27.1 Verify `FrotaFacadeMock` fully implements `IFrotaFacade` in `src/services/facades/mock/FrotaFacadeMock.ts`
+    - Confirm all methods declared in `IFrotaFacade` are implemented: `listVeiculos`, `getVeiculoById`, `listMotoristas`, `getMotoristaById`, `updateMyStatus`, `getMyVehicle`, `associateVehicle`, `disassociateVehicle`
+    - If any method is missing, add a stub returning `fail({code: 'NOT_IMPLEMENTED', message: '...', statusCode: 501})`
+    - _Requirements: 30.1_
+  - [ ] 27.2 Remove `as unknown as IFrotaFacade` cast in `src/services/facades/index.ts`
+    - In the mock branch, replace `return new FrotaFacadeMock() as unknown as IFrotaFacade` with `return new FrotaFacadeMock()` since `FrotaFacadeMock` fully implements the interface
+    - _Requirements: 30.2_
+
+- [ ] 28. Final checkpoint — gap-filling tasks complete
+  - Ensure all TypeScript diagnostics pass on all files modified in tasks 21–27. Ask the user if any questions arise.

@@ -364,3 +364,98 @@ The implementation must be fully aligned with the backend contract documented in
 4. THE System SHALL include a test verifying the round-trip property: `associateVehicle(id)` followed by `getMyVehicle()` returns a vehicle with `id === veiculoId`.
 5. THE System SHALL include a test verifying that `usePassageiroRealtime` dispatches `updateCorridaStatus` when a `status-corrida-alterado` event is received.
 6. THE System SHALL include a test verifying that `useMotoristaRealtime` dispatches `setPendingOffer(null)` when `activeCorrida` transitions from null to a non-terminal status.
+
+---
+
+### Requirement 24: MotoristaInfoModal Integration in PassageiroScreen
+
+**User Story:** As a Passenger, I want to see the driver's name and vehicle details automatically when my ride is accepted, so that I know who is coming to pick me up.
+
+#### Acceptance Criteria
+
+1. WHEN `activeCorrida.status` transitions to `ACEITA` and `activeCorrida.motoristaId` is non-null, THE PassageiroScreen SHALL set a local `showMotoristaModal` state to `true` and render `MotoristaInfoModal` with `visible={true}`.
+2. WHEN the Passenger taps the confirm button inside `MotoristaInfoModal`, THE PassageiroScreen SHALL set `showMotoristaModal` to `false`.
+3. WHEN `activeCorrida` reaches a Terminal Status, THE PassageiroScreen SHALL set `showMotoristaModal` to `false` regardless of whether the user dismissed it.
+4. THE `MotoristaInfoModal` SHALL receive `motoristaId` from `activeCorrida.motoristaId` and `veiculoId` from `activeCorrida.veiculoId` (or `null` if the field is absent).
+5. WHILE `MotoristaInfoModal` is loading driver data, THE System SHALL display an `ActivityIndicator` inside the modal and keep the modal visible.
+
+---
+
+### Requirement 25: DespachoWebSocket `estado-operacional` and `reconexao-concluida` Listeners
+
+**User Story:** As a developer, I want the WebSocket transport to forward all server-emitted events to the facade layer, so that hooks can react to driver status changes and reconnection payloads without polling.
+
+#### Acceptance Criteria
+
+1. THE `IDespachoWebSocketClient` interface SHALL declare `onEstadoOperacional(handler: EventHandler<{status: string}>): () => void`.
+2. THE `IDespachoWebSocketClient` interface SHALL declare `onReconexaoConcluida(handler: EventHandler<ReconexaoConcluida>): () => void`.
+3. THE `DespachoWebSocketClient` SHALL register a `socket.on('estado-operacional', ...)` listener in `registerSocketListeners()` that forwards the payload to all `estadoOperacionalHandlers`.
+4. THE `DespachoWebSocketClient` SHALL register a `socket.on('reconexao-concluida', ...)` listener in `registerSocketListeners()` that forwards the payload to all `reconexaoConcluida` handlers.
+5. THE `RealtimeFacadeImpl.registerTransportListeners()` SHALL call `client.onEstadoOperacional(payload => emitEvent({type: 'estado-operacional', payload}))`.
+6. THE `RealtimeFacadeImpl.registerTransportListeners()` SHALL call `client.onReconexaoConcluida(payload => emitEvent({type: 'reconexao-concluida', payload}))`.
+
+---
+
+### Requirement 26: Fix ESLint `Unused style detected` Errors in Theme-Driven Components
+
+**User Story:** As a developer, I want all style objects created via `createStyles(theme)` to be recognized by the linter, so that the CI pipeline does not fail on false-positive unused-style errors.
+
+#### Acceptance Criteria
+
+1. THE `MotoristaInfoModal` SHALL call `createStyles(theme)` inside `React.useMemo(() => createStyles(theme), [theme])` and assign the result to a `styles` constant — this pattern is already present and SHALL be preserved without modification.
+2. THE `CorridaMensagensScreen` SHALL call `createMensagensStyles(theme)` inside `useMemo(() => createMensagensStyles(theme), [theme])` and assign the result to a `styles` constant — this pattern is already present and SHALL be preserved without modification.
+3. WHERE the ESLint rule `react-native/no-unused-styles` reports false positives for styles returned by a `useMemo`-wrapped factory, THE System SHALL add an inline `// eslint-disable-next-line react-native/no-unused-styles` comment above the `StyleSheet.create` call inside the factory function to suppress the false positive.
+4. THE `CorridaMensagensScreen` inline style `{paddingBottom: insets.bottom > 0 ? insets.bottom : 12}` SHALL be replaced by computing `const bottomPad = insets.bottom > 0 ? insets.bottom : 12` before the JSX return and referencing it as `style={[styles.inputRow, {paddingBottom: bottomPad}]}`.
+
+---
+
+### Requirement 27: Missing i18n Keys for Chat Input and MotoristaInfoModal
+
+**User Story:** As a developer, I want all i18n keys referenced in components to exist in all three locale files, so that the app never renders a raw key string in any language.
+
+#### Acceptance Criteria
+
+1. THE `pt-BR.json` file SHALL contain `corridas.mensagens.inputPlaceholder` with the value `"Digite uma mensagem..."`.
+2. THE `pt-BR.json` file SHALL contain the following keys under `motorista.info`: `title` (`"Informações do Motorista"`), `cnhLabel` (`"CNH"`), `cnhCategoriaLabel` (`"Categoria CNH"`), `veiculoLabel` (`"Veículo"`), `placaLabel` (`"Placa"`), `anoLabel` (`"Ano"`).
+3. THE `en-US.json` file SHALL mirror all keys added in criteria 1–2 with English translations: `inputPlaceholder` → `"Type a message..."`, `title` → `"Driver Information"`, `cnhLabel` → `"Driver License"`, `cnhCategoriaLabel` → `"License Category"`, `veiculoLabel` → `"Vehicle"`, `placaLabel` → `"License Plate"`, `anoLabel` → `"Year"`.
+4. THE `es.json` file SHALL mirror all keys added in criteria 1–2 with Spanish translations: `inputPlaceholder` → `"Escribe un mensaje..."`, `title` → `"Información del Conductor"`, `cnhLabel` → `"Licencia de Conducir"`, `cnhCategoriaLabel` → `"Categoría de Licencia"`, `veiculoLabel` → `"Vehículo"`, `placaLabel` → `"Matrícula"`, `anoLabel` → `"Año"`.
+5. THE `pt-BR.json` file SHALL NOT contain duplicate keys — the existing duplicate `corridas.status.EM_ROTA` SHALL be deduplicated, keeping only the last occurrence (`"Em Rota"`).
+
+---
+
+### Requirement 28: `usePassageiroRealtime` — Handle `historico-mensagens` Event
+
+**User Story:** As a Passenger, I want the chat history to be loaded automatically when I join a ride room, so that I see previous messages without a separate HTTP call.
+
+#### Acceptance Criteria
+
+1. WHEN a `historico-mensagens` WebSocket event is received in `usePassageiroRealtime`, THE System SHALL dispatch `setMensagens` with the normalized message array to `corridaSlice`.
+2. THE normalization SHALL convert each `HistoricoMensagemPayload` item to a `CorridaMensagem` using `realtimeFacade.normalizeCorridaMensagem`.
+3. WHEN `historico-mensagens` is received, THE System SHALL replace the existing `corridaSlice.mensagens` array entirely — it SHALL NOT append to it.
+4. THE `corridaSlice` SHALL expose a `setMensagens` action that accepts `CorridaMensagem[]` and replaces the current `mensagens` array.
+
+---
+
+### Requirement 29: `AvaliarCorridaScreen` — Accept `CONCLUIDA` Status
+
+**User Story:** As a Passenger, I want the rating screen to appear after the ride is marked as `CONCLUIDA` by the backend, so that I can rate the ride regardless of which terminal status word the server uses.
+
+#### Acceptance Criteria
+
+1. THE `AcompanharCorridaScreen` SHALL navigate to `AvaliarCorrida` when `activeCorrida.status` is either `FINALIZADA` or `CONCLUIDA`.
+2. THE `AvaliarCorridaScreen` deadline check SHALL treat both `FINALIZADA` and `CONCLUIDA` as valid completed statuses when computing the 3-day window from `activeCorrida.updatedAt`.
+3. THE `corridaSlice.updateCorridaStatus` reducer SHALL accept `'CONCLUIDA'` as a valid `CorridaStatus` value — the `CorridaStatus` union in `src/models/Corrida.ts` SHALL include `'CONCLUIDA'`.
+4. THE `normalizeStatus` function in `src/models/Corrida.ts` SHALL map the raw string `'concluida'` (case-insensitive) to `'CONCLUIDA'`.
+
+---
+
+### Requirement 30: `FrotaFacadeMock` Wiring Verification
+
+**User Story:** As a developer, I want to confirm that `FrotaFacadeMock` is correctly wired in the mock branch of `src/services/facades/index.ts`, so that mock mode works end-to-end without a backend.
+
+#### Acceptance Criteria
+
+1. THE `src/services/facades/index.ts` mock branch SHALL instantiate `FrotaFacadeMock` from `./mock/FrotaFacadeMock` and assign it to `frotaFacade` — the cast `as unknown as IFrotaFacade` is acceptable only if `FrotaFacadeMock` fully implements `IFrotaFacade`.
+2. THE `FrotaFacadeMock` class SHALL implement every method declared in `IFrotaFacade`, including `getMyVehicle`, `associateVehicle`, `disassociateVehicle`, `listVeiculos`, `getMotoristaById`, and `getVeiculoById`.
+3. IF `FrotaFacadeMock` does not implement a method required by `IFrotaFacade`, THEN the missing method SHALL be added with a stub that returns `{ data: null, error: null }` and logs a warning.
+4. THE `as unknown as IFrotaFacade` cast in `index.ts` SHALL be removed once `FrotaFacadeMock` fully satisfies the `IFrotaFacade` interface — the assignment SHALL use a direct type assertion `new FrotaFacadeMock() satisfies IFrotaFacade` or simply `new FrotaFacadeMock()` if the types align.

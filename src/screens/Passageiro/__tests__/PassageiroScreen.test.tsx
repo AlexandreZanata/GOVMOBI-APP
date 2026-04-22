@@ -26,7 +26,7 @@ import type {
   GeocodingResult,
   PesquisaRouteResult,
 } from '../../../types/pesquisa';
-import {UserRole, UserStatus} from '../../../models/User';
+import {UserRole, UserStatus} from '@models/User';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -340,7 +340,7 @@ describe('PassageiroScreen', () => {
     });
 
     const firstResult = await findByTestId(
-      `${'search-result-'}${mockSearchResults[0].coordinates.latitude}-${mockSearchResults[0].coordinates.longitude}-0`,
+      `search-result-${mockSearchResults[0].coordinates.latitude}-${mockSearchResults[0].coordinates.longitude}-0`,
     );
     await act(async () => {
       fireEvent.press(firstResult);
@@ -373,7 +373,7 @@ describe('PassageiroScreen', () => {
     });
 
     const firstResult = await findByTestId(
-      `${'search-result-'}${mockSearchResults[0].coordinates.latitude}-${mockSearchResults[0].coordinates.longitude}-0`,
+      `search-result-${mockSearchResults[0].coordinates.latitude}-${mockSearchResults[0].coordinates.longitude}-0`,
     );
     await act(async () => {
       fireEvent.press(firstResult);

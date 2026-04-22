@@ -3,10 +3,10 @@
  *
  * USUARIO (passenger) screens:
  *   PassageiroCorridasListScreen — loading, empty state, active corrida card, request CTA
- *   AcompanharCorridaScreen      — loading, details, messages, cancel flow
+ *   AcompanharCorridaScreen — loading, details, messages, cancel flow
  *
  * MOTORISTA (driver) screens:
- *   MotoristaCorridaScreen       — loading, aceitar/recusar, conflict error
+ *   MotoristaCorridaScreen — loading, aceitar/recusar, conflict error
  *
  * Covers: loading, error, success, and primary interactions.
  * TSC clean — zero `any`.

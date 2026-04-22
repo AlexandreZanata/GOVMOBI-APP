@@ -28,7 +28,6 @@ import {createCorridasStyles} from './CorridasScreens.styles';
 import {CorridaStatusBadge} from '@components/molecules/CorridaStatusBadge';
 import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
 import type {CorridasStackParamList} from '@navigation/types';
-import {useAppSelector} from '../../store';
 
 type RouteProps = RouteProp<CorridasStackParamList, 'MotoristaCorridaAction'>;
 
@@ -47,7 +46,6 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
   const {corridaId} = route.params;
 
   const styles = useMemo(() => createCorridasStyles(theme), [theme]);
-  const userId = useAppSelector(s => s.auth.user?.id ?? '');
 
   const {
     activeCorrida,
@@ -83,10 +81,11 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
 
   const handleConfirmarEmbarque = useCallback(() => {
     void onConfirmarEmbarque(corridaId, {
+      motoristaId: activeCorrida?.motoristaId ?? '',
       posicaoLat: -16.6869,
       posicaoLng: -49.2648,
     });
-  }, [corridaId, onConfirmarEmbarque]);
+  }, [activeCorrida?.motoristaId, corridaId, onConfirmarEmbarque]);
 
   const handleFinalizar = useCallback(() => {
     Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
@@ -95,6 +94,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
         text: t('common.confirm'),
         onPress: () => {
           void onFinalizar(corridaId, {
+            motoristaId: activeCorrida?.motoristaId ?? '',
             posicaoFinalLat: -16.6869,
             posicaoFinalLng: -49.2648,
           }).then(() => navigation.goBack());
