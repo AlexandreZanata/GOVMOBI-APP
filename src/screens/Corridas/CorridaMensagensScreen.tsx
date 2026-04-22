@@ -54,8 +54,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     usePassageiroCorrida(corridaId);
 
   const navigateToHome = useCallback((): void => {
-    const parent = navigation.getParent();
-    parent?.navigate('PassageiroHome' as never);
+    navigation.goBack();
   }, [navigation]);
 
   useEffect(() => {

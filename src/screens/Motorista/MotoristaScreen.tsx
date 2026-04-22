@@ -163,7 +163,10 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   const handleOpenMessages = useCallback(() => {
     if (!activeCorrida) return;
-    navigation.navigate('CorridaMensagens', {corridaId: activeCorrida.id});
+    navigation.navigate('MotoristaCorridas', {
+      screen: 'CorridaMensagens',
+      params: {corridaId: activeCorrida.id},
+    });
   }, [activeCorrida, navigation]);
 
   // ── Nova corrida offer handlers ──────────────────────────────────────────
