@@ -280,6 +280,7 @@
       "emRota": "On Route",
       "afastado": "Off Duty",
       "offline": "Offline",
+      "ativo": "Active",
       "toggleLabel": "Toggle availability",
       "disponivelMsg": "You are now available for rides.",
       "afastadoMsg": "You are now off duty.",

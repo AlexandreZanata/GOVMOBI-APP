@@ -1,25 +1,15 @@
 /**
  * @fileoverview MotoristaIdleSheet — bottom sheet shown when the driver has no active ride.
- * Includes a toggle to switch between DISPONIVEL and AFASTADO.
+ * Includes a dual-button row (Ativo / Offline) to toggle operational status.
  */
 import React from 'react';
 import {ActivityIndicator, Animated, Pressable, Text, View, type LayoutChangeEvent} from 'react-native';
 import {useTranslation} from 'react-i18next';
-import {useNavigation} from '@react-navigation/native';
-import type {CompositeNavigationProp} from '@react-navigation/native';
-import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MaterialIcons} from '@expo/vector-icons';
 import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.styles';
 import {useTheme} from '@theme/index';
 import {useAppSelector} from '@store/index';
 import type {MotoristaStatusOperacional} from '@models/Motorista';
-import type {MotoristaTabParamList, MotoristaCorridasStackParamList} from '@navigation/types';
-
-type NavProp = CompositeNavigationProp<
-  BottomTabNavigationProp<MotoristaTabParamList, 'MotoristaHome'>,
-  NativeStackNavigationProp<MotoristaCorridasStackParamList>
->;
 
 export interface MotoristaIdleSheetProps {
   /** Animated translateY value for the slide-up entrance. */
@@ -39,6 +29,7 @@ export interface MotoristaIdleSheetProps {
 /**
  * Idle bottom sheet for the driver home screen.
  * Shown when no active ride is present.
+ * Provides a 50/50 Ativo/Offline button row for quick status switching.
  */
 export const MotoristaIdleSheet = ({
   sheetTranslate,
@@ -52,7 +43,6 @@ export const MotoristaIdleSheet = ({
   const theme = useTheme();
   const styles = createMotoristaStyles(theme);
   const connectionStatus = useAppSelector(s => s.realtime.connectionStatus);
-  const navigation = useNavigation<NavProp>();
 
   const realtimeDotColor =
     connectionStatus === 'connected'
@@ -65,14 +55,9 @@ export const MotoristaIdleSheet = ({
     defaultValue: t('motorista.realtime.disconnected'),
   });
 
-  const isAvailable = statusOperacional === 'DISPONIVEL';
+  const isAtivo = statusOperacional === 'DISPONIVEL';
   const isEmCorrida = statusOperacional === 'EM_CORRIDA';
-  const toggleColor = isAvailable ? C.success : C.danger;
-  const toggleLabel = isAvailable
-    ? t('motorista.status.disponivel')
-    : statusOperacional === 'EM_CORRIDA' || isEmCorrida
-      ? t('motorista.status.emCorrida')
-      : t('motorista.status.offline');
+  const isOffline = !isAtivo && !isEmCorrida;
 
   return (
     <Animated.View
@@ -82,31 +67,58 @@ export const MotoristaIdleSheet = ({
         {paddingBottom, transform: [{translateY: sheetTranslate}]},
       ]}
       testID="idle-sheet">
+      <View style={styles.dragHandle} />
       <Text style={styles.idleTitle}>{t('motorista.idle.title')}</Text>
       <Text style={styles.idleSubtitle}>{t('motorista.idle.subtitle')}</Text>
 
-      {/* Availability toggle */}
-      <Pressable
-        accessibilityLabel={t('motorista.status.toggleLabel')}
-        accessibilityRole="switch"
-        accessibilityState={{checked: isAvailable, busy: isTogglingStatus || isEmCorrida}}
-        disabled={isTogglingStatus || isEmCorrida}
-        onPress={onToggleStatus}
-        style={[
-          styles.statusToggleBtn,
-          {borderColor: toggleColor},
-          (isTogglingStatus || isEmCorrida) && styles.statusToggleBtnDisabled,
-        ]}
-        testID="status-toggle-btn">
-        {isTogglingStatus ? (
-          <ActivityIndicator color={toggleColor} size="small" />
-        ) : (
-          <View style={[styles.statusToggleDot, {backgroundColor: toggleColor}]} />
-        )}
-        <Text style={[styles.statusToggleLabel, {color: toggleColor}]}>
-          {toggleLabel}
-        </Text>
-      </Pressable>
+      {/* Dual status toggle: Ativo (green) | Offline (red) — each 50% width */}
+      <View style={styles.statusDualBtnRow}>
+        {/* Ativo button */}
+        <Pressable
+          accessibilityLabel={t('motorista.status.ativo')}
+          accessibilityRole="button"
+          accessibilityState={{selected: isAtivo, busy: isTogglingStatus || isEmCorrida}}
+          disabled={isTogglingStatus || isEmCorrida || isAtivo}
+          onPress={onToggleStatus}
+          style={[
+            styles.statusDualBtn,
+            styles.statusDualBtnActive,
+            (isOffline || isEmCorrida) && !isAtivo && styles.statusDualBtnInactive,
+          ]}
+          testID="btn-status-ativo">
+          {isTogglingStatus && !isAtivo ? (
+            <ActivityIndicator color={C.textOnDark} size="small" />
+          ) : (
+            <>
+              <MaterialIcons name="check-circle" size={16} color={C.textOnDark} />
+              <Text style={styles.statusDualBtnText}>{t('motorista.status.ativo')}</Text>
+            </>
+          )}
+        </Pressable>
+
+        {/* Offline button */}
+        <Pressable
+          accessibilityLabel={t('motorista.status.offline')}
+          accessibilityRole="button"
+          accessibilityState={{selected: isOffline, busy: isTogglingStatus || isEmCorrida}}
+          disabled={isTogglingStatus || isEmCorrida || isOffline}
+          onPress={onToggleStatus}
+          style={[
+            styles.statusDualBtn,
+            styles.statusDualBtnOffline,
+            isAtivo && styles.statusDualBtnInactive,
+          ]}
+          testID="btn-status-offline">
+          {isTogglingStatus && isAtivo ? (
+            <ActivityIndicator color={C.textOnDark} size="small" />
+          ) : (
+            <>
+              <MaterialIcons name="cancel" size={16} color={C.textOnDark} />
+              <Text style={styles.statusDualBtnText}>{t('motorista.status.offline')}</Text>
+            </>
+          )}
+        </Pressable>
+      </View>
 
       {/* Managed by system message when EM_CORRIDA */}
       {isEmCorrida && (
@@ -114,17 +126,6 @@ export const MotoristaIdleSheet = ({
           {t('motorista.status.managedBySystem')}
         </Text>
       )}
-
-      {/* Vehicle association button */}
-      <Pressable
-        accessibilityLabel={t('motorista.veiculo.title')}
-        accessibilityRole="button"
-        onPress={() => navigation.navigate('MotoristaCorridas', {screen: 'VeiculoAssociation'})}
-        style={styles.vehicleBtn}
-        testID="vehicle-association-btn">
-        <MaterialIcons name="directions-car" size={20} color={theme.design.textPrimary} />
-        <Text style={styles.vehicleBtnText}>{t('motorista.veiculo.title')}</Text>
-      </Pressable>
 
       <View style={styles.statusIndicatorRow} testID="realtime-status-row">
         <View style={[styles.statusDot, {backgroundColor: realtimeDotColor}]} />

@@ -29,7 +29,6 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useMotorista} from './useMotorista';
 import {useMotoristaRealtime} from './useMotoristaRealtime';import {NovaCorridaModal} from './components/NovaCorridaModal';
 import {createMotoristaStyles, MotoristaColors as C} from './MotoristaScreen.styles';
-import {createHistoricoStyles} from '@screens/Corridas/HistoricoCorridas.styles';
 import {useTheme} from '../../theme';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
 import {MotoristaIdleSheet} from './components/MotoristaIdleSheet';
@@ -62,7 +61,6 @@ export const MotoristaScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const styles = useMemo(() => createMotoristaStyles(theme), [theme]);
-  const hs = useMemo(() => createHistoricoStyles(theme), [theme]);
   const navigation = useNavigation<MotoristaNavProp>();
 
   const {corridaFacade, pesquisaFacade} = useFacades();
@@ -324,17 +322,22 @@ export const MotoristaScreen = (): React.JSX.Element => {
     <SafeAreaView edges={['top']} style={[styles.container, {backgroundColor: theme.colors.primary}]} testID="motorista-home-screen">
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
 
-      {/* Header bar — same style as My Rides titleRow */}
-      <View style={[hs.titleRow, styles.statusHeaderRow]} testID="status-header">
-        <View style={styles.statusPillDotOnly}>
-          <View style={[styles.statusPillDot, {backgroundColor: hasActiveRide ? C.success : C.warning}]} />
-        </View>
-        <Text style={hs.headerTitle}>
-          {hasActiveRide && activeCorrida
-            ? t(`corridas.status.${normalizedActiveStatus}`, {defaultValue: normalizedActiveStatus})
-            : t('motorista.status.disponivel')}
-        </Text>
-      </View>
+      {/* Header bar — operational status indicator */}
+      {(() => {
+        const isAtivo = statusOperacional === 'DISPONIVEL' || statusOperacional === 'EM_CORRIDA';
+        const headerBg = isAtivo ? C.headerActive : C.headerOffline;
+        const statusText = hasActiveRide && activeCorrida
+          ? t(`corridas.status.${normalizedActiveStatus}`, {defaultValue: normalizedActiveStatus ?? ''})
+          : isAtivo
+            ? t('motorista.status.ativo')
+            : t('motorista.status.offline');
+        return (
+          <View style={[styles.statusHeaderRow, {backgroundColor: headerBg}]} testID="status-header">
+            <View style={[styles.statusPillDot, {backgroundColor: isAtivo ? C.headerActiveDot : C.headerOfflineDot}]} />
+            <Text style={styles.statusHeaderText}>{statusText}</Text>
+          </View>
+        );
+      })()}
 
       {/* Map area */}
       <View style={styles.mapWrapper}>

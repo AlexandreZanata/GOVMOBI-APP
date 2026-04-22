@@ -325,6 +325,7 @@
       "emRota": "Em Rota",
       "afastado": "Indisponível",
       "offline": "Offline",
+      "ativo": "Ativo",
       "toggleLabel": "Alternar disponibilidade",
       "disponivelMsg": "Você está disponível para corridas.",
       "afastadoMsg": "Você está indisponível para corridas.",

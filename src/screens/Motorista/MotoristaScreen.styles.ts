@@ -34,6 +34,18 @@ export const MotoristaColors = {
   textDark: '#0B1623',
   /** Shadow color for bottom sheets. */
   shadowDark: '#0A1628',
+  /** Header background when driver is ATIVO (active/available). */
+  headerActive: '#145C3E',
+  /** Header background when driver is OFFLINE. */
+  headerOffline: '#7A2A1A',
+  /** Dot color inside header when active. */
+  headerActiveDot: '#4FFFB0',
+  /** Dot color inside header when offline. */
+  headerOfflineDot: '#FFB3A0',
+  /** Active status button background. */
+  statusBtnActive: '#1D9E75',
+  /** Offline status button background. */
+  statusBtnOffline: '#D85A30',
 } as const;
 
 /**
@@ -102,12 +114,19 @@ export const createMotoristaStyles = (theme: Theme) => {
       backgroundColor: C.danger,
     },
 
-    // ── Status header row (overrides titleRow to center content) ────────────
+    // ── Status header row — color-coded background signals active/offline ───
     statusHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: spacing[2],
+      paddingVertical: spacing[3],
+      paddingHorizontal: spacing[5],
+    },
+    statusHeaderText: {
+      ...typo.scale.labelLg,
+      color: C.textOnDark,
+      letterSpacing: 0.5,
     },
     statusPillDotOnly: {
       alignItems: 'center',
@@ -121,11 +140,39 @@ export const createMotoristaStyles = (theme: Theme) => {
       gap: spacing[2],
     },
     statusPillDot: {
-      width: 8,
-      height: 8,
+      width: 10,
+      height: 10,
       borderRadius: borderRadius.radius.full,
     },
     statusPillText: {
+      ...typo.scale.labelMd,
+      color: C.textOnDark,
+    },
+    // ── Dual status toggle buttons (Ativo / Offline) — 50/50 row ────────────
+    statusDualBtnRow: {
+      flexDirection: 'row',
+      gap: spacing[3],
+      marginBottom: spacing[4],
+    },
+    statusDualBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing[2],
+      paddingVertical: spacing[3],
+      borderRadius: borderRadius.radius.md,
+    },
+    statusDualBtnActive: {
+      backgroundColor: C.statusBtnActive,
+    },
+    statusDualBtnOffline: {
+      backgroundColor: C.statusBtnOffline,
+    },
+    statusDualBtnInactive: {
+      opacity: 0.45,
+    },
+    statusDualBtnText: {
       ...typo.scale.labelMd,
       color: C.textOnDark,
     },
