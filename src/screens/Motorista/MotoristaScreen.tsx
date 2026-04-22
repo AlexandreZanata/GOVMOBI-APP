@@ -209,7 +209,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
             </View>
           </MapboxGL.PointAnnotation>
         )}
-        {hasActiveRide && activeCorrida && (
+        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.destinoLng) && Number.isFinite(activeCorrida.destinoLat) && (
           <MapboxGL.PointAnnotation
             coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
             id="ride-destination"
@@ -217,7 +217,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
             <View style={styles.destinationPin} />
           </MapboxGL.PointAnnotation>
         )}
-        {hasActiveRide && activeCorrida && (
+        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.origemLng) && Number.isFinite(activeCorrida.origemLat) && (
           <MapboxGL.PointAnnotation
             coordinate={[activeCorrida.origemLng, activeCorrida.origemLat]}
             id="ride-origin"

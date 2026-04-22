@@ -21,7 +21,6 @@
  *   GET  /corridas/contexto                 — estado ativo do usuário
  */
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
-import {normalizeStatus as normalizeCorridaStatus} from '@models/Corrida';
 import type {
   CreateCorridaInput,
   SolicitarCorridaInput,
@@ -71,6 +70,54 @@ const normalizeStatus = (status: string): Corrida['status'] => {
     default:                 return 'SOLICITADA';
   }
 };
+
+/**
+ * Raw corrida shape as returned by the backend lifecycle endpoints.
+ * Coordinates may come as nested objects { origem: {lat,lng}, destino: {lat,lng} }
+ * or as flat fields origemLat/origemLng/destinoLat/destinoLng.
+ */
+interface RawCorrida {
+  id: string;
+  passageiroId: string;
+  motoristaId: string | null;
+  veiculoId?: string | null;
+  status: string;
+  motivoServico?: string;
+  observacoes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  // Nested shape (backend canonical)
+  origem?: {lat: number; lng: number};
+  destino?: {lat: number; lng: number};
+  // Flat shape (some endpoints)
+  origemLat?: number;
+  origemLng?: number;
+  destinoLat?: number;
+  destinoLng?: number;
+}
+
+/**
+ * Normalizes a raw backend corrida response into the app's Corrida model.
+ * Handles both nested { origem: {lat,lng} } and flat origemLat/origemLng shapes.
+ *
+ * @param raw - Raw response from any corrida lifecycle endpoint.
+ * @returns Normalized Corrida with guaranteed numeric coordinates.
+ */
+const normalizeCorrida = (raw: RawCorrida): Corrida => ({
+  id: raw.id,
+  passageiroId: raw.passageiroId,
+  motoristaId: raw.motoristaId,
+  veiculoId: raw.veiculoId ?? null,
+  origemLat: raw.origemLat ?? raw.origem?.lat ?? 0,
+  origemLng: raw.origemLng ?? raw.origem?.lng ?? 0,
+  destinoLat: raw.destinoLat ?? raw.destino?.lat ?? 0,
+  destinoLng: raw.destinoLng ?? raw.destino?.lng ?? 0,
+  status: normalizeStatus(raw.status),
+  motivoServico: raw.motivoServico ?? '',
+  observacoes: raw.observacoes,
+  createdAt: raw.createdAt ?? new Date().toISOString(),
+  updatedAt: raw.updatedAt ?? new Date().toISOString(),
+});
 
 // ---------------------------------------------------------------------------
 // Contract
@@ -186,15 +233,41 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     corridaId: string,
     _input: AceitarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
-    // Backend spec: body is EMPTY — vehicle resolved from driver's JWT + association
-    console.log(`[CorridaFacade] POST /corridas/${corridaId}/aceitar → body={} (vehicle resolved server-side)`);
-    const result = await this.post<Corrida>(`/corridas/${corridaId}/aceitar`, {});
-    if (result.error) {
-      console.error(`[CorridaFacade] aceitar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
-    } else {
-      console.log(`[CorridaFacade] aceitar OK → status=${result.data?.status}`);
+    // Backend spec: body is EMPTY — vehicle resolved from driver's JWT + association.
+    // The 201 response is a partial object { veiculoId, passageiroId } — NOT a full Corrida.
+    // After success, fetch the full corrida via GET /corridas/:id.
+    console.log(`[CorridaFacade] POST /corridas/${corridaId}/aceitar → body={}`);
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/corridas/${corridaId}/aceitar`, {
+        method: 'POST',
+        headers: this.authHeaders(),
+        body: JSON.stringify({}),
+      });
+      if (response.status === 409) {
+        const errBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const errCode = (errBody['code'] as string | undefined) ?? 'CONFLICT';
+        const errMsg = (errBody['message'] as string | undefined) ?? 'Conflict';
+        console.error(`[CorridaFacade] aceitar CONFLICT → ${errMsg}`);
+        return fail(toError(errMsg, errCode, 409));
+      }
+      if (!response.ok) {
+        const errText = await response.text().catch(() => '');
+        console.error(`[CorridaFacade] aceitar FAILED → HTTP ${response.status} ${errText}`);
+        return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
+      }
+      // 201 body is partial — fetch the full corrida to get coordinates and status
+      console.log(`[CorridaFacade] aceitar HTTP ${response.status} OK → fetching full corrida`);
+      const corridaResult = await this.getCorrida(corridaId);
+      if (corridaResult.error) {
+        console.error(`[CorridaFacade] aceitar getCorrida FAILED →`, JSON.stringify(corridaResult.error));
+        return corridaResult;
+      }
+      console.log(`[CorridaFacade] aceitar OK → status=${corridaResult.data?.status} origemLat=${corridaResult.data?.origemLat} destinoLat=${corridaResult.data?.destinoLat}`);
+      return corridaResult;
+    } catch (err) {
+      console.error(`[CorridaFacade] aceitar EXCEPTION →`, err);
+      return fail(toError('Network error', 'NETWORK_ERROR'));
     }
-    return result;
   }
 
   /** @inheritdoc */
@@ -203,7 +276,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: RecusarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/recusar →`, JSON.stringify(input));
-    const result = await this.post<Corrida>(`/corridas/${corridaId}/recusar`, input);
+    const result = await this.postCorrida(`/corridas/${corridaId}/recusar`, input);
     if (result.error) {
       console.error(`[CorridaFacade] recusar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -215,7 +288,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   /** @inheritdoc */
   public async iniciarDeslocamento(corridaId: string): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/iniciar-deslocamento`);
-    const result = await this.post<Corrida>(`/corridas/${corridaId}/iniciar-deslocamento`, {});
+    const result = await this.postCorrida(`/corridas/${corridaId}/iniciar-deslocamento`, {});
     if (result.error) {
       console.error(`[CorridaFacade] iniciarDeslocamento FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -227,7 +300,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   /** @inheritdoc */
   public async chegarAoLocal(corridaId: string): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/chegar`);
-    const result = await this.post<Corrida>(`/corridas/${corridaId}/chegar`, {});
+    const result = await this.postCorrida(`/corridas/${corridaId}/chegar`, {});
     if (result.error) {
       console.error(`[CorridaFacade] chegar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -242,7 +315,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: ConfirmarEmbarqueInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/confirmar-embarque →`, JSON.stringify(input));
-    const result = await this.post<Corrida>(`/corridas/${corridaId}/confirmar-embarque`, input);
+    const result = await this.postCorrida(`/corridas/${corridaId}/confirmar-embarque`, input);
     if (result.error) {
       console.error(`[CorridaFacade] confirmarEmbarque FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -257,7 +330,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: FinalizarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/finalizar →`, JSON.stringify(input));
-    const result = await this.post<Corrida>(`/corridas/${corridaId}/finalizar`, input);
+    const result = await this.postCorrida(`/corridas/${corridaId}/finalizar`, input);
     if (result.error) {
       console.error(`[CorridaFacade] finalizar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -272,7 +345,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: CancelarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/cancelar →`, JSON.stringify(input));
-    const result = await this.post<Corrida>(`/corridas/${corridaId}/cancelar`, input);
+    const result = await this.postCorrida(`/corridas/${corridaId}/cancelar`, input);
     if (result.error) {
       console.error(`[CorridaFacade] cancelar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -283,7 +356,16 @@ export class CorridaFacadeImpl implements ICorridaFacade {
 
   /** @inheritdoc */
   public async getCorrida(corridaId: string): Promise<Result<Corrida, FacadeError>> {
-    return this.get<Corrida>(`/corridas/${corridaId}`);
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/corridas/${corridaId}`, {
+        headers: this.authHeaders(),
+      });
+      if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
+      const raw = (await response.json()) as RawCorrida;
+      return ok(normalizeCorrida(raw));
+    } catch {
+      return fail(toError('Network error', 'NETWORK_ERROR'));
+    }
   }
 
   /** @inheritdoc */
@@ -375,8 +457,8 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       });
       if (response.status === 404) return ok(null);
       if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
-      const raw = (await response.json()) as Corrida & {status: string};
-      return ok({...raw, status: normalizeCorridaStatus(raw.status)});
+      const raw = (await response.json()) as RawCorrida;
+      return ok(normalizeCorrida(raw));
     } catch {
       return fail(toError('Network error', 'NETWORK_ERROR'));
     }
@@ -441,6 +523,43 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       }
       if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
       return ok((await response.json()) as T);
+    } catch {
+      return fail(toError('Network error', 'NETWORK_ERROR'));
+    }
+  }
+
+  /**
+   * POST helper that normalizes the response into a Corrida model.
+   * Handles both nested { origem: {lat,lng} } and flat origemLat/origemLng shapes.
+   *
+   * @param endpoint - API path.
+   * @param body - Request body.
+   * @returns Normalized Corrida result.
+   */
+  private async postCorrida(endpoint: string, body: object): Promise<Result<Corrida, FacadeError>> {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: this.authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (response.status === 409) {
+        const errBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const errCode = (errBody['code'] as string | undefined) ?? 'CONFLICT';
+        const errMsg = (errBody['message'] as string | undefined) ?? 'Conflict';
+        return fail(toError(errMsg, errCode, 409));
+      }
+      if (response.status === 400) {
+        const errBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const msg = Array.isArray(errBody['message'])
+          ? (errBody['message'] as string[]).join(', ')
+          : (errBody['message'] as string | undefined) ?? 'Bad request';
+        return fail(toError(msg, 'BAD_REQUEST', 400));
+      }
+      if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
+      const raw = (await response.json()) as RawCorrida;
+      console.log(`[CorridaFacade] raw response →`, JSON.stringify(raw));
+      return ok(normalizeCorrida(raw));
     } catch {
       return fail(toError('Network error', 'NETWORK_ERROR'));
     }
