@@ -259,13 +259,13 @@ Incremental implementation of the full ride lifecycle for both roles. Each phase
 - The `useRideReconnection` hook must be mounted at app level (alongside `useRealtimeSession`) so it survives tab navigation
 - `FrotaFacadeMock` must be wired into the `index.ts` mock branch so mock mode works end-to-end without a backend
 
-- [ ] 21. MotoristaInfoModal integration in PassageiroScreen
-  - [ ] 21.1 Add `showMotoristaModal` state and auto-show useEffect in `src/screens/Passageiro/PassageiroScreen.tsx`
+- [x] 21. MotoristaInfoModal integration in PassageiroScreen
+  - [x] 21.1 Add `showMotoristaModal` state and auto-show useEffect in `src/screens/Passageiro/PassageiroScreen.tsx`
     - Add `const [showMotoristaModal, setShowMotoristaModal] = useState<boolean>(false)`
     - Add `useEffect` watching `activeCorrida?.status` and `activeCorrida?.motoristaId`: when status === `'ACEITA'` and `motoristaId` is non-null, call `setShowMotoristaModal(true)`
     - Add a second `useEffect` watching `activeCorrida?.status`: when status is in `TERMINAL_STATUSES`, call `setShowMotoristaModal(false)`
     - _Requirements: 24.1, 24.3_
-  - [ ] 21.2 Render `<MotoristaInfoModal>` inside `PassageiroScreen`
+  - [x] 21.2 Render `<MotoristaInfoModal>` inside `PassageiroScreen`
     - Import `MotoristaInfoModal` from `'./components/MotoristaInfoModal'`
     - Render with `visible={showMotoristaModal}`, `motoristaId={activeCorrida?.motoristaId ?? null}`, `veiculoId={activeCorrida?.veiculoId ?? null}`, `onDismiss={() => setShowMotoristaModal(false)}`
     - _Requirements: 24.2, 24.4, 24.5_

@@ -27,6 +27,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {usePassageiro} from './usePassageiro';
 import {usePassageiroRealtime} from '../../hooks/usePassageiroRealtime';
 import {SolicitarCorridaModal} from './components/SolicitarCorridaModal';
+import {MotoristaInfoModal} from './components/MotoristaInfoModal';
 import {PassageiroSearchBar} from './components/PassageiroSearchBar';
 import {PassageiroSearchOverlay} from './components/PassageiroSearchOverlay';
 import {PassageiroIdleSheet} from './components/PassageiroIdleSheet';
@@ -45,6 +46,7 @@ import {
 import {addToast} from '@store/slices/uiSlice';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
 import type {Corrida} from '@models/Corrida';
+import {TERMINAL_STATUSES as CORRIDA_TERMINAL_STATUSES} from '@models/Corrida';
 
 // ── Navigation types ──────────────────────────────────────────────────────────
 type PassageiroTabParamList = {
@@ -81,7 +83,7 @@ const activeRouteLineStyle = {
   lineJoin: 'round' as const,
 };
 
-const TERMINAL_STATUSES = new Set<string>(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
+const TERMINAL_STATUSES = CORRIDA_TERMINAL_STATUSES;
 const STATUS_POLL_MS = 5000;
 
 const normalizeCorridaStatus = (status: string): Corrida['status'] => {
@@ -203,6 +205,23 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const isActionLoading = useAppSelector(s => s.corrida.isActionLoading);
   const pendingCorridaId = useAppSelector(s => s.corrida.pendingCorridaId);
   const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
+
+  // ── MotoristaInfoModal state ────────────────────────────────────────────────
+  const [showMotoristaModal, setShowMotoristaModal] = useState<boolean>(false);
+
+  // Auto-show when ride is accepted and driver is assigned
+  useEffect(() => {
+    if (activeCorrida?.status === 'ACEITA' && activeCorrida.motoristaId != null) {
+      setShowMotoristaModal(true);
+    }
+  }, [activeCorrida?.status, activeCorrida?.motoristaId]);
+
+  // Auto-hide when ride reaches a terminal status
+  useEffect(() => {
+    if (activeCorrida?.status != null && TERMINAL_STATUSES.has(activeCorrida.status)) {
+      setShowMotoristaModal(false);
+    }
+  }, [activeCorrida?.status]);
 
   // ── Status polling ──────────────────────────────────────────────────────────
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -551,6 +570,13 @@ export const PassageiroScreen = (): React.JSX.Element => {
         onClose={onCloseRequestModal}
         onSuccess={() => onCloseRequestModal()}
         visible={isRequestModalOpen}
+      />
+
+      <MotoristaInfoModal
+        motoristaId={activeCorrida?.motoristaId ?? null}
+        onDismiss={() => setShowMotoristaModal(false)}
+        veiculoId={activeCorrida?.veiculoId ?? null}
+        visible={showMotoristaModal}
       />
     </View>
   );
