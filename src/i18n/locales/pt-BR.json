@@ -382,11 +382,15 @@
     },
     "info": {
       "title": "Informações do Motorista",
+      "nomeLabel": "Motorista",
       "cnhLabel": "CNH",
       "cnhCategoriaLabel": "Categoria CNH",
       "veiculoLabel": "Veículo",
       "placaLabel": "Placa",
-      "anoLabel": "Ano"
+      "anoLabel": "Ano",
+      "statusAceita": "Motorista Aceitou!",
+      "statusEmRota": "Motorista a Caminho",
+      "statusPassageiroABordo": "Motorista Chegou!"
     }
   },
   "corridas": {

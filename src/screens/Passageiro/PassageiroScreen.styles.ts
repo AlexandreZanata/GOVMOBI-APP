@@ -400,6 +400,45 @@ export const createPassageiroStyles = () =>
       letterSpacing: 0.3,
     },
 
+    // ── Driver strip inside active ride panel ────────────────────────────────
+    driverStrip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 4,
+      paddingBottom: 10,
+      gap: 10,
+    },
+    driverStripAvatar: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: C.interactiveBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    driverStripInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    driverStripName: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: C.textDark,
+    },
+    driverStripVehicle: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: C.textMid,
+      letterSpacing: 0.5,
+    },
+    driverStripDivider: {
+      height: 1,
+      backgroundColor: C.dividerLight,
+      marginHorizontal: 16,
+      marginBottom: 8,
+    },
     // ── Active ride banner (replaces bottom sheet when ride is in progress) ──
     activeBanner: {
       borderTopWidth: 3,

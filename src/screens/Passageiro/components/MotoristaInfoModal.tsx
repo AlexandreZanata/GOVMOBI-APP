@@ -1,10 +1,14 @@
-/* eslint-disable react-native/no-unused-styles */
-/* eslint-disable react-native/no-color-literals */
 /**
- * @fileoverview MotoristaInfoModal — shows driver and vehicle info when ride is accepted.
+ * @fileoverview MotoristaInfoModal — shows driver name, vehicle info, and a
+ * status-driven action headline when a ride is accepted / driver is en route.
  *
- * Displayed automatically when the ride status changes to ACEITA and the driver
- * info becomes available. The passenger can dismiss it to continue tracking.
+ * Displays:
+ *  - Status headline (i18n): "MOTORISTA ACEITOU", "MOTORISTA A CAMINHO", "MOTORISTA CHEGOU!"
+ *  - Driver name (from GET /servidores/:servidorId)
+ *  - Vehicle model, plate, year (from GET /frota/veiculos/:veiculoId)
+ *
+ * Intentionally omits CNH number and category — those are internal driver
+ * credentials and must never be shown to passengers.
  */
 import React, {useCallback, useEffect, useState} from 'react';
 import {
@@ -19,22 +23,52 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {useTheme, type Theme} from '../../../theme';
 import {useFacades} from '@services/facades';
-import type {Motorista} from '@models/Motorista';
 import type {Veiculo} from '@models/index';
+import type {CorridaStatus} from '@models/Corrida';
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 
 export interface MotoristaInfoModalProps {
   /** Whether the modal is visible. */
   visible: boolean;
-  /** Driver UUID. */
+  /** Motorista UUID — used to fetch servidorId → nome. */
   motoristaId: string | null;
   /** Vehicle UUID. */
   veiculoId: string | null;
+  /** Current ride status — drives the headline copy. */
+  corridaStatus: CorridaStatus | null;
   /** Called when the user dismisses the modal. */
   onDismiss: () => void;
 }
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 /**
- * Modal showing driver and vehicle information when a ride is accepted.
+ * Maps a ride status to its i18n key for the modal headline.
+ * Returns null for statuses where the modal should not be shown.
+ *
+ * @param status - Current corrida status.
+ * @returns i18n key string or null.
+ */
+const headlineKey = (status: CorridaStatus | null): string | null => {
+  switch (status) {
+    case 'aceita':             return 'motorista.info.statusAceita';
+    case 'em_rota':            return 'motorista.info.statusEmRota';
+    case 'passageiro_a_bordo': return 'motorista.info.statusPassageiroABordo';
+    default:                   return null;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+/**
+ * Modal showing driver name, vehicle info, and a status-driven headline.
  *
  * @param props - {@link MotoristaInfoModalProps}
  * @returns JSX element for the driver info modal.
@@ -43,21 +77,22 @@ export const MotoristaInfoModal = ({
   visible,
   motoristaId,
   veiculoId,
+  corridaStatus,
   onDismiss,
 }: MotoristaInfoModalProps): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
-  const {frotaFacade} = useFacades();
+  const {frotaFacade, servidoresFacade} = useFacades();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
-  const [motorista, setMotorista] = useState<Motorista | null>(null);
+  const [motoristaNome, setMotoristaNome] = useState<string | null>(null);
   const [veiculo, setVeiculo] = useState<Veiculo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!visible || !motoristaId) {
-      setMotorista(null);
+      setMotoristaNome(null);
       setVeiculo(null);
       setError(null);
       return;
@@ -68,52 +103,61 @@ export const MotoristaInfoModal = ({
     setError(null);
 
     const load = async (): Promise<void> => {
-      const [motResult, veiResult] = await Promise.all([
-        frotaFacade.getMotoristaById(motoristaId),
-        veiculoId ? frotaFacade.getVeiculoById(veiculoId) : Promise.resolve({data: null, error: null}),
-      ]);
-
+      // Step 1: get the Motorista record to obtain servidorId
+      const motResult = await frotaFacade.getMotoristaById(motoristaId);
       if (cancelled) return;
 
-      if (motResult.error) {
+      if (motResult.error || !motResult.data) {
         setError(t('errors.unknownError'));
         setIsLoading(false);
         return;
       }
 
-      setMotorista(motResult.data ?? null);
+      const {servidorId} = motResult.data;
+
+      // Step 2: fetch Servidor (for nome) and Veiculo in parallel
+      const [srvResult, veiResult] = await Promise.all([
+        servidoresFacade.getServidorById({id: servidorId}),
+        veiculoId
+          ? frotaFacade.getVeiculoById(veiculoId)
+          : Promise.resolve({data: null, error: null}),
+      ]);
+
+      if (cancelled) return;
+
+      setMotoristaNome(srvResult.data?.nome ?? null);
       setVeiculo(veiResult.data ?? null);
       setIsLoading(false);
     };
 
     void load();
+    return () => { cancelled = true; };
+  }, [visible, motoristaId, veiculoId, frotaFacade, servidoresFacade, t]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [visible, motoristaId, veiculoId, frotaFacade, t]);
+  const handleDismiss = useCallback(() => { onDismiss(); }, [onDismiss]);
 
-  const handleDismiss = useCallback(() => {
-    onDismiss();
-  }, [onDismiss]);
+  const key = headlineKey(corridaStatus);
 
   return (
     <Modal
-      animationType="fade"
+      animationType="slide"
       onRequestClose={handleDismiss}
       transparent
       visible={visible}>
       <View style={styles.backdrop} testID="motorista-info-modal">
         <View style={styles.card}>
-          {/* Header */}
-          <View style={styles.header}>
-            <MaterialIcons
-              color={theme.colors.primary}
-              name="person"
-              size={32}
-            />
-            <Text style={styles.title}>{t('motorista.info.title')}</Text>
-          </View>
+
+          {/* Headline — status-driven action label */}
+          {key && (
+            <View style={styles.headline}>
+              <MaterialIcons
+                color={theme.colors.primary}
+                name={corridaStatus === 'passageiro_a_bordo' ? 'check-circle' : 'directions-car'}
+                size={22}
+              />
+              <Text style={styles.headlineText}>{t(key)}</Text>
+            </View>
+          )}
 
           {/* Content */}
           {isLoading ? (
@@ -126,41 +170,42 @@ export const MotoristaInfoModal = ({
             </View>
           ) : (
             <View style={styles.content}>
-              {/* Driver info */}
-              <View style={styles.section}>
-                <Text style={styles.label}>{t('motorista.info.cnhLabel')}</Text>
-                <Text style={styles.value}>{motorista?.cnhNumero ?? '—'}</Text>
+              {/* Driver name */}
+              <View style={styles.driverRow}>
+                <View style={styles.avatar}>
+                  <MaterialIcons name="person" size={28} color={theme.colors.primary} />
+                </View>
+                <View style={styles.driverInfo}>
+                  <Text style={styles.driverLabel}>{t('motorista.info.nomeLabel')}</Text>
+                  <Text style={styles.driverName} numberOfLines={1}>
+                    {motoristaNome ?? '—'}
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.section}>
-                <Text style={styles.label}>{t('motorista.info.cnhCategoriaLabel')}</Text>
-                <Text style={styles.value}>{motorista?.cnhCategoria ?? '—'}</Text>
-              </View>
-
-              {/* Vehicle info */}
+              {/* Vehicle */}
               {veiculo && (
                 <>
                   <View style={styles.divider} />
-                  <View style={styles.section}>
-                    <Text style={styles.label}>{t('motorista.info.veiculoLabel')}</Text>
-                    <Text style={styles.value}>{veiculo.modelo}</Text>
-                  </View>
-
-                  <View style={styles.section}>
-                    <Text style={styles.label}>{t('motorista.info.placaLabel')}</Text>
-                    <Text style={styles.value}>{veiculo.placa}</Text>
-                  </View>
-
-                  <View style={styles.section}>
-                    <Text style={styles.label}>{t('motorista.info.anoLabel')}</Text>
-                    <Text style={styles.value}>{veiculo.ano}</Text>
+                  <View style={styles.vehicleRow}>
+                    <MaterialIcons
+                      name="directions-car"
+                      size={18}
+                      color={theme.design.textSecondary}
+                    />
+                    <View style={styles.vehicleInfo}>
+                      <Text style={styles.vehicleModel}>
+                        {`${veiculo.modelo} · ${veiculo.ano}`}
+                      </Text>
+                      <Text style={styles.vehiclePlate}>{veiculo.placa}</Text>
+                    </View>
                   </View>
                 </>
               )}
             </View>
           )}
 
-          {/* Footer */}
+          {/* Dismiss button */}
           <Pressable
             accessibilityLabel={t('common.confirm')}
             accessibilityRole="button"
@@ -185,55 +230,90 @@ const createStyles = (theme: Theme) =>
   StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: theme.spacing[5],
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'flex-end',
     },
     card: {
       backgroundColor: theme.design.surface100,
-      borderRadius: theme.borderRadius.radius.lg,
-      width: '100%',
-      maxWidth: 400,
+      borderTopLeftRadius: theme.borderRadius.radius.xl,
+      borderTopRightRadius: theme.borderRadius.radius.xl,
+      paddingBottom: theme.spacing[6],
       ...theme.shadows.card,
     },
-    header: {
+    headline: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: theme.spacing[3],
+      gap: theme.spacing[2],
       paddingHorizontal: theme.spacing[5],
       paddingTop: theme.spacing[5],
-      paddingBottom: theme.spacing[4],
+      paddingBottom: theme.spacing[3],
+      borderBottomWidth: 1,
+      borderBottomColor: theme.design.surface300,
     },
-    title: {
+    headlineText: {
       ...theme.typography.scale.headingMd,
-      color: theme.design.textPrimary,
-      flex: 1,
+      color: theme.colors.primary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
     },
     content: {
       paddingHorizontal: theme.spacing[5],
-      paddingBottom: theme.spacing[4],
+      paddingTop: theme.spacing[4],
+      paddingBottom: theme.spacing[2],
       gap: theme.spacing[3],
     },
-    section: {
+    driverRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacing[3],
+    },
+    avatar: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: theme.design.surface200,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    driverInfo: {
+      flex: 1,
       gap: theme.spacing[1],
     },
-    label: {
+    driverLabel: {
       ...theme.typography.scale.labelSm,
       color: theme.design.textSecondary,
       textTransform: 'uppercase',
     },
-    value: {
-      ...theme.typography.scale.bodyLg,
+    driverName: {
+      ...theme.typography.scale.headingSm,
       color: theme.design.textPrimary,
     },
     divider: {
       height: 1,
       backgroundColor: theme.design.surface300,
-      marginVertical: theme.spacing[2],
+    },
+    vehicleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacing[3],
+    },
+    vehicleInfo: {
+      flex: 1,
+      gap: theme.spacing[1],
+    },
+    vehicleModel: {
+      ...theme.typography.scale.bodyMd,
+      color: theme.design.textPrimary,
+      fontWeight: '600',
+    },
+    vehiclePlate: {
+      ...theme.typography.scale.labelMd,
+      color: theme.design.textSecondary,
+      letterSpacing: 1.5,
+      textTransform: 'uppercase',
     },
     loadingContainer: {
-      paddingVertical: theme.spacing[6],
+      paddingVertical: theme.spacing[8],
       alignItems: 'center',
     },
     errorContainer: {
@@ -246,10 +326,11 @@ const createStyles = (theme: Theme) =>
       textAlign: 'center',
     },
     button: {
+      marginHorizontal: theme.spacing[5],
+      marginTop: theme.spacing[4],
       backgroundColor: theme.colors.primary,
+      borderRadius: theme.borderRadius.radius.md,
       paddingVertical: theme.spacing[4],
-      borderBottomLeftRadius: theme.borderRadius.radius.lg,
-      borderBottomRightRadius: theme.borderRadius.radius.lg,
       alignItems: 'center',
     },
     buttonText: {

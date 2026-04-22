@@ -114,7 +114,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const styles = useMemo(() => createPassageiroStyles(), []);
   const navigation = useNavigation<PassageiroScreenNavProp>();
   const dispatch = useAppDispatch();
-  const {corridaFacade, pesquisaFacade} = useFacades();
+  const {corridaFacade, pesquisaFacade, frotaFacade, servidoresFacade} = useFacades();
   const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
 
   // ── UI state ────────────────────────────────────────────────────────────────
@@ -125,6 +125,8 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const [showCancelInput, setShowCancelInput] = useState(false);
   const [origemAddress, setOrigemAddress] = useState<string | null>(null);
   const [destinoAddress, setDestinoAddress] = useState<string | null>(null);
+  const [motoristaNome, setMotoristaNome] = useState<string | null>(null);
+  const [veiculoLabel, setVeiculoLabel] = useState<string | null>(null);
   const [activeRouteCoords, setActiveRouteCoords] = useState<[number, number][]>([]);
   const activeRouteRequestRef = useRef(0);
 
@@ -260,6 +262,37 @@ export const PassageiroScreen = (): React.JSX.Element => {
     })();
     return () => { cancelled = true; };
   }, [activeCorrida, hasActiveRide, pesquisaFacade, t]);
+
+  // ── Driver name + vehicle label for active ride panel ──────────────────────
+  useEffect(() => {
+    const motoristaId = activeCorrida?.motoristaId;
+    const veiculoId = activeCorrida?.veiculoId;
+    const driverAssigned = new Set(['aceita', 'em_rota', 'passageiro_a_bordo']);
+
+    if (!activeCorrida || !hasActiveRide || !motoristaId || !driverAssigned.has(activeCorrida.status)) {
+      setMotoristaNome(null);
+      setVeiculoLabel(null);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const motResult = await frotaFacade.getMotoristaById(motoristaId);
+      if (cancelled || motResult.error || !motResult.data) return;
+
+      const [srvResult, veiResult] = await Promise.all([
+        servidoresFacade.getServidorById({id: motResult.data.servidorId}),
+        veiculoId ? frotaFacade.getVeiculoById(veiculoId) : Promise.resolve({data: null, error: null}),
+      ]);
+      if (cancelled) return;
+
+      setMotoristaNome(srvResult.data?.nome ?? null);
+      if (veiResult.data) {
+        setVeiculoLabel(`${veiResult.data.modelo} · ${veiResult.data.placa}`);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeCorrida?.motoristaId, activeCorrida?.veiculoId, activeCorrida?.status, hasActiveRide, frotaFacade, servidoresFacade]);
 
   // ── Route line for active ride ──────────────────────────────────────────────
   useEffect(() => {
@@ -548,6 +581,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
           corrida={activeCorrida}
           destinoAddress={destinoAddress}
           isActionLoading={isActionLoading}
+          motoristaNome={motoristaNome}
           onCancel={handleCancel}
           onCancelMotivoChange={setCancelMotivo}
           onHideCancelInput={() => { setShowCancelInput(false); setCancelMotivo(''); }}
@@ -559,6 +593,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
           origemAddress={origemAddress}
           paddingBottom={sheetPaddingBottom}
           showCancelInput={showCancelInput}
+          veiculoLabel={veiculoLabel}
         />
       )}
 
@@ -569,6 +604,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
       />
 
       <MotoristaInfoModal
+        corridaStatus={activeCorrida?.status ?? null}
         motoristaId={activeCorrida?.motoristaId ?? null}
         onDismiss={() => setShowMotoristaModal(false)}
         veiculoId={activeCorrida?.veiculoId ?? null}
