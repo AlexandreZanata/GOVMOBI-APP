@@ -203,9 +203,30 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(200);
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
-    if (corrida.status === 'FINALIZADA') {
-      return fail(toError('Corrida já finalizada', 'BAD_REQUEST'));
+
+    // Enforce backend state machine: EM_ROTA / PASSAGEIRO_EMBARCADO → 409
+    if (corrida.status === 'EM_DESLOCAMENTO' || corrida.status === 'EM_ROTA' || corrida.status === 'PASSAGEIRO_EMBARCADO') {
+      return fail({
+        code: 'INVALID_STATE_TRANSITION',
+        message: 'Corrida em andamento não pode ser cancelada.',
+        statusCode: 409,
+      });
     }
+    // Terminal states → 409
+    if (
+      corrida.status === 'FINALIZADA' ||
+      corrida.status === 'CONCLUIDA' ||
+      corrida.status === 'CANCELADA' ||
+      corrida.status === 'EXPIRADA' ||
+      corrida.status === 'AVALIADA'
+    ) {
+      return fail({
+        code: 'INVALID_STATE_TRANSITION',
+        message: 'Estado terminal — nenhuma transição é possível.',
+        statusCode: 409,
+      });
+    }
+
     const updated = transition(corrida, 'CANCELADA');
     store.set(corridaId, updated);
     return ok(updated);
@@ -276,7 +297,13 @@ export class CorridaFacadeMock implements ICorridaFacade {
   public async getActiveCorrida(): Promise<Result<Corrida | null, FacadeError>> {
     await delay(150);
     const active = [...store.values()].find(
-      c => c.status !== 'FINALIZADA' && c.status !== 'CANCELADA' && c.status !== 'RECUSADA',
+      c =>
+        c.status !== 'FINALIZADA' &&
+        c.status !== 'CONCLUIDA' &&
+        c.status !== 'CANCELADA' &&
+        c.status !== 'EXPIRADA' &&
+        c.status !== 'AVALIADA' &&
+        c.status !== 'RECUSADA',
     );
     return ok(active ?? null);
   }
@@ -285,7 +312,13 @@ export class CorridaFacadeMock implements ICorridaFacade {
   public async getContexto(): Promise<Result<CorridaContexto, FacadeError>> {
     await delay(150);
     const active = [...store.values()].find(
-      c => c.status !== 'FINALIZADA' && c.status !== 'CANCELADA' && c.status !== 'RECUSADA',
+      c =>
+        c.status !== 'FINALIZADA' &&
+        c.status !== 'CONCLUIDA' &&
+        c.status !== 'CANCELADA' &&
+        c.status !== 'EXPIRADA' &&
+        c.status !== 'AVALIADA' &&
+        c.status !== 'RECUSADA',
     );
     return ok({
       usuario: {

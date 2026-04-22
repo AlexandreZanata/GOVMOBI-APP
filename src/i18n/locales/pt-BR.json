@@ -429,7 +429,10 @@
       "FINALIZADA": "Finalizada",
       "CANCELADA": "Cancelada",
       "AGUARDANDO_ACEITE": "Aguardando Aceite",
-      "AVALIADA": "Avaliada"
+      "AVALIADA": "Avaliada",
+      "EM_ROTA": "Em Rota",
+      "CONCLUIDA": "Concluída",
+      "EXPIRADA": "Expirada"
     },
     "actions": {
       "title": "Ações",
@@ -461,7 +464,8 @@
     "terminal": {
       "FINALIZADA": "Corrida finalizada com sucesso.",
       "CANCELADA": "Corrida cancelada.",
-      "RECUSADA": "Corrida recusada."
+      "RECUSADA": "Corrida recusada.",
+      "EXPIRADA": "Corrida expirada — nenhum motorista disponível."
     },
     "success": {
       "aceita": "Corrida aceita com sucesso.",

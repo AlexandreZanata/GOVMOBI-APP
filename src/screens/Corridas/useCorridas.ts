@@ -25,6 +25,7 @@ import {
 } from '@store/slices/corridaSlice';
 import {addToast} from '@store/slices/uiSlice';
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
+import {podeSerCancelada} from '@models/Corrida';
 import type {
   AceitarCorridaInput,
   ConfirmarEmbarqueInput,
@@ -97,11 +98,9 @@ export const useCorridas = (corridaId?: string): CorridasState => {
       const result = await corridaFacade.getCorridaStatus(targetId);
       if (result.data) {
         dispatch(updateCorridaStatus(result.data.status as Corrida['status']));
-        // Stop polling on terminal states
-        if (
-          result.data.status === 'FINALIZADA' ||
-          result.data.status === 'CANCELADA'
-        ) {
+        // Stop polling on any terminal state
+        const terminal = new Set(['FINALIZADA', 'CONCLUIDA', 'CANCELADA', 'EXPIRADA', 'AVALIADA']);
+        if (terminal.has(result.data.status)) {
           if (pollRef.current) {
             clearInterval(pollRef.current);
             pollRef.current = null;
@@ -275,13 +274,21 @@ export const useCorridas = (corridaId?: string): CorridasState => {
 
   const onCancelar = useCallback(
     async (id: string, motivo: string): Promise<void> => {
+      // Guard: enforce state machine client-side before hitting the API
+      if (activeCorrida && !podeSerCancelada(activeCorrida.status)) {
+        const msg = t('corridas.cancel.notAllowed');
+        dispatch(setCorridaError(msg));
+        dispatch(addToast({id: `cancel-err-${Date.now()}`, message: msg, type: 'error'}));
+        return;
+      }
       await withAction(
         async () => {
           const r = await corridaFacade.cancelarCorrida(id, {motivo});
           if (r.error) {
-            const msg = r.error.code === 'BAD_REQUEST'
-              ? t('corridas.errors.jaFinalizada')
-              : t('corridas.errors.cancelarFailed');
+            const msg =
+              r.error.code === 'INVALID_STATE_TRANSITION'
+                ? t('corridas.cancel.notAllowed')
+                : t('corridas.errors.cancelarFailed');
             throw new Error(msg);
           }
           return r.data;
@@ -294,7 +301,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.cancelarFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [activeCorrida, corridaFacade, dispatch, t, withAction],
   );
 
   return {

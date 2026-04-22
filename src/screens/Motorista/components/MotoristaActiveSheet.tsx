@@ -18,6 +18,7 @@ import {statusColor} from '@screens/Corridas/CorridasScreens.styles';
 import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
 import {useTheme} from '@theme/index';
 import type {Corrida} from '@models/Corrida';
+import {podeSerCancelada} from '@models/Corrida';
 
 export interface MotoristaActiveSheetProps {
   /** The active corrida. */
@@ -83,6 +84,7 @@ export const MotoristaActiveSheet = ({
   const theme = useTheme();
   const styles = createMotoristaStyles(theme);
   const badgeColor = statusColor(corrida.status, theme);
+  const canCancel = podeSerCancelada(corrida.status);
 
   const handleFinalizar = () => {
     Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
@@ -252,8 +254,8 @@ export const MotoristaActiveSheet = ({
         </Pressable>
       )}
 
-      {/* Cancel */}
-      {showCancelInput ? (
+      {/* Cancel — only shown for cancellable states (not EM_ROTA / PASSAGEIRO_EMBARCADO) */}
+      {canCancel && (showCancelInput ? (
         <>
           <TextInput
             accessibilityLabel={t('corridas.cancel.motivoPlaceholder')}
@@ -283,7 +285,7 @@ export const MotoristaActiveSheet = ({
           testID="btn-cancelar">
           <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
         </Pressable>
-      )}
+      ))}
     </Animated.View>
   );
 };

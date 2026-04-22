@@ -51,30 +51,24 @@ const toError = (message: string, code = 'INTERNAL_ERROR', statusCode?: number):
   ({code, message, statusCode});
 
 /**
- * Maps the backend's lowercase CorridaStatus enum values to the app's
- * uppercase union type used in Redux and UI components.
+ * Maps the backend's status enum values to the app's CorridaStatus union.
+ * Handles both lowercase (backend) and uppercase (app) variants.
  */
 const normalizeStatus = (status: string): Corrida['status'] => {
   switch (status.trim().toLowerCase()) {
-    case 'solicitada':
-    case 'aguardando_aceite':
-      return 'SOLICITADA';
-    case 'aceita':
-      return 'ACEITA';
+    case 'solicitada':       return 'SOLICITADA';
+    case 'aguardando_aceite': return 'AGUARDANDO_ACEITE';
+    case 'aceita':           return 'ACEITA';
+    case 'recusada':         return 'RECUSADA';
     case 'em_rota':
-    case 'em_deslocamento':
-      return 'EM_DESLOCAMENTO';
-    case 'passageiro_embarcado':
-      return 'PASSAGEIRO_EMBARCADO';
+    case 'em_deslocamento':  return 'EM_ROTA';
+    case 'passageiro_embarcado': return 'PASSAGEIRO_EMBARCADO';
     case 'concluida':
-    case 'finalizada':
-    case 'avaliada':
-      return 'FINALIZADA';
-    case 'cancelada':
-    case 'expirada':
-      return 'CANCELADA';
-    default:
-      return 'SOLICITADA';
+    case 'finalizada':       return 'CONCLUIDA';
+    case 'avaliada':         return 'AVALIADA';
+    case 'cancelada':        return 'CANCELADA';
+    case 'expirada':         return 'EXPIRADA';
+    default:                 return 'SOLICITADA';
   }
 };
 
@@ -394,7 +388,13 @@ export class CorridaFacadeImpl implements ICorridaFacade {
         headers: this.authHeaders(),
         body: JSON.stringify(body),
       });
-      if (response.status === 409) return fail(toError('Conflict', 'CONFLICT', 409));
+      if (response.status === 409) {
+        const errBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const errCode = (errBody['code'] as string | undefined) ?? 'CONFLICT';
+        const errMsg = (errBody['message'] as string | undefined) ?? 'Conflict';
+        // INVALID_STATE_TRANSITION is the backend code for EM_ROTA cancel attempts
+        return fail(toError(errMsg, errCode, 409));
+      }
       if (response.status === 400) {
         const errBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
         const msg = Array.isArray(errBody['message'])

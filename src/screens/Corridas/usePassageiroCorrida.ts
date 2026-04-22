@@ -26,6 +26,7 @@ import {
 } from '@store/slices/corridaSlice';
 import {addToast} from '@store/slices/uiSlice';
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
+import {podeSerCancelada} from '@models/Corrida';
 
 /** Polling interval for GET /corridas/:id/status (ms). */
 const STATUS_POLL_INTERVAL_MS = 5_000;
@@ -96,11 +97,9 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
       const result = await corridaFacade.getCorridaStatus(targetId);
       if (result.data) {
         dispatch(updateCorridaStatus(result.data.status as Corrida['status']));
-        // Stop polling on terminal states
-        if (
-          result.data.status === 'FINALIZADA' ||
-          result.data.status === 'CANCELADA'
-        ) {
+        // Stop polling on any terminal state
+        const terminal = new Set(['FINALIZADA', 'CONCLUIDA', 'CANCELADA', 'EXPIRADA', 'AVALIADA']);
+        if (terminal.has(result.data.status)) {
           if (pollRef.current) {
             clearInterval(pollRef.current);
             pollRef.current = null;
@@ -188,26 +187,29 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
 
   const onCancelar = useCallback(
     async (id: string, motivo: string): Promise<void> => {
+      // Guard: enforce state machine client-side before hitting the API
+      if (activeCorrida && !podeSerCancelada(activeCorrida.status)) {
+        const msg = t('corridas.cancel.notAllowed');
+        dispatch(setCorridaError(msg));
+        dispatch(addToast({id: `cancel-err-${Date.now()}`, message: msg, type: 'error'}));
+        return;
+      }
+
       dispatch(setIsActionLoading(true));
       dispatch(setCorridaError(null));
 
-      const result = await corridaFacade.cancelarCorrida(id, {
-        solicitanteId: 'current-user', // resolved from auth token server-side
-        motivo,
-        tipoSolicitante: 'passageiro',
-      });
+      // Only send motivo — solicitanteId and tipoSolicitante are JWT-derived server-side
+      const result = await corridaFacade.cancelarCorrida(id, {motivo});
 
       dispatch(setIsActionLoading(false));
 
       if (result.error) {
         const msg =
-          result.error.code === 'BAD_REQUEST'
-            ? t('corridas.errors.jaFinalizada')
+          result.error.code === 'INVALID_STATE_TRANSITION'
+            ? t('corridas.cancel.notAllowed')
             : t('corridas.errors.cancelarFailed');
         dispatch(setCorridaError(msg));
-        dispatch(
-          addToast({id: `cancel-err-${Date.now()}`, message: msg, type: 'error'}),
-        );
+        dispatch(addToast({id: `cancel-err-${Date.now()}`, message: msg, type: 'error'}));
         return;
       }
 
@@ -223,7 +225,7 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
         }),
       );
     },
-    [corridaFacade, dispatch, t],
+    [activeCorrida, corridaFacade, dispatch, t],
   );
 
   return {

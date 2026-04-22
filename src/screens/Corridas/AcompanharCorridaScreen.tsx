@@ -28,6 +28,7 @@ import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import {createAcompanharStyles} from './AcompanharCorrida.styles';
 import type {CorridaMensagem} from '@models/Corrida';
+import {podeSerCancelada, TERMINAL_STATUSES} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
 import {useAppSelector} from '../../store';
 
@@ -76,7 +77,7 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
   }, [corridaId]);
 
   useEffect(() => {
-    if (activeCorrida?.status === 'FINALIZADA') {
+    if (activeCorrida?.status === 'FINALIZADA' || activeCorrida?.status === 'CONCLUIDA') {
       navigation.navigate('AvaliarCorrida', {corridaId: activeCorrida.id});
     }
   }, [activeCorrida?.status, activeCorrida?.id, navigation]);
@@ -121,13 +122,12 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
   }
 
   const badgeColor = statusColor(activeCorrida.status, theme);
-  const isTerminal =
-    activeCorrida.status === 'FINALIZADA' || activeCorrida.status === 'CANCELADA';
-
-  const cancellableStatuses = new Set(['SOLICITADA', 'AGUARDANDO_ACEITE', 'ACEITA']);
-  const canCancel = cancellableStatuses.has(activeCorrida.status);
+  const isTerminal = TERMINAL_STATUSES.has(activeCorrida.status);
+  const canCancel = podeSerCancelada(activeCorrida.status);
+  // EM_ROTA / PASSAGEIRO_EMBARCADO: ride in progress, cannot cancel
   const showCancelNotAllowed =
     activeCorrida.status === 'EM_DESLOCAMENTO' ||
+    activeCorrida.status === 'EM_ROTA' ||
     activeCorrida.status === 'PASSAGEIRO_EMBARCADO';
 
   return (

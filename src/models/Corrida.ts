@@ -4,17 +4,27 @@
 
 /**
  * Status of a ride request in its lifecycle.
- * Matches the state machine from route-corridas.md.
+ *
+ * State machine (backend-authoritative):
+ *   SOLICITADA → AGUARDANDO_ACEITE → ACEITA → EM_ROTA → CONCLUIDA → AVALIADA
+ *   Any non-terminal state → CANCELADA (role-restricted)
+ *   AGUARDANDO_ACEITE → EXPIRADA (system)
+ *
+ * Terminal states: CONCLUIDA, AVALIADA, CANCELADA, EXPIRADA — no further transitions.
+ * EM_ROTA is NOT cancellable (passenger already boarded).
  */
 export type CorridaStatus =
   | 'SOLICITADA'
   | 'AGUARDANDO_ACEITE'
   | 'ACEITA'
   | 'RECUSADA'
-  | 'EM_DESLOCAMENTO'
+  | 'EM_DESLOCAMENTO'   // app-side alias for EM_ROTA
+  | 'EM_ROTA'           // backend canonical name
   | 'PASSAGEIRO_EMBARCADO'
-  | 'FINALIZADA'
+  | 'FINALIZADA'        // app-side alias for CONCLUIDA
+  | 'CONCLUIDA'         // backend canonical name
   | 'CANCELADA'
+  | 'EXPIRADA'          // system-generated terminal state
   | 'AVALIADA';
 
 const VALID_STATUSES: ReadonlySet<CorridaStatus> = new Set([
@@ -23,11 +33,44 @@ const VALID_STATUSES: ReadonlySet<CorridaStatus> = new Set([
   'ACEITA',
   'RECUSADA',
   'EM_DESLOCAMENTO',
+  'EM_ROTA',
   'PASSAGEIRO_EMBARCADO',
   'FINALIZADA',
+  'CONCLUIDA',
   'CANCELADA',
+  'EXPIRADA',
   'AVALIADA',
 ]);
+
+/**
+ * Statuses from which a ride CAN be cancelled.
+ * EM_ROTA / EM_DESLOCAMENTO / PASSAGEIRO_EMBARCADO are NOT cancellable.
+ * Terminal states are also not cancellable.
+ */
+export const CANCELLABLE_STATUSES: ReadonlySet<CorridaStatus> = new Set([
+  'SOLICITADA',
+  'AGUARDANDO_ACEITE',
+  'ACEITA',
+]);
+
+/** Terminal states — no further transitions possible. */
+export const TERMINAL_STATUSES: ReadonlySet<CorridaStatus> = new Set([
+  'FINALIZADA',
+  'CONCLUIDA',
+  'CANCELADA',
+  'EXPIRADA',
+  'AVALIADA',
+]);
+
+/**
+ * Returns true if the ride can be cancelled from the given status.
+ * Enforces the backend rule: EM_ROTA is NOT cancellable.
+ *
+ * @param status - Current ride status.
+ * @returns Whether cancellation is allowed.
+ */
+export const podeSerCancelada = (status: CorridaStatus): boolean =>
+  CANCELLABLE_STATUSES.has(status);
 
 /**
  * Maps unknown string values to the closest known CorridaStatus,
@@ -37,12 +80,10 @@ export function normalizeStatus(value: string): CorridaStatus {
   if (VALID_STATUSES.has(value as CorridaStatus)) {
     return value as CorridaStatus;
   }
-  // Map legacy / alternate spellings to the closest known status
   const upper = value.toUpperCase();
   if (VALID_STATUSES.has(upper as CorridaStatus)) {
     return upper as CorridaStatus;
   }
-  // Fallback: return as-is cast (caller should handle unknown values gracefully)
   return value as CorridaStatus;
 }
 

@@ -399,7 +399,10 @@
       "FINALIZADA": "Completed",
       "CANCELADA": "Cancelled",
       "AGUARDANDO_ACEITE": "Awaiting Acceptance",
-      "AVALIADA": "Rated"
+      "AVALIADA": "Rated",
+      "EM_ROTA": "En Route",
+      "CONCLUIDA": "Completed",
+      "EXPIRADA": "Expired"
     },
     "actions": {
       "title": "Actions",
@@ -426,7 +429,8 @@
     "terminal": {
       "FINALIZADA": "Ride completed successfully.",
       "CANCELADA": "Ride cancelled.",
-      "RECUSADA": "Ride refused."
+      "RECUSADA": "Ride refused.",
+      "EXPIRADA": "Ride expired — no driver available."
     },
     "success": {
       "aceita": "Ride accepted.",

@@ -391,7 +391,10 @@
       "FINALIZADA": "Finalizado",
       "CANCELADA": "Cancelado",
       "AGUARDANDO_ACEITE": "Esperando Aceptación",
-      "AVALIADA": "Calificado"
+      "AVALIADA": "Calificado",
+      "EM_ROTA": "En Ruta",
+      "CONCLUIDA": "Completado",
+      "EXPIRADA": "Expirado"
     },
     "actions": {
       "title": "Acciones",
@@ -418,7 +421,8 @@
     "terminal": {
       "FINALIZADA": "Viaje finalizado con éxito.",
       "CANCELADA": "Viaje cancelado.",
-      "RECUSADA": "Viaje rechazado."
+      "RECUSADA": "Viaje rechazado.",
+      "EXPIRADA": "Viaje expirado — ningún conductor disponible."
     },
     "success": {
       "aceita": "Viaje aceptado.",
