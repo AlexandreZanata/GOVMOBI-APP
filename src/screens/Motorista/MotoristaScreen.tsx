@@ -322,19 +322,22 @@ export const MotoristaScreen = (): React.JSX.Element => {
     <SafeAreaView edges={['top']} style={[styles.container, {backgroundColor: theme.colors.primary}]} testID="motorista-home-screen">
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
 
-      {/* Header bar — operational status indicator */}
+      {/* Header bar — navy background, status highlighted via inline badge */}
       {(() => {
         const isAtivo = statusOperacional === 'DISPONIVEL' || statusOperacional === 'EM_CORRIDA';
-        const headerBg = isAtivo ? C.headerActive : C.headerOffline;
         const statusText = hasActiveRide && activeCorrida
           ? t(`corridas.status.${normalizedActiveStatus}`, {defaultValue: normalizedActiveStatus ?? ''})
           : isAtivo
-            ? t('motorista.status.ativo')
-            : t('motorista.status.offline');
+            ? t('motorista.status.ativo', {defaultValue: 'Disponível'})
+            : t('motorista.status.indisponivel', {defaultValue: 'Indisponível'});
+        const badgeBg = isAtivo ? C.statusBadgeActiveBg : C.statusBadgeOfflineBg;
+        const badgeDot = isAtivo ? C.headerActiveDot : C.headerOfflineDot;
         return (
-          <View style={[styles.statusHeaderRow, {backgroundColor: headerBg}]} testID="status-header">
-            <View style={[styles.statusPillDot, {backgroundColor: isAtivo ? C.headerActiveDot : C.headerOfflineDot}]} />
-            <Text style={styles.statusHeaderText}>{statusText}</Text>
+          <View style={styles.statusHeaderRow} testID="status-header">
+            <View style={[styles.statusInlineBadge, {backgroundColor: badgeBg}]}>
+              <View style={[styles.statusPillDot, {backgroundColor: badgeDot}]} />
+              <Text style={styles.statusHeaderText}>{statusText}</Text>
+            </View>
           </View>
         );
       })()}

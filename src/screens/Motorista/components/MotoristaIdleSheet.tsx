@@ -8,7 +8,6 @@ import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.styles';
 import {useTheme} from '@theme/index';
-import {useAppSelector} from '@store/index';
 import type {MotoristaStatusOperacional} from '@models/Motorista';
 
 export interface MotoristaIdleSheetProps {
@@ -42,18 +41,6 @@ export const MotoristaIdleSheet = ({
   const {t} = useTranslation();
   const theme = useTheme();
   const styles = createMotoristaStyles(theme);
-  const connectionStatus = useAppSelector(s => s.realtime.connectionStatus);
-
-  const realtimeDotColor =
-    connectionStatus === 'connected'
-      ? C.success
-      : connectionStatus === 'connecting'
-        ? C.warning
-        : C.danger;
-
-  const realtimeLabel = t(`motorista.realtime.${connectionStatus}`, {
-    defaultValue: t('motorista.realtime.disconnected'),
-  });
 
   const isAtivo = statusOperacional === 'DISPONIVEL';
   const isEmCorrida = statusOperacional === 'EM_CORRIDA';
@@ -75,7 +62,7 @@ export const MotoristaIdleSheet = ({
       <View style={styles.statusDualBtnRow}>
         {/* Ativo button */}
         <Pressable
-          accessibilityLabel={t('motorista.status.ativo')}
+          accessibilityLabel={t('motorista.status.ativo', {defaultValue: 'Disponível'})}
           accessibilityRole="button"
           accessibilityState={{selected: isAtivo, busy: isTogglingStatus || isEmCorrida}}
           disabled={isTogglingStatus || isEmCorrida || isAtivo}
@@ -91,14 +78,14 @@ export const MotoristaIdleSheet = ({
           ) : (
             <>
               <MaterialIcons name="check-circle" size={16} color={C.textOnDark} />
-              <Text style={styles.statusDualBtnText}>{t('motorista.status.ativo')}</Text>
+              <Text style={styles.statusDualBtnText}>{t('motorista.status.ativo', {defaultValue: 'Disponível'})}</Text>
             </>
           )}
         </Pressable>
 
         {/* Offline button */}
         <Pressable
-          accessibilityLabel={t('motorista.status.offline')}
+          accessibilityLabel={t('motorista.status.indisponivel', {defaultValue: 'Indisponível'})}
           accessibilityRole="button"
           accessibilityState={{selected: isOffline, busy: isTogglingStatus || isEmCorrida}}
           disabled={isTogglingStatus || isEmCorrida || isOffline}
@@ -114,7 +101,7 @@ export const MotoristaIdleSheet = ({
           ) : (
             <>
               <MaterialIcons name="cancel" size={16} color={C.textOnDark} />
-              <Text style={styles.statusDualBtnText}>{t('motorista.status.offline')}</Text>
+              <Text style={styles.statusDualBtnText}>{t('motorista.status.indisponivel', {defaultValue: 'Indisponível'})}</Text>
             </>
           )}
         </Pressable>
@@ -127,10 +114,6 @@ export const MotoristaIdleSheet = ({
         </Text>
       )}
 
-      <View style={styles.statusIndicatorRow} testID="realtime-status-row">
-        <View style={[styles.statusDot, {backgroundColor: realtimeDotColor}]} />
-        <Text style={styles.statusLabel}>{realtimeLabel}</Text>
-      </View>
     </Animated.View>
   );
 };

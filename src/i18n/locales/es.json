@@ -276,7 +276,8 @@
       "emRota": "En Ruta",
       "emCorrida": "En Viaje",
       "offline": "Sin conexión",
-      "ativo": "Activo",
+      "ativo": "Disponible",
+      "indisponivel": "No disponible",
       "managedBySystem": "Estado gestionado por el sistema durante el viaje."
     },
     "idle": {

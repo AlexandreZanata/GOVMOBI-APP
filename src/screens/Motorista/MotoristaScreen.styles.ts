@@ -46,6 +46,10 @@ export const MotoristaColors = {
   statusBtnActive: '#1D9E75',
   /** Offline status button background. */
   statusBtnOffline: '#D85A30',
+  /** Semi-transparent green badge background for active status in header. */
+  statusBadgeActiveBg: 'rgba(29,158,117,0.25)',
+  /** Semi-transparent red badge background for offline status in header. */
+  statusBadgeOfflineBg: 'rgba(216,90,48,0.25)',
 } as const;
 
 /**
@@ -114,7 +118,7 @@ export const createMotoristaStyles = (theme: Theme) => {
       backgroundColor: C.danger,
     },
 
-    // ── Status header row — color-coded background signals active/offline ───
+    // ── Status header row — navy bg, status highlighted via inline badge ────
     statusHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -122,9 +126,20 @@ export const createMotoristaStyles = (theme: Theme) => {
       gap: spacing[2],
       paddingVertical: spacing[3],
       paddingHorizontal: spacing[5],
+      backgroundColor: C.navBg,
+    },
+    /** Small pill inside the header that carries the color signal. */
+    statusInlineBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing[2],
+      paddingVertical: spacing[1],
+      paddingHorizontal: spacing[4],
+      borderRadius: borderRadius.radius.full,
     },
     statusHeaderText: {
       ...typo.scale.labelLg,
+      fontSize: 16,
       color: C.textOnDark,
       letterSpacing: 0.5,
     },

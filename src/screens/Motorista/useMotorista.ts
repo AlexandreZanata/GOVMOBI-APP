@@ -326,21 +326,12 @@ export const useMotorista = (): MotoristaState => {
         return;
       }
       console.log('[useMotorista] onToggleStatus OK → new status:', result.data?.statusOperacional);
-      // Use the status returned by the server (source of truth)
       const confirmedStatus = result.data?.statusOperacional ?? next;
       dispatch(setStatusOperacional(confirmedStatus));
-      const msgKey = confirmedStatus === 'DISPONIVEL' ? 'motorista.status.disponivelMsg' : 'motorista.status.offlineMsg';
-      dispatch(
-        addToast({
-          id: `status-${Date.now()}`,
-          message: t(msgKey),
-          type: confirmedStatus === 'DISPONIVEL' ? 'success' : 'info',
-        }),
-      );
     } finally {
       setIsTogglingStatus(false);
     }
-  }, [frotaFacade, statusOperacional, papeis, dispatch, t]);
+  }, [frotaFacade, statusOperacional, papeis, dispatch]);
 
   // ---------------------------------------------------------------------------
   // Map controls
