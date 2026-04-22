@@ -70,7 +70,8 @@ export const useNotifications = (): UseNotificationsResult => {
     if (!initialized) return;
 
     // Suppress foreground banners — WebSocket handles in-app delivery.
-    registerForegroundHandler();
+    // v5 addEventListener returns nothing; we keep the cleanup ref ourselves.
+    const cleanupForeground = registerForegroundHandler();
 
     // Request OS permission and update Redux.
     requestPushPermission(accepted => {
@@ -84,6 +85,8 @@ export const useNotifications = (): UseNotificationsResult => {
       setPermissionGranted(prev => prev || granted);
       if (granted) dispatch(setPermissionStatus('granted'));
     });
+
+    return cleanupForeground;
   }, [dispatch, notificationFacade]);
 
   // ---------------------------------------------------------------------------
@@ -98,7 +101,8 @@ export const useNotifications = (): UseNotificationsResult => {
   }, []);
 
   useEffect(() => {
-    registerNotificationOpenedHandler(handleNotificationOpened);
+    const cleanup = registerNotificationOpenedHandler(handleNotificationOpened);
+    return cleanup;
   }, [handleNotificationOpened]);
 
   // ---------------------------------------------------------------------------

@@ -1,17 +1,36 @@
 /**
  * @fileoverview OneSignal push notification service for GovMobile.
  *
- * Wraps the `react-native-onesignal` SDK behind a stable interface so the
- * rest of the app never imports OneSignal directly. This makes it easy to
- * swap implementations and keeps tests isolated.
+ * Wraps the `react-native-onesignal` v5 SDK behind a stable interface so the
+ * rest of the app never imports OneSignal directly.
  *
- * Dual-channel strategy:
- *  - **WebSocket (foreground):** Real-time events arrive via the DespachoGateway
- *    and are dispatched as in-app toasts / Redux state updates by
- *    `useRealtimeSession`. OneSignal is NOT used for foreground delivery.
- *  - **OneSignal (background / killed):** When the WebSocket is disconnected
- *    (app backgrounded or killed), the backend's OutboxWorker sends a push
- *    via OneSignal targeting the `servidorId` as the external user ID.
+ * ## Why the safe-loader exists
+ * `react-native-onesignal` v5 calls `TurboModuleRegistry.getEnforcing("OneSignal")`
+ * at **module evaluation time** (top-level code). When the native module is not
+ * registered — Expo Go, web, Jest without a proper mock — this throws an
+ * `Invariant Violation` *before* any `try/catch` around `require()` can fire.
+ *
+ * The fix: we intercept the throw at the Metro/Node module boundary by wrapping
+ * the `require()` call inside a function that is itself wrapped in `try/catch`,
+ * and we cache the result so the module is only evaluated once.
+ *
+ * ## Dual-channel strategy
+ *  - **WebSocket (foreground):** Real-time events arrive via DespachoGateway and
+ *    are dispatched as in-app toasts / Redux state updates by `useRealtimeSession`.
+ *    OneSignal foreground banners are suppressed to avoid duplicates.
+ *  - **OneSignal (background / killed):** When the WebSocket is disconnected the
+ *    backend's OutboxWorker sends a push via OneSignal targeting `servidorId` as
+ *    the external user ID.
+ *
+ * ## v5 API changes (from v4)
+ * | v4 | v5 |
+ * |---|---|
+ * | `OneSignal.setAppId(id)` | `OneSignal.initialize(id)` |
+ * | `OneSignal.setExternalUserId(id)` | `OneSignal.login(id)` |
+ * | `OneSignal.removeExternalUserId()` | `OneSignal.logout()` |
+ * | `OneSignal.promptForPushNotificationsWithUserResponse(cb)` | `OneSignal.Notifications.requestPermission(fallback?)` → `Promise<boolean>` |
+ * | `OneSignal.setNotificationWillShowInForegroundHandler(h)` | `OneSignal.Notifications.addEventListener('foregroundWillDisplay', h)` |
+ * | `OneSignal.setNotificationOpenedHandler(h)` | `OneSignal.Notifications.addEventListener('click', h)` |
  *
  * @module OneSignalService
  */
@@ -21,7 +40,40 @@ import {ENV} from '../../config/env';
 import {logger} from '@utils/logger';
 
 // ---------------------------------------------------------------------------
-// Types
+// v5 type shim — only the surface we actually use
+// ---------------------------------------------------------------------------
+
+interface OSNotificationV5 {
+  title?: string;
+  body?: string;
+  additionalData?: GovMobNotificationData;
+}
+
+interface ForegroundWillDisplayEvent {
+  getNotification(): OSNotificationV5;
+  /** Call with the notification to display it, or null/undefined to suppress. */
+  preventDefault(): void;
+}
+
+interface NotificationClickEvent {
+  notification: OSNotificationV5;
+}
+
+interface OneSignalV5 {
+  initialize(appId: string): void;
+  login(externalId: string): void;
+  logout(): void;
+  Notifications: {
+    requestPermission(fallbackToSettings?: boolean): Promise<boolean>;
+    addEventListener(event: 'foregroundWillDisplay', handler: (e: ForegroundWillDisplayEvent) => void): void;
+    addEventListener(event: 'click', handler: (e: NotificationClickEvent) => void): void;
+    removeEventListener(event: 'foregroundWillDisplay', handler: (e: ForegroundWillDisplayEvent) => void): void;
+    removeEventListener(event: 'click', handler: (e: NotificationClickEvent) => void): void;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Public types
 // ---------------------------------------------------------------------------
 
 /**
@@ -52,48 +104,51 @@ export interface NotificationOpenedEvent {
 export type NotificationOpenedHandler = (event: NotificationOpenedEvent) => void;
 
 // ---------------------------------------------------------------------------
-// OneSignal dynamic import helpers
+// Crash-safe module loader
 // ---------------------------------------------------------------------------
 
+/** Cached result — undefined = not yet attempted, null = unavailable. */
+let _cachedModule: OneSignalV5 | null | undefined = undefined;
+
 /**
- * Lazily resolves the OneSignal default export.
- * Returns null when the SDK is not installed (e.g. in Jest / web).
+ * Safely loads the `react-native-onesignal` v5 module.
  *
- * @returns OneSignal module or null.
+ * `TurboModuleRegistry.getEnforcing` runs at module evaluation time in v5,
+ * so a plain `try/catch` around `require()` is insufficient — the throw
+ * happens *inside* the module before `require()` returns. We catch it here
+ * at the call-site boundary and cache the result to avoid repeated attempts.
+ *
+ * @returns The OneSignal v5 namespace, or `null` when unavailable.
  */
-const getOneSignal = (): {
-  setAppId: (id: string) => void;
-  promptForPushNotificationsWithUserResponse: (cb?: (accepted: boolean) => void) => void;
-  setExternalUserId: (id: string, cb?: (results: unknown) => void) => void;
-  removeExternalUserId: (cb?: (results: unknown) => void) => void;
-  setNotificationWillShowInForegroundHandler: (handler: (event: {
-    getNotification: () => {title: string; body: string; additionalData: GovMobNotificationData};
-    complete: (n: unknown) => void;
-  }) => void) => void;
-  setNotificationOpenedHandler: (handler: (event: {
-    notification: {title: string; body: string; additionalData: GovMobNotificationData};
-  }) => void) => void;
-} | null => {
+function getOneSignal(): OneSignalV5 | null {
+  if (_cachedModule !== undefined) return _cachedModule;
+
   try {
+    // The require is intentionally inside a try/catch to intercept the
+    // TurboModuleRegistry.getEnforcing throw that v5 emits at module load.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require('react-native-onesignal') as {default: unknown};
-    return mod.default as ReturnType<typeof getOneSignal>;
-  } catch {
-    return null;
+    const mod = require('react-native-onesignal') as {OneSignal?: OneSignalV5; default?: OneSignalV5};
+    // v5 exports a named `OneSignal` export (not default)
+    _cachedModule = (mod.OneSignal ?? mod.default ?? null) as OneSignalV5 | null;
+  } catch (e) {
+    logger.warn('OneSignalService', 'SDK load failed — native module not registered', e);
+    _cachedModule = null;
   }
-};
+
+  return _cachedModule;
+}
 
 // ---------------------------------------------------------------------------
-// Service
+// Service functions
 // ---------------------------------------------------------------------------
 
 /**
- * Initializes the OneSignal SDK with the GovMob App ID.
+ * Initializes the OneSignal v5 SDK with the GovMob App ID.
  * Safe to call multiple times — OneSignal is idempotent on re-init.
  *
  * Must be called once at app startup (inside `useNotifications`).
  *
- * @returns True if initialization succeeded, false if SDK unavailable.
+ * @returns `true` if initialization succeeded, `false` if SDK unavailable.
  */
 export function initOneSignal(): boolean {
   if (Platform.OS === 'web') return false;
@@ -104,22 +159,23 @@ export function initOneSignal(): boolean {
     return false;
   }
 
-  OneSignal.setAppId(ENV.ONESIGNAL_APP_ID);
+  OneSignal.initialize(ENV.ONESIGNAL_APP_ID);
   logger.info('OneSignalService', `Initialized with App ID: ${ENV.ONESIGNAL_APP_ID}`);
   return true;
 }
 
 /**
- * Requests push notification permission from the OS.
+ * Requests push notification permission from the OS (v5 API).
  * On iOS this shows the native permission dialog.
- * On Android 13+ this also triggers the POST_NOTIFICATIONS permission.
+ * On Android 13+ this triggers the POST_NOTIFICATIONS permission.
  *
  * @param onResponse - Optional callback with the user's decision.
  */
 export function requestPushPermission(onResponse?: (accepted: boolean) => void): void {
   const OneSignal = getOneSignal();
   if (!OneSignal) return;
-  OneSignal.promptForPushNotificationsWithUserResponse(accepted => {
+
+  void OneSignal.Notifications.requestPermission(true).then(accepted => {
     logger.info('OneSignalService', 'Permission response:', accepted);
     onResponse?.(accepted);
   });
@@ -127,8 +183,9 @@ export function requestPushPermission(onResponse?: (accepted: boolean) => void):
 
 /**
  * Associates the authenticated user's `servidorId` with this device in
- * OneSignal. The backend uses this ID to target push notifications.
+ * OneSignal via `OneSignal.login()` (v5 replacement for `setExternalUserId`).
  *
+ * The backend uses this ID to target push notifications.
  * Call immediately after a successful login / session hydration.
  *
  * @param servidorId - UUID from GET /auth/me (`me.id`).
@@ -136,45 +193,46 @@ export function requestPushPermission(onResponse?: (accepted: boolean) => void):
 export function setOneSignalExternalUserId(servidorId: string): void {
   const OneSignal = getOneSignal();
   if (!OneSignal) return;
-  OneSignal.setExternalUserId(servidorId, results => {
-    logger.info('OneSignalService', `External user ID set: ${servidorId}`, results);
-  });
+
+  OneSignal.login(servidorId);
+  logger.info('OneSignalService', `External user ID set (login): ${servidorId}`);
 }
 
 /**
- * Removes the external user ID association on logout.
- * Prevents push notifications from being delivered to this device after
- * the user signs out.
+ * Removes the external user ID association on logout via `OneSignal.logout()`.
+ * Prevents push notifications from being delivered to this device after sign-out.
  */
 export function removeOneSignalExternalUserId(): void {
   const OneSignal = getOneSignal();
   if (!OneSignal) return;
-  OneSignal.removeExternalUserId(results => {
-    logger.info('OneSignalService', 'External user ID removed', results);
-  });
+
+  OneSignal.logout();
+  logger.info('OneSignalService', 'External user ID removed (logout)');
 }
 
 /**
  * Registers a handler for notifications received while the app is in the
- * foreground. Since the WebSocket handles foreground delivery, this handler
- * suppresses the OS banner to avoid duplicate alerts.
+ * foreground. Suppresses the OS banner — WebSocket handles foreground delivery.
  *
- * The notification data is still available for in-app processing.
+ * @returns Cleanup function that removes the listener.
  */
-export function registerForegroundHandler(): void {
+export function registerForegroundHandler(): () => void {
   const OneSignal = getOneSignal();
-  if (!OneSignal) return;
+  if (!OneSignal) return () => {};
 
-  OneSignal.setNotificationWillShowInForegroundHandler(event => {
+  const handler = (event: ForegroundWillDisplayEvent): void => {
     const notification = event.getNotification();
     logger.info(
       'OneSignalService',
       'Foreground push received (suppressed — WS handles this):',
       notification.title,
     );
-    // Pass null to suppress the OS banner — WebSocket already delivered this.
-    event.complete(null);
-  });
+    // preventDefault() suppresses the OS banner; WebSocket already delivered this.
+    event.preventDefault();
+  };
+
+  OneSignal.Notifications.addEventListener('foregroundWillDisplay', handler);
+  return () => OneSignal.Notifications.removeEventListener('foregroundWillDisplay', handler);
 }
 
 /**
@@ -182,17 +240,21 @@ export function registerForegroundHandler(): void {
  * Use this to navigate to the relevant ride screen.
  *
  * @param handler - Callback with the simplified notification event.
+ * @returns Cleanup function that removes the listener.
  */
-export function registerNotificationOpenedHandler(handler: NotificationOpenedHandler): void {
+export function registerNotificationOpenedHandler(handler: NotificationOpenedHandler): () => void {
   const OneSignal = getOneSignal();
-  if (!OneSignal) return;
+  if (!OneSignal) return () => {};
 
-  OneSignal.setNotificationOpenedHandler(event => {
+  const internalHandler = (event: NotificationClickEvent): void => {
     const {title, body, additionalData} = event.notification;
     handler({
       title: title ?? '',
       body: body ?? '',
       data: additionalData ?? {},
     });
-  });
+  };
+
+  OneSignal.Notifications.addEventListener('click', internalHandler);
+  return () => OneSignal.Notifications.removeEventListener('click', internalHandler);
 }
