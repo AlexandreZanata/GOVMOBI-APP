@@ -46,6 +46,9 @@ const seedMensagens = (corridaId: string): CorridaMensagem[] => [
     corridaId,
     remetenteId: 'motorista-mock-001',
     conteudo: 'Estou a caminho!',
+    lida: true,
+    visualizadaEm: new Date(Date.now() - 50_000).toISOString(),
+    visualizadaPor: 'passageiro-mock-001',
     createdAt: new Date(Date.now() - 60_000).toISOString(),
   },
   {
@@ -53,6 +56,9 @@ const seedMensagens = (corridaId: string): CorridaMensagem[] => [
     corridaId,
     remetenteId: 'passageiro-mock-001',
     conteudo: 'Ok, aguardando.',
+    lida: true,
+    visualizadaEm: null,
+    visualizadaPor: null,
     createdAt: new Date(Date.now() - 30_000).toISOString(),
   },
 ];
@@ -265,6 +271,30 @@ export class CorridaFacadeMock implements ICorridaFacade {
     await delay(150);
     const msgs = mensagensStore.get(corridaId) ?? [];
     return ok(msgs);
+  }
+
+  /** @inheritdoc */
+  public async visualizarMensagens(corridaId: string): Promise<Result<void, FacadeError>> {
+    await delay(80);
+    const msgs = mensagensStore.get(corridaId);
+    if (msgs) {
+      const now = new Date().toISOString();
+      mensagensStore.set(
+        corridaId,
+        msgs.map(m => ({...m, visualizadaEm: m.visualizadaEm ?? now, visualizadaPor: m.visualizadaPor ?? 'mock-viewer'})),
+      );
+    }
+    return ok(undefined);
+  }
+
+  /** @inheritdoc */
+  public async getNaoVisualizadasCount(
+    corridaId: string,
+  ): Promise<Result<{corridaId: string; count: number}, FacadeError>> {
+    await delay(80);
+    const msgs = mensagensStore.get(corridaId) ?? [];
+    const count = msgs.filter(m => !m.visualizadaEm).length;
+    return ok({corridaId, count});
   }
 
   /** @inheritdoc */

@@ -77,12 +77,11 @@ export interface FinalizarCorridaInput {
 
 /**
  * POST /corridas/:id/cancelar body.
- * Backend requires solicitanteId (UUID) and tipoSolicitante in the request body.
+ * The backend determines the caller's role (passageiro or motorista) from the JWT.
+ * Only `motivo` is required — do NOT send solicitanteId or tipoSolicitante.
  */
 export interface CancelarCorridaInput {
   motivo: string;
-  solicitanteId?: string;
-  tipoSolicitante?: 'MOTORISTA' | 'PASSAGEIRO';
 }
 
 /**

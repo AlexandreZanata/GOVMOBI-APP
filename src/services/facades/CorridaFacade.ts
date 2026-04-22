@@ -196,6 +196,19 @@ export interface ICorridaFacade {
   getMensagens(corridaId: string): Promise<Result<CorridaMensagem[], FacadeError>>;
 
   /**
+   * PATCH /corridas/:id/mensagens/visualizar
+   * Marks all received messages as viewed (blue ticks).
+   * Also triggers the `mensagens-visualizadas` WS broadcast.
+   */
+  visualizarMensagens(corridaId: string): Promise<Result<void, FacadeError>>;
+
+  /**
+   * GET /corridas/:id/mensagens/nao-visualizadas
+   * Returns the count of unread messages for badge display.
+   */
+  getNaoVisualizadasCount(corridaId: string): Promise<Result<{corridaId: string; count: number}, FacadeError>>;
+
+  /**
    * GET /corridas?page=&limit= — paginated ride list.
    * Admins see all; drivers and passengers see their own.
    */
@@ -429,6 +442,30 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   }
 
   /** @inheritdoc */
+  public async visualizarMensagens(corridaId: string): Promise<Result<void, FacadeError>> {
+    try {
+      const response = await fetch(
+        `${this.apiBaseUrl}/corridas/${corridaId}/mensagens/visualizar`,
+        {method: 'PATCH', headers: this.authHeaders()},
+      );
+      // 204 No Content is the success response
+      if (response.status === 204 || response.ok) return ok(undefined);
+      return fail(toError('Unable to mark messages as viewed', 'NETWORK_ERROR', response.status));
+    } catch {
+      return fail(toError('Network error', 'NETWORK_ERROR'));
+    }
+  }
+
+  /** @inheritdoc */
+  public async getNaoVisualizadasCount(
+    corridaId: string,
+  ): Promise<Result<{corridaId: string; count: number}, FacadeError>> {
+    return this.get<{corridaId: string; count: number}>(
+      `/corridas/${corridaId}/mensagens/nao-visualizadas`,
+    );
+  }
+
+  /** @inheritdoc */
   public async searchLocations(query: string): Promise<Result<SearchResult[], FacadeError>> {
     if (!this.mapboxToken) return fail(toError('Mapbox token not configured', 'CONFIG_ERROR'));
     if (!query.trim()) return ok([]);
@@ -494,9 +531,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
 
   /** @inheritdoc @deprecated */
   public async cancelCorrida(corridaId: string, reason: string): Promise<Result<boolean, FacadeError>> {
-    // Deprecated — caller must migrate to cancelarCorrida with solicitanteId + tipoSolicitante.
-    // This stub satisfies the interface but will fail at runtime without a valid solicitanteId.
-    const result = await this.cancelarCorrida(corridaId, {motivo: reason, solicitanteId: '', tipoSolicitante: 'PASSAGEIRO'});
+    const result = await this.cancelarCorrida(corridaId, {motivo: reason});
     if (result.error) return fail(result.error);
     return ok(true);
   }

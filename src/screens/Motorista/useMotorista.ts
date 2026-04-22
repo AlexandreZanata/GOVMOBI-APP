@@ -564,8 +564,6 @@ export const useMotorista = (): MotoristaState => {
         async () => {
           const r = await corridaFacade.cancelarCorrida(corridaId, {
             motivo,
-            solicitanteId: motoristaId,
-            tipoSolicitante: 'MOTORISTA',
           });
           if (r.error) {
             throw new Error(

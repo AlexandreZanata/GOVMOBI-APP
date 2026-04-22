@@ -41,6 +41,9 @@ export interface HistoricoMensagemPayload {
   corridaId: string;
   remetenteId: string;
   conteudo: string;
+  lida?: boolean;
+  visualizadaEm?: string | null;
+  visualizadaPor?: string | null;
   timestamp: string | number;
 }
 
@@ -60,7 +63,35 @@ export interface NovaMensagemPayload {
   corridaId: string;
   remetenteId: string;
   conteudo: string;
+  lida?: boolean;
+  visualizadaEm?: string | null;
+  visualizadaPor?: string | null;
   timestamp: string | number;
+}
+
+/** Client → Server: mark all received messages as viewed. */
+export interface VisualizarMensagensPayload {
+  corridaId: string;
+}
+
+/** Client → Server: request unread message count. */
+export interface ContarNaoVisualizadasPayload {
+  corridaId: string;
+}
+
+/** Server → Client: broadcast that messages were viewed (updates sender's ticks). */
+export interface MensagensVisualizadasPayload {
+  corridaId: string;
+  /** UUID of the user who viewed the messages. */
+  visualizadaPor: string;
+  /** ISO timestamp of when the view happened. */
+  visualizadaEm: string;
+}
+
+/** Server → Client: unread count response (only to requesting socket). */
+export interface ContagemNaoVisualizadasPayload {
+  corridaId: string;
+  count: number;
 }
 
 /** Ride lifecycle status event payload. */
@@ -100,4 +131,6 @@ export type RealtimeEvent =
   | {type: 'status-corrida-alterado'; payload: StatusCorridaAlteradoPayload}
   | {type: 'nova-corrida-disponivel'; payload: NovaCorridaDisponivelPayload}
   | {type: 'estado-operacional'; payload: {status: MotoristaStatusOperacional}}
-  | {type: 'reconexao-concluida'; payload: ReconexaoConcluida};
+  | {type: 'reconexao-concluida'; payload: ReconexaoConcluida}
+  | {type: 'mensagens-visualizadas'; payload: MensagensVisualizadasPayload}
+  | {type: 'contagem-nao-visualizadas'; payload: ContagemNaoVisualizadasPayload};

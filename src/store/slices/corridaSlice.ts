@@ -57,6 +57,8 @@ export interface CorridaState {
   driverPosition: PosicaoMotorista | null;
   /** Count of unread messages from the other party (resets when chat is opened). */
   unreadMensagens: number;
+  /** Count of messages not yet visualized (blue tick) — from GET /nao-visualizadas. */
+  naoVisualizadasCount: number;
 }
 
 const initialState: CorridaState = {
@@ -76,6 +78,7 @@ const initialState: CorridaState = {
   ratingSubmitted: false,
   driverPosition: null,
   unreadMensagens: 0,
+  naoVisualizadasCount: 0,
 };
 
 /**
@@ -94,6 +97,7 @@ const corridaSlice = createSlice({
         state.ratingSubmitted = false;
         state.driverPosition = null;
         state.unreadMensagens = 0;
+        state.naoVisualizadasCount = 0;
       }
     },
 
@@ -206,6 +210,33 @@ const corridaSlice = createSlice({
     },
 
     /**
+     * Updates the `visualizadaEm` / `visualizadaPor` fields on all messages
+     * sent by the current user when the other party views them.
+     * Triggered by the `mensagens-visualizadas` WebSocket event.
+     */
+    updateMensagensVisualizadas(
+      state,
+      action: PayloadAction<{visualizadaPor: string; visualizadaEm: string; currentServidorId: string}>,
+    ) {
+      const {visualizadaPor, visualizadaEm, currentServidorId} = action.payload;
+      state.mensagens = state.mensagens.map(m => {
+        // Only update messages sent by the current user that haven't been visualized yet
+        if (m.remetenteId === currentServidorId && !m.visualizadaEm) {
+          return {...m, visualizadaEm, visualizadaPor};
+        }
+        return m;
+      });
+    },
+
+    /**
+     * Sets the server-authoritative count of non-visualized messages.
+     * Used to drive the badge on the Corridas tab.
+     */
+    setNaoVisualizadasCount(state, action: PayloadAction<number>) {
+      state.naoVisualizadasCount = action.payload;
+    },
+
+    /**
      * Toggles the messages loading state.
      */
     setIsLoadingMensagens(state, action: PayloadAction<boolean>) {
@@ -271,6 +302,8 @@ export const {
   setMensagens,
   addMensagem,
   clearUnreadMensagens,
+  updateMensagensVisualizadas,
+  setNaoVisualizadasCount,
   setIsLoadingMensagens,
   setPosicaoMotoristaAtual,
   addToHistory,

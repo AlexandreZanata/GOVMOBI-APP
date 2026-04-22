@@ -20,6 +20,10 @@ import type {
   PosicaoAtualizadaPayload,
   ReconexaoConcluida,
   StatusCorridaAlteradoPayload,
+  VisualizarMensagensPayload,
+  ContarNaoVisualizadasPayload,
+  MensagensVisualizadasPayload,
+  ContagemNaoVisualizadasPayload,
 } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -43,6 +47,8 @@ interface DespachoServerToClientEvents {
   'nova-corrida-disponivel': (payload: NovaCorridaDisponivelPayload) => void;
   'estado-operacional': (payload: {status: string}) => void;
   'reconexao-concluida': (payload: ReconexaoConcluida) => void;
+  'mensagens-visualizadas': (payload: MensagensVisualizadasPayload) => void;
+  'contagem-nao-visualizadas': (payload: ContagemNaoVisualizadasPayload) => void;
 }
 
 interface DespachoClientToServerEvents {
@@ -50,6 +56,8 @@ interface DespachoClientToServerEvents {
   'ficar-disponivel': (payload: Record<string, never>) => void;
   'atualizar-posicao': (payload: AtualizarPosicaoPayload) => void;
   'enviar-mensagem': (payload: EnviarMensagemPayload) => void;
+  'visualizar-mensagens': (payload: VisualizarMensagensPayload) => void;
+  'contar-nao-visualizadas': (payload: ContarNaoVisualizadasPayload) => void;
 }
 
 type DespachoSocket = Socket<
@@ -92,6 +100,12 @@ export interface IDespachoWebSocketClient {
   onNovaCorridaDisponivel(handler: EventHandler<NovaCorridaDisponivelPayload>): () => void;
   onEstadoOperacional(handler: EventHandler<{status: string}>): () => void;
   onReconexaoConcluida(handler: EventHandler<ReconexaoConcluida>): () => void;
+  /** Emits `visualizar-mensagens` to mark all received messages as viewed. */
+  visualizarMensagens(payload: VisualizarMensagensPayload): void;
+  /** Emits `contar-nao-visualizadas` to request the unread count. */
+  contarNaoVisualizadas(payload: ContarNaoVisualizadasPayload): void;
+  onMensagensVisualizadas(handler: EventHandler<MensagensVisualizadasPayload>): () => void;
+  onContagemNaoVisualizadas(handler: EventHandler<ContagemNaoVisualizadasPayload>): () => void;
   setTokenRefresher(refresher: TokenRefresher): void;
 }
 
@@ -137,6 +151,8 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   private readonly novaCorridaHandlers = new Set<EventHandler<NovaCorridaDisponivelPayload>>();
   private readonly estadoOperacionalHandlers = new Set<EventHandler<{status: string}>>();
   private readonly reconexaoConcluídaHandlers = new Set<EventHandler<ReconexaoConcluida>>();
+  private readonly mensagensVisualizadasHandlers = new Set<EventHandler<MensagensVisualizadasPayload>>();
+  private readonly contagemNaoVisualizadasHandlers = new Set<EventHandler<ContagemNaoVisualizadasPayload>>();
 
   private tokenRefresher: TokenRefresher | null = null;
   private isHandling401 = false;
@@ -200,6 +216,16 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     this.socket?.emit('enviar-mensagem', payload);
   }
 
+  public visualizarMensagens(payload: VisualizarMensagensPayload): void {
+    wsLog('EMIT visualizar-mensagens →', JSON.stringify(payload));
+    this.socket?.emit('visualizar-mensagens', payload);
+  }
+
+  public contarNaoVisualizadas(payload: ContarNaoVisualizadasPayload): void {
+    wsLog('EMIT contar-nao-visualizadas →', JSON.stringify(payload));
+    this.socket?.emit('contar-nao-visualizadas', payload);
+  }
+
   public onConnected(handler: ConnectionHandler): () => void {
     this.connectedHandlers.add(handler);
     return () => { this.connectedHandlers.delete(handler); };
@@ -248,6 +274,16 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   public onReconexaoConcluida(handler: EventHandler<ReconexaoConcluida>): () => void {
     this.reconexaoConcluídaHandlers.add(handler);
     return () => { this.reconexaoConcluídaHandlers.delete(handler); };
+  }
+
+  public onMensagensVisualizadas(handler: EventHandler<MensagensVisualizadasPayload>): () => void {
+    this.mensagensVisualizadasHandlers.add(handler);
+    return () => { this.mensagensVisualizadasHandlers.delete(handler); };
+  }
+
+  public onContagemNaoVisualizadas(handler: EventHandler<ContagemNaoVisualizadasPayload>): () => void {
+    this.contagemNaoVisualizadasHandlers.add(handler);
+    return () => { this.contagemNaoVisualizadasHandlers.delete(handler); };
   }
 
   private registerSocketListeners(): void {
@@ -343,6 +379,16 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     this.socket.on('reconexao-concluida', payload => {
       wsLog('EVENT reconexao-concluida →', JSON.stringify(payload));
       this.reconexaoConcluídaHandlers.forEach(h => h(payload));
+    });
+
+    this.socket.on('mensagens-visualizadas', payload => {
+      wsLog('EVENT mensagens-visualizadas →', JSON.stringify(payload));
+      this.mensagensVisualizadasHandlers.forEach(h => h(payload));
+    });
+
+    this.socket.on('contagem-nao-visualizadas', payload => {
+      wsLog('EVENT contagem-nao-visualizadas →', JSON.stringify(payload));
+      this.contagemNaoVisualizadasHandlers.forEach(h => h(payload));
     });
   }
 }

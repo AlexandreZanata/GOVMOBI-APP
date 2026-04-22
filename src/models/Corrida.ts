@@ -107,11 +107,22 @@ export interface Corrida {
 
 /**
  * Message in a ride's chat history.
+ *
+ * Read-receipt semantics (WhatsApp-style):
+ *  - `lida = true`        → message was fetched via GET /mensagens (single grey tick → double grey tick)
+ *  - `visualizadaEm`      → message was explicitly viewed via PATCH /visualizar or WS (double blue tick)
+ *  - `visualizadaPor`     → UUID of the user who viewed it
  */
 export interface CorridaMensagem {
   id: string;
   corridaId: string;
   remetenteId: string;
   conteudo: string;
+  /** True once the recipient fetches the message history (GET /mensagens). */
+  lida: boolean;
+  /** ISO timestamp set when the recipient explicitly views the message. */
+  visualizadaEm: string | null;
+  /** UUID of the user who viewed the message. */
+  visualizadaPor: string | null;
   createdAt: string;
 }

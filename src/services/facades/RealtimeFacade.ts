@@ -14,6 +14,8 @@ import type {
   EnviarMensagemPayload,
   RealtimeConnectionStatus,
   RealtimeEvent,
+  VisualizarMensagensPayload,
+  ContarNaoVisualizadasPayload,
 } from '../../types';
 import {type FacadeError, type Result} from './types';
 
@@ -91,12 +93,18 @@ const toCorridaMensagem = (payload: {
   corridaId: string;
   remetenteId: string;
   conteudo: string;
+  lida?: boolean;
+  visualizadaEm?: string | null;
+  visualizadaPor?: string | null;
   timestamp: string | number;
 }): CorridaMensagem => ({
   id: payload.id,
   corridaId: payload.corridaId,
   remetenteId: payload.remetenteId,
   conteudo: payload.conteudo,
+  lida: payload.lida ?? true,
+  visualizadaEm: payload.visualizadaEm ?? null,
+  visualizadaPor: payload.visualizadaPor ?? null,
   createdAt: normalizeTimestamp(payload.timestamp),
 });
 
@@ -165,6 +173,30 @@ export interface IRealtimeFacade {
   ): Promise<Result<boolean, FacadeError>>;
 
   /**
+   * Marks all received messages in a ride room as viewed (blue ticks).
+   * Emits `visualizar-mensagens` via WebSocket.
+   *
+   * @param payload - Ride room identifier.
+   * @returns Result indicating local dispatch success.
+   * @throws Never. Errors are returned as `Result`.
+   */
+  visualizarMensagens(
+    payload: VisualizarMensagensPayload,
+  ): Promise<Result<boolean, FacadeError>>;
+
+  /**
+   * Requests the count of unread messages for a ride room.
+   * Server responds with `contagem-nao-visualizadas` only to the requesting socket.
+   *
+   * @param payload - Ride room identifier.
+   * @returns Result indicating local dispatch success.
+   * @throws Never. Errors are returned as `Result`.
+   */
+  contarNaoVisualizadas(
+    payload: ContarNaoVisualizadasPayload,
+  ): Promise<Result<boolean, FacadeError>>;
+
+  /**
    * Subscribes to normalized realtime events.
    *
    * @param handler - Unified realtime event handler.
@@ -203,6 +235,9 @@ export interface IRealtimeFacade {
     corridaId: string;
     remetenteId: string;
     conteudo: string;
+    lida?: boolean;
+    visualizadaEm?: string | null;
+    visualizadaPor?: string | null;
     timestamp: string | number;
   }): CorridaMensagem;
 }
@@ -322,6 +357,28 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
   }
 
   /** @inheritdoc */
+  public async visualizarMensagens(
+    payload: VisualizarMensagensPayload,
+  ): Promise<Result<boolean, FacadeError>> {
+    if (!this.isConnected && !this.config.mockMode) {
+      return fail(toError('Realtime connection is not active', 'NOT_CONNECTED'));
+    }
+    this.client.visualizarMensagens(payload);
+    return ok(true);
+  }
+
+  /** @inheritdoc */
+  public async contarNaoVisualizadas(
+    payload: ContarNaoVisualizadasPayload,
+  ): Promise<Result<boolean, FacadeError>> {
+    if (!this.isConnected && !this.config.mockMode) {
+      return fail(toError('Realtime connection is not active', 'NOT_CONNECTED'));
+    }
+    this.client.contarNaoVisualizadas(payload);
+    return ok(true);
+  }
+
+  /** @inheritdoc */
   public onEvent(handler: RealtimeEventHandler): () => void {
     this.eventHandlers.add(handler);
     return () => {
@@ -350,6 +407,9 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     corridaId: string;
     remetenteId: string;
     conteudo: string;
+    lida?: boolean;
+    visualizadaEm?: string | null;
+    visualizadaPor?: string | null;
     timestamp: string | number;
   }): CorridaMensagem {
     return toCorridaMensagem(payload);
@@ -407,6 +467,16 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     this.client.onReconexaoConcluida(payload => {
       rtLog('facade → reconexao-concluida →', JSON.stringify(payload));
       this.emitEvent({type: 'reconexao-concluida', payload});
+    });
+
+    this.client.onMensagensVisualizadas(payload => {
+      rtLog('facade → mensagens-visualizadas →', JSON.stringify(payload));
+      this.emitEvent({type: 'mensagens-visualizadas', payload});
+    });
+
+    this.client.onContagemNaoVisualizadas(payload => {
+      rtLog('facade → contagem-nao-visualizadas →', JSON.stringify(payload));
+      this.emitEvent({type: 'contagem-nao-visualizadas', payload});
     });
   }
 

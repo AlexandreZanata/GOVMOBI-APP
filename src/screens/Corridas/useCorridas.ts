@@ -78,7 +78,6 @@ export const useCorridas = (corridaId?: string): CorridasState => {
   const isLoadingMensagens = useAppSelector(s => s.corrida.isLoadingMensagens);
   const papeis = useAppSelector(s => s.auth.papeis);
   const motoristaId = useAppSelector(s => s.auth.motoristaId);
-  const servidorId = useAppSelector(s => s.auth.servidorId ?? '');
 
   // Driver = user with a non-null motoristaId from /auth/me
   const isMotorista = !!motoristaId;
@@ -288,8 +287,6 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         async () => {
           const r = await corridaFacade.cancelarCorrida(id, {
             motivo,
-            solicitanteId: motoristaId ?? servidorId,
-            tipoSolicitante: motoristaId ? 'MOTORISTA' : 'PASSAGEIRO',
           });
           if (r.error) {
             const msg =
@@ -308,7 +305,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.cancelarFailed',
       );
     },
-    [activeCorrida, corridaFacade, dispatch, motoristaId, servidorId, t, withAction],
+    [activeCorrida, corridaFacade, dispatch, motoristaId, t, withAction],
   );
 
   return {

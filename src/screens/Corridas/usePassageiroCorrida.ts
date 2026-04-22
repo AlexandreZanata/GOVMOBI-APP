@@ -82,7 +82,6 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
   const error = useAppSelector(s => s.corrida.error);
   const mensagens = useAppSelector(s => s.corrida.mensagens);
   const isLoadingMensagens = useAppSelector(s => s.corrida.isLoadingMensagens);
-  const servidorId = useAppSelector(s => s.auth.servidorId ?? '');
 
   // ---------------------------------------------------------------------------
   // Status polling — GET /corridas/:id/status (Redis-optimised)
@@ -185,8 +184,6 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
 
       const result = await corridaFacade.cancelarCorrida(id, {
         motivo,
-        solicitanteId: servidorId,
-        tipoSolicitante: 'PASSAGEIRO',
       });
 
       dispatch(setIsActionLoading(false));
@@ -213,7 +210,7 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
         }),
       );
     },
-    [activeCorrida, corridaFacade, dispatch, servidorId, t],
+    [activeCorrida, corridaFacade, dispatch, t],
   );
 
   return {
