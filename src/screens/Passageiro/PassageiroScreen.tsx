@@ -183,6 +183,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
   const isActionLoading = useAppSelector(s => s.corrida.isActionLoading);
   const pendingCorridaId = useAppSelector(s => s.corrida.pendingCorridaId);
+  const servidorId = useAppSelector(s => s.auth.servidorId ?? '');
   const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
 
   // ── MotoristaInfoModal state ────────────────────────────────────────────────
@@ -335,6 +336,8 @@ export const PassageiroScreen = (): React.JSX.Element => {
           void corridaFacade
             .cancelarCorrida(activeCorrida.id, {
               motivo: cancelMotivo.trim(),
+              solicitanteId: servidorId,
+              tipoSolicitante: 'PASSAGEIRO',
             })
             .then(result => {
               dispatch(setIsActionLoading(false));

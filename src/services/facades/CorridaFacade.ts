@@ -49,6 +49,34 @@ const fail = <T>(e: FacadeError): Result<T, FacadeError> => ({data: null, error:
 const toError = (message: string, code = 'INTERNAL_ERROR', statusCode?: number): FacadeError =>
   ({code, message, statusCode});
 
+// ---------------------------------------------------------------------------
+// Paginated list types
+// ---------------------------------------------------------------------------
+
+/** Raw item shape returned by GET /corridas (list endpoint). */
+interface RawCorridaListItem {
+  id: string;
+  status: string;
+  passageiroId: string;
+  motoristaId: string | null;
+  veiculoId?: string | null;
+  origem: {lat: number; lng: number};
+  destino: {lat: number; lng: number};
+  distanciaMetros?: number;
+  duracaoSegundos?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Paginated response from GET /corridas. */
+export interface CorridasPage {
+  data: Corrida[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 /**
  * Maps the backend's status enum values to the app's CorridaStatus union.
  * Handles both lowercase (backend) and uppercase (app) variants.
@@ -166,6 +194,12 @@ export interface ICorridaFacade {
 
   /** GET /corridas/:id/mensagens */
   getMensagens(corridaId: string): Promise<Result<CorridaMensagem[], FacadeError>>;
+
+  /**
+   * GET /corridas?page=&limit= — paginated ride list.
+   * Admins see all; drivers and passengers see their own.
+   */
+  listCorridas(page: number, limit: number): Promise<Result<CorridasPage, FacadeError>>;
 
   /** Mapbox geocoding search. */
   searchLocations(query: string): Promise<Result<SearchResult[], FacadeError>>;
@@ -547,6 +581,46 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       }
     } catch (err) {
       console.error(`[CorridaFacade] avaliar EXCEPTION →`, err);
+      return fail(toError('Network error', 'NETWORK_ERROR'));
+    }
+  }
+
+  /** @inheritdoc */
+  public async listCorridas(page: number, limit: number): Promise<Result<CorridasPage, FacadeError>> {
+    try {
+      const response = await fetch(
+        `${this.apiBaseUrl}/corridas?page=${page}&limit=${limit}`,
+        {headers: this.authHeaders()},
+      );
+      if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
+      const raw = (await response.json()) as {
+        data: RawCorridaListItem[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+      return ok({
+        data: raw.data.map(item => ({
+          id: item.id,
+          passageiroId: item.passageiroId,
+          motoristaId: item.motoristaId,
+          veiculoId: item.veiculoId ?? null,
+          origemLat: item.origem.lat,
+          origemLng: item.origem.lng,
+          destinoLat: item.destino.lat,
+          destinoLng: item.destino.lng,
+          status: normalizeStatus(item.status),
+          motivoServico: '',
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        })),
+        total: raw.total,
+        page: raw.page,
+        limit: raw.limit,
+        totalPages: raw.totalPages,
+      });
+    } catch {
       return fail(toError('Network error', 'NETWORK_ERROR'));
     }
   }

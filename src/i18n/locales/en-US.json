@@ -337,11 +337,15 @@
     },
     "info": {
       "title": "Driver Information",
+      "nomeLabel": "Driver",
       "cnhLabel": "Driver License",
       "cnhCategoriaLabel": "License Category",
       "veiculoLabel": "Vehicle",
       "placaLabel": "Plate",
-      "anoLabel": "Year"
+      "anoLabel": "Year",
+      "statusAceita": "Driver Accepted!",
+      "statusEmRota": "Driver On The Way",
+      "statusPassageiroABordo": "Driver Arrived!"
     }
   },
   "corridas": {

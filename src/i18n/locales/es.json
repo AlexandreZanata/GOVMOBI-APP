@@ -328,11 +328,15 @@
     },
     "info": {
       "title": "Información del Conductor",
+      "nomeLabel": "Conductor",
       "cnhLabel": "Licencia",
       "cnhCategoriaLabel": "Categoría de Licencia",
       "veiculoLabel": "Vehículo",
       "placaLabel": "Placa",
-      "anoLabel": "Año"
+      "anoLabel": "Año",
+      "statusAceita": "¡Conductor Aceptó!",
+      "statusEmRota": "Conductor en Camino",
+      "statusPassageiroABordo": "¡Conductor Llegó!"
     }
   },
   "corridas": {

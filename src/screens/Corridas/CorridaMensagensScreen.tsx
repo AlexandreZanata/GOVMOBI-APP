@@ -28,8 +28,7 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles} from './CorridasScreens.styles';
-import {useAppDispatch, useAppSelector} from '../../store';
-import {addMensagem} from '@store/slices/corridaSlice';
+import {useAppSelector} from '../../store';
 import {useFacades} from '@services/facades';
 import type {CorridaMensagem} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
@@ -53,7 +52,6 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
   const navigation = useNavigation();
-  const dispatch = useAppDispatch();
   const {realtimeFacade} = useFacades();
   const {corridaId} = route.params;
 
@@ -78,22 +76,8 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     void onLoadMensagens(corridaId);
   }, [corridaId, onLoadMensagens]);
 
-  // Subscribe to nova-mensagem events and append to Redux
-  useEffect(() => {
-    const unsubscribe = realtimeFacade.onEvent(event => {
-      if (event.type === 'nova-mensagem') {
-        const msg = realtimeFacade.normalizeCorridaMensagem({
-          id: event.payload.id,
-          corridaId: event.payload.corridaId,
-          remetenteId: event.payload.remetenteId,
-          conteudo: event.payload.conteudo,
-          timestamp: event.payload.timestamp,
-        });
-        dispatch(addMensagem(msg));
-      }
-    });
-    return unsubscribe;
-  }, [dispatch, realtimeFacade]);
+  // nova-mensagem is handled globally by useRealtimeSession → addMensagem.
+  // No local listener needed — reading from Redux is sufficient.
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {

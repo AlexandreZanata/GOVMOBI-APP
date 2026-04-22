@@ -10,6 +10,8 @@
  * Intentionally omits CNH number and category — those are internal driver
  * credentials and must never be shown to passengers.
  */
+/* eslint-disable react-native/no-unused-styles */
+/* eslint-disable react-native/no-color-literals */
 import React, {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
@@ -140,7 +142,7 @@ export const MotoristaInfoModal = ({
 
   return (
     <Modal
-      animationType="slide"
+      animationType="fade"
       onRequestClose={handleDismiss}
       transparent
       visible={visible}>
@@ -231,13 +233,16 @@ const createStyles = (theme: Theme) =>
     backdrop: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.55)',
-      justifyContent: 'flex-end',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: theme.spacing[5],
     },
     card: {
       backgroundColor: theme.design.surface100,
-      borderTopLeftRadius: theme.borderRadius.radius.xl,
-      borderTopRightRadius: theme.borderRadius.radius.xl,
-      paddingBottom: theme.spacing[6],
+      borderRadius: theme.borderRadius.radius.xl,
+      width: '100%',
+      maxWidth: 400,
+      overflow: 'hidden',
       ...theme.shadows.card,
     },
     headline: {
@@ -326,10 +331,8 @@ const createStyles = (theme: Theme) =>
       textAlign: 'center',
     },
     button: {
-      marginHorizontal: theme.spacing[5],
-      marginTop: theme.spacing[4],
       backgroundColor: theme.colors.primary,
-      borderRadius: theme.borderRadius.radius.md,
+      marginTop: theme.spacing[4],
       paddingVertical: theme.spacing[4],
       alignItems: 'center',
     },

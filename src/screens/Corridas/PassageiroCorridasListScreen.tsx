@@ -1,17 +1,17 @@
 /**
- * @fileoverview PassageiroCorridasListScreen — ride history for the USUARIO.
+ * @fileoverview PassageiroCorridasListScreen — paginated ride history.
  *
- * Shows:
- *   - Active corrida card (if any non-terminal ride exists)
- *   - Request ride CTA (always visible for USUARIO)
- *   - Completed/terminal ride history
+ * Fetches GET /corridas?page=&limit= and renders each ride as a tappable card.
+ * Tapping a card navigates to CorridaDetalhe (read-only).
+ * No ride-request CTA — that lives on the Home tab.
  */
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
   StatusBar,
+  StyleSheet,
   Text,
   View,
   type ListRenderItem,
@@ -21,21 +21,106 @@ import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useTheme} from '../../theme';
-import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
-import {createHistoricoStyles} from './HistoricoCorridas.styles';
-import {RideCard} from '@components/molecules/RideCard';
+import {useTheme, type Theme} from '../../theme';
+import {useFacades} from '@services/facades';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
-import {useAppSelector} from '../../store';
 import type {Corrida} from '@models/Corrida';
+import {useAppSelector} from '../../store';
 
 type NavProp = NativeStackNavigationProp<PassageiroCorridasStackParamList>;
 
-const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
+const PAGE_LIMIT = 10;
+
+// ---------------------------------------------------------------------------
+// Status color helper
+// ---------------------------------------------------------------------------
+
+const statusDot = (status: string, theme: Theme): string => {
+  switch (status) {
+    case 'concluida':
+    case 'avaliada':       return theme.colors.success;
+    case 'cancelada':
+    case 'expirada':       return theme.colors.error;
+    case 'aceita':
+    case 'em_rota':
+    case 'passageiro_a_bordo': return theme.colors.warning;
+    default:               return theme.design.textTertiary;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Ride card
+// ---------------------------------------------------------------------------
+
+interface RideCardProps {
+  item: Corrida;
+  onPress: (id: string) => void;
+  theme: Theme;
+  t: (key: string) => string;
+}
+
+const RideListCard = React.memo(({item, onPress, theme, t}: RideCardProps) => {
+  const s = useMemo(() => createCardStyles(theme), [theme]);
+  const dot = statusDot(item.status, theme);
+  const date = new Date(item.createdAt).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  return (
+    <Pressable
+      accessibilityLabel={t('corridas.detail.title')}
+      accessibilityRole="button"
+      onPress={() => onPress(item.id)}
+      style={({pressed}) => [s.card, pressed && s.cardPressed]}
+      testID={`ride-card-${item.id}`}>
+
+      {/* Status bar on the left */}
+      <View style={[s.statusBar, {backgroundColor: dot}]} />
+
+      <View style={s.body}>
+        {/* Top row: status pill + date */}
+        <View style={s.topRow}>
+          <View style={[s.statusPill, {backgroundColor: dot}]}>
+            <Text style={s.statusPillText}>
+              {t(`corridas.status.${item.status}`)}
+            </Text>
+          </View>
+          <Text style={s.date}>{date}</Text>
+        </View>
+
+        {/* Origin */}
+        <View style={s.routeRow}>
+          <MaterialIcons name="trip-origin" size={13} color={theme.colors.success} style={s.icon} />
+          <Text style={s.routeText} numberOfLines={1}>
+            {`${item.origemLat.toFixed(5)}, ${item.origemLng.toFixed(5)}`}
+          </Text>
+        </View>
+
+        {/* Destination */}
+        <View style={s.routeRow}>
+          <MaterialIcons name="location-on" size={13} color={theme.colors.error} style={s.icon} />
+          <Text style={s.routeText} numberOfLines={1}>
+            {`${item.destinoLat.toFixed(5)}, ${item.destinoLng.toFixed(5)}`}
+          </Text>
+        </View>
+      </View>
+
+      <MaterialIcons name="chevron-right" size={20} color={theme.design.textTertiary} style={s.chevron} />
+    </Pressable>
+  );
+});
+
+RideListCard.displayName = 'RideListCard';
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 /**
- * Passenger corridas screen.
- * Shows active ride card, request CTA, and ride history.
+ * Paginated ride history list for the passenger (USUARIO).
+ * Read-only — no actions, no request CTA.
  *
  * @returns JSX element for the PassageiroCorridasListScreen.
  */
@@ -43,159 +128,117 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const navigation = useNavigation<NavProp>();
-
-  const shared = useMemo(() => createCorridasStyles(theme), [theme]);
-  const s = useMemo(() => createHistoricoStyles(theme), [theme]);
-
-  const activeCorrida = useAppSelector(st => st.corrida.activeCorrida);
-  const corridaHistory = useAppSelector(st => st.corrida.corridaHistory ?? []);
+  const {corridaFacade} = useFacades();
   const papeis = useAppSelector(st => st.auth.papeis);
-  const [isLoading] = useState(false);
 
-  const hasActiveRide =
-    activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
+  const s = useMemo(() => createScreenStyles(theme), [theme]);
 
-  const rides = useMemo<Corrida[]>(() => {
-    const all: Corrida[] = [...corridaHistory];
-    if (activeCorrida && TERMINAL_STATUSES.has(activeCorrida.status)) {
-      if (!all.find(r => r.id === activeCorrida.id)) all.unshift(activeCorrida);
+  const [rides, setRides] = useState<Corrida[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isFetchingRef = useRef(false);
+
+  const fetchPage = useCallback(async (pageNum: number, replace: boolean) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    if (replace) setIsLoading(true);
+    setError(null);
+
+    const result = await corridaFacade.listCorridas(pageNum, PAGE_LIMIT);
+
+    isFetchingRef.current = false;
+    setIsLoading(false);
+    setIsRefreshing(false);
+
+    if (result.error) {
+      setError(t('errors.networkError'));
+      return;
     }
-    return all.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-  }, [activeCorrida, corridaHistory]);
 
-  const handleViewDetail = useCallback(
+    const {data, totalPages: tp, page: p} = result.data;
+    setTotalPages(tp);
+    setPage(p);
+    setRides(prev => (replace ? data : [...prev, ...data]));
+  }, [corridaFacade, t]);
+
+  // Initial load
+  useEffect(() => {
+    void fetchPage(1, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    void fetchPage(1, true);
+  }, [fetchPage]);
+
+  const handleLoadMore = useCallback(() => {
+    if (page < totalPages && !isFetchingRef.current) {
+      void fetchPage(page + 1, false);
+    }
+  }, [fetchPage, page, totalPages]);
+
+  const handlePress = useCallback(
     (corridaId: string) => navigation.navigate('CorridaDetalhe', {corridaId}),
     [navigation],
   );
 
-  const handleViewActive = useCallback(() => {
-    if (!activeCorrida) return;
-    navigation.navigate('AcompanharCorrida', {corridaId: activeCorrida.id});
-  }, [activeCorrida, navigation]);
-
-  const renderRide: ListRenderItem<Corrida> = useCallback(
-    ({item, index}) => (
-      <RideCard
-        corrida={item}
-        isLast={index === rides.length - 1}
-        onPress={handleViewDetail}
-        testID={`ride-card-${item.id}`}
-      />
+  const renderItem: ListRenderItem<Corrida> = useCallback(
+    ({item}) => (
+      <RideListCard item={item} onPress={handlePress} theme={theme} t={t} />
     ),
-    [handleViewDetail, rides.length],
+    [handlePress, theme, t],
   );
 
-  const ListHeader = useCallback(
-    () => (
-      <>
-        {/* Active ride card */}
-        {hasActiveRide && activeCorrida && (
-          <Pressable
-            accessibilityLabel={t('corridas.list.viewActive')}
-            accessibilityRole="button"
-            onPress={handleViewActive}
-            style={shared.card}
-            testID="active-corrida-card">
-            <View
-              style={[
-                shared.statusBadge,
-                {backgroundColor: statusColor(activeCorrida.status, theme)},
-              ]}>
-              <Text style={shared.statusText}>
-                {t(`corridas.status.${activeCorrida.status}`)}
-              </Text>
-            </View>
-            <View style={shared.cardRow}>
-              <MaterialIcons
-                name="trip-origin"
-                size={16}
-                color={theme.colors.success}
-                style={shared.cardRowIcon}
-              />
-              <Text style={shared.cardValue} numberOfLines={1}>
-                {`${activeCorrida.origemLat.toFixed(4)}, ${activeCorrida.origemLng.toFixed(4)}`}
-              </Text>
-            </View>
-            <View style={shared.cardRow}>
-              <MaterialIcons
-                name="location-on"
-                size={16}
-                color={theme.colors.error}
-                style={shared.cardRowIcon}
-              />
-              <Text style={shared.cardValue} numberOfLines={1}>
-                {`${activeCorrida.destinoLat.toFixed(4)}, ${activeCorrida.destinoLng.toFixed(4)}`}
-              </Text>
-            </View>
-          </Pressable>
-        )}
+  const keyExtractor = useCallback((item: Corrida) => item.id, []);
 
-        {/* Request ride CTA — always visible */}
-        <Pressable
-          accessibilityLabel={t('passageiro.bottomSheet.cta')}
-          accessibilityRole="button"
-          onPress={() =>
-            navigation.navigate('AcompanharCorrida', {corridaId: ''})
-          }
-          style={[shared.actionButton, shared.actionButtonPrimary]}
-          testID="btn-request-ride">
-          <Text style={shared.actionButtonText}>
-            {t('passageiro.bottomSheet.cta')}
-          </Text>
-        </Pressable>
-
-        {rides.length > 0 && (
-          <Text style={s.headerTitle}>{t('corridas.history.title')}</Text>
-        )}
-      </>
-    ),
-    [
-      activeCorrida,
-      handleViewActive,
-      hasActiveRide,
-      navigation,
-      rides.length,
-      s,
-      shared,
-      t,
-      theme,
-    ],
-  );
-
-  const ListEmpty = useCallback(
-    () => (
-      <View style={s.emptyContainer} testID="corridas-empty">
-        <MaterialIcons
-          name="directions-car"
-          size={56}
-          color={theme.design.textTertiary}
-        />
-        <Text style={s.emptyTitle}>{t('corridas.history.empty.title')}</Text>
-        <Text style={s.emptySubtitle}>
-          {t('corridas.history.empty.subtitle')}
-        </Text>
+  const ListFooter = useCallback(() => {
+    if (!isLoading || isRefreshing) return null;
+    return (
+      <View style={s.footer}>
+        <ActivityIndicator color={theme.colors.primary} size="small" />
       </View>
-    ),
-    [s, t, theme],
-  );
+    );
+  }, [isLoading, isRefreshing, s, theme]);
 
-  const isEmpty = !isLoading && rides.length === 0 && !hasActiveRide;
+  const ListEmpty = useCallback(() => {
+    if (isLoading) return null;
+    if (error) {
+      return (
+        <View style={s.emptyContainer} testID="corridas-error">
+          <MaterialIcons name="wifi-off" size={48} color={theme.design.textTertiary} />
+          <Text style={s.emptyTitle}>{t('errors.networkError')}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void fetchPage(1, true)}
+            style={s.retryBtn}
+            testID="retry-btn">
+            <Text style={s.retryText}>{t('common.retry')}</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return (
+      <View style={s.emptyContainer} testID="corridas-empty">
+        <MaterialIcons name="directions-car" size={56} color={theme.design.textTertiary} />
+        <Text style={s.emptyTitle}>{t('corridas.history.empty.title')}</Text>
+        <Text style={s.emptySubtitle}>{t('corridas.history.empty.subtitle')}</Text>
+      </View>
+    );
+  }, [error, fetchPage, isLoading, s, t, theme]);
 
   return (
     <SafeAreaView
       edges={['top']}
-      style={[s.root, {backgroundColor: theme.colors.primary}]}
+      style={[s.root, {backgroundColor: theme.design.navy800}]}
       testID="passageiro-corridas-list-screen">
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={theme.colors.primary}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={theme.design.navy800} />
 
-      {/* Dark blue title header */}
-      <View style={[s.titleRow, {flexDirection: 'row', justifyContent: 'space-between'}]}>
+      {/* Header */}
+      <View style={s.header}>
         <Text style={s.headerTitle}>{t('corridas.history.title')}</Text>
         {papeis.includes('ADMIN') && (
           <Pressable
@@ -208,14 +251,12 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
         )}
       </View>
 
-      {/* White content area */}
-      <View style={s.contentArea}>
-        {isLoading ? (
-          <View style={s.centeredFill}>
-            <ActivityIndicator color={theme.design.blue500} size="large" />
+      {/* Content */}
+      <View style={s.content}>
+        {isLoading && rides.length === 0 ? (
+          <View style={s.emptyContainer} testID="corridas-loading">
+            <ActivityIndicator color={theme.colors.primary} size="large" />
           </View>
-        ) : isEmpty ? (
-          <ListEmpty />
         ) : (
           <FlatList
             contentContainerStyle={[
@@ -223,13 +264,18 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
               rides.length === 0 && s.listContentEmpty,
             ]}
             data={rides}
-            keyExtractor={item => item.id}
-            ListHeaderComponent={ListHeader}
+            keyExtractor={keyExtractor}
+            ListEmptyComponent={ListEmpty}
+            ListFooterComponent={ListFooter}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.3}
+            onRefresh={handleRefresh}
+            refreshing={isRefreshing}
             removeClippedSubviews
-            renderItem={renderRide}
+            renderItem={renderItem}
             showsVerticalScrollIndicator={false}
-            testID="historico-list"
-            windowSize={5}
+            testID="corridas-list"
+            windowSize={7}
           />
         )}
       </View>
@@ -238,3 +284,135 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
 };
 
 PassageiroCorridasListScreen.displayName = 'PassageiroCorridasListScreen';
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
+/* eslint-disable react-native/no-unused-styles */
+const createScreenStyles = (theme: Theme) => {
+  const {design, spacing, typography: typo} = theme;
+  return StyleSheet.create({
+    root: {flex: 1},
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing[5],
+      paddingVertical: spacing[4],
+      backgroundColor: design.navy800,
+    },
+    headerTitle: {
+      ...typo.scale.headingLg,
+      color: design.textOnDark,
+    },
+    content: {
+      flex: 1,
+      backgroundColor: design.surface200,
+    },
+    listContent: {
+      paddingHorizontal: spacing[4],
+      paddingTop: spacing[4],
+      paddingBottom: spacing[10],
+    },
+    listContentEmpty: {
+      flexGrow: 1,
+    },
+    footer: {
+      paddingVertical: spacing[4],
+      alignItems: 'center',
+    },
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing[8],
+      paddingVertical: spacing[12],
+    },
+    emptyTitle: {
+      ...typo.scale.headingMd,
+      color: design.textPrimary,
+      marginTop: spacing[4],
+      textAlign: 'center',
+    },
+    emptySubtitle: {
+      ...typo.scale.bodyMd,
+      color: design.textTertiary,
+      marginTop: spacing[2],
+      textAlign: 'center',
+    },
+    retryBtn: {
+      marginTop: spacing[4],
+      paddingHorizontal: spacing[5],
+      paddingVertical: spacing[3],
+      borderRadius: theme.borderRadius.radius.md,
+      backgroundColor: theme.colors.primary,
+    },
+    retryText: {
+      ...typo.scale.labelMd,
+      color: design.textOnDark,
+    },
+  });
+};
+
+const createCardStyles = (theme: Theme) => {
+  const {design, spacing, borderRadius, shadows, typography: typo} = theme;
+  return StyleSheet.create({
+    card: {
+      backgroundColor: design.surface100,
+      borderRadius: borderRadius.radius.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing[3],
+      overflow: 'hidden',
+      ...shadows.card,
+    },
+    cardPressed: {
+      opacity: 0.85,
+    },
+    statusBar: {
+      width: 4,
+      alignSelf: 'stretch',
+    },
+    body: {
+      flex: 1,
+      paddingVertical: spacing[3],
+      paddingHorizontal: spacing[3],
+      gap: spacing[1],
+    },
+    topRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing[2],
+    },
+    statusPill: {
+      borderRadius: borderRadius.radius.full,
+      paddingHorizontal: spacing[2],
+      paddingVertical: 2,
+    },
+    statusPillText: {
+      ...typo.scale.labelSm,
+      color: design.textOnDark,
+    },
+    date: {
+      ...typo.scale.caption,
+      color: design.textTertiary,
+    },
+    routeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    icon: {
+      marginRight: spacing[1],
+    },
+    routeText: {
+      ...typo.scale.bodySm,
+      color: design.textSecondary,
+      flex: 1,
+    },
+    chevron: {
+      marginRight: spacing[2],
+    },
+  });
+};
