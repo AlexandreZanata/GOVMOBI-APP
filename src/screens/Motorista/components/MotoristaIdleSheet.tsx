@@ -3,7 +3,7 @@
  * Includes a toggle to switch between DISPONIVEL and AFASTADO.
  */
 import React from 'react';
-import {ActivityIndicator, Animated, Pressable, Text, View} from 'react-native';
+import {ActivityIndicator, Animated, Pressable, Text, View, type LayoutChangeEvent} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {useNavigation} from '@react-navigation/native';
 import type {CompositeNavigationProp} from '@react-navigation/native';
@@ -27,7 +27,7 @@ export interface MotoristaIdleSheetProps {
   /** Bottom padding to respect safe area. */
   paddingBottom: number;
   /** Called when the sheet layout is measured (triggers slide-up animation). */
-  onLayout: () => void;
+  onLayout: (event: LayoutChangeEvent) => void;
   /** Current operational status of the driver. */
   statusOperacional: MotoristaStatusOperacional | null;
   /** Whether the status toggle request is in flight. */

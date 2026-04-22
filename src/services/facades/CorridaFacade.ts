@@ -60,8 +60,7 @@ const normalizeStatus = (status: string): Corrida['status'] => {
     case 'aceita':           return 'ACEITA';
     case 'recusada':         return 'RECUSADA';
     case 'em_rota':
-    case 'em_deslocamento':  return 'EM_ROTA';
-    case 'passageiro_embarcado': return 'PASSAGEIRO_EMBARCADO';
+    case 'em_deslocamento':  return 'EM_ROTA';    case 'passageiro_embarcado': return 'PASSAGEIRO_EMBARCADO';
     case 'concluida':
     case 'finalizada':       return 'CONCLUIDA';
     case 'avaliada':         return 'AVALIADA';
@@ -276,7 +275,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: RecusarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/recusar →`, JSON.stringify(input));
-    const result = await this.postCorrida(`/corridas/${corridaId}/recusar`, input);
+    const result = await this.postCorrida(`/corridas/${corridaId}/recusar`, input, corridaId);
     if (result.error) {
       console.error(`[CorridaFacade] recusar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -288,7 +287,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   /** @inheritdoc */
   public async iniciarDeslocamento(corridaId: string): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/iniciar-deslocamento`);
-    const result = await this.postCorrida(`/corridas/${corridaId}/iniciar-deslocamento`, {});
+    const result = await this.postCorrida(`/corridas/${corridaId}/iniciar-deslocamento`, {}, corridaId);
     if (result.error) {
       console.error(`[CorridaFacade] iniciarDeslocamento FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -300,7 +299,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   /** @inheritdoc */
   public async chegarAoLocal(corridaId: string): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/chegar`);
-    const result = await this.postCorrida(`/corridas/${corridaId}/chegar`, {});
+    const result = await this.postCorrida(`/corridas/${corridaId}/chegar`, {}, corridaId);
     if (result.error) {
       console.error(`[CorridaFacade] chegar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -315,7 +314,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: ConfirmarEmbarqueInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/confirmar-embarque →`, JSON.stringify(input));
-    const result = await this.postCorrida(`/corridas/${corridaId}/confirmar-embarque`, input);
+    const result = await this.postCorrida(`/corridas/${corridaId}/confirmar-embarque`, input, corridaId);
     if (result.error) {
       console.error(`[CorridaFacade] confirmarEmbarque FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -330,7 +329,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: FinalizarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/finalizar →`, JSON.stringify(input));
-    const result = await this.postCorrida(`/corridas/${corridaId}/finalizar`, input);
+    const result = await this.postCorrida(`/corridas/${corridaId}/finalizar`, input, corridaId);
     if (result.error) {
       console.error(`[CorridaFacade] finalizar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -345,7 +344,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: CancelarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/cancelar →`, JSON.stringify(input));
-    const result = await this.postCorrida(`/corridas/${corridaId}/cancelar`, input);
+    const result = await this.postCorrida(`/corridas/${corridaId}/cancelar`, input, corridaId);
     if (result.error) {
       console.error(`[CorridaFacade] cancelar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
@@ -530,13 +529,16 @@ export class CorridaFacadeImpl implements ICorridaFacade {
 
   /**
    * POST helper that normalizes the response into a Corrida model.
-   * Handles both nested { origem: {lat,lng} } and flat origemLat/origemLng shapes.
+   * If the response body is partial (missing id), fetches the full corrida
+   * via GET /corridas/:id — handles endpoints that return 200/201 with
+   * partial payloads (iniciar-deslocamento, chegar, confirmar-embarque, etc.).
    *
    * @param endpoint - API path.
    * @param body - Request body.
+   * @param corridaId - Corrida UUID for fallback GET when response is partial.
    * @returns Normalized Corrida result.
    */
-  private async postCorrida(endpoint: string, body: object): Promise<Result<Corrida, FacadeError>> {
+  private async postCorrida(endpoint: string, body: object, corridaId?: string): Promise<Result<Corrida, FacadeError>> {
     try {
       const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
         method: 'POST',
@@ -557,9 +559,23 @@ export class CorridaFacadeImpl implements ICorridaFacade {
         return fail(toError(msg, 'BAD_REQUEST', 400));
       }
       if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
-      const raw = (await response.json()) as RawCorrida;
+
+      // Try to parse the response body — many lifecycle endpoints return partial objects
+      const raw = await response.json().catch(() => ({})) as RawCorrida;
       console.log(`[CorridaFacade] raw response →`, JSON.stringify(raw));
-      return ok(normalizeCorrida(raw));
+
+      // If the response has a valid id, normalize and return it directly
+      if (raw.id && raw.status) {
+        return ok(normalizeCorrida(raw));
+      }
+
+      // Partial body (e.g. iniciar-deslocamento returns {}) — fetch full corrida
+      const id = corridaId ?? raw.id;
+      if (!id) {
+        return fail(toError('Response missing corrida id and no corridaId provided', 'INTERNAL_ERROR'));
+      }
+      console.log(`[CorridaFacade] partial response — fetching full corrida ${id}`);
+      return this.getCorrida(id);
     } catch {
       return fail(toError('Network error', 'NETWORK_ERROR'));
     }

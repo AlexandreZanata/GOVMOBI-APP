@@ -17,6 +17,7 @@ import {
   StatusBar,
   Text,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
@@ -96,11 +97,15 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   const sheetTranslate = useRef(new Animated.Value(0)).current;
   const sheetAnimated = useRef(false);
+  // Measured height of the bottom sheet — used to position the chat FAB above it
+  const [sheetHeight, setSheetHeight] = useState(0);
 
   const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
   const isTerminal = activeCorrida !== null && TERMINAL_STATUSES.has(activeCorrida.status);
 
-  const onSheetLayout = useCallback(() => {
+  const onSheetLayout = useCallback((event: LayoutChangeEvent) => {
+    const h = event.nativeEvent.layout.height;
+    if (h > 0) setSheetHeight(h);
     if (sheetAnimated.current) return;
     sheetAnimated.current = true;
     sheetTranslate.setValue(200);
@@ -238,7 +243,10 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   const sheetPaddingBottom = 14;
   const fabTop = 12;
-  const chatFabBottom = 220 + sheetPaddingBottom;
+  // FAB sits 16px above the sheet — dynamically computed from measured sheet height.
+  // Falls back to 80px until the first layout event fires.
+  const FAB_GAP = 16;
+  const chatFabBottom = sheetHeight > 0 ? sheetHeight + FAB_GAP : 80;
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, {backgroundColor: theme.colors.primary}]} testID="motorista-home-screen">

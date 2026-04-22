@@ -397,6 +397,7 @@
       "ACEITA": "Accepted",
       "RECUSADA": "Refused",
       "EM_DESLOCAMENTO": "En Route",
+      "EM_ROTA": "En Route",
       "PASSAGEIRO_EMBARCADO": "Passenger Boarded",
       "FINALIZADA": "Completed",
       "CANCELADA": "Cancelled",

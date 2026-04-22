@@ -245,6 +245,9 @@ export const createMotoristaStyles = (theme: Theme) => {
       borderTopRightRadius: borderRadius.radius.xl,
       paddingHorizontal: spacing[5],
       paddingTop: spacing[3],
+      // Ensure the sheet is tall enough to always show action buttons
+      minHeight: 340,
+      maxHeight: '65%',
       zIndex: 20,
       ...shadows.lg,
     },
@@ -376,7 +379,10 @@ export const createMotoristaStyles = (theme: Theme) => {
       backgroundColor: C.success,
     },
 
-    // ── Vehicle association button (idle sheet) ───────────────────────────────
+    // ── Route dot offset ─────────────────────────────────────────────────────
+    routeDotOffset: {
+      marginTop: spacing[1],
+    },
     vehicleBtn: {
       flexDirection: 'row',
       alignItems: 'center',

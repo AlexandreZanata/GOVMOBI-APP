@@ -5,11 +5,11 @@
  *   1. Initial mount (cold start / app open)
  *   2. Every time AppState transitions from background → active
  *
- * This ensures that if the user left the app while a ride was in progress,
- * the active ride is restored into Redux immediately on return — without
- * requiring the user to navigate anywhere.
- *
- * Only runs when the user is authenticated.
+ * IMPORTANT: Never clears an existing non-terminal activeCorrida from Redux
+ * based on a contexto response. The local state is authoritative during an
+ * active ride — the server contexto may lag behind real-time events.
+ * Only seeds a ride that the client doesn't know about, or clears state
+ * when there is no local active ride either.
  */
 import {useEffect, useRef} from 'react';
 import {AppState, type AppStateStatus} from 'react-native';
@@ -19,11 +19,15 @@ import {
   setActiveCorrida,
   setPendingCorridaId,
 } from '@store/slices/corridaSlice';
+import {TERMINAL_STATUSES} from '@models/Corrida';
 
 /**
  * Syncs corrida context on app foreground.
  * Seeds `activeCorrida` and `pendingCorridaId` into Redux if the server
  * reports an active ride that the client doesn't know about.
+ *
+ * Does NOT clear an existing non-terminal activeCorrida — the local Redux
+ * state is authoritative during an active ride.
  *
  * @returns Void — side-effect only hook.
  */
@@ -31,8 +35,12 @@ export const useCorridaContexto = (): void => {
   const dispatch = useAppDispatch();
   const {corridaFacade} = useFacades();
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
+  const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const isSyncingRef = useRef(false);
+  // Keep a ref to the latest activeCorrida so the sync closure always sees current value
+  const activaRef = useRef(activeCorrida);
+  activaRef.current = activeCorrida;
 
   const sync = async (): Promise<void> => {
     if (!isAuthenticated || isSyncingRef.current) return;
@@ -44,15 +52,23 @@ export const useCorridaContexto = (): void => {
       if (!result.data) return;
 
       const {corridaAtiva} = result.data;
+      const localActiva = activaRef.current;
 
       if (corridaAtiva) {
-        // Restore active ride into Redux — PassageiroScreen will pick it up
+        // Server has an active ride — seed it if we don't have one locally
         dispatch(setActiveCorrida(corridaAtiva));
         dispatch(setPendingCorridaId(corridaAtiva.id));
       } else {
-        // No active ride on server — clear any stale local state
-        dispatch(setActiveCorrida(null));
-        dispatch(setPendingCorridaId(null));
+        // Server reports no active ride.
+        // Only clear local state if we don't have a non-terminal ride in Redux.
+        // If we do, the local state is more up-to-date than the contexto response.
+        const hasNonTerminalLocal =
+          localActiva !== null && !TERMINAL_STATUSES.has(localActiva.status);
+
+        if (!hasNonTerminalLocal) {
+          dispatch(setActiveCorrida(null));
+          dispatch(setPendingCorridaId(null));
+        }
       }
     } finally {
       isSyncingRef.current = false;
@@ -73,7 +89,6 @@ export const useCorridaContexto = (): void => {
         const prev = appStateRef.current;
         appStateRef.current = nextState;
 
-        // background/inactive → active
         if (
           (prev === 'background' || prev === 'inactive') &&
           nextState === 'active'

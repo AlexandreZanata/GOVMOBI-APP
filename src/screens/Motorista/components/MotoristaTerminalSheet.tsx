@@ -2,7 +2,7 @@
  * @fileoverview MotoristaTerminalSheet — bottom sheet shown when a ride reaches a terminal state.
  */
 import React from 'react';
-import {Animated, Text, View} from 'react-native';
+import {Animated, Text, View, type LayoutChangeEvent} from 'react-native';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.styles';
@@ -17,7 +17,7 @@ export interface MotoristaTerminalSheetProps {
   /** Bottom padding to respect safe area. */
   paddingBottom: number;
   /** Called when the sheet layout is measured. */
-  onLayout: () => void;
+  onLayout: (event: LayoutChangeEvent) => void;
 }
 
 /**

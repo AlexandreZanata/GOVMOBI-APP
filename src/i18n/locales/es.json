@@ -388,6 +388,7 @@
       "ACEITA": "Aceptado",
       "RECUSADA": "Rechazado",
       "EM_DESLOCAMENTO": "En Camino",
+      "EM_ROTA": "En Camino",
       "PASSAGEIRO_EMBARCADO": "Pasajero Abordado",
       "FINALIZADA": "Finalizado",
       "CANCELADA": "Cancelado",

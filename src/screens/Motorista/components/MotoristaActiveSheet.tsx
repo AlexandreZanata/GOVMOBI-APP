@@ -1,6 +1,12 @@
 /**
  * @fileoverview MotoristaActiveSheet — bottom sheet shown when a ride is active.
- * Contains status badge, route rows, lifecycle action buttons, and cancel section.
+ *
+ * Shows:
+ *   - Status badge (translated, never raw key)
+ *   - Origin / destination as street addresses (reverse geocoded, cached)
+ *   - All lifecycle action buttons visible at once; each disappears only after
+ *     the driver completes that specific step
+ *   - Cancel section (only for cancellable states)
  */
 import React from 'react';
 import {
@@ -8,17 +14,19 @@ import {
   Alert,
   Animated,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.styles';
 import {statusColor} from '@screens/Corridas/CorridasScreens.styles';
-import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
 import {useTheme} from '@theme/index';
 import type {Corrida} from '@models/Corrida';
 import {podeSerCancelada} from '@models/Corrida';
+import {useReverseGeocode} from '@hooks/useReverseGeocode';
 
 export interface MotoristaActiveSheetProps {
   /** The active corrida. */
@@ -30,7 +38,7 @@ export interface MotoristaActiveSheetProps {
   /** Bottom padding to respect safe area. */
   paddingBottom: number;
   /** Called when the sheet layout is measured. */
-  onLayout: () => void;
+  onLayout: (event: LayoutChangeEvent) => void;
   /** Cancel motivo text. */
   cancelMotivo: string;
   /** Whether the cancel input is visible. */
@@ -51,6 +59,25 @@ export interface MotoristaActiveSheetProps {
   onFinalizar: () => void;
   onCancelar: () => void;
 }
+
+/**
+ * Determines which action buttons are visible based on the current status.
+ * Each button disappears only after the driver completes that step.
+ *
+ * State machine:
+ *   SOLICITADA / AGUARDANDO_ACEITE → Aceitar + Recusar
+ *   ACEITA                         → Iniciar Deslocamento + Confirmar Embarque
+ *   EM_ROTA / EM_DESLOCAMENTO      → Chegar ao Local + Confirmar Embarque
+ *   PASSAGEIRO_EMBARCADO           → Finalizar
+ */
+const getVisibleActions = (status: Corrida['status']) => ({
+  showAceitar:             status === 'SOLICITADA' || status === 'AGUARDANDO_ACEITE',
+  showRecusar:             status === 'SOLICITADA' || status === 'AGUARDANDO_ACEITE',
+  showIniciarDeslocamento: status === 'ACEITA',
+  showChegar:              status === 'EM_ROTA' || status === 'EM_DESLOCAMENTO',
+  showConfirmarEmbarque:   status === 'ACEITA' || status === 'EM_ROTA' || status === 'EM_DESLOCAMENTO',
+  showFinalizar:           status === 'PASSAGEIRO_EMBARCADO',
+});
 
 /**
  * Active ride bottom sheet for the driver home screen.
@@ -86,6 +113,12 @@ export const MotoristaActiveSheet = ({
   const badgeColor = statusColor(corrida.status, theme);
   const canCancel = podeSerCancelada(corrida.status);
 
+  // Reverse geocode origin and destination — never show raw coordinates
+  const origemAddress = useReverseGeocode(corrida.origemLat, corrida.origemLng);
+  const destinoAddress = useReverseGeocode(corrida.destinoLat, corrida.destinoLng);
+
+  const actions = getVisibleActions(corrida.status);
+
   const handleFinalizar = () => {
     Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
       {text: t('common.cancel'), style: 'cancel'},
@@ -119,26 +152,34 @@ export const MotoristaActiveSheet = ({
         <Text style={styles.activeSheetTitle}>{t('motorista.activeRide.title')}</Text>
         <View style={[styles.statusBadge, {backgroundColor: badgeColor}]}>
           <Text style={styles.statusBadgeText}>
-            {t(`corridas.status.${corrida.status}`)}
+            {t(`corridas.status.${corrida.status}`, {defaultValue: corrida.status})}
           </Text>
         </View>
       </View>
 
-      {/* Route */}
-      <RouteInfoRow
-        type="origin"
-        label={t('corridas.detail.origem')}
-        value={`${corrida.origemLat.toFixed(4)}, ${corrida.origemLng.toFixed(4)}`}
-      />
-      <RouteInfoRow
-        type="destination"
-        label={t('corridas.detail.destino')}
-        value={`${corrida.destinoLat.toFixed(4)}, ${corrida.destinoLng.toFixed(4)}`}
-      />
+      {/* Route — street addresses, never raw coordinates */}
+      <View style={styles.routeRow}>
+        <View style={[styles.statusDot, styles.routeDotOffset, {backgroundColor: C.success}]} />
+        <View style={styles.routeTextBlock}>
+          <Text style={styles.routeLabel}>{t('corridas.detail.origem')}</Text>
+          <Text style={styles.routeValue} numberOfLines={2}>
+            {origemAddress ?? t('corridas.detail.addressLoading')}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.routeRow}>
+        <View style={[styles.statusDot, styles.routeDotOffset, {backgroundColor: C.danger}]} />
+        <View style={styles.routeTextBlock}>
+          <Text style={styles.routeLabel}>{t('corridas.detail.destino')}</Text>
+          <Text style={styles.routeValue} numberOfLines={2}>
+            {destinoAddress ?? t('corridas.detail.addressLoading')}
+          </Text>
+        </View>
+      </View>
 
-      {/* SOLICITADA → Aceitar / Recusar */}
-      {corrida.status === 'SOLICITADA' && (
-        <>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* SOLICITADA / AGUARDANDO_ACEITE → Aceitar */}
+        {actions.showAceitar && (
           <Pressable
             accessibilityLabel={t('corridas.actions.aceitar')}
             accessibilityRole="button"
@@ -152,7 +193,11 @@ export const MotoristaActiveSheet = ({
               <Text style={styles.actionButtonText}>{t('corridas.actions.aceitar')}</Text>
             )}
           </Pressable>
-          {showRecusaInput ? (
+        )}
+
+        {/* SOLICITADA / AGUARDANDO_ACEITE → Recusar */}
+        {actions.showRecusar && (
+          showRecusaInput ? (
             <>
               <TextInput
                 accessibilityLabel={t('corridas.recusar.motivoPlaceholder')}
@@ -182,110 +227,110 @@ export const MotoristaActiveSheet = ({
               testID="btn-recusar">
               <Text style={styles.actionButtonText}>{t('corridas.actions.recusar')}</Text>
             </Pressable>
-          )}
-        </>
-      )}
+          )
+        )}
 
-      {/* ACEITA → Iniciar Deslocamento */}
-      {corrida.status === 'ACEITA' && (
-        <Pressable
-          accessibilityLabel={t('corridas.actions.iniciarDeslocamento')}
-          accessibilityRole="button"
-          disabled={isActionLoading}
-          onPress={onIniciarDeslocamento}
-          style={[styles.actionButton, styles.actionButtonPrimary, isActionLoading && styles.actionButtonDisabled]}
-          testID="btn-iniciar-deslocamento">
-          {isActionLoading ? (
-            <ActivityIndicator color={C.textOnDark} size="small" />
-          ) : (
-            <Text style={styles.actionButtonText}>{t('corridas.actions.iniciarDeslocamento')}</Text>
-          )}
-        </Pressable>
-      )}
+        {/* ACEITA → Iniciar Deslocamento */}
+        {actions.showIniciarDeslocamento && (
+          <Pressable
+            accessibilityLabel={t('corridas.actions.iniciarDeslocamento')}
+            accessibilityRole="button"
+            disabled={isActionLoading}
+            onPress={onIniciarDeslocamento}
+            style={[styles.actionButton, styles.actionButtonPrimary, isActionLoading && styles.actionButtonDisabled]}
+            testID="btn-iniciar-deslocamento">
+            {isActionLoading ? (
+              <ActivityIndicator color={C.textOnDark} size="small" />
+            ) : (
+              <Text style={styles.actionButtonText}>{t('corridas.actions.iniciarDeslocamento')}</Text>
+            )}
+          </Pressable>
+        )}
 
-      {/* EM_DESLOCAMENTO → Chegar */}
-      {corrida.status === 'EM_DESLOCAMENTO' && (
-        <Pressable
-          accessibilityLabel={t('motorista.actions.chegar')}
-          accessibilityRole="button"
-          disabled={isActionLoading}
-          onPress={onChegar}
-          style={[styles.actionButton, styles.actionButtonPrimary, isActionLoading && styles.actionButtonDisabled]}
-          testID="btn-chegar">
-          {isActionLoading ? (
-            <ActivityIndicator color={C.textOnDark} size="small" />
-          ) : (
-            <Text style={styles.actionButtonText}>{t('motorista.actions.chegar')}</Text>
-          )}
-        </Pressable>
-      )}
+        {/* EM_ROTA → Chegar ao Local */}
+        {actions.showChegar && (
+          <Pressable
+            accessibilityLabel={t('motorista.actions.chegar')}
+            accessibilityRole="button"
+            disabled={isActionLoading}
+            onPress={onChegar}
+            style={[styles.actionButton, styles.actionButtonPrimary, isActionLoading && styles.actionButtonDisabled]}
+            testID="btn-chegar">
+            {isActionLoading ? (
+              <ActivityIndicator color={C.textOnDark} size="small" />
+            ) : (
+              <Text style={styles.actionButtonText}>{t('motorista.actions.chegar')}</Text>
+            )}
+          </Pressable>
+        )}
 
-      {/* EM_DESLOCAMENTO / ACEITA → Confirmar Embarque */}
-      {(corrida.status === 'EM_DESLOCAMENTO' || corrida.status === 'ACEITA') && (
-        <Pressable
-          accessibilityLabel={t('corridas.actions.confirmarEmbarque')}
-          accessibilityRole="button"
-          disabled={isActionLoading}
-          onPress={onConfirmarEmbarque}
-          style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
-          testID="btn-confirmar-embarque">
-          {isActionLoading ? (
-            <ActivityIndicator color={C.textOnDark} size="small" />
-          ) : (
-            <Text style={styles.actionButtonText}>{t('corridas.actions.confirmarEmbarque')}</Text>
-          )}
-        </Pressable>
-      )}
+        {/* ACEITA / EM_ROTA → Confirmar Embarque */}
+        {actions.showConfirmarEmbarque && (
+          <Pressable
+            accessibilityLabel={t('corridas.actions.confirmarEmbarque')}
+            accessibilityRole="button"
+            disabled={isActionLoading}
+            onPress={onConfirmarEmbarque}
+            style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
+            testID="btn-confirmar-embarque">
+            {isActionLoading ? (
+              <ActivityIndicator color={C.textOnDark} size="small" />
+            ) : (
+              <Text style={styles.actionButtonText}>{t('corridas.actions.confirmarEmbarque')}</Text>
+            )}
+          </Pressable>
+        )}
 
-      {/* PASSAGEIRO_EMBARCADO → Finalizar */}
-      {corrida.status === 'PASSAGEIRO_EMBARCADO' && (
-        <Pressable
-          accessibilityLabel={t('corridas.actions.finalizar')}
-          accessibilityRole="button"
-          disabled={isActionLoading}
-          onPress={handleFinalizar}
-          style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
-          testID="btn-finalizar">
-          {isActionLoading ? (
-            <ActivityIndicator color={C.textOnDark} size="small" />
-          ) : (
-            <Text style={styles.actionButtonText}>{t('corridas.actions.finalizar')}</Text>
-          )}
-        </Pressable>
-      )}
+        {/* PASSAGEIRO_EMBARCADO → Finalizar */}
+        {actions.showFinalizar && (
+          <Pressable
+            accessibilityLabel={t('corridas.actions.finalizar')}
+            accessibilityRole="button"
+            disabled={isActionLoading}
+            onPress={handleFinalizar}
+            style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
+            testID="btn-finalizar">
+            {isActionLoading ? (
+              <ActivityIndicator color={C.textOnDark} size="small" />
+            ) : (
+              <Text style={styles.actionButtonText}>{t('corridas.actions.finalizar')}</Text>
+            )}
+          </Pressable>
+        )}
 
-      {/* Cancel — only shown for cancellable states (not EM_ROTA / PASSAGEIRO_EMBARCADO) */}
-      {canCancel && (showCancelInput ? (
-        <>
-          <TextInput
-            accessibilityLabel={t('corridas.cancel.motivoPlaceholder')}
-            onChangeText={onCancelMotivoChange}
-            placeholder={t('corridas.cancel.motivoPlaceholder')}
-            placeholderTextColor={C.textMuted}
-            style={styles.cancelInput}
-            testID="cancel-motivo-input"
-            value={cancelMotivo}
-          />
+        {/* Cancel — only for cancellable states */}
+        {canCancel && (showCancelInput ? (
+          <>
+            <TextInput
+              accessibilityLabel={t('corridas.cancel.motivoPlaceholder')}
+              onChangeText={onCancelMotivoChange}
+              placeholder={t('corridas.cancel.motivoPlaceholder')}
+              placeholderTextColor={C.textMuted}
+              style={styles.cancelInput}
+              testID="cancel-motivo-input"
+              value={cancelMotivo}
+            />
+            <Pressable
+              accessibilityLabel={t('corridas.cancel.title')}
+              accessibilityRole="button"
+              disabled={isActionLoading}
+              onPress={handleCancelar}
+              style={[styles.actionButton, styles.actionButtonDanger, isActionLoading && styles.actionButtonDisabled]}
+              testID="btn-cancelar-confirm">
+              <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
+            </Pressable>
+          </>
+        ) : (
           <Pressable
             accessibilityLabel={t('corridas.cancel.title')}
             accessibilityRole="button"
-            disabled={isActionLoading}
-            onPress={handleCancelar}
-            style={[styles.actionButton, styles.actionButtonDanger, isActionLoading && styles.actionButtonDisabled]}
-            testID="btn-cancelar-confirm">
+            onPress={onShowCancelInput}
+            style={[styles.actionButton, styles.actionButtonDanger]}
+            testID="btn-cancelar">
             <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
           </Pressable>
-        </>
-      ) : (
-        <Pressable
-          accessibilityLabel={t('corridas.cancel.title')}
-          accessibilityRole="button"
-          onPress={onShowCancelInput}
-          style={[styles.actionButton, styles.actionButtonDanger]}
-          testID="btn-cancelar">
-          <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
-        </Pressable>
-      ))}
+        ))}
+      </ScrollView>
     </Animated.View>
   );
 };

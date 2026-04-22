@@ -73,13 +73,12 @@ const mapRideStatus = (status: string): CorridaStatus | null => {
     case 'CorridaAceita':
       return 'ACEITA';
     case 'DeslocamentoIniciado':
-      return 'EM_DESLOCAMENTO';
     case 'MotoristaChegando':
-      return 'EM_DESLOCAMENTO';
+      return 'EM_ROTA';
     case 'EmbarqueConfirmado':
       return 'PASSAGEIRO_EMBARCADO';
     case 'CorridaConcluida':
-      return 'FINALIZADA';
+      return 'CONCLUIDA';
     case 'CorridaCancelada':
       return 'CANCELADA';
     default:

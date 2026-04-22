@@ -30,6 +30,7 @@ import {
 import {addToast} from '@store/slices/uiSlice';
 import {setStatusOperacional} from '@store/slices/authSlice';
 import type {Corrida, CorridaMensagem, Coordenada} from '@models/Corrida';
+import {TERMINAL_STATUSES} from '@models/Corrida';
 import type {MotoristaStatusOperacional} from '@models/Motorista';
 import type {
   AceitarCorridaInput,
@@ -41,8 +42,6 @@ import type {
 const STATUS_POLL_MS = 5_000;
 /** Interval for refreshing the available rides list (ms). */
 const RIDES_REFRESH_MS = 15_000;
-
-const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
 
 /** Camera region for the Mapbox map. */
 export interface MapRegion {
@@ -152,6 +151,9 @@ export const useMotorista = (): MotoristaState => {
   const isSyncingRef = useRef(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+  // Keep a ref to the latest activeCorrida so syncContexto always sees current value
+  const activaRef = useRef(activeCorrida);
+  activaRef.current = activeCorrida;
 
   useEffect(() => {
     if (!userLocation) return;
@@ -173,12 +175,20 @@ export const useMotorista = (): MotoristaState => {
       const result = await corridaFacade.getContexto();
       if (!result.data) return;
       const {corridaAtiva} = result.data;
+      const localActiva = activaRef.current;
+
       if (corridaAtiva) {
         dispatch(setActiveCorrida(corridaAtiva));
         dispatch(setPendingCorridaId(corridaAtiva.id));
       } else {
-        dispatch(setActiveCorrida(null));
-        dispatch(setPendingCorridaId(null));
+        // Only clear if we don't have a non-terminal ride locally.
+        // Local state is more up-to-date than the contexto response during an active ride.
+        const hasNonTerminalLocal =
+          localActiva !== null && !TERMINAL_STATUSES.has(localActiva.status);
+        if (!hasNonTerminalLocal) {
+          dispatch(setActiveCorrida(null));
+          dispatch(setPendingCorridaId(null));
+        }
       }
     } finally {
       isSyncingRef.current = false;
@@ -264,7 +274,7 @@ export const useMotorista = (): MotoristaState => {
       const result = await corridaFacade.getCorridaStatus(targetId);
       if (result.data) {
         dispatch(updateCorridaStatus(result.data.status as Corrida['status']));
-        if (TERMINAL_STATUSES.has(result.data.status)) {
+        if (TERMINAL_STATUSES.has(result.data.status as Corrida['status'])) {
           if (pollRef.current) {
             clearInterval(pollRef.current);
             pollRef.current = null;
