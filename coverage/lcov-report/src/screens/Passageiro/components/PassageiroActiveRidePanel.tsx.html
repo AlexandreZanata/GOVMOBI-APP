@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">26.66% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>4/15</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">58.33% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/12</span>
+                <span class='fraction'>0/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">28.57% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>4/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -239,7 +239,21 @@
 <a name='L174'></a><a href='#L174'>174</a>
 <a name='L175'></a><a href='#L175'>175</a>
 <a name='L176'></a><a href='#L176'>176</a>
-<a name='L177'></a><a href='#L177'>177</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -285,6 +299,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -306,13 +323,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -418,8 +446,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview PassageiroActiveRidePanel — bottom sheet shown when a ride is active.
  * Shows status, addresses, cancel section, and chat FAB.
+ * Chat FAB is positioned dynamically above the sheet, matching the motorista pattern.
  */
-import React from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -427,6 +456,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
@@ -451,8 +481,6 @@ export interface PassageiroActiveRidePanelProps {
   cancelMotivo: string;
   /** Whether the cancel input is visible. */
   showCancelInput: boolean;
-  /** Bottom offset for the chat FAB. */
-  chatFabBottom: number;
   onCancelMotivoChange: (text: string) =&gt; void;
   onShowCancelInput: () =&gt; void;
   onHideCancelInput: () =&gt; void;
@@ -460,15 +488,18 @@ export interface PassageiroActiveRidePanelProps {
   onOpenMessages: () =&gt; void;
 }
 &nbsp;
-const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
+const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
+const FAB_GAP = 16;
 &nbsp;
 /**
  * Active ride panel for the passenger home screen.
+ * The chat FAB is positioned dynamically above the sheet using onLayout,
+ * matching the exact same pattern as MotoristaScreen.
  *
  * @param props - {@link PassageiroActiveRidePanelProps}
  * @returns JSX element for the active ride panel.
  */
-export const PassageiroActiveRidePanel = ({
+export const PassageiroActiveRidePanel = <span class="fstat-no" title="function not covered" >({</span>
   corrida,
   isActionLoading,
   paddingBottom,
@@ -476,21 +507,30 @@ export const PassageiroActiveRidePanel = ({
   destinoAddress,
   cancelMotivo,
   showCancelInput,
-  chatFabBottom,
   onCancelMotivoChange,
   onShowCancelInput,
   onHideCancelInput,
   onCancel,
   onOpenMessages,
 }: PassageiroActiveRidePanelProps): React.JSX.Element =&gt; {
-  const {t} = useTranslation();
-  const styles = createPassageiroStyles();
-  const isTerminal = TERMINAL_STATUSES.has(corrida.status);
-  const canCancel = !isTerminal;
+  const {t} = <span class="cstat-no" title="statement not covered" >useTranslation();</span>
+  const styles = <span class="cstat-no" title="statement not covered" >createPassageiroStyles();</span>
+  const isTerminal = <span class="cstat-no" title="statement not covered" >TERMINAL_STATUSES.has(corrida.status);</span>
+  const canCancel = <span class="cstat-no" title="statement not covered" >!isTerminal;</span>
 &nbsp;
-  return (
+  // Measure sheet height to position the chat FAB above it — same as motorista
+  const [sheetHeight, setSheetHeight] = <span class="cstat-no" title="statement not covered" >useState(0);</span>
+  const onSheetLayout = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >(e</span>vent: LayoutChangeEvent) =&gt; {</span>
+    const h = <span class="cstat-no" title="statement not covered" >event.nativeEvent.layout.height;</span>
+<span class="cstat-no" title="statement not covered" >    if (h &gt; 0) <span class="cstat-no" title="statement not covered" >setSheetHeight(h);</span></span>
+  }, []);
+&nbsp;
+  const chatFabBottom = <span class="cstat-no" title="statement not covered" >sheetHeight &gt; 0 ? sheetHeight + FAB_GAP : 80;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return (</span>
     &lt;&gt;
       &lt;View
+        onLayout={onSheetLayout}
         style={[styles.bottomSheet, styles.activeBanner, {paddingBottom}]}
         testID="active-ride-panel"&gt;
         &lt;View style={styles.dragHandle} /&gt;
@@ -532,7 +572,7 @@ export const PassageiroActiveRidePanel = ({
         {/* Cancel section */}
         {canCancel &amp;&amp;
           (showCancelInput ? (
-<span class="branch-0 cbranch-no" title="branch not covered" >            &lt;View style={styles.cancelSection}&gt;</span>
+            &lt;View style={styles.cancelSection}&gt;
               &lt;TextInput
                 accessibilityLabel={t('corridas.cancel.motivoPlaceholder')}
                 onChangeText={onCancelMotivoChange}
@@ -576,16 +616,18 @@ export const PassageiroActiveRidePanel = ({
           ))}
       &lt;/View&gt;
 &nbsp;
-      {/* Chat FAB */}
-      &lt;TouchableOpacity
-        accessibilityLabel={t('corridas.mensagens.title')}
-        accessibilityRole="button"
-        activeOpacity={0.8}
-        onPress={onOpenMessages}
-        style={[styles.chatFab, {bottom: chatFabBottom}]}
-        testID="fab-chat"&gt;
-        &lt;MaterialIcons name="chat" size={22} color={C.textOnDark} /&gt;
-      &lt;/TouchableOpacity&gt;
+      {/* Chat FAB — positioned dynamically above the sheet, same as motorista */}
+      {!isTerminal &amp;&amp; (
+        &lt;TouchableOpacity
+          accessibilityLabel={t('corridas.mensagens.title')}
+          accessibilityRole="button"
+          activeOpacity={0.8}
+          onPress={onOpenMessages}
+          style={[styles.chatFab, {bottom: chatFabBottom}]}
+          testID="fab-chat"&gt;
+          &lt;MaterialIcons name="chat" size={22} color={C.textOnDark} /&gt;
+        &lt;/TouchableOpacity&gt;
+      )}
     &lt;/&gt;
   );
 };
@@ -598,7 +640,7 @@ PassageiroActiveRidePanel.displayName = 'PassageiroActiveRidePanel';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T18:34:43.360Z
+                at 2026-04-22T19:00:58.510Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

@@ -82,6 +82,8 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
     if (status === 'concluida') {
       navigation.navigate('AvaliarCorrida', {corridaId: activeCorrida.id});
     }
+  // activeCorrida object ref changes on every WS update; key on status+id only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCorrida?.status, activeCorrida?.id, navigation]);
 
   const handleCancel = useCallback(() => {

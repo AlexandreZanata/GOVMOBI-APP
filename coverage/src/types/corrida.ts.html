@@ -194,7 +194,69 @@
 <a name='L129'></a><a href='#L129'>129</a>
 <a name='L130'></a><a href='#L130'>130</a>
 <a name='L131'></a><a href='#L131'>131</a>
-<a name='L132'></a><a href='#L132'>132</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -327,27 +389,34 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview Type definitions for ride (corrida) operations.
- * Covers all action payloads from the /corridas API contract.
+ *
+ * Body payloads are aligned exactly with the backend controller — only fields
+ * the API reads from the request body are included. Fields derived from the
+ * JWT on the server (passageiroId, motoristaId, solicitanteId, tipoSolicitante)
+ * are NOT sent in the body and are NOT present in these types.
  */
 import type {Coordenada, Localizacao} from '@models/Corrida';
 &nbsp;
 // ---------------------------------------------------------------------------
-// Legacy input (used by PassageiroScreen)
+// Legacy input (used by PassageiroScreen createCorrida helper)
 // ---------------------------------------------------------------------------
 &nbsp;
-/** Input for creating a new ride request (legacy — uses Localizacao objects). */
+/** Input for creating a new ride request using Localizacao objects. */
 export interface CreateCorridaInput {
   origem: Localizacao;
   destino: Localizacao;
+  motivoServico: string;
 }
 &nbsp;
 // ---------------------------------------------------------------------------
-// API action payloads (aligned with route-corridas.md)
+// API action payloads — body-only fields
 // ---------------------------------------------------------------------------
 &nbsp;
-/** POST /corridas — request a new ride. */
+/**
+ * POST /corridas body.
+ * passageiroId is extracted from the JWT by the backend — do NOT send it.
+ */
 export interface SolicitarCorridaInput {
-  passageiroId: string;
   origemLat: number;
   origemLng: number;
   destinoLat: number;
@@ -356,37 +425,61 @@ export interface SolicitarCorridaInput {
   observacoes?: string;
 }
 &nbsp;
-/** POST /corridas/:id/aceitar — driver accepts a ride. */
+/**
+ * POST /corridas/:id/aceitar body.
+ * Backend spec: body is EMPTY — vehicle and driver are resolved server-side
+ * from the driver's JWT (user.motoristaId) and their active vehicle association.
+ * This type is kept for interface compatibility but the facade sends {}.
+ */
 export interface AceitarCorridaInput {
-  motoristaId: string;
-  veiculoId: string;
+  // intentionally empty — all fields derived from JWT on the server
 }
 &nbsp;
-/** POST /corridas/:id/recusar — driver refuses a ride. */
+/**
+ * POST /corridas/:id/recusar body.
+ * Backend requires motoristaId as a UUID in the request body.
+ */
 export interface RecusarCorridaInput {
   motoristaId: string;
   motivo?: string;
 }
 &nbsp;
-/** POST /corridas/:id/confirmar-embarque — driver confirms passenger boarded. */
+/**
+ * POST /corridas/:id/confirmar-embarque body.
+ * The backend requires motoristaId in the body (validated as UUID).
+ */
 export interface ConfirmarEmbarqueInput {
   motoristaId: string;
   posicaoLat: number;
   posicaoLng: number;
 }
 &nbsp;
-/** POST /corridas/:id/finalizar — driver completes the ride. */
+/**
+ * POST /corridas/:id/finalizar body.
+ * The backend requires motoristaId in the body (validated as UUID).
+ */
 export interface FinalizarCorridaInput {
   motoristaId: string;
   posicaoFinalLat: number;
   posicaoFinalLng: number;
 }
 &nbsp;
-/** POST /corridas/:id/cancelar — cancel an active ride. */
+/**
+ * POST /corridas/:id/cancelar body.
+ * Backend requires solicitanteId (UUID) and tipoSolicitante in the request body.
+ */
 export interface CancelarCorridaInput {
-  solicitanteId: string;
   motivo: string;
-  tipoSolicitante: 'passageiro' | 'motorista' | 'admin';
+  solicitanteId?: string;
+  tipoSolicitante?: 'MOTORISTA' | 'PASSAGEIRO';
+}
+&nbsp;
+/**
+ * POST /corridas/:id/avaliar body.
+ */
+export interface AvaliarCorridaInput {
+  nota: number;
+  comentario?: string;
 }
 &nbsp;
 // ---------------------------------------------------------------------------
@@ -396,7 +489,6 @@ export interface CancelarCorridaInput {
 /** Response from POST /corridas (202 Accepted). */
 export interface SolicitarCorridaResponse {
   corridaId: string;
-  status: 'SOLICITADA';
 }
 &nbsp;
 /** Response from GET /corridas/:id/status (Redis-optimised). */
@@ -405,8 +497,18 @@ export interface CorridaStatusResponse {
   status: string;
 }
 &nbsp;
+/** Response from GET /corridas/:id/posicao-motorista. */
+export interface PosicaoMotoristaResponse {
+  corridaId: string;
+  lat: number;
+  lng: number;
+  velocidade: number;
+  heading: number;
+  timestamp: string;
+}
+&nbsp;
 // ---------------------------------------------------------------------------
-// Geocoding / search (used by PassageiroScreen)
+// Geocoding / search
 // ---------------------------------------------------------------------------
 &nbsp;
 /** Mapbox geocoding result item. */
@@ -437,23 +539,14 @@ export interface SearchResult {
 // GET /corridas/contexto — mobile state sync
 // ---------------------------------------------------------------------------
 &nbsp;
-/**
- * Normalized response from GET /corridas/contexto.
- * The raw API returns nested origem/destino objects and lowercase status;
- * the facade normalizes these to the flat Corrida model before returning.
- */
+/** Normalized response from GET /corridas/contexto. */
 export interface CorridaContexto {
-  /** Authenticated user summary. */
   usuario: {
     id: string;
     email: string;
     papeis: string[];
     nome: string;
   };
-  /**
-   * Active corrida normalized to the app's Corrida model, or null if none.
-   * Status is uppercased (e.g. 'SOLICITADA') to match CorridaStatus enum.
-   */
   corridaAtiva: import('../models/Corrida').Corrida | null;
 }
 &nbsp;</pre></td></tr></table></pre>
@@ -463,7 +556,7 @@ export interface CorridaContexto {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T18:34:43.516Z
+                at 2026-04-22T19:00:58.687Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

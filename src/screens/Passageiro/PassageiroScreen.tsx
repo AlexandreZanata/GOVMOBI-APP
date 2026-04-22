@@ -62,6 +62,7 @@ type PassageiroCorridasStackParamList = {
   CorridaDetalhe: {corridaId: string};
   SolicitarCorrida: undefined;
   CorridaMensagens: {corridaId: string};
+  AvaliarCorrida: {corridaId: string};
 };
 type PassageiroScreenNavProp = CompositeNavigationProp<
   BottomTabNavigationProp<PassageiroTabParamList, 'PassageiroHome'>,
@@ -185,9 +186,15 @@ export const PassageiroScreen = (): React.JSX.Element => {
   // ── MotoristaInfoModal state ────────────────────────────────────────────────
   const [showMotoristaModal, setShowMotoristaModal] = useState<boolean>(false);
 
-  // Auto-show when ride is accepted and driver is assigned
+  // Auto-show when driver is assigned (aceita, em_rota, passageiro_a_bordo)
+  // and motoristaId is populated (hydrated by usePassageiroRealtime after fetch).
   useEffect(() => {
-    if (activeCorrida?.status === 'aceita' && activeCorrida.motoristaId != null) {
+    const driverAssignedStatuses = new Set(['aceita', 'em_rota', 'passageiro_a_bordo']);
+    if (
+      activeCorrida?.status != null &&
+      driverAssignedStatuses.has(activeCorrida.status) &&
+      activeCorrida.motoristaId != null
+    ) {
       setShowMotoristaModal(true);
     }
   }, [activeCorrida?.status, activeCorrida?.motoristaId]);
@@ -198,6 +205,16 @@ export const PassageiroScreen = (): React.JSX.Element => {
       setShowMotoristaModal(false);
     }
   }, [activeCorrida?.status]);
+
+  // Navigate to rating screen when ride is concluded
+  useEffect(() => {
+    if (activeCorrida?.status === 'concluida' && activeCorrida.id) {
+      navigation.navigate('PassageiroCorridas', {
+        screen: 'AvaliarCorrida',
+        params: {corridaId: activeCorrida.id},
+      });
+    }
+  }, [activeCorrida?.status, activeCorrida?.id, navigation]);
 
   // ── Status polling ──────────────────────────────────────────────────────────
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);

@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">77.77% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>24/32</span>
+                <span class='fraction'>28/36</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">77.77% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>7/9</span>
+                <span class='fraction'>6/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">74.07% </span>
+                <span class="strong">78.12% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>20/27</span>
+                <span class='fraction'>25/32</span>
             </div>
         
             
@@ -197,7 +197,14 @@
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
 <a name='L134'></a><a href='#L134'>134</a>
-<a name='L135'></a><a href='#L135'>135</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -231,6 +238,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -252,24 +262,11 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
@@ -278,7 +275,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -334,7 +342,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview Main application assembly module.
  */
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo, useRef} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Provider} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
@@ -353,23 +361,29 @@ import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
 import {GlobalToast, NetworkBanner} from '@components/organisms';
 import {
+  useAppLocationBootstrap,
   useAuthSession,
   useNetworkStatus,
   useNotifications,
   useRealtimeSession,
 } from './hooks';
-import {useCorridaContexto} from './hooks/useCorridaContexto';
+import {useCorridaContexto} from '@hooks/useCorridaContexto';
+import {useDriverLocationStream} from '@hooks/useDriverLocationStream';
+import {useRideReconnection} from '@hooks/useRideReconnection';
 import {FacadeProvider} from '@services/facades';
 &nbsp;
 /**
  * Startup side-effect hooks that depend on app providers.
  */
 const AppStartupEffects = (): null =&gt; {
+  useAppLocationBootstrap();
   useNetworkStatus();
   useNotifications();
   useAuthSession();
   useRealtimeSession();
+  useRideReconnection();
   useCorridaContexto();
+  useDriverLocationStream();
   return null;
 };
 &nbsp;
@@ -385,15 +399,19 @@ const AppShell = (): React.JSX.Element =&gt; {
   const token = useAppSelector(state =&gt; state.auth.token);
   const dispatch = useAppDispatch();
 &nbsp;
-  // Token getter for facades that need authenticated requests
-  const getToken = useMemo(() =&gt; <span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >token,</span> [token]);
+  // Keep a ref to the latest token so the getter stays stable across token
+  // rotations. A new function reference would cause FacadeProvider to recreate
+  // all facades (including RealtimeFacadeImpl), destroying active WebSocket
+  // subscriptions and preventing drivers from receiving nova-corrida-disponivel.
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+&nbsp;
+  // Stable getter — never changes reference, always returns the latest token.
+  const getToken = useCallback(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >tokenRef.current,</span> []);
 &nbsp;
   /**
    * Token refresher for the realtime transport's 401 recovery cycle.
    * Per spec: refresh JWT → reconnect socket → re-emit assinar-corrida.
-   * The socket client calls this when the server rejects with 401.
-   * On success the new token is dispatched to Redux, which triggers
-   * useRealtimeSession to reconnect with the fresh credentials.
    */
   const refreshToken = useCallback(<span class="fstat-no" title="function not covered" >as</span>ync (): Promise&lt;string | null&gt; =&gt; {
     const authFacade = <span class="cstat-no" title="statement not covered" >new AuthFacadeImpl({apiBaseUrl: ENV.apiUrl});</span>
@@ -410,12 +428,6 @@ const AppShell = (): React.JSX.Element =&gt; {
     &lt;ThemeProvider mode={themeMode}&gt;
       &lt;FacadeProvider getToken={getToken} refreshToken={refreshToken}&gt;
         &lt;AppStartupEffects /&gt;
-        {/*
-         * Sets the Android system navigation bar (bottom) to navy800 — matching
-         * the top status bar color seen in the design. On iOS this has no effect
-         * (iOS doesn't expose navigation bar color control).
-         * style="light" keeps the status bar icons white on the dark background.
-         */}
         &lt;StatusBar
           style="light"
           backgroundColor={designColors.navy800}
@@ -472,7 +484,7 @@ export default App;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-17T18:34:43.360Z
+                at 2026-04-22T19:00:58.510Z
             </div>
         <script src="../prettify.js"></script>
         <script>
