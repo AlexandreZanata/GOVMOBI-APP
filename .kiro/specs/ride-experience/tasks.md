@@ -321,13 +321,13 @@ Incremental implementation of the full ride lifecycle for both roles. Each phase
     - In the `switch` block, add `case 'historico-mensagens':` that maps each item in `event.payload` through `realtimeFacade.normalizeCorridaMensagem` and dispatches `setMensagens(normalizedMessages)`
     - _Requirements: 28.1, 6.5_
 
-- [ ] 26. `CONCLUIDA` status support verification
-  - [ ] 26.1 Verify `CorridaStatus` union and `normalizeStatus` in `src/models/Corrida.ts`
+- [x] 26. `CONCLUIDA` status support verification
+  - [x] 26.1 Verify `CorridaStatus` union and `normalizeStatus` in `src/models/Corrida.ts`
     - Confirm `'CONCLUIDA'` is present in the `CorridaStatus` union type (it is — no change needed)
     - Confirm `normalizeStatus` handles `'concluida'` → `'CONCLUIDA'` via the `toUpperCase()` path (it does — no change needed)
     - If either is missing, add the necessary entry
     - _Requirements: 29.1_
-  - [ ] 26.2 Verify `AcompanharCorridaScreen` navigates on `CONCLUIDA`
+  - [x] 26.2 Verify `AcompanharCorridaScreen` navigates on `CONCLUIDA`
     - Confirm the `useEffect` in `src/screens/Corridas/AcompanharCorridaScreen.tsx` already checks `status === 'FINALIZADA' || status === 'CONCLUIDA'` (it does — no change needed)
     - If the check is missing, add `activeCorrida?.status === 'CONCLUIDA'` to the navigation condition
     - _Requirements: 29.2, 4.1_
