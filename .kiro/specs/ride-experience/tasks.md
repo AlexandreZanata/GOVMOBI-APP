@@ -289,28 +289,28 @@ Incremental implementation of the full ride lifecycle for both roles. Each phase
     - Ensure the `RealtimeEvent` union in `src/types/realtime.ts` includes `estado-operacional` and `reconexao-concluida` event types
     - _Requirements: 25.5_
 
-- [-] 23. ESLint false-positive fixes
-  - [ ] 23.1 Suppress `react-native/no-unused-styles` in `src/screens/Passageiro/components/MotoristaInfoModal.tsx`
+- [x] 23. ESLint false-positive fixes
+  - [x] 23.1 Suppress `react-native/no-unused-styles` in `src/screens/Passageiro/components/MotoristaInfoModal.tsx`
     - Add `/* eslint-disable react-native/no-unused-styles */` at the top of the file (styles are used but ESLint cannot detect usage through `React.useMemo`)
     - _Requirements: 26.1_
-  - [ ] 23.2 Fix inline style warning in `src/screens/Corridas/CorridaMensagensScreen.tsx`
+  - [x] 23.2 Fix inline style warning in `src/screens/Corridas/CorridaMensagensScreen.tsx`
     - Extract `const bottomPad = insets.bottom > 0 ? insets.bottom : 12` before the return statement
     - Replace `{paddingBottom: insets.bottom > 0 ? insets.bottom : 12}` with `{paddingBottom: bottomPad}` in the `inputRow` style array
     - Add `/* eslint-disable react-native/no-unused-styles */` at the top of the file if the unused-styles lint errors persist
     - _Requirements: 26.2_
 
-- [ ] 24. Missing i18n keys for Req 27
-  - [ ] 24.1 Add `corridas.mensagens.inputPlaceholder` to all three locale files
+- [x] 24. Missing i18n keys for Req 27
+  - [x] 24.1 Add `corridas.mensagens.inputPlaceholder` to all three locale files
     - `src/i18n/locales/pt-BR.json`: add `"inputPlaceholder": "Digite uma mensagem..."` under `corridas.mensagens`
     - `src/i18n/locales/en-US.json`: add `"inputPlaceholder": "Type a message..."` under `corridas.mensagens`
     - `src/i18n/locales/es.json`: add `"inputPlaceholder": "Escribe un mensaje..."` under `corridas.mensagens`
     - _Requirements: 27.1, 21.1, 21.2_
-  - [ ] 24.2 Add `motorista.info` namespace to all three locale files
+  - [x] 24.2 Add `motorista.info` namespace to all three locale files
     - `pt-BR.json`: add `"info": { "title": "Informações do Motorista", "cnhLabel": "CNH", "cnhCategoriaLabel": "Categoria CNH", "veiculoLabel": "Veículo", "placaLabel": "Placa", "anoLabel": "Ano" }` under `motorista`
     - `en-US.json`: add `"info": { "title": "Driver Information", "cnhLabel": "Driver License", "cnhCategoriaLabel": "License Category", "veiculoLabel": "Vehicle", "placaLabel": "Plate", "anoLabel": "Year" }` under `motorista`
     - `es.json`: add `"info": { "title": "Información del Conductor", "cnhLabel": "Licencia", "cnhCategoriaLabel": "Categoría de Licencia", "veiculoLabel": "Vehículo", "placaLabel": "Placa", "anoLabel": "Año" }` under `motorista`
     - _Requirements: 27.2, 21.1, 21.2_
-  - [ ] 24.3 Fix duplicate `corridas.status.EM_ROTA` key in `src/i18n/locales/pt-BR.json`
+  - [x] 24.3 Fix duplicate `corridas.status.EM_ROTA` key in `src/i18n/locales/pt-BR.json`
     - Remove the second `"EM_ROTA"` entry under `corridas.status` (keep the first one)
     - Apply the same fix to `en-US.json` and `es.json` which have the same duplicate
     - _Requirements: 27.3_

@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-unused-styles */
 /**
  * @fileoverview CorridaMensagensScreen — full-screen chat for an active ride.
  *
@@ -175,6 +176,8 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     [currentUserId, styles],
   );
 
+  const bottomPad = insets.bottom > 0 ? insets.bottom : 12;
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -209,7 +212,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
       )}
 
       {/* Message input */}
-      <View style={[styles.inputRow, {paddingBottom: insets.bottom > 0 ? insets.bottom : 12}]}>
+      <View style={[styles.inputRow, {paddingBottom: bottomPad}]}>
         <TextInput
           accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
           editable={!isSending}

@@ -360,6 +360,14 @@
       "checking": "Verificando corrida ativa...",
       "restored": "Corrida restaurada com sucesso.",
       "fallbackUsed": "Conexão restaurada via servidor."
+    },
+    "info": {
+      "title": "Informações do Motorista",
+      "cnhLabel": "CNH",
+      "cnhCategoriaLabel": "Categoria CNH",
+      "veiculoLabel": "Veículo",
+      "placaLabel": "Placa",
+      "anoLabel": "Ano"
     }
   },
   "corridas": {
@@ -433,7 +441,6 @@
       "CANCELADA": "Cancelada",
       "AGUARDANDO_ACEITE": "Aguardando Aceite",
       "AVALIADA": "Avaliada",
-      "EM_ROTA": "Em Rota",
       "CONCLUIDA": "Concluída",
       "EXPIRADA": "Expirada"
     },
@@ -462,7 +469,8 @@
     },
     "mensagens": {
       "title": "Mensagens",
-      "empty": "Nenhuma mensagem ainda."
+      "empty": "Nenhuma mensagem ainda.",
+      "inputPlaceholder": "Digite uma mensagem..."
     },
     "terminal": {
       "FINALIZADA": "Corrida finalizada com sucesso.",

@@ -325,6 +325,14 @@
       "checking": "Verificando viaje activo...",
       "restored": "Viaje restaurado con éxito.",
       "fallbackUsed": "Conexión restaurada a través del servidor."
+    },
+    "info": {
+      "title": "Información del Conductor",
+      "cnhLabel": "Licencia",
+      "cnhCategoriaLabel": "Categoría de Licencia",
+      "veiculoLabel": "Vehículo",
+      "placaLabel": "Placa",
+      "anoLabel": "Año"
     }
   },
   "corridas": {
@@ -394,7 +402,6 @@
       "CANCELADA": "Cancelado",
       "AGUARDANDO_ACEITE": "Esperando Aceptación",
       "AVALIADA": "Calificado",
-      "EM_ROTA": "En Ruta",
       "CONCLUIDA": "Completado",
       "EXPIRADA": "Expirado"
     },
@@ -419,7 +426,7 @@
       "title": "Finalizar Viaje",
       "confirm": "¿Confirmar finalización del viaje?"
     },
-    "mensagens": {"title": "Mensajes", "empty": "Sin mensajes aún."},
+    "mensagens": {"title": "Mensajes", "empty": "Sin mensajes aún.", "inputPlaceholder": "Escribe un mensaje..."},
     "terminal": {
       "FINALIZADA": "Viaje finalizado con éxito.",
       "CANCELADA": "Viaje cancelado.",

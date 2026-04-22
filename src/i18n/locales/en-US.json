@@ -334,6 +334,14 @@
       "checking": "Checking for active ride...",
       "restored": "Ride restored successfully.",
       "fallbackUsed": "Connection restored via server."
+    },
+    "info": {
+      "title": "Driver Information",
+      "cnhLabel": "Driver License",
+      "cnhCategoriaLabel": "License Category",
+      "veiculoLabel": "Vehicle",
+      "placaLabel": "Plate",
+      "anoLabel": "Year"
     }
   },
   "corridas": {
@@ -403,7 +411,6 @@
       "CANCELADA": "Cancelled",
       "AGUARDANDO_ACEITE": "Awaiting Acceptance",
       "AVALIADA": "Rated",
-      "EM_ROTA": "En Route",
       "CONCLUIDA": "Completed",
       "EXPIRADA": "Expired"
     },
@@ -428,7 +435,7 @@
       "title": "Complete Ride",
       "confirm": "Confirm ride completion?"
     },
-    "mensagens": {"title": "Messages", "empty": "No messages yet."},
+    "mensagens": {"title": "Messages", "empty": "No messages yet.", "inputPlaceholder": "Type a message..."},
     "terminal": {
       "FINALIZADA": "Ride completed successfully.",
       "CANCELADA": "Ride cancelled.",
