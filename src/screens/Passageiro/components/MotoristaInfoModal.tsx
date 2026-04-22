@@ -1,4 +1,5 @@
 /* eslint-disable react-native/no-unused-styles */
+/* eslint-disable react-native/no-color-literals */
 /**
  * @fileoverview MotoristaInfoModal — shows driver and vehicle info when ride is accepted.
  *

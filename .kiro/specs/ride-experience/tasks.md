@@ -332,14 +332,14 @@ Incremental implementation of the full ride lifecycle for both roles. Each phase
     - If the check is missing, add `activeCorrida?.status === 'CONCLUIDA'` to the navigation condition
     - _Requirements: 29.2, 4.1_
 
-- [ ] 27. `FrotaFacadeMock` wiring verification
-  - [ ] 27.1 Verify `FrotaFacadeMock` fully implements `IFrotaFacade` in `src/services/facades/mock/FrotaFacadeMock.ts`
+- [x] 27. `FrotaFacadeMock` wiring verification
+  - [x] 27.1 Verify `FrotaFacadeMock` fully implements `IFrotaFacade` in `src/services/facades/mock/FrotaFacadeMock.ts`
     - Confirm all methods declared in `IFrotaFacade` are implemented: `listVeiculos`, `getVeiculoById`, `listMotoristas`, `getMotoristaById`, `updateMyStatus`, `getMyVehicle`, `associateVehicle`, `disassociateVehicle`
     - If any method is missing, add a stub returning `fail({code: 'NOT_IMPLEMENTED', message: '...', statusCode: 501})`
     - _Requirements: 30.1_
-  - [ ] 27.2 Remove `as unknown as IFrotaFacade` cast in `src/services/facades/index.ts`
+  - [x] 27.2 Remove `as unknown as IFrotaFacade` cast in `src/services/facades/index.ts`
     - In the mock branch, replace `return new FrotaFacadeMock() as unknown as IFrotaFacade` with `return new FrotaFacadeMock()` since `FrotaFacadeMock` fully implements the interface
     - _Requirements: 30.2_
 
-- [ ] 28. Final checkpoint — gap-filling tasks complete
+- [x] 28. Final checkpoint — gap-filling tasks complete
   - Ensure all TypeScript diagnostics pass on all files modified in tasks 21–27. Ask the user if any questions arise.

@@ -95,7 +95,7 @@ const createDefaultFacades = (
       frotaFacade: (() => {
         const {FrotaFacadeMock} =
           require('./mock/FrotaFacadeMock') as typeof import('./mock/FrotaFacadeMock');
-        return new FrotaFacadeMock() as unknown as IFrotaFacade;
+        return new FrotaFacadeMock();
       })(),
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       corridaFacade: (() => {
