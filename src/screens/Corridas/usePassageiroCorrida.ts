@@ -130,7 +130,6 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
     async (id: string): Promise<void> => {
       const result = await corridaFacade.getCorrida(id);
       if (result.data) {
-        // Normalize: real API may return snake_case coords — map them defensively
         const raw = result.data as Corrida & Record<string, unknown>;
         const normalized: Corrida = {
           ...raw,
@@ -139,32 +138,16 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
           destinoLat: (raw.destinoLat ?? raw['destino_lat']) as number,
           destinoLng: (raw.destinoLng ?? raw['destino_lng']) as number,
         };
-        // Only update Redux if coordinates are valid numbers — preserve seeded data otherwise
-        const hasCoords =
-          typeof normalized.origemLat === 'number' &&
-          typeof normalized.origemLng === 'number' &&
-          typeof normalized.destinoLat === 'number' &&
-          typeof normalized.destinoLng === 'number';
-        if (hasCoords) {
-          dispatch(setActiveCorrida(normalized));
-        } else {
-          // Merge status/metadata but keep existing coords from the seeded Redux state
-          dispatch(
-            setActiveCorrida({
-              ...(activeCorrida ?? {}),
-              ...normalized,
-              origemLat: activeCorrida?.origemLat ?? normalized.origemLat,
-              origemLng: activeCorrida?.origemLng ?? normalized.origemLng,
-              destinoLat: activeCorrida?.destinoLat ?? normalized.destinoLat,
-              destinoLng: activeCorrida?.destinoLng ?? normalized.destinoLng,
-            } as Corrida),
-          );
-        }
+        dispatch(setActiveCorrida(normalized));
       } else {
         dispatch(setCorridaError(result.error?.message ?? t('errors.unknownError')));
       }
     },
-    [activeCorrida, corridaFacade, dispatch, t],
+    // activeCorrida intentionally excluded — including it causes an infinite
+    // re-render loop: dispatch(setActiveCorrida) → activeCorrida changes →
+    // onLoadCorrida recreated → useEffect fires again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [corridaFacade, dispatch, t],
   );
 
   // ---------------------------------------------------------------------------
