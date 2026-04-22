@@ -15,6 +15,7 @@ import {MotoristaCorridasListScreen} from '@screens/Motorista/MotoristaCorridasL
 import {CorridaDetalheScreen} from '@screens/Corridas/CorridaDetalheScreen';
 import {MotoristaCorridaScreen} from '@screens/Corridas/MotoristaCorridaScreen';
 import {CorridaMensagensScreen} from '@screens/Corridas/CorridaMensagensScreen';
+import {VeiculoAssociationScreen} from '@screens/Motorista/VeiculoAssociationScreen';
 import type {MotoristaCorridasStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<MotoristaCorridasStackParamList>();
@@ -56,6 +57,11 @@ export const MotoristaCorridasNavigator = (): React.JSX.Element => {
         component={CorridaMensagensScreen}
         name="CorridaMensagens"
         options={{title: t('corridas.mensagens.title'), headerShown: true}}
+      />
+      <Stack.Screen
+        component={VeiculoAssociationScreen}
+        name="VeiculoAssociation"
+        options={{title: t('motorista.veiculo.title'), headerShown: true}}
       />
     </Stack.Navigator>
   );

@@ -32,8 +32,8 @@ interface AppConfig {
 const extra = Constants.expoConfig?.extra ?? {};
 
 export const ENV: AppConfig = {
-  apiUrl: extra.apiUrl ?? 'http://172.19.2.116:3000',
-  wsUrl: extra.wsUrl ?? 'http://172.19.2.116:3000',
+  apiUrl: extra.apiUrl ?? '',
+  wsUrl: extra.wsUrl ?? '',
   appEnv: extra.appEnv ?? 'development',
   mockMode: extra.mockMode === 'true' || extra.mockMode === true,
   MOCK_MODE: extra.mockMode === 'true' || extra.mockMode === true,

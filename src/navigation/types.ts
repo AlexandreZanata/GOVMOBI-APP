@@ -90,6 +90,7 @@ export type PassageiroCorridasStackParamList = {
   CorridaDetalhe: {corridaId: string};
   AcompanharCorrida: {corridaId: string};
   CorridaMensagens: {corridaId: string};
+  AvaliarCorrida: {corridaId: string};
 };
 
 // ---------------------------------------------------------------------------
@@ -110,7 +111,7 @@ export type CorridasStackParamList = {
 
 export type MotoristaTabParamList = {
   MotoristaHome: undefined;
-  MotoristaCorridas: undefined;
+  MotoristaCorridas: NavigatorScreenParams<MotoristaCorridasStackParamList> | undefined;
   MotoristaNotificacoes: undefined;
   MotoristaProfile: undefined;
 };
@@ -129,6 +130,7 @@ export type MotoristaCorridasStackParamList = {
   MotoristaCorridaDetalhe: {corridaId: string};
   MotoristaCorridaAction: {corridaId: string};
   CorridaMensagens: {corridaId: string};
+  VeiculoAssociation: undefined;
 };
 
 // ---------------------------------------------------------------------------

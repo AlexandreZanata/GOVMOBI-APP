@@ -74,7 +74,6 @@ export const SolicitarCorridaScreen = (): React.JSX.Element => {
     setIsSubmitting(true);
 
     const result = await corridaFacade.solicitarCorrida({
-      passageiroId: userId,
       origemLat: -16.6869, // In production: from GPS
       origemLng: -49.2648,
       destinoLat: selectedDestino.latitude,

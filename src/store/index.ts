@@ -22,6 +22,7 @@ import notificationsReducer from './slices/notificationsSlice';
 import uiReducer from './slices/uiSlice';
 import corridaReducer from './slices/corridaSlice';
 import realtimeReducer from './slices/realtimeSlice';
+import locationReducer from './slices/locationSlice';
 import {baseApi} from './api/baseApi';
 
 // --- Persist configs ---
@@ -42,6 +43,12 @@ const uiPersistConfig = {
   whitelist: ['themeMode', 'language'],
 };
 
+const locationPersistConfig = {
+  key: 'location',
+  storage: AsyncStorage,
+  whitelist: ['lastKnown', 'lastFixAt', 'permissionStatus'],
+};
+
 // --- Root reducer ---
 
 const rootReducer = combineReducers({
@@ -52,6 +59,7 @@ const rootReducer = combineReducers({
   ui: persistReducer(uiPersistConfig, uiReducer),
   corrida: corridaReducer,
   realtime: realtimeReducer,
+  location: persistReducer(locationPersistConfig, locationReducer),
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

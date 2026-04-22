@@ -138,7 +138,6 @@ export const SolicitarCorridaModal = ({
     const origemLng = userLocation.longitude;
 
     const result = await corridaFacade.solicitarCorrida({
-      passageiroId: userId,
       origemLat,
       origemLng,
       destinoLat: selectedDestino.latitude,

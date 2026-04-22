@@ -303,7 +303,13 @@
     },
     "status": {
       "disponivel": "Disponível",
-      "emRota": "Em Rota"
+      "emRota": "Em Rota",
+      "afastado": "Indisponível",
+      "toggleLabel": "Alternar disponibilidade",
+      "disponivelMsg": "Você está disponível para corridas.",
+      "afastadoMsg": "Você está indisponível para corridas.",
+      "emCorrida": "Em Corrida",
+      "managedBySystem": "Status gerenciado pelo sistema durante a corrida."
     },
     "idle": {
       "title": "Aguardando Corridas",
@@ -336,6 +342,22 @@
       "available": "Corridas Disponíveis",
       "noAvailable": "Nenhuma corrida disponível no momento.",
       "acceptRide": "Aceitar corrida"
+    },
+    "veiculo": {
+      "title": "Associar Veículo",
+      "selectLabel": "Selecione um veículo",
+      "associateBtn": "Associar Veículo",
+      "disassociateBtn": "Desassociar Veículo",
+      "noVehicles": "Nenhum veículo ativo disponível.",
+      "conflictError": "Este veículo já está em uso por outro motorista.",
+      "disassociateConflict": "Não é possível desassociar o veículo durante uma corrida ativa.",
+      "successAssociated": "Veículo associado com sucesso.",
+      "successDisassociated": "Veículo desassociado com sucesso."
+    },
+    "reconnection": {
+      "checking": "Verificando corrida ativa...",
+      "restored": "Corrida restaurada com sucesso.",
+      "fallbackUsed": "Conexão restaurada via servidor."
     }
   },
   "corridas": {
@@ -388,6 +410,16 @@
     "motorista": {
       "title": "Ação do Motorista"
     },
+    "avaliar": {
+      "title": "Avaliar Corrida",
+      "notaLabel": "Sua avaliação",
+      "comentarioLabel": "Comentário (opcional)",
+      "comentarioPlaceholder": "Conte como foi sua experiência...",
+      "submit": "Enviar Avaliação",
+      "skipLabel": "Pular avaliação",
+      "alreadyRated": "Você já avaliou esta corrida.",
+      "deadlinePassed": "O prazo para avaliação expirou."
+    },
     "status": {
       "SOLICITADA": "Solicitada",
       "ACEITA": "Aceita",
@@ -395,7 +427,9 @@
       "EM_DESLOCAMENTO": "Em Deslocamento",
       "PASSAGEIRO_EMBARCADO": "Passageiro Embarcado",
       "FINALIZADA": "Finalizada",
-      "CANCELADA": "Cancelada"
+      "CANCELADA": "Cancelada",
+      "AGUARDANDO_ACEITE": "Aguardando Aceite",
+      "AVALIADA": "Avaliada"
     },
     "actions": {
       "title": "Ações",
@@ -413,7 +447,8 @@
       "confirm": "Confirmar cancelamento",
       "motivoRequired": "Informe o motivo do cancelamento.",
       "motivoPlaceholder": "Motivo do cancelamento",
-      "defaultMotivo": "Cancelado pelo motorista"
+      "defaultMotivo": "Cancelado pelo motorista",
+      "notAllowed": "Cancelamento não permitido nesta etapa da corrida."
     },
     "finalizar": {
       "title": "Finalizar Corrida",

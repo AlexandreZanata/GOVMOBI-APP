@@ -1,6 +1,7 @@
 /**
  * @fileoverview Shared WebSocket payload contracts for GovMobile realtime flows.
  */
+import type {MotoristaStatusOperacional} from '@models/Motorista';
 
 /** Connection lifecycle state for the `/despacho` socket. */
 export type RealtimeConnectionStatus =
@@ -20,7 +21,8 @@ export interface AssinarCorridaPayload {
 
 /** Driver telemetry command payload. */
 export interface AtualizarPosicaoPayload {
-  corridaId: string;
+  /** Present only when an active (non-terminal) ride exists. */
+  corridaId?: string;
   lat: number;
   lng: number;
   velocidade: number;
@@ -87,4 +89,5 @@ export type RealtimeEvent =
   | {type: 'posicao-atualizada'; payload: PosicaoAtualizadaPayload}
   | {type: 'nova-mensagem'; payload: NovaMensagemPayload}
   | {type: 'status-corrida-alterado'; payload: StatusCorridaAlteradoPayload}
-  | {type: 'nova-corrida-disponivel'; payload: NovaCorridaDisponivelPayload};
+  | {type: 'nova-corrida-disponivel'; payload: NovaCorridaDisponivelPayload}
+  | {type: 'estado-operacional'; payload: {status: MotoristaStatusOperacional}};

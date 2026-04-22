@@ -3,6 +3,7 @@
  */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {type User} from '../../models';
+import {type MotoristaStatusOperacional} from '../../models/Motorista';
 
 export interface AuthState {
   user: User | null;
@@ -29,6 +30,11 @@ export interface AuthState {
    * preventing drivers from briefly seeing the passenger interface.
    */
   isHydrating: boolean;
+  /**
+   * Cached operational status of the authenticated driver.
+   * Kept in sync after PATCH /frota/motoristas/me/status calls.
+   */
+  statusOperacional: MotoristaStatusOperacional | null;
 }
 
 const initialState: AuthState = {
@@ -41,6 +47,7 @@ const initialState: AuthState = {
   motoristaId: null,
   municipioId: null,
   isHydrating: false,
+  statusOperacional: null,
 };
 
 /**
@@ -135,10 +142,20 @@ const authSlice = createSlice({
     setIsHydrating(state, action: PayloadAction<boolean>) {
       state.isHydrating = action.payload;
     },
+
+    /**
+     * Updates the cached operational status after a successful PATCH call.
+     */
+    setStatusOperacional(
+      state,
+      action: PayloadAction<MotoristaStatusOperacional | null>,
+    ) {
+      state.statusOperacional = action.payload;
+    },
   },
 });
 
-export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setIsHydrating, setToken, tokenRefreshed, logout, setLoading, setError} =
+export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setIsHydrating, setStatusOperacional, setToken, tokenRefreshed, logout, setLoading, setError} =
   authSlice.actions;
 
 export default authSlice.reducer;

@@ -22,14 +22,17 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import {createAcompanharStyles} from './AcompanharCorrida.styles';
 import type {CorridaMensagem} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
+import {useAppSelector} from '../../store';
 
 type RouteProps = RouteProp<PassageiroCorridasStackParamList, 'AcompanharCorrida'>;
+type NavProp = NativeStackNavigationProp<PassageiroCorridasStackParamList>;
 
 /**
  * Ride status + route + messages + cancel screen for the passenger.
@@ -40,12 +43,14 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavProp>();
   const route = useRoute<RouteProps>();
   const {corridaId} = route.params;
 
   const shared = useMemo(() => createCorridasStyles(theme), [theme]);
   const s = useMemo(() => createAcompanharStyles(theme), [theme]);
+
+  const driverPosition = useAppSelector(s => s.corrida.driverPosition);
 
   const {
     activeCorrida,
@@ -69,6 +74,12 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
     void onLoadMensagens(corridaId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [corridaId]);
+
+  useEffect(() => {
+    if (activeCorrida?.status === 'FINALIZADA') {
+      navigation.navigate('AvaliarCorrida', {corridaId: activeCorrida.id});
+    }
+  }, [activeCorrida?.status, activeCorrida?.id, navigation]);
 
   const handleCancel = useCallback(() => {
     if (!cancelMotivo.trim()) {
@@ -112,7 +123,12 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
   const badgeColor = statusColor(activeCorrida.status, theme);
   const isTerminal =
     activeCorrida.status === 'FINALIZADA' || activeCorrida.status === 'CANCELADA';
-  const canCancel = !isTerminal && activeCorrida.status !== 'RECUSADA';
+
+  const cancellableStatuses = new Set(['SOLICITADA', 'AGUARDANDO_ACEITE', 'ACEITA']);
+  const canCancel = cancellableStatuses.has(activeCorrida.status);
+  const showCancelNotAllowed =
+    activeCorrida.status === 'EM_DESLOCAMENTO' ||
+    activeCorrida.status === 'PASSAGEIRO_EMBARCADO';
 
   return (
     <View style={[s.root, {paddingTop: insets.top}]} testID="acompanhar-screen">
@@ -142,6 +158,21 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
         </View>
       </View>
 
+      {/* Driver position */}
+      {driverPosition && !isTerminal && (
+        <View style={[s.card, {margin: theme.spacing[4]}]} testID="driver-position-card">
+          <View style={s.routeRow}>
+            <MaterialIcons name="directions-car" size={16} color={theme.colors.primary} />
+            <Text style={s.cardTitle}>
+              {`${driverPosition.lat.toFixed(4)}, ${driverPosition.lng.toFixed(4)}`}
+            </Text>
+          </View>
+          <Text style={shared.cardValue}>
+            {`${driverPosition.velocidade.toFixed(0)} km/h`}
+          </Text>
+        </View>
+      )}
+
       {/* Messages */}
       <View style={s.messagesSection}>
         <Text style={shared.sectionHeader}>{t('corridas.mensagens.title')}</Text>
@@ -161,6 +192,13 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
           />
         )}
       </View>
+
+      {/* Cancel not allowed */}
+      {showCancelNotAllowed && (
+        <View style={[s.card, {margin: theme.spacing[4]}]} testID="cancel-not-allowed">
+          <Text style={shared.cardValue}>{t('corridas.cancel.notAllowed')}</Text>
+        </View>
+      )}
 
       {/* Cancel section */}
       {canCancel && (
@@ -202,6 +240,18 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
             </Pressable>
           )}
         </View>
+      )}
+
+      {/* Chat FAB */}
+      {!isTerminal && (
+        <Pressable
+          accessibilityLabel={t('corridas.mensagens.title')}
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('CorridaMensagens', {corridaId})}
+          style={s.fab}
+          testID="chat-fab">
+          <MaterialIcons name="chat" size={24} color={theme.design.textOnDark} />
+        </Pressable>
       )}
 
       {isActionLoading && (

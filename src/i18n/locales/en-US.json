@@ -277,7 +277,13 @@
     },
     "status": {
       "disponivel": "Available",
-      "emRota": "On Route"
+      "emRota": "On Route",
+      "afastado": "Off Duty",
+      "toggleLabel": "Toggle availability",
+      "disponivelMsg": "You are now available for rides.",
+      "afastadoMsg": "You are now off duty.",
+      "emCorrida": "On Ride",
+      "managedBySystem": "Status managed by the system during the ride."
     },
     "idle": {
       "title": "Waiting for Rides",
@@ -310,6 +316,22 @@
       "available": "Available Rides",
       "noAvailable": "No rides available at the moment.",
       "acceptRide": "Accept ride"
+    },
+    "veiculo": {
+      "title": "Associate Vehicle",
+      "selectLabel": "Select a vehicle",
+      "associateBtn": "Associate Vehicle",
+      "disassociateBtn": "Disassociate Vehicle",
+      "noVehicles": "No active vehicles available.",
+      "conflictError": "This vehicle is already in use by another driver.",
+      "disassociateConflict": "Cannot disassociate vehicle during an active ride.",
+      "successAssociated": "Vehicle associated successfully.",
+      "successDisassociated": "Vehicle disassociated successfully."
+    },
+    "reconnection": {
+      "checking": "Checking for active ride...",
+      "restored": "Ride restored successfully.",
+      "fallbackUsed": "Connection restored via server."
     }
   },
   "corridas": {
@@ -358,6 +380,16 @@
       "submit": "Request Ride"
     },
     "motorista": {"title": "Driver Action"},
+    "avaliar": {
+      "title": "Rate Ride",
+      "notaLabel": "Your rating",
+      "comentarioLabel": "Comment (optional)",
+      "comentarioPlaceholder": "Tell us about your experience...",
+      "submit": "Submit Rating",
+      "skipLabel": "Skip rating",
+      "alreadyRated": "You have already rated this ride.",
+      "deadlinePassed": "The rating deadline has passed."
+    },
     "status": {
       "SOLICITADA": "Requested",
       "ACEITA": "Accepted",
@@ -365,7 +397,9 @@
       "EM_DESLOCAMENTO": "En Route",
       "PASSAGEIRO_EMBARCADO": "Passenger Boarded",
       "FINALIZADA": "Completed",
-      "CANCELADA": "Cancelled"
+      "CANCELADA": "Cancelled",
+      "AGUARDANDO_ACEITE": "Awaiting Acceptance",
+      "AVALIADA": "Rated"
     },
     "actions": {
       "title": "Actions",
@@ -381,7 +415,8 @@
       "confirm": "Confirm cancellation",
       "motivoRequired": "Please provide a cancellation reason.",
       "motivoPlaceholder": "Cancellation reason",
-      "defaultMotivo": "Cancelled by driver"
+      "defaultMotivo": "Cancelled by driver",
+      "notAllowed": "Cancellation is not allowed at this stage of the ride."
     },
     "finalizar": {
       "title": "Complete Ride",

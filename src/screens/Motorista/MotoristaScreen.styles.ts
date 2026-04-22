@@ -210,6 +210,30 @@ export const createMotoristaStyles = (theme: Theme) => {
       color: C.textDark,
     },
 
+    // ── Status availability toggle ────────────────────────────────────────────
+    statusToggleBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: spacing[2],
+      borderWidth: 1.5,
+      borderRadius: borderRadius.radius.full,
+      paddingVertical: spacing[2],
+      paddingHorizontal: spacing[4],
+      marginBottom: spacing[4],
+    },
+    statusToggleBtnDisabled: {
+      opacity: 0.6,
+    },
+    statusToggleDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    statusToggleLabel: {
+      ...typo.scale.labelMd,
+    },
+
     // ── Active ride sheet ─────────────────────────────────────────────────────
     activeSheet: {
       position: 'absolute',
@@ -342,6 +366,31 @@ export const createMotoristaStyles = (theme: Theme) => {
       height: 20,
       borderRadius: 10,
       backgroundColor: C.danger,
+    },
+
+    // ── Origin pin ────────────────────────────────────────────────────────────
+    originPin: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: C.success,
+    },
+
+    // ── Vehicle association button (idle sheet) ───────────────────────────────
+    vehicleBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing[2],
+      paddingVertical: spacing[2],
+      paddingHorizontal: spacing[3],
+      borderRadius: borderRadius.radius.md,
+      backgroundColor: theme.design.surface300,
+      alignSelf: 'flex-start',
+      marginTop: spacing[2],
+    },
+    vehicleBtnText: {
+      ...typo.scale.bodyMd,
+      color: theme.design.textPrimary,
     },
   });
 };

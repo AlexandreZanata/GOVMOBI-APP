@@ -123,9 +123,10 @@ export const usePassageiro = (): PassageiroState => {
     state => state.corrida.selectedDestino,
   );
   const papeis = useAppSelector(state => state.auth.papeis);
+  const locationCurrent = useAppSelector(state => state.location.current);
+  const locationLastKnown = useAppSelector(state => state.location.lastKnown);
+  const locationFixStatus = useAppSelector(state => state.location.fixStatus);
 
-  const [userLocation, setUserLocation] = useState<Coordenada | null>(null);
-  const [isLocating, setIsLocating] = useState(true);
   const [mapRegion, setMapRegion] = useState<MapRegion>(DEFAULT_REGION);
   const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -151,6 +152,9 @@ export const usePassageiro = (): PassageiroState => {
   const lastSearchErrorAtRef = useRef(0);
   const routeRequestRef = useRef(0);
 
+  const userLocation = locationCurrent ?? locationLastKnown;
+  const isLocating = locationFixStatus === 'locating' || (!userLocation && locationFixStatus === 'idle');
+
   const canPreviewRoute =
     papeis.length === 0 ||
     papeis.includes('USUARIO') ||
@@ -158,6 +162,15 @@ export const usePassageiro = (): PassageiroState => {
 
   useEffect(() => {
     userLocationRef.current = userLocation;
+  }, [userLocation]);
+
+  useEffect(() => {
+    if (!userLocation) return;
+    setMapRegion({
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+      zoomLevel: DEFAULT_ZOOM,
+    });
   }, [userLocation]);
 
   // ---------------------------------------------------------------------------
@@ -197,79 +210,6 @@ export const usePassageiro = (): PassageiroState => {
     };
   }, [pesquisaFacade, authToken]);
 
-  // ---------------------------------------------------------------------------
-  // Location — with timeout + watch fallback
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    let cancelled = false;
-    let watchSub: {remove: () => void} | null = null;
-
-    const fetchLocation = async (): Promise<void> => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const Location = require('expo-location') as typeof import('expo-location');
-
-        const {status} = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          if (!cancelled) setIsLocating(false);
-          return;
-        }
-
-        // Race getCurrentPositionAsync against a 6-second timeout.
-        // On some devices the first call hangs indefinitely — the watch
-        // fallback below will still deliver a position.
-        const positionPromise = Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        const timeoutPromise = new Promise<null>(resolve =>
-          setTimeout(() => resolve(null), 6000),
-        );
-
-        const result = await Promise.race([positionPromise, timeoutPromise]);
-
-        if (!cancelled && result) {
-          const coords: Coordenada = {
-            latitude: result.coords.latitude,
-            longitude: result.coords.longitude,
-          };
-          setUserLocation(coords);
-          setMapRegion({latitude: coords.latitude, longitude: coords.longitude, zoomLevel: DEFAULT_ZOOM});
-          setIsLocating(false);
-          return;
-        }
-
-        // Fallback: subscribe to position updates — first fix resolves the state
-        if (!cancelled) {
-          watchSub = await Location.watchPositionAsync(
-            {accuracy: Location.Accuracy.Balanced, distanceInterval: 10},
-            pos => {
-              if (cancelled) return;
-              const coords: Coordenada = {
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-              };
-              setUserLocation(coords);
-              setMapRegion({latitude: coords.latitude, longitude: coords.longitude, zoomLevel: DEFAULT_ZOOM});
-              setIsLocating(false);
-              // Unsubscribe after first fix — we only needed the initial position
-              watchSub?.remove();
-              watchSub = null;
-            },
-          );
-        }
-      } catch {
-        if (!cancelled) setIsLocating(false);
-      }
-    };
-
-    void fetchLocation();
-
-    return () => {
-      cancelled = true;
-      watchSub?.remove();
-    };
-  }, []);
 
   // ---------------------------------------------------------------------------
   // Search

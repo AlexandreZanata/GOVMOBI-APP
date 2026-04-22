@@ -26,11 +26,9 @@ import type {CompositeNavigationProp} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useMotorista} from './useMotorista';
-import {useMotoristaRealtime} from './useMotoristaRealtime';
-import {NovaCorridaModal} from './components/NovaCorridaModal';
+import {useMotoristaRealtime} from './useMotoristaRealtime';import {NovaCorridaModal} from './components/NovaCorridaModal';
 import {createMotoristaStyles, MotoristaColors as C} from './MotoristaScreen.styles';
 import {createHistoricoStyles} from '@screens/Corridas/HistoricoCorridas.styles';
-import {useAppSelector} from '../../store';
 import {useTheme} from '../../theme';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
 import {MotoristaIdleSheet} from './components/MotoristaIdleSheet';
@@ -72,6 +70,9 @@ export const MotoristaScreen = (): React.JSX.Element => {
     onCancelar,
     onAceitar,
     onRecusar,
+    statusOperacional,
+    isTogglingStatus,
+    onToggleStatus,
   } = useMotorista();
 
   // Wraps the hook's center handler and also animates the Mapbox camera.
@@ -146,6 +147,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   const handleFinalizar = useCallback(() => {
     if (!activeCorrida) return;
+    // ficar-disponivel is emitted by useMotoristaRealtime when activeCorrida reaches terminal status
     void onFinalizar(activeCorrida.id, {
       posicaoFinalLat: userLocation?.latitude ?? activeCorrida.destinoLat,
       posicaoFinalLng: userLocation?.longitude ?? activeCorrida.destinoLng,
@@ -216,6 +218,14 @@ export const MotoristaScreen = (): React.JSX.Element => {
             <View style={styles.destinationPin} />
           </MapboxGL.PointAnnotation>
         )}
+        {hasActiveRide && activeCorrida && (
+          <MapboxGL.PointAnnotation
+            coordinate={[activeCorrida.origemLng, activeCorrida.origemLat]}
+            id="ride-origin"
+            title={t('corridas.detail.origem')}>
+            <View style={styles.originPin} />
+          </MapboxGL.PointAnnotation>
+        )}
       </MapboxGL.MapView>
     ) : (
       <View style={styles.mapFallback} testID="map-fallback">
@@ -284,9 +294,12 @@ export const MotoristaScreen = (): React.JSX.Element => {
         {/* Bottom sheet — three states */}
         {!hasActiveRide && !isTerminal && (
           <MotoristaIdleSheet
+            isTogglingStatus={isTogglingStatus}
             onLayout={onSheetLayout}
+            onToggleStatus={onToggleStatus}
             paddingBottom={sheetPaddingBottom}
             sheetTranslate={sheetTranslate}
+            statusOperacional={statusOperacional}
           />
         )}
 

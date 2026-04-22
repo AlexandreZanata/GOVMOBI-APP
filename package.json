@@ -7,6 +7,8 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "emulator": "bash scripts/emulator.sh",
+    "emulator:install": "cd android && ./gradlew assembleDebug && cd .. && adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/app-debug.apk && adb -s emulator-5554 reverse tcp:8081 tcp:8081 && adb -s emulator-5554 shell am start -n gov.govmobile.app/.MainActivity",
     "web": "expo start --web",
     "dev:android": "expo run:android",
     "dev:ios": "expo run:ios",

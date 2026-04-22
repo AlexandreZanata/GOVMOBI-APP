@@ -14,8 +14,10 @@ import {useCallback, useEffect} from 'react';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setPendingOffer} from '@store/slices/realtimeSlice';
+import {setStatusOperacional} from '@store/slices/authSlice';
 import type {NovaCorridaDisponivelPayload} from '../../types';
 import type {Coordenada} from '@models/Corrida';
+import type {MotoristaStatusOperacional} from '@models/Motorista';
 
 const TERMINAL_STATUSES = new Set(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
 
@@ -63,14 +65,37 @@ export const useMotoristaRealtime = (
   }, [activeCorrida, isMotorista, connectionStatus, realtimeFacade]);
 
   // ---------------------------------------------------------------------------
-  // Clear the pending offer when the driver gets an active ride
-  // (they accepted it — no need to keep showing the modal).
+  // Handle estado-operacional events from the server.
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (activeCorrida && !TERMINAL_STATUSES.has(activeCorrida.status)) {
+    const unsubscribe = realtimeFacade.onEvent(event => {
+      if (event.type === 'estado-operacional') {
+        const payload = event.payload as {status: MotoristaStatusOperacional};
+        dispatch(setStatusOperacional(payload.status));
+      }
+    });
+    return unsubscribe;
+  }, [dispatch, realtimeFacade]);
+
+  // ---------------------------------------------------------------------------
+  // Clear the pending offer when the driver gets an active ride
+  // (they accepted it — no need to keep showing the modal).
+  // After a terminal status, re-enter the dispatch queue.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!activeCorrida) return;
+
+    if (TERMINAL_STATUSES.has(activeCorrida.status)) {
+      // Ride reached terminal status — re-enter dispatch queue
+      if (isMotorista && connectionStatus === 'connected') {
+        void realtimeFacade.setDriverAvailable();
+        dispatch(setStatusOperacional('DISPONIVEL'));
+      }
+    } else {
+      // Active non-terminal ride — clear pending offer
       dispatch(setPendingOffer(null));
     }
-  }, [activeCorrida, dispatch]);
+  }, [activeCorrida, dispatch, isMotorista, connectionStatus, realtimeFacade]);
 
   const dismissOffer = useCallback(() => {
     dispatch(setPendingOffer(null));

@@ -20,23 +20,27 @@ import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
 import {GlobalToast, NetworkBanner} from '@components/organisms';
 import {
+  useAppLocationBootstrap,
   useAuthSession,
   useNetworkStatus,
   useNotifications,
   useRealtimeSession,
 } from './hooks';
-import {useCorridaContexto} from './hooks/useCorridaContexto';
-import {useDriverLocationStream} from './hooks/useDriverLocationStream';
+import {useCorridaContexto} from '@hooks/useCorridaContexto';
+import {useDriverLocationStream} from '@hooks/useDriverLocationStream';
+import {useRideReconnection} from '@hooks/useRideReconnection';
 import {FacadeProvider} from '@services/facades';
 
 /**
  * Startup side-effect hooks that depend on app providers.
  */
 const AppStartupEffects = (): null => {
+  useAppLocationBootstrap();
   useNetworkStatus();
   useNotifications();
   useAuthSession();
   useRealtimeSession();
+  useRideReconnection();
   useCorridaContexto();
   useDriverLocationStream();
   return null;

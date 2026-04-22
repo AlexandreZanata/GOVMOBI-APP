@@ -91,7 +91,12 @@ const createDefaultFacades = (
       notificationFacade: new NotificationFacadeMock(),
       runFacade: new RunFacadeMock(),
       servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
-      frotaFacade: new FrotaFacadeImpl(resolvedConfig),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      frotaFacade: (() => {
+        const {FrotaFacadeMock} =
+          require('./mock/FrotaFacadeMock') as typeof import('./mock/FrotaFacadeMock');
+        return new FrotaFacadeMock() as unknown as IFrotaFacade;
+      })(),
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       corridaFacade: (() => {
         const {CorridaFacadeMock} =

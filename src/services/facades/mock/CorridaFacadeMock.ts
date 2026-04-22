@@ -13,8 +13,10 @@ import type {
   ConfirmarEmbarqueInput,
   FinalizarCorridaInput,
   CancelarCorridaInput,
+  AvaliarCorridaInput,
   CorridaStatusResponse,
   CreateCorridaInput,
+  PosicaoMotoristaResponse,
   SearchResult,
 } from '../../../types';
 import type {ICorridaFacade} from '../CorridaFacade';
@@ -60,7 +62,7 @@ const makeCorrida = (
   status: CorridaStatus = 'SOLICITADA',
 ): Corrida => ({
   id: uuid(),
-  passageiroId: input.passageiroId || 'passageiro-mock-001',
+  passageiroId: 'passageiro-mock-001',
   motoristaId: null,
   veiculoId: null,
   origemLat: input.origemLat,
@@ -103,7 +105,6 @@ export class CorridaFacadeMock implements ICorridaFacade {
     input: CreateCorridaInput,
   ): Promise<Result<SolicitarCorridaResponse, FacadeError>> {
     return this.solicitarCorrida({
-      passageiroId: input.passageiroId,
       origemLat: input.origem.latitude,
       origemLng: input.origem.longitude,
       destinoLat: input.destino.latitude,
@@ -294,6 +295,34 @@ export class CorridaFacadeMock implements ICorridaFacade {
         nome: 'Mock User',
       },
       corridaAtiva: active ?? null,
+    });
+  }
+
+  /** @inheritdoc */
+  public async avaliarCorrida(corridaId: string, input: AvaliarCorridaInput): Promise<Result<Corrida, FacadeError>> {
+    await delay(150 + Math.random() * 150);
+    if (input.nota < 1 || input.nota > 5 || !Number.isInteger(input.nota)) {
+      return fail(toError('nota must be an integer between 1 and 5', 'VALIDATION_ERROR'));
+    }
+    const corrida = store.get(corridaId);
+    if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
+    const updated = transition(corrida, 'AVALIADA');
+    store.set(corridaId, updated);
+    return ok(updated);
+  }
+
+  /** @inheritdoc */
+  public async getMotoristaPosition(corridaId: string): Promise<Result<PosicaoMotoristaResponse, FacadeError>> {
+    await delay(150 + Math.random() * 150);
+    const corrida = store.get(corridaId);
+    if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
+    return ok({
+      corridaId,
+      lat: -16.6869 + (Math.random() - 0.5) * 0.01,
+      lng: -49.2648 + (Math.random() - 0.5) * 0.01,
+      velocidade: 30 + Math.random() * 40,
+      heading: Math.random() * 360,
+      timestamp: new Date().toISOString(),
     });
   }
 }

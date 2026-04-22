@@ -21,6 +21,7 @@
  *   GET  /corridas/contexto                 — estado ativo do usuário
  */
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
+import {normalizeStatus as normalizeCorridaStatus} from '@models/Corrida';
 import type {
   CreateCorridaInput,
   SolicitarCorridaInput,
@@ -30,9 +31,11 @@ import type {
   ConfirmarEmbarqueInput,
   FinalizarCorridaInput,
   CancelarCorridaInput,
+  AvaliarCorridaInput,
   CorridaStatusResponse,
   CorridaContexto,
   MapboxGeocodingResponse,
+  PosicaoMotoristaResponse,
   SearchResult,
 } from '../../types';
 import {type FacadeConfig, type FacadeError, type Result} from './types';
@@ -130,6 +133,12 @@ export interface ICorridaFacade {
 
   /** GET /corridas/active — active ride (legacy). */
   getActiveCorrida(): Promise<Result<Corrida | null, FacadeError>>;
+
+  /** POST /corridas/:id/avaliar */
+  avaliarCorrida(corridaId: string, input: AvaliarCorridaInput): Promise<Result<Corrida, FacadeError>>;
+
+  /** GET /corridas/:id/posicao-motorista */
+  getMotoristaPosition(corridaId: string): Promise<Result<PosicaoMotoristaResponse, FacadeError>>;
 }
 
 // ---------------------------------------------------------------------------
@@ -170,7 +179,6 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: CreateCorridaInput,
   ): Promise<Result<SolicitarCorridaResponse, FacadeError>> {
     return this.solicitarCorrida({
-      passageiroId: input.passageiroId,
       origemLat: input.origem.latitude,
       origemLng: input.origem.longitude,
       destinoLat: input.destino.latitude,
@@ -330,11 +338,30 @@ export class CorridaFacadeImpl implements ICorridaFacade {
 
   /** @inheritdoc */
   public async getActiveCorrida(): Promise<Result<Corrida | null, FacadeError>> {
-    // The backend exposes GET /corridas/contexto for active ride state.
-    // This method is kept for backward compat — delegates to getContexto.
-    const result = await this.getContexto();
-    if (result.error) return fail(result.error);
-    return ok(result.data.corridaAtiva);
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/corridas/ativa`, {
+        headers: this.authHeaders(),
+      });
+      if (response.status === 404) return ok(null);
+      if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
+      const raw = (await response.json()) as Corrida & {status: string};
+      return ok({...raw, status: normalizeCorridaStatus(raw.status)});
+    } catch {
+      return fail(toError('Network error', 'NETWORK_ERROR'));
+    }
+  }
+
+  /** @inheritdoc */
+  public async avaliarCorrida(corridaId: string, input: AvaliarCorridaInput): Promise<Result<Corrida, FacadeError>> {
+    if (input.nota < 1 || input.nota > 5 || !Number.isInteger(input.nota)) {
+      return fail(toError('nota must be an integer between 1 and 5', 'VALIDATION_ERROR'));
+    }
+    return this.post<Corrida>(`/corridas/${corridaId}/avaliar`, input);
+  }
+
+  /** @inheritdoc */
+  public async getMotoristaPosition(corridaId: string): Promise<Result<PosicaoMotoristaResponse, FacadeError>> {
+    return this.get<PosicaoMotoristaResponse>(`/corridas/${corridaId}/posicao-motorista`);
   }
 
   // ---------------------------------------------------------------------------

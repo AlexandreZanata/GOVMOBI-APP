@@ -97,10 +97,10 @@ export interface IDespachoWebSocketClient {
 const createSocket: DespachoSocketFactory = (url, token): DespachoSocket => {
   wsLog(`createSocket → url="${url}" token="${token.slice(0, 20)}..."`);
   return io(url, {
-    // Start with polling so the HTTP handshake succeeds first, then upgrade.
-    // Using websocket-only fails silently on Android when the server is on a
-    // local network IP and the upgrade is blocked by a proxy or firewall.
-    transports: ['polling', 'websocket'],
+    // Use WebSocket-only transport. The production reverse proxy handles WS
+    // upgrades correctly. Polling causes 400 errors on proxied deployments
+    // because the proxy doesn't forward the polling POST to the backend.
+    transports: ['websocket'],
     auth: {token},
     extraHeaders: {Authorization: `Bearer ${token}`},
     reconnection: true,
@@ -153,11 +153,9 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
     wsLog(`connect() → "${this.baseUrl}/despacho" token="${accessToken.slice(0, 20)}..."`);
 
     // Pre-check: verify the server is reachable before opening the socket.
-    // A plain HTTP GET to the base URL will fail fast if the IP is wrong or
-    // the device is on a different network.
     fetch(`${this.baseUrl}/health`, {method: 'GET'})
       .then(res => wsLog(`pre-check OK — status=${res.status}`))
-      .catch(e => wsErr(`pre-check FAILED — server "${this.baseUrl}" unreachable: ${String(e)}\n→ Make sure the device and the backend are on the same network and the IP is correct.`));
+      .catch(e => wsErr(`pre-check FAILED — server "${this.baseUrl}" unreachable: ${String(e)}`));
 
     this.socket?.removeAllListeners();
     this.socket?.disconnect();

@@ -13,11 +13,12 @@ import {useEffect, useRef} from 'react';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
 import {
-  setPosicaoMotoristaAtual,
+  setDriverPosition,
   updateCorridaStatus,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
 import type {Corrida} from '@models/Corrida';
+import {normalizeStatus} from '@models/Corrida';
 
 /**
  * Manages the passenger's realtime WebSocket subscription for an active ride.
@@ -74,15 +75,13 @@ export const usePassageiroRealtime = (): void => {
     const unsubscribe = realtimeFacade.onEvent(event => {
       switch (event.type) {
         case 'status-corrida-alterado': {
-          const mapped = realtimeFacade.mapCorridaStatus(event.payload.status);
-          if (mapped) {
-            dispatch(updateCorridaStatus(mapped as Corrida['status']));
-          }
+          const mapped = realtimeFacade.mapCorridaStatus(event.payload.status) ?? normalizeStatus(event.payload.status);
+          dispatch(updateCorridaStatus(mapped as Corrida['status']));
           break;
         }
         case 'posicao-atualizada': {
           dispatch(
-            setPosicaoMotoristaAtual({
+            setDriverPosition({
               motoristaId: event.payload.motoristaId,
               lat: event.payload.lat,
               lng: event.payload.lng,

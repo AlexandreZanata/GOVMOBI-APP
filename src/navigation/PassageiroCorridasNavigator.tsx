@@ -18,6 +18,7 @@ import {PassageiroCorridasListScreen} from '@screens/Corridas/PassageiroCorridas
 import {AcompanharCorridaScreen} from '@screens/Corridas/AcompanharCorridaScreen';
 import {CorridaDetalheScreen} from '@screens/Corridas/CorridaDetalheScreen';
 import {CorridaMensagensScreen} from '@screens/Corridas/CorridaMensagensScreen';
+import {AvaliarCorridaScreen} from '@screens/Corridas/AvaliarCorridaScreen';
 import type {PassageiroCorridasStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<PassageiroCorridasStackParamList>();
@@ -60,6 +61,11 @@ export const PassageiroCorridasNavigator = (): React.JSX.Element => {
         component={CorridaMensagensScreen}
         name="CorridaMensagens"
         options={{title: t('corridas.mensagens.title'), headerShown: true}}
+      />
+      <Stack.Screen
+        component={AvaliarCorridaScreen}
+        name="AvaliarCorrida"
+        options={{title: t('corridas.avaliar.title'), headerShown: true}}
       />
     </Stack.Navigator>
   );

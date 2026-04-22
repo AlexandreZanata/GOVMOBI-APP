@@ -53,6 +53,23 @@ export interface IFrotaFacade {
    * @returns Result wrapping Motorista or FacadeError with code NOT_FOUND.
    */
   getMotoristaById(id: string): Promise<Result<Motorista, FacadeError>>;
+
+  /**
+   * Updates the authenticated driver's own operational status.
+   * PATCH /frota/motoristas/me/status
+   * @param status - New status value.
+   * @returns Result wrapping updated Motorista or a FacadeError.
+   */
+  updateMyStatus(status: import('@models/Motorista').MotoristaStatusOperacional): Promise<Result<Motorista, FacadeError>>;
+
+  /** GET /frota/motoristas/me/veiculo */
+  getMyVehicle(): Promise<Result<Veiculo | null, FacadeError>>;
+
+  /** POST /frota/motoristas/me/veiculo */
+  associateVehicle(veiculoId: string): Promise<Result<Veiculo, FacadeError>>;
+
+  /** DELETE /frota/motoristas/me/veiculo */
+  disassociateVehicle(): Promise<Result<void, FacadeError>>;
 }
 
 /**
@@ -101,6 +118,87 @@ export class FrotaFacadeImpl implements IFrotaFacade {
       return ok(found);
     }
     return this.getEnvelope<Motorista>(`/frota/motoristas/${id}`);
+  }
+
+  public async updateMyStatus(
+    status: import('@models/Motorista').MotoristaStatusOperacional,
+  ): Promise<Result<Motorista, FacadeError>> {
+    if (this.mockMode) {
+      await this.delay(200);
+      // Return a mock motorista with the updated status
+      const mock: Motorista = {...MOCK_MOTORISTAS[0], statusOperacional: status, updatedAt: new Date().toISOString()};
+      return ok(mock);
+    }
+    try {
+      const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/status`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status}),
+      });
+      if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
+      const envelope = (await res.json()) as {success: boolean; data: Motorista};
+      return ok(envelope.data);
+    } catch {
+      return fail({code: 'NETWORK_ERROR', message: 'Network error', retryable: true});
+    }
+  }
+
+  public async getMyVehicle(): Promise<Result<Veiculo | null, FacadeError>> {
+    if (this.mockMode) {
+      await this.delay(200);
+      return ok(null);
+    }
+    try {
+      const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/veiculo`, {
+        headers: {'Content-Type': 'application/json'},
+      });
+      if (res.status === 404) return ok(null);
+      if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
+      const envelope = (await res.json()) as {success: boolean; data: Veiculo};
+      return ok(envelope.data);
+    } catch {
+      return fail({code: 'NETWORK_ERROR', message: 'Network error', retryable: true});
+    }
+  }
+
+  public async associateVehicle(veiculoId: string): Promise<Result<Veiculo, FacadeError>> {
+    if (this.mockMode) {
+      await this.delay(200);
+      const found = MOCK_VEICULOS.find(v => v.id === veiculoId);
+      if (!found) return fail({code: 'NOT_FOUND', message: 'Veiculo not found', statusCode: 404});
+      return ok(found);
+    }
+    try {
+      const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/veiculo`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({veiculoId}),
+      });
+      if (res.status === 409) return fail({code: 'CONFLICT', message: 'Vehicle already in use', statusCode: 409});
+      if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
+      const envelope = (await res.json()) as {success: boolean; data: Veiculo};
+      return ok(envelope.data);
+    } catch {
+      return fail({code: 'NETWORK_ERROR', message: 'Network error', retryable: true});
+    }
+  }
+
+  public async disassociateVehicle(): Promise<Result<void, FacadeError>> {
+    if (this.mockMode) {
+      await this.delay(200);
+      return ok(undefined);
+    }
+    try {
+      const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/veiculo`, {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+      });
+      if (res.status === 409) return fail({code: 'CONFLICT', message: 'Cannot disassociate vehicle during active ride', statusCode: 409});
+      if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
+      return ok(undefined);
+    } catch {
+      return fail({code: 'NETWORK_ERROR', message: 'Network error', retryable: true});
+    }
   }
 
   private async getEnvelope<T>(path: string): Promise<Result<T, FacadeError>> {

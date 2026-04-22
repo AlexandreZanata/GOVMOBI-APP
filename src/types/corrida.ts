@@ -14,7 +14,6 @@ import type {Coordenada, Localizacao} from '@models/Corrida';
 
 /** Input for creating a new ride request using Localizacao objects. */
 export interface CreateCorridaInput {
-  passageiroId: string;
   origem: Localizacao;
   destino: Localizacao;
   motivoServico: string;
@@ -26,12 +25,9 @@ export interface CreateCorridaInput {
 
 /**
  * POST /corridas body.
- * The backend DTO requires passageiroId as @IsUUID('7') for validation,
- * but the controller ignores it and uses user.id from the JWT instead.
- * We send the authenticated user's ID to satisfy the validator.
+ * passageiroId is extracted from the JWT by the backend — do NOT send it.
  */
 export interface SolicitarCorridaInput {
-  passageiroId: string;
   origemLat: number;
   origemLng: number;
   destinoLat: number;
@@ -85,6 +81,14 @@ export interface CancelarCorridaInput {
   motivo: string;
 }
 
+/**
+ * POST /corridas/:id/avaliar body.
+ */
+export interface AvaliarCorridaInput {
+  nota: number;
+  comentario?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Response shapes
 // ---------------------------------------------------------------------------
@@ -98,6 +102,16 @@ export interface SolicitarCorridaResponse {
 export interface CorridaStatusResponse {
   id: string;
   status: string;
+}
+
+/** Response from GET /corridas/:id/posicao-motorista. */
+export interface PosicaoMotoristaResponse {
+  corridaId: string;
+  lat: number;
+  lng: number;
+  velocidade: number;
+  heading: number;
+  timestamp: string;
 }
 
 // ---------------------------------------------------------------------------

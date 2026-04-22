@@ -273,7 +273,9 @@
     },
     "status": {
       "disponivel": "Disponible",
-      "emRota": "En Ruta"
+      "emRota": "En Ruta",
+      "emCorrida": "En Viaje",
+      "managedBySystem": "Estado gestionado por el sistema durante el viaje."
     },
     "idle": {
       "title": "Esperando Viajes",
@@ -306,6 +308,22 @@
       "available": "Viajes Disponibles",
       "noAvailable": "No hay viajes disponibles en este momento.",
       "acceptRide": "Aceptar viaje"
+    },
+    "veiculo": {
+      "title": "Asociar Vehículo",
+      "selectLabel": "Selecciona un vehículo",
+      "associateBtn": "Asociar Vehículo",
+      "disassociateBtn": "Desasociar Vehículo",
+      "noVehicles": "No hay vehículos activos disponibles.",
+      "conflictError": "Este vehículo ya está en uso por otro conductor.",
+      "disassociateConflict": "No se puede desasociar el vehículo durante un viaje activo.",
+      "successAssociated": "Vehículo asociado con éxito.",
+      "successDisassociated": "Vehículo desasociado con éxito."
+    },
+    "reconnection": {
+      "checking": "Verificando viaje activo...",
+      "restored": "Viaje restaurado con éxito.",
+      "fallbackUsed": "Conexión restaurada a través del servidor."
     }
   },
   "corridas": {
@@ -354,6 +372,16 @@
       "submit": "Solicitar Viaje"
     },
     "motorista": {"title": "Acción del Conductor"},
+    "avaliar": {
+      "title": "Calificar Viaje",
+      "notaLabel": "Tu calificación",
+      "comentarioLabel": "Comentario (opcional)",
+      "comentarioPlaceholder": "Cuéntanos sobre tu experiencia...",
+      "submit": "Enviar Calificación",
+      "skipLabel": "Omitir calificación",
+      "alreadyRated": "Ya calificaste este viaje.",
+      "deadlinePassed": "El plazo para calificar ha expirado."
+    },
     "status": {
       "SOLICITADA": "Solicitado",
       "ACEITA": "Aceptado",
@@ -361,7 +389,9 @@
       "EM_DESLOCAMENTO": "En Camino",
       "PASSAGEIRO_EMBARCADO": "Pasajero Abordado",
       "FINALIZADA": "Finalizado",
-      "CANCELADA": "Cancelado"
+      "CANCELADA": "Cancelado",
+      "AGUARDANDO_ACEITE": "Esperando Aceptación",
+      "AVALIADA": "Calificado"
     },
     "actions": {
       "title": "Acciones",
@@ -377,7 +407,8 @@
       "confirm": "Confirmar cancelación",
       "motivoRequired": "Ingrese el motivo de cancelación.",
       "motivoPlaceholder": "Motivo de cancelación",
-      "defaultMotivo": "Cancelado por el conductor"
+      "defaultMotivo": "Cancelado por el conductor",
+      "notAllowed": "La cancelación no está permitida en esta etapa del viaje."
     },
     "finalizar": {
       "title": "Finalizar Viaje",

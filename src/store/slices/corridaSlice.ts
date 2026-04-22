@@ -51,6 +51,10 @@ export interface CorridaState {
   posicaoMotoristaAtual: PosicaoMotorista | null;
   /** Completed/terminal rides for the history tab. */
   corridaHistory: Corrida[];
+  /** Whether the passenger has submitted a rating for the active ride. */
+  ratingSubmitted: boolean;
+  /** Latest driver position received from the posicao-atualizada WebSocket event. */
+  driverPosition: PosicaoMotorista | null;
 }
 
 const initialState: CorridaState = {
@@ -67,6 +71,8 @@ const initialState: CorridaState = {
   isLoadingMensagens: false,
   posicaoMotoristaAtual: null,
   corridaHistory: [],
+  ratingSubmitted: false,
+  driverPosition: null,
 };
 
 /**
@@ -81,6 +87,10 @@ const corridaSlice = createSlice({
      */
     setActiveCorrida(state, action: PayloadAction<Corrida | null>) {
       state.activeCorrida = action.payload;
+      if (action.payload === null) {
+        state.ratingSubmitted = false;
+        state.driverPosition = null;
+      }
     },
 
     /**
@@ -208,6 +218,20 @@ const corridaSlice = createSlice({
     resetCorrida() {
       return initialState;
     },
+
+    /**
+     * Sets whether the passenger has submitted a rating for the current ride.
+     */
+    setRatingSubmitted(state, action: PayloadAction<boolean>) {
+      state.ratingSubmitted = action.payload;
+    },
+
+    /**
+     * Updates the driver's latest position from the posicao-atualizada WebSocket event.
+     */
+    setDriverPosition(state, action: PayloadAction<PosicaoMotorista | null>) {
+      state.driverPosition = action.payload;
+    },
   },
 });
 
@@ -229,6 +253,8 @@ export const {
   setPosicaoMotoristaAtual,
   addToHistory,
   resetCorrida,
+  setRatingSubmitted,
+  setDriverPosition,
 } = corridaSlice.actions;
 
 export default corridaSlice.reducer;

@@ -28,7 +28,9 @@ import {
   addToHistory,
 } from '@store/slices/corridaSlice';
 import {addToast} from '@store/slices/uiSlice';
+import {setStatusOperacional} from '@store/slices/authSlice';
 import type {Corrida, CorridaMensagem, Coordenada} from '@models/Corrida';
+import type {MotoristaStatusOperacional} from '@models/Motorista';
 import type {
   AceitarCorridaInput,
   ConfirmarEmbarqueInput,
@@ -79,8 +81,14 @@ export interface MotoristaState {
   isLoadingMensagens: boolean;
   /** Whether the current user has the MOTORISTA role. */
   isMotorista: boolean;
+  /** Current operational status of the driver. */
+  statusOperacional: MotoristaStatusOperacional | null;
+  /** Whether the status toggle is in progress. */
+  isTogglingStatus: boolean;
   /** Re-centers map on driver location. */
   onCenterOnUser: () => void;
+  /** Toggles driver availability between DISPONIVEL and AFASTADO. */
+  onToggleStatus: () => Promise<void>;
   /** Accepts a ride. */
   onAceitar: (corridaId: string, input: AceitarCorridaInput) => Promise<void>;
   /** Refuses a ride. */
@@ -121,89 +129,37 @@ export const useMotorista = (): MotoristaState => {
   const isLoadingMensagens = useAppSelector(s => s.corrida.isLoadingMensagens);
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
   const motoristaId = useAppSelector(s => s.auth.motoristaId ?? '');
+  const statusOperacional = useAppSelector(s => s.auth.statusOperacional);
+  const locationCurrent = useAppSelector(s => s.location.current);
+  const locationLastKnown = useAppSelector(s => s.location.lastKnown);
+  const locationFixStatus = useAppSelector(s => s.location.fixStatus);
 
   // Driver = user with a non-null motoristaId from /auth/me
   const isMotorista = !!motoristaId;
 
-  const [userLocation, setUserLocation] = useState<Coordenada | null>(null);
-  const [isLocating, setIsLocating] = useState(true);
   const [mapRegion, setMapRegion] = useState<MapRegion>(DEFAULT_REGION);
   const [availableRides, setAvailableRides] = useState<Corrida[]>([]);
   const [isLoadingRides, setIsLoadingRides] = useState(false);
+
+  const userLocation = locationCurrent ?? locationLastKnown;
+  const isLocating =
+    locationFixStatus === 'locating' ||
+    (!userLocation && locationFixStatus === 'idle');
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ridesRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSyncingRef = useRef(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
-
-  // ---------------------------------------------------------------------------
-  // GPS location — with timeout + watch fallback
-  // ---------------------------------------------------------------------------
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    let watchSub: {remove: () => void} | null = null;
-
-    const fetchLocation = async (): Promise<void> => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const Location = require('expo-location') as typeof import('expo-location');
-        const {status} = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          if (!cancelled) setIsLocating(false);
-          return;
-        }
-
-        // Race getCurrentPositionAsync against a 6-second timeout
-        const positionPromise = Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        const timeoutPromise = new Promise<null>(resolve =>
-          setTimeout(() => resolve(null), 6000),
-        );
-
-        const result = await Promise.race([positionPromise, timeoutPromise]);
-
-        if (!cancelled && result) {
-          const coords: Coordenada = {
-            latitude: result.coords.latitude,
-            longitude: result.coords.longitude,
-          };
-          setUserLocation(coords);
-          setMapRegion({latitude: coords.latitude, longitude: coords.longitude, zoomLevel: 13});
-          setIsLocating(false);
-          return;
-        }
-
-        // Fallback: watch for first available fix
-        if (!cancelled) {
-          watchSub = await Location.watchPositionAsync(
-            {accuracy: Location.Accuracy.Balanced, distanceInterval: 10},
-            pos => {
-              if (cancelled) return;
-              const coords: Coordenada = {
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-              };
-              setUserLocation(coords);
-              setMapRegion({latitude: coords.latitude, longitude: coords.longitude, zoomLevel: 13});
-              setIsLocating(false);
-              watchSub?.remove();
-              watchSub = null;
-            },
-          );
-        }
-      } catch {
-        if (!cancelled) setIsLocating(false);
-      }
-    };
-
-    void fetchLocation();
-    return () => {
-      cancelled = true;
-      watchSub?.remove();
-    };
-  }, []);
+    if (!userLocation) return;
+    setMapRegion({
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+      zoomLevel: 13,
+    });
+  }, [userLocation]);
 
   // ---------------------------------------------------------------------------
   // Context sync (GET /corridas/contexto) — foreground restore
@@ -327,6 +283,41 @@ export const useMotorista = (): MotoristaState => {
       }
     };
   }, [targetId, activeCorrida, corridaFacade, dispatch]);
+
+  // ---------------------------------------------------------------------------
+  // Status toggle (PATCH /frota/motoristas/me/status)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Toggles the driver's operational status between DISPONIVEL and AFASTADO.
+   * If currently DISPONIVEL or EM_ROTA → sets AFASTADO.
+   * If AFASTADO or null → sets DISPONIVEL.
+   */
+  const onToggleStatus = useCallback(async (): Promise<void> => {
+    const next: MotoristaStatusOperacional =
+      statusOperacional === 'DISPONIVEL' || statusOperacional === 'EM_ROTA'
+        ? 'AFASTADO'
+        : 'DISPONIVEL';
+
+    setIsTogglingStatus(true);
+    try {
+      const result = await frotaFacade.updateMyStatus(next);
+      if (result.error) {
+        dispatch(addToast({id: `status-err-${Date.now()}`, message: result.error.message, type: 'error'}));
+        return;
+      }
+      dispatch(setStatusOperacional(next));
+      dispatch(
+        addToast({
+          id: `status-${Date.now()}`,
+          message: t(next === 'DISPONIVEL' ? 'motorista.status.disponivelMsg' : 'motorista.status.afastadoMsg'),
+          type: next === 'DISPONIVEL' ? 'success' : 'info',
+        }),
+      );
+    } finally {
+      setIsTogglingStatus(false);
+    }
+  }, [frotaFacade, statusOperacional, dispatch, t]);
 
   // ---------------------------------------------------------------------------
   // Map controls
@@ -626,7 +617,10 @@ export const useMotorista = (): MotoristaState => {
     mensagens,
     isLoadingMensagens,
     isMotorista,
+    statusOperacional,
+    isTogglingStatus,
     onCenterOnUser,
+    onToggleStatus,
     onAceitar,
     onRecusar,
     onIniciarDeslocamento,

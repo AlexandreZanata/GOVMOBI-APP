@@ -14,3 +14,8 @@ export interface MotoristasFilter {
   statusOperacional?: MotoristaStatusOperacional;
   ativo?: boolean;
 }
+
+/** POST /frota/motoristas/me/veiculo body. */
+export interface VeiculoAssociationInput {
+  veiculoId: string;
+}

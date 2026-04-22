@@ -201,5 +201,23 @@ export const createAcompanharStyles = (theme: Theme) => {
       ...typo.scale.labelSm,
       color: design.textOnDark,
     },
+
+    // ── Chat FAB ───────────────────────────────────────────────────────────────
+    fab: {
+      position: 'absolute',
+      bottom: 80,
+      right: 20,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: theme.colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+    },
   });
 };
