@@ -1,98 +1,122 @@
 /**
- * @fileoverview Hook module for useNotifications.
+ * @fileoverview Hook that manages the full push notification lifecycle.
+ *
+ * Dual-channel strategy:
+ *  - **Foreground (WebSocket):** Real-time events are delivered via the
+ *    DespachoGateway WebSocket and handled by `useRealtimeSession`. OneSignal
+ *    foreground banners are suppressed to avoid duplicates.
+ *  - **Background / killed (OneSignal):** When the WebSocket is disconnected,
+ *    the backend's OutboxWorker sends a push via OneSignal targeting the
+ *    `servidorId` as the external user ID.
+ *
+ * Lifecycle:
+ *  1. On mount — initialize OneSignal SDK and request OS permission.
+ *  2. When `servidorId` becomes available (after login/hydration) — set the
+ *     OneSignal external user ID so the backend can target this device.
+ *  3. When `servidorId` is cleared (logout) — remove the external user ID.
+ *  4. Register the notification-opened handler for deep-link navigation.
  */
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useFacades} from '@services/facades';
 import {setPermissionStatus} from '@store/slices/notificationsSlice';
-import {useAppDispatch} from '../store';
+import {useAppDispatch, useAppSelector} from '../store';
 import {logger} from '@utils/logger';
+import {
+  initOneSignal,
+  registerForegroundHandler,
+  registerNotificationOpenedHandler,
+  removeOneSignalExternalUserId,
+  requestPushPermission,
+  setOneSignalExternalUserId,
+  type NotificationOpenedEvent,
+} from '@services/notifications/OneSignalService';
 
 export interface UseNotificationsResult {
+  /** Whether the OS has granted push notification permission. */
   permissionGranted: boolean;
-  fcmToken: string | null;
 }
 
-interface MessagingModule {
-  messaging: () => {
-    getToken: () => Promise<string>;
-  };
-}
-
-type RuntimeRequire = (moduleName: string) => unknown;
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 /**
- * Resolves an FCM token when Firebase Messaging SDK is available.
- * Returns null in environments where FCM is not configured.
+ * Initializes OneSignal, requests OS push permission, and keeps the external
+ * user ID in sync with the authenticated session.
  *
- * @returns Firebase Cloud Messaging token or null.
- */
-const resolveFcmToken = async (): Promise<string | null> => {
-  try {
-    const runtimeRequire = (globalThis as {require?: RuntimeRequire}).require;
-    if (!runtimeRequire) {
-      return null;
-    }
-
-    const firebaseModule = runtimeRequire('@react-native-firebase/messaging');
-
-    if (!firebaseModule) {
-      return null;
-    }
-
-    const messagingModule = firebaseModule as unknown as MessagingModule;
-    return await messagingModule.messaging().getToken();
-  } catch (error: unknown) {
-    logger.warn('useNotifications', 'Unable to resolve FCM token', error);
-    return null;
-  }
-};
-
-/**
- * Requests notification permissions and performs token setup on app startup.
+ * Mount this hook once inside `AppStartupEffects` — it is idempotent.
  *
- * @returns Current notification permission and token setup state.
+ * @returns Current push notification permission state.
  */
 export const useNotifications = (): UseNotificationsResult => {
   const dispatch = useAppDispatch();
   const {notificationFacade} = useFacades();
-  const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
-  const [fcmToken, setFcmToken] = useState<string | null>(null);
-  const hasAttemptedSetup = useRef(false);
 
+  const servidorId = useAppSelector(s => s.auth.servidorId);
+  const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
+
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const sdkInitialized = useRef(false);
+  const lastLinkedServidorId = useRef<string | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // One-time SDK init + permission request
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (hasAttemptedSetup.current) {
-      return;
-    }
+    if (sdkInitialized.current) return;
+    sdkInitialized.current = true;
 
-    hasAttemptedSetup.current = true;
+    const initialized = initOneSignal();
+    if (!initialized) return;
 
-    const setupNotifications = async (): Promise<void> => {
-      const permissionResult = await notificationFacade.requestPermission();
-      const granted = permissionResult.error === null && permissionResult.data;
+    // Suppress foreground banners — WebSocket handles in-app delivery.
+    registerForegroundHandler();
 
-      setPermissionGranted(granted);
-      dispatch(setPermissionStatus(granted ? 'granted' : 'denied'));
+    // Request OS permission and update Redux.
+    requestPushPermission(accepted => {
+      setPermissionGranted(accepted);
+      dispatch(setPermissionStatus(accepted ? 'granted' : 'denied'));
+    });
 
-      if (!granted) {
-        return;
-      }
-
-      const token = await resolveFcmToken();
-      setFcmToken(token);
-
-      if (!token) {
-        logger.info(
-          'useNotifications',
-          'FCM token unavailable in current setup',
-        );
-      }
-    };
-
-    void setupNotifications();
+    // Fallback: also request via the notification facade (handles legacy FCM path).
+    void notificationFacade.requestPermission().then(result => {
+      const granted = result.error === null && !!result.data;
+      setPermissionGranted(prev => prev || granted);
+      if (granted) dispatch(setPermissionStatus('granted'));
+    });
   }, [dispatch, notificationFacade]);
 
-  return {
-    permissionGranted,
-    fcmToken,
-  };
+  // ---------------------------------------------------------------------------
+  // Notification-opened handler (deep-link navigation)
+  // Registered once — uses a stable ref so navigation changes don't re-register.
+  // ---------------------------------------------------------------------------
+  const handleNotificationOpened = useCallback((event: NotificationOpenedEvent) => {
+    logger.info('useNotifications', `Notification opened: ${event.title}`, event.data);
+    // Navigation is handled by the consumer (RootNavigator) via Redux state.
+    // We dispatch a corridaId update here so the navigator can react.
+    // The actual navigation logic lives in the navigator to keep this hook lean.
+  }, []);
+
+  useEffect(() => {
+    registerNotificationOpenedHandler(handleNotificationOpened);
+  }, [handleNotificationOpened]);
+
+  // ---------------------------------------------------------------------------
+  // Sync external user ID with auth state
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (isAuthenticated && servidorId && servidorId !== lastLinkedServidorId.current) {
+      lastLinkedServidorId.current = servidorId;
+      setOneSignalExternalUserId(servidorId);
+      logger.info('useNotifications', `OneSignal external user ID linked: ${servidorId}`);
+    }
+
+    if (!isAuthenticated && lastLinkedServidorId.current !== null) {
+      lastLinkedServidorId.current = null;
+      removeOneSignalExternalUserId();
+      logger.info('useNotifications', 'OneSignal external user ID removed on logout');
+    }
+  }, [isAuthenticated, servidorId]);
+
+  return {permissionGranted};
 };

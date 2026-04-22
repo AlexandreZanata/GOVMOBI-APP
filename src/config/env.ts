@@ -27,6 +27,8 @@ interface AppConfig {
   MAPBOX_ACCESS_TOKEN: string;
   /** Mapbox secret token for downloads (optional) */
   MAPBOX_SECRET_TOKEN: string;
+  /** OneSignal App ID for push notifications */
+  ONESIGNAL_APP_ID: string;
 }
 
 const extra = Constants.expoConfig?.extra ?? {};
@@ -39,6 +41,7 @@ export const ENV: AppConfig = {
   MOCK_MODE: extra.mockMode === 'true' || extra.mockMode === true,
   MAPBOX_ACCESS_TOKEN: extra.mapboxAccessToken ?? '',
   MAPBOX_SECRET_TOKEN: extra.mapboxSecretToken ?? '',
+  ONESIGNAL_APP_ID: extra.oneSignalAppId ?? 'd6247b88-6e87-4695-ac0f-396993ede8ba',
 };
 
 export const isDev = ENV.appEnv === 'development';

@@ -35,6 +35,12 @@ export interface AuthState {
    * Kept in sync after PATCH /frota/motoristas/me/status calls.
    */
   statusOperacional: MotoristaStatusOperacional | null;
+  /**
+   * Servidor UUID from GET /auth/me (`me.id`).
+   * Used as the OneSignal external user ID so the backend can target
+   * push notifications to this specific device.
+   */
+  servidorId: string | null;
 }
 
 const initialState: AuthState = {
@@ -48,6 +54,7 @@ const initialState: AuthState = {
   municipioId: null,
   isHydrating: false,
   statusOperacional: null,
+  servidorId: null,
 };
 
 /**
@@ -118,6 +125,7 @@ const authSlice = createSlice({
       state.papeis = [];
       state.motoristaId = null;
       state.municipioId = null;
+      state.servidorId = null;
     },
 
     /**
@@ -152,10 +160,18 @@ const authSlice = createSlice({
     ) {
       state.statusOperacional = action.payload;
     },
+
+    /**
+     * Stores the servidor UUID from GET /auth/me.
+     * Used as the OneSignal external user ID for targeted push notifications.
+     */
+    setServidorId(state, action: PayloadAction<string | null>) {
+      state.servidorId = action.payload;
+    },
   },
 });
 
-export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setIsHydrating, setStatusOperacional, setToken, tokenRefreshed, logout, setLoading, setError} =
+export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setIsHydrating, setStatusOperacional, setServidorId, setToken, tokenRefreshed, logout, setLoading, setError} =
   authSlice.actions;
 
 export default authSlice.reducer;

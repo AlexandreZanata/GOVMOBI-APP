@@ -67,6 +67,12 @@ module.exports = {
           // own default (11.18.2), which ships android-ndk27 artifacts.
         },
       ],
+      [
+        'onesignal-expo-plugin',
+        {
+          mode: process.env.APP_ENV === 'production' ? 'production' : 'development',
+        },
+      ],
     ],
     scheme: 'govmobile',
     extra: {
@@ -76,6 +82,7 @@ module.exports = {
       mockMode: process.env.MOCK_MODE === 'true',
       mapboxAccessToken: MAPBOX_ACCESS_TOKEN,
       mapboxSecretToken: MAPBOX_SECRET_TOKEN,
+      oneSignalAppId: process.env.ONESIGNAL_APP_ID ?? 'd6247b88-6e87-4695-ac0f-396993ede8ba',
     },
   },
 };

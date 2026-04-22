@@ -219,7 +219,26 @@
     "empty": {
       "title": "Sem notificacoes",
       "message": "Voce nao tem notificacoes no momento."
-    }
+    },
+    "push": {
+      "corridaAceita": {
+        "title": "Corrida Aceita",
+        "body": "Seu motorista está a caminho."
+      },
+      "motoristaChegando": {
+        "title": "Motorista Chegando",
+        "body": "Seu motorista está próximo ao ponto de embarque."
+      },
+      "corridaCancelada": {
+        "title": "Corrida Cancelada",
+        "body": "Sua corrida foi cancelada."
+      },
+      "corridaConcluida": {
+        "title": "Corrida Concluída",
+        "body": "Sua corrida foi finalizada. Avalie sua experiência."
+      }
+    },
+    "permissionDenied": "Permissão de notificação negada. Ative nas configurações do dispositivo."
   },
   "profile": {
     "save": "Salvar",

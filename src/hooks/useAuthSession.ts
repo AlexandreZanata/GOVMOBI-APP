@@ -28,6 +28,7 @@ import {
   setMunicipioId,
   setIsHydrating,
   setStatusOperacional,
+  setServidorId,
 } from '@store/slices/authSlice';
 import {addToast} from '@store/slices/uiSlice';
 import {useTranslation} from 'react-i18next';
@@ -170,6 +171,7 @@ export const useAuthSession = (): void => {
     dispatch(setPapeis(me.papeis));
     dispatch(setMotoristaId(me.motoristaId ?? null));
     dispatch(setMunicipioId(me.municipioId ?? null));
+    dispatch(setServidorId(me.id));
     if (me.statusOperacional) {
       dispatch(setStatusOperacional(me.statusOperacional));
     }
