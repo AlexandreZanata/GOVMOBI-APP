@@ -17,6 +17,7 @@ import corridaReducer from '../../../store/slices/corridaSlice';
 import authReducer from '../../../store/slices/authSlice';
 import realtimeReducer from '../../../store/slices/realtimeSlice';
 import uiReducer from '../../../store/slices/uiSlice';
+import locationReducer from '../../../store/slices/locationSlice';
 import type {ICorridaFacade} from '@services/facades';
 import type {IPesquisaFacade} from '@services/facades';
 import type {IRealtimeFacade} from '@services/facades';
@@ -202,6 +203,7 @@ const buildStore = () =>
       auth: authReducer,
       realtime: realtimeReducer,
       ui: uiReducer,
+      location: locationReducer,
     },
     preloadedState: {
       auth: {

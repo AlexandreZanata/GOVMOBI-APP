@@ -10,10 +10,19 @@ jest.mock('./hooks', () => ({
   useNetworkStatus: jest.fn(() => true),
   useNotifications: jest.fn(() => ({permissionGranted: false, fcmToken: null})),
   useRealtimeSession: jest.fn(),
+  useAppLocationBootstrap: jest.fn(),
 }));
 
 jest.mock('./hooks/useCorridaContexto', () => ({
   useCorridaContexto: jest.fn(),
+}));
+
+jest.mock('./hooks/useRideReconnection', () => ({
+  useRideReconnection: jest.fn(),
+}));
+
+jest.mock('./hooks/useDriverLocationStream', () => ({
+  useDriverLocationStream: jest.fn(),
 }));
 
 jest.mock('redux-persist/integration/react', () => ({

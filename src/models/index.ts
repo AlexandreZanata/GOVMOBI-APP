@@ -10,3 +10,4 @@ export * from './Servidor';
 export * from './Veiculo';
 export * from './Motorista';
 export * from './Corrida';
+export * from './Avaliacao';
