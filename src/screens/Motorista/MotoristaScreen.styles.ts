@@ -245,9 +245,8 @@ export const createMotoristaStyles = (theme: Theme) => {
       borderTopRightRadius: borderRadius.radius.xl,
       paddingHorizontal: spacing[5],
       paddingTop: spacing[3],
-      // Ensure the sheet is tall enough to always show action buttons
-      minHeight: 340,
-      maxHeight: '65%',
+      // No minHeight — sheet shrinks to fit its content automatically
+      maxHeight: '70%',
       zIndex: 20,
       ...shadows.lg,
     },
@@ -289,6 +288,20 @@ export const createMotoristaStyles = (theme: Theme) => {
     routeValue: {
       ...typo.scale.bodyMd,
       color: C.textDark,
+    },
+
+    // ── Inline address row (matches passenger panel style) ────────────────────
+    addressRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing[2],
+      paddingHorizontal: spacing[1],
+      marginBottom: spacing[2],
+    },
+    addressText: {
+      ...typo.scale.bodySm,
+      color: C.textMuted,
+      flex: 1,
     },
 
     // ── Action buttons ────────────────────────────────────────────────────────
@@ -361,6 +374,24 @@ export const createMotoristaStyles = (theme: Theme) => {
       justifyContent: 'center',
       zIndex: 25,
       ...shadows.lg,
+    },
+    chatFabBadge: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: C.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 4,
+    },
+    chatFabBadgeText: {
+      ...typo.scale.caption,
+      color: C.textOnDark,
+      fontWeight: '700',
+      fontSize: 10,
     },
 
     // ── Destination pin ───────────────────────────────────────────────────────

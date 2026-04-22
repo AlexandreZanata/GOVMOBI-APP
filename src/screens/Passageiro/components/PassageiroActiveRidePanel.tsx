@@ -11,14 +11,14 @@ import {
   TouchableOpacity,
   View,
   type LayoutChangeEvent,
-} from 'react-native';
-import {MaterialIcons} from '@expo/vector-icons';
+} from 'react-native';import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {
   createPassageiroStyles,
   PassageiroColors as C,
 } from '../PassageiroScreen.styles';
 import type {Corrida} from '@models/Corrida';
+import {useAppSelector} from '../../../store';
 
 export interface PassageiroActiveRidePanelProps {
   /** The active corrida. */
@@ -79,6 +79,7 @@ export const PassageiroActiveRidePanel = ({
   const canCancel = !isTerminal;
   const showDriverStrip =
     DRIVER_ASSIGNED.has(corrida.status) && !!(motoristaNome ?? veiculoLabel);
+  const unreadMensagens = useAppSelector(s => s.corrida.unreadMensagens);
 
   const [sheetHeight, setSheetHeight] = useState(0);
   const onSheetLayout = useCallback((event: LayoutChangeEvent) => {
@@ -210,6 +211,13 @@ export const PassageiroActiveRidePanel = ({
           style={[styles.chatFab, {bottom: chatFabBottom}]}
           testID="fab-chat">
           <MaterialIcons name="chat" size={22} color={C.textOnDark} />
+          {unreadMensagens > 0 && (
+            <View style={styles.chatFabBadge} testID="chat-fab-badge">
+              <Text style={styles.chatFabBadgeText}>
+                {unreadMensagens > 99 ? '99+' : String(unreadMensagens)}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       )}
     </>

@@ -55,6 +55,8 @@ export interface CorridaState {
   ratingSubmitted: boolean;
   /** Latest driver position received from the posicao-atualizada WebSocket event. */
   driverPosition: PosicaoMotorista | null;
+  /** Count of unread messages from the other party (resets when chat is opened). */
+  unreadMensagens: number;
 }
 
 const initialState: CorridaState = {
@@ -73,6 +75,7 @@ const initialState: CorridaState = {
   corridaHistory: [],
   ratingSubmitted: false,
   driverPosition: null,
+  unreadMensagens: 0,
 };
 
 /**
@@ -90,6 +93,7 @@ const corridaSlice = createSlice({
       if (action.payload === null) {
         state.ratingSubmitted = false;
         state.driverPosition = null;
+        state.unreadMensagens = 0;
       }
     },
 
@@ -179,9 +183,26 @@ const corridaSlice = createSlice({
 
     /**
      * Appends a new live chat message to the active ride room.
+     * Also increments the unread counter — caller must pass the current user's
+     * servidorId so messages from self are not counted.
      */
-    addMensagem(state, action: PayloadAction<CorridaMensagem>) {
-      state.mensagens.push(action.payload);
+    addMensagem(state, action: PayloadAction<{mensagem: CorridaMensagem; currentServidorId: string}>) {
+      const {mensagem, currentServidorId} = action.payload;
+      // Avoid duplicates (WS may deliver the same message twice on reconnect)
+      if (!state.mensagens.some(m => m.id === mensagem.id)) {
+        state.mensagens.push(mensagem);
+        // Only count messages from the other party
+        if (mensagem.remetenteId !== currentServidorId) {
+          state.unreadMensagens += 1;
+        }
+      }
+    },
+
+    /**
+     * Resets the unread message counter (call when the user opens the chat screen).
+     */
+    clearUnreadMensagens(state) {
+      state.unreadMensagens = 0;
     },
 
     /**
@@ -249,6 +270,7 @@ export const {
   clearSearch,
   setMensagens,
   addMensagem,
+  clearUnreadMensagens,
   setIsLoadingMensagens,
   setPosicaoMotoristaAtual,
   addToHistory,

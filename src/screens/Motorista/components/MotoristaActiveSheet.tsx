@@ -7,20 +7,24 @@
  *   - All lifecycle action buttons visible at once; each disappears only after
  *     the driver completes that specific step
  *   - Cancel section (only for cancellable states)
+ *
+ * Each action button uses an optimistic lock: disabled immediately on press,
+ * released only when the corrida status transitions (WS event). This prevents
+ * double-taps during the API → WebSocket propagation delay.
  */
-import React from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
   Animated,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
   type LayoutChangeEvent,
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
+import {MaterialIcons} from '@expo/vector-icons';
 import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.styles';
 import {statusColor} from '@screens/Corridas/CorridasScreens.styles';
 import {useTheme} from '@theme/index';
@@ -123,23 +127,53 @@ export const MotoristaActiveSheet = ({
 
   const actions = getVisibleActions(normalizedStatus);
 
-  const handleFinalizar = () => {
+  // ---------------------------------------------------------------------------
+  // Optimistic per-action lock
+  // Disabled immediately on press; released when corrida.status changes.
+  // Prevents double-taps during the API → WebSocket propagation delay.
+  // ---------------------------------------------------------------------------
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const lastStatusRef = useRef(normalizedStatus);
+
+  useEffect(() => {
+    // Status changed → the WS event arrived → release the lock
+    if (lastStatusRef.current !== normalizedStatus) {
+      lastStatusRef.current = normalizedStatus;
+      setPendingAction(null);
+    }
+  }, [normalizedStatus]);
+
+  const withLock = useCallback(
+    (actionKey: string, handler: () => void) => () => {
+      if (pendingAction !== null || isActionLoading) return;
+      setPendingAction(actionKey);
+      handler();
+    },
+    [pendingAction, isActionLoading],
+  );
+
+  // A button is busy if the global loading flag is set OR this specific action
+  // is pending (optimistic lock held until status transitions).
+  const isBusy = (actionKey: string): boolean =>
+    isActionLoading || pendingAction === actionKey;
+
+  const handleFinalizar = useCallback(() => {
     Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
       {text: t('common.cancel'), style: 'cancel'},
-      {text: t('common.confirm'), onPress: onFinalizar},
+      {text: t('common.confirm'), onPress: withLock('finalizar', onFinalizar)},
     ]);
-  };
+  }, [t, withLock, onFinalizar]);
 
-  const handleCancelar = () => {
+  const handleCancelar = useCallback(() => {
     if (!cancelMotivo.trim()) {
       Alert.alert(t('corridas.cancel.title'), t('corridas.cancel.motivoRequired'));
       return;
     }
     Alert.alert(t('corridas.cancel.title'), t('corridas.cancel.confirm'), [
       {text: t('common.cancel'), style: 'cancel'},
-      {text: t('common.confirm'), style: 'destructive', onPress: onCancelar},
+      {text: t('common.confirm'), style: 'destructive', onPress: withLock('cancelar', onCancelar)},
     ]);
-  };
+  }, [cancelMotivo, t, withLock, onCancelar]);
 
   return (
     <Animated.View
@@ -161,37 +195,31 @@ export const MotoristaActiveSheet = ({
         </View>
       </View>
 
-      {/* Route — street addresses, never raw coordinates */}
-      <View style={styles.routeRow}>
-        <View style={[styles.statusDot, styles.routeDotOffset, {backgroundColor: C.success}]} />
-        <View style={styles.routeTextBlock}>
-          <Text style={styles.routeLabel}>{t('corridas.detail.origem')}</Text>
-          <Text style={styles.routeValue} numberOfLines={2}>
-            {origemAddress ?? t('corridas.detail.addressLoading')}
-          </Text>
-        </View>
+      {/* Route — inline icon + address, same style as passenger panel */}
+      <View style={styles.addressRow}>
+        <MaterialIcons name="trip-origin" size={14} color={C.success} />
+        <Text style={styles.addressText} numberOfLines={2}>
+          {origemAddress ?? t('corridas.detail.addressLoading')}
+        </Text>
       </View>
-      <View style={styles.routeRow}>
-        <View style={[styles.statusDot, styles.routeDotOffset, {backgroundColor: C.danger}]} />
-        <View style={styles.routeTextBlock}>
-          <Text style={styles.routeLabel}>{t('corridas.detail.destino')}</Text>
-          <Text style={styles.routeValue} numberOfLines={2}>
-            {destinoAddress ?? t('corridas.detail.addressLoading')}
-          </Text>
-        </View>
+      <View style={styles.addressRow}>
+        <MaterialIcons name="location-on" size={14} color={C.danger} />
+        <Text style={styles.addressText} numberOfLines={2}>
+          {destinoAddress ?? t('corridas.detail.addressLoading')}
+        </Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <View>
         {/* SOLICITADA / AGUARDANDO_ACEITE → Aceitar */}
         {actions.showAceitar && (
           <Pressable
             accessibilityLabel={t('corridas.actions.aceitar')}
             accessibilityRole="button"
-            disabled={isActionLoading}
-            onPress={onAceitar}
-            style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
+            disabled={isBusy('aceitar')}
+            onPress={withLock('aceitar', onAceitar)}
+            style={[styles.actionButton, styles.actionButtonSuccess, isBusy('aceitar') && styles.actionButtonDisabled]}
             testID="btn-aceitar">
-            {isActionLoading ? (
+            {isBusy('aceitar') ? (
               <ActivityIndicator color={C.textOnDark} size="small" />
             ) : (
               <Text style={styles.actionButtonText}>{t('corridas.actions.aceitar')}</Text>
@@ -215,11 +243,15 @@ export const MotoristaActiveSheet = ({
               <Pressable
                 accessibilityLabel={t('corridas.actions.recusar')}
                 accessibilityRole="button"
-                disabled={isActionLoading}
-                onPress={onRecusar}
-                style={[styles.actionButton, styles.actionButtonDanger, isActionLoading && styles.actionButtonDisabled]}
+                disabled={isBusy('recusar')}
+                onPress={withLock('recusar', onRecusar)}
+                style={[styles.actionButton, styles.actionButtonDanger, isBusy('recusar') && styles.actionButtonDisabled]}
                 testID="btn-recusar-confirm">
-                <Text style={styles.actionButtonText}>{t('corridas.actions.recusar')}</Text>
+                {isBusy('recusar') ? (
+                  <ActivityIndicator color={C.textOnDark} size="small" />
+                ) : (
+                  <Text style={styles.actionButtonText}>{t('corridas.actions.recusar')}</Text>
+                )}
               </Pressable>
             </>
           ) : (
@@ -239,11 +271,11 @@ export const MotoristaActiveSheet = ({
           <Pressable
             accessibilityLabel={t('corridas.actions.iniciarDeslocamento')}
             accessibilityRole="button"
-            disabled={isActionLoading}
-            onPress={onIniciarDeslocamento}
-            style={[styles.actionButton, styles.actionButtonPrimary, isActionLoading && styles.actionButtonDisabled]}
+            disabled={isBusy('iniciarDeslocamento')}
+            onPress={withLock('iniciarDeslocamento', onIniciarDeslocamento)}
+            style={[styles.actionButton, styles.actionButtonPrimary, isBusy('iniciarDeslocamento') && styles.actionButtonDisabled]}
             testID="btn-iniciar-deslocamento">
-            {isActionLoading ? (
+            {isBusy('iniciarDeslocamento') ? (
               <ActivityIndicator color={C.textOnDark} size="small" />
             ) : (
               <Text style={styles.actionButtonText}>{t('corridas.actions.iniciarDeslocamento')}</Text>
@@ -256,11 +288,11 @@ export const MotoristaActiveSheet = ({
           <Pressable
             accessibilityLabel={t('motorista.actions.chegar')}
             accessibilityRole="button"
-            disabled={isActionLoading}
-            onPress={onChegar}
-            style={[styles.actionButton, styles.actionButtonPrimary, isActionLoading && styles.actionButtonDisabled]}
+            disabled={isBusy('chegar')}
+            onPress={withLock('chegar', onChegar)}
+            style={[styles.actionButton, styles.actionButtonPrimary, isBusy('chegar') && styles.actionButtonDisabled]}
             testID="btn-chegar">
-            {isActionLoading ? (
+            {isBusy('chegar') ? (
               <ActivityIndicator color={C.textOnDark} size="small" />
             ) : (
               <Text style={styles.actionButtonText}>{t('motorista.actions.chegar')}</Text>
@@ -268,16 +300,16 @@ export const MotoristaActiveSheet = ({
           </Pressable>
         )}
 
-        {/* ACEITA / EM_ROTA → Confirmar Embarque */}
+        {/* EM_ROTA → Confirmar Embarque */}
         {actions.showConfirmarEmbarque && (
           <Pressable
             accessibilityLabel={t('corridas.actions.confirmarEmbarque')}
             accessibilityRole="button"
-            disabled={isActionLoading}
-            onPress={onConfirmarEmbarque}
-            style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
+            disabled={isBusy('confirmarEmbarque')}
+            onPress={withLock('confirmarEmbarque', onConfirmarEmbarque)}
+            style={[styles.actionButton, styles.actionButtonSuccess, isBusy('confirmarEmbarque') && styles.actionButtonDisabled]}
             testID="btn-confirmar-embarque">
-            {isActionLoading ? (
+            {isBusy('confirmarEmbarque') ? (
               <ActivityIndicator color={C.textOnDark} size="small" />
             ) : (
               <Text style={styles.actionButtonText}>{t('corridas.actions.confirmarEmbarque')}</Text>
@@ -290,11 +322,11 @@ export const MotoristaActiveSheet = ({
           <Pressable
             accessibilityLabel={t('corridas.actions.passageiroABordo')}
             accessibilityRole="button"
-            disabled={isActionLoading}
-            onPress={onPassageiroABordo}
-            style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
+            disabled={isBusy('passageiroABordo')}
+            onPress={withLock('passageiroABordo', onPassageiroABordo)}
+            style={[styles.actionButton, styles.actionButtonSuccess, isBusy('passageiroABordo') && styles.actionButtonDisabled]}
             testID="btn-passageiro-a-bordo">
-            {isActionLoading ? (
+            {isBusy('passageiroABordo') ? (
               <ActivityIndicator color={C.textOnDark} size="small" />
             ) : (
               <Text style={styles.actionButtonText}>{t('corridas.actions.passageiroABordo')}</Text>
@@ -307,11 +339,11 @@ export const MotoristaActiveSheet = ({
           <Pressable
             accessibilityLabel={t('corridas.actions.finalizar')}
             accessibilityRole="button"
-            disabled={isActionLoading}
+            disabled={isBusy('finalizar')}
             onPress={handleFinalizar}
-            style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
+            style={[styles.actionButton, styles.actionButtonSuccess, isBusy('finalizar') && styles.actionButtonDisabled]}
             testID="btn-finalizar">
-            {isActionLoading ? (
+            {isBusy('finalizar') ? (
               <ActivityIndicator color={C.textOnDark} size="small" />
             ) : (
               <Text style={styles.actionButtonText}>{t('corridas.actions.finalizar')}</Text>
@@ -334,11 +366,15 @@ export const MotoristaActiveSheet = ({
             <Pressable
               accessibilityLabel={t('corridas.cancel.title')}
               accessibilityRole="button"
-              disabled={isActionLoading}
+              disabled={isBusy('cancelar')}
               onPress={handleCancelar}
-              style={[styles.actionButton, styles.actionButtonDanger, isActionLoading && styles.actionButtonDisabled]}
+              style={[styles.actionButton, styles.actionButtonDanger, isBusy('cancelar') && styles.actionButtonDisabled]}
               testID="btn-cancelar-confirm">
-              <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
+              {isBusy('cancelar') ? (
+                <ActivityIndicator color={C.textOnDark} size="small" />
+              ) : (
+                <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
+              )}
             </Pressable>
           </>
         ) : (
@@ -351,7 +387,7 @@ export const MotoristaActiveSheet = ({
             <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
     </Animated.View>
   );
 };

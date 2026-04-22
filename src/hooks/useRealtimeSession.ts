@@ -58,6 +58,7 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
   const token = useAppSelector(state => state.auth.token);
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
   const motoristaId = useAppSelector(state => state.auth.motoristaId);
+  const servidorId = useAppSelector(state => state.auth.servidorId ?? '');
   const connectionStatus = useAppSelector(state => state.realtime.connectionStatus);
   const lastError = useAppSelector(state => state.realtime.lastError);
 
@@ -73,6 +74,9 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
 
   const facadeRef = useRef(realtimeFacade);
   facadeRef.current = realtimeFacade;
+
+  const servidorIdRef = useRef(servidorId);
+  servidorIdRef.current = servidorId;
 
   // ---------------------------------------------------------------------------
   // Register listeners — runs once per facade instance.
@@ -101,7 +105,10 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
           break;
         case 'nova-mensagem':
           dispatchRef.current(
-            addMensagem(facadeRef.current.normalizeCorridaMensagem(event.payload)),
+            addMensagem({
+              mensagem: facadeRef.current.normalizeCorridaMensagem(event.payload),
+              currentServidorId: servidorIdRef.current,
+            }),
           );
           break;
         case 'posicao-atualizada':

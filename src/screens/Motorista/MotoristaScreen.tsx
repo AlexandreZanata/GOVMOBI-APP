@@ -37,11 +37,21 @@ import {MotoristaTerminalSheet} from './components/MotoristaTerminalSheet';
 import {MotoristaActiveSheet} from './components/MotoristaActiveSheet';
 import type {MotoristaTabParamList, MotoristaCorridasStackParamList} from '@navigation/types';
 import {normalizeStatus, TERMINAL_STATUSES} from '@models/Corrida';
+import {useAppSelector} from '../../store';
+import {useFacades} from '@services/facades';
 
 type MotoristaNavProp = CompositeNavigationProp<
   BottomTabNavigationProp<MotoristaTabParamList, 'MotoristaHome'>,
   NativeStackNavigationProp<MotoristaCorridasStackParamList>
 >;
+
+const activeRouteLineStyle = {
+  lineColor: '#2F80FF',
+  lineWidth: 4,
+  lineOpacity: 1,
+  lineCap: 'round' as const,
+  lineJoin: 'round' as const,
+};
 
 /**
  * Driver home screen — map + active ride panel.
@@ -55,6 +65,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
   const hs = useMemo(() => createHistoricoStyles(theme), [theme]);
   const navigation = useNavigation<MotoristaNavProp>();
 
+  const {corridaFacade, pesquisaFacade} = useFacades();
   const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
 
   const {
@@ -89,6 +100,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   // Realtime: location streaming + nova-corrida-disponivel modal
   const {pendingOffer, dismissOffer} = useMotoristaRealtime(userLocation);
+  const unreadMensagens = useAppSelector(s => s.corrida.unreadMensagens);
 
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [showCancelInput, setShowCancelInput] = useState(false);
@@ -111,6 +123,35 @@ export const MotoristaScreen = (): React.JSX.Element => {
     activeCorrida !== null &&
     normalizedActiveStatus !== null &&
     TERMINAL_STATUSES.has(normalizedActiveStatus);
+
+  // ── Route line for active ride ──────────────────────────────────────────────
+  const [activeRouteCoords, setActiveRouteCoords] = useState<[number, number][]>([]);
+  const activeRouteRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (
+      !activeCorrida || !hasActiveRide ||
+      !Number.isFinite(activeCorrida.origemLat) || !Number.isFinite(activeCorrida.origemLng) ||
+      !Number.isFinite(activeCorrida.destinoLat) || !Number.isFinite(activeCorrida.destinoLng)
+    ) {
+      setActiveRouteCoords([]);
+      return;
+    }
+    let cancelled = false;
+    const requestId = ++activeRouteRequestRef.current;
+    void (async () => {
+      const result = await pesquisaFacade.getRouteBetweenPoints({
+        origemLat: activeCorrida.origemLat,
+        origemLng: activeCorrida.origemLng,
+        destinoLat: activeCorrida.destinoLat,
+        destinoLng: activeCorrida.destinoLng,
+      });
+      if (cancelled || requestId !== activeRouteRequestRef.current) return;
+      const coords = result.data?.geometry.coordinates;
+      if (coords && coords.length >= 2) setActiveRouteCoords(coords);
+    })();
+    return () => { cancelled = true; };
+  }, [activeCorrida, hasActiveRide, pesquisaFacade]);
 
   const onSheetLayout = useCallback((event: LayoutChangeEvent) => {
     const h = event.nativeEvent.layout.height;
@@ -203,6 +244,15 @@ export const MotoristaScreen = (): React.JSX.Element => {
   }, [dismissOffer, onRecusar]);
 
   // ── Map ─────────────────────────────────────────────────────────────────────
+  const activeRouteFeature = useMemo(() => {
+    if (activeRouteCoords.length < 2) return null;
+    return {
+      type: 'Feature' as const,
+      properties: {},
+      geometry: {type: 'LineString' as const, coordinates: activeRouteCoords},
+    };
+  }, [activeRouteCoords]);
+
   const mapContent =
     MapboxGL ? (
       <MapboxGL.MapView
@@ -221,6 +271,12 @@ export const MotoristaScreen = (): React.JSX.Element => {
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}
         />
+        {/* Route line between origin and destination */}
+        {hasActiveRide && activeRouteFeature && MapboxGL.ShapeSource && MapboxGL.LineLayer && (
+          <MapboxGL.ShapeSource id="active-route-source" shape={activeRouteFeature}>
+            <MapboxGL.LineLayer id="active-route-line" style={activeRouteLineStyle} />
+          </MapboxGL.ShapeSource>
+        )}
         {userLocation && (
           <MapboxGL.PointAnnotation
             coordinate={[userLocation.longitude, userLocation.latitude]}
@@ -314,6 +370,13 @@ export const MotoristaScreen = (): React.JSX.Element => {
             style={[styles.chatFab, {bottom: chatFabBottom}]}
             testID="chat-fab">
             <MaterialIcons name="chat" size={24} color={C.textOnDark} />
+            {unreadMensagens > 0 && (
+              <View style={styles.chatFabBadge} testID="chat-fab-badge">
+                <Text style={styles.chatFabBadgeText}>
+                  {unreadMensagens > 99 ? '99+' : String(unreadMensagens)}
+                </Text>
+              </View>
+            )}
           </Pressable>
         )}
 

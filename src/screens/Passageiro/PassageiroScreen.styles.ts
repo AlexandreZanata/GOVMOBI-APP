@@ -503,6 +503,23 @@ export const createPassageiroStyles = () =>
       elevation: 6,
       zIndex: 20,
     },
+    chatFabBadge: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: C.errorRed,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 4,
+    },
+    chatFabBadgeText: {
+      color: C.textOnDark,
+      fontWeight: '700',
+      fontSize: 10,
+    },
     // ── Cancel section inside active ride panel ───────────────────────────────
     cancelSection: {
       marginTop: 10,

@@ -29,6 +29,8 @@ import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles} from './CorridasScreens.styles';
 import {useAppSelector} from '../../store';
+import {useAppDispatch} from '../../store';
+import {clearUnreadMensagens} from '@store/slices/corridaSlice';
 import {useFacades} from '@services/facades';
 import type {CorridaMensagem} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
@@ -60,6 +62,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
 
   const currentUserId = useAppSelector(s => s.auth.user?.id ?? '');
   const mensagens = useAppSelector(s => s.corrida.mensagens);
+  const dispatch = useAppDispatch();
 
   const {isLoadingMensagens, onLoadMensagens} = usePassageiroCorrida(corridaId);
 
@@ -71,10 +74,11 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     navigation.goBack();
   }, [navigation]);
 
-  // Load message history on mount
+  // Load message history on mount + reset unread counter
   useEffect(() => {
     void onLoadMensagens(corridaId);
-  }, [corridaId, onLoadMensagens]);
+    dispatch(clearUnreadMensagens());
+  }, [corridaId, dispatch, onLoadMensagens]);
 
   // nova-mensagem is handled globally by useRealtimeSession → addMensagem.
   // No local listener needed — reading from Redux is sufficient.
@@ -195,7 +199,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
         />
       )}
 
-      {/* Message input */}
+      {/* Message input — available to all roles */}
       <View style={[styles.inputRow, {paddingBottom: bottomPad}]}>
         <TextInput
           accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
