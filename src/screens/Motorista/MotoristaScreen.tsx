@@ -66,6 +66,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
     onIniciarDeslocamento,
     onChegar,
     onConfirmarEmbarque,
+    onPassageiroABordo,
     onFinalizar,
     onCancelar,
     onAceitar,
@@ -157,6 +158,11 @@ export const MotoristaScreen = (): React.JSX.Element => {
       posicaoLng: userLocation?.longitude ?? activeCorrida.origemLng,
     });
   }, [activeCorrida, onConfirmarEmbarque, userLocation]);
+
+  const handlePassageiroABordo = useCallback(() => {
+    if (!activeCorrida) return;
+    void onPassageiroABordo(activeCorrida.id);
+  }, [activeCorrida, onPassageiroABordo]);
 
   const handleFinalizar = useCallback(() => {
     if (!activeCorrida) return;
@@ -342,6 +348,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
             onCancelMotivoChange={setCancelMotivo}
             onChegar={handleChegar}
             onConfirmarEmbarque={handleConfirmarEmbarque}
+            onPassageiroABordo={handlePassageiroABordo}
             onFinalizar={handleFinalizar}
             onIniciarDeslocamento={handleIniciarDeslocamento}
             onLayout={onSheetLayout}

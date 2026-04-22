@@ -15,8 +15,8 @@ Implements the two missing rating screens: an ADMIN-only list of all system rati
     - Add `export * from './Avaliacao';`
     - _Requirements: 1.3_
 
-- [-] 2. `AvaliacoesFacade` — contract and real implementation
-  - [ ] 2.1 Create `src/services/facades/AvaliacoesFacade.ts`
+- [x] 2. `AvaliacoesFacade` — contract and real implementation
+  - [x] 2.1 Create `src/services/facades/AvaliacoesFacade.ts`
     - Define `IAvaliacoesFacade` interface with `listAvaliacoes()` and `getMinhaAvaliacaoSummary()`
     - Implement `AvaliacoesFacadeImpl` with `getToken` constructor config (same pattern as `FrotaFacadeImpl`)
     - `listAvaliacoes()` → `GET /admin/avaliacoes` with Bearer token; unwrap response array

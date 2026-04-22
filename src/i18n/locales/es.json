@@ -398,6 +398,7 @@
       "EM_DESLOCAMENTO": "En Camino",
       "EM_ROTA": "En Camino",
       "PASSAGEIRO_EMBARCADO": "Pasajero Abordado",
+      "PASSAGEIRO_A_BORDO": "Pasajero a Bordo",
       "FINALIZADA": "Finalizado",
       "CANCELADA": "Cancelado",
       "AGUARDANDO_ACEITE": "Esperando Aceptación",
@@ -411,6 +412,7 @@
       "recusar": "Rechazar Viaje",
       "iniciarDeslocamento": "Iniciar Desplazamiento",
       "confirmarEmbarque": "Confirmar Abordaje",
+      "passageiroABordo": "Pasajero a Bordo",
       "finalizar": "Finalizar Viaje"
     },
     "recusar": {"motivoPlaceholder": "Motivo del rechazo (opcional)"},

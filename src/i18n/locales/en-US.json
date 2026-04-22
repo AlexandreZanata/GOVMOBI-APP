@@ -407,6 +407,7 @@
       "EM_DESLOCAMENTO": "En Route",
       "EM_ROTA": "En Route",
       "PASSAGEIRO_EMBARCADO": "Passenger Boarded",
+      "PASSAGEIRO_A_BORDO": "Passenger On Board",
       "FINALIZADA": "Completed",
       "CANCELADA": "Cancelled",
       "AGUARDANDO_ACEITE": "Awaiting Acceptance",
@@ -420,6 +421,7 @@
       "recusar": "Refuse Ride",
       "iniciarDeslocamento": "Start Driving",
       "confirmarEmbarque": "Confirm Boarding",
+      "passageiroABordo": "Passenger On Board",
       "finalizar": "Complete Ride"
     },
     "recusar": {"motivoPlaceholder": "Reason for refusal (optional)"},

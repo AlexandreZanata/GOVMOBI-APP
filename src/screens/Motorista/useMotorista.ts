@@ -99,6 +99,8 @@ export interface MotoristaState {
   onChegar: (corridaId: string) => Promise<void>;
   /** Confirms passenger boarded. */
   onConfirmarEmbarque: (corridaId: string, input: ConfirmarEmbarqueInput) => Promise<void>;
+  /** Confirms passenger is in the vehicle — transitions to PASSAGEIRO_A_BORDO. */
+  onPassageiroABordo: (corridaId: string) => Promise<void>;
   /** Completes the ride. */
   onFinalizar: (corridaId: string, input: FinalizarCorridaInput) => Promise<void>;
   /** Cancels an active ride. */
@@ -516,6 +518,28 @@ export const useMotorista = (): MotoristaState => {
   );
 
   /**
+   * Confirms passenger is in the vehicle (POST /corridas/:id/passageiro-a-bordo).
+   * Transitions status to PASSAGEIRO_A_BORDO; after this only "Finalizar" is shown.
+   */
+  const onPassageiroABordo = useCallback(
+    async (corridaId: string): Promise<void> => {
+      await withAction(
+        async () => {
+          const r = await corridaFacade.passageiroABordo(corridaId);
+          if (r.error) throw new Error(r.error.message);
+          return r.data;
+        },
+        data => {
+          if (data) dispatch(setActiveCorrida(data));
+          dispatch(addToast({id: `pab-${Date.now()}`, message: t('corridas.success.passageiroABordo'), type: 'success'}));
+        },
+        'corridas.errors.passageiroABordoFailed',
+      );
+    },
+    [corridaFacade, dispatch, t, withAction],
+  );
+
+  /**
    * Completes the ride (POST /corridas/:id/finalizar).
    *
    * @param corridaId - Ride UUID.
@@ -632,6 +656,7 @@ export const useMotorista = (): MotoristaState => {
     onIniciarDeslocamento,
     onChegar,
     onConfirmarEmbarque,
+    onPassageiroABordo,
     onFinalizar,
     onCancelar,
     onLoadCorrida,

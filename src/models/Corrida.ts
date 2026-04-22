@@ -21,6 +21,7 @@ export type CorridaStatus =
   | 'EM_DESLOCAMENTO'   // app-side alias for EM_ROTA
   | 'EM_ROTA'           // backend canonical name
   | 'PASSAGEIRO_EMBARCADO'
+  | 'PASSAGEIRO_A_BORDO'  // driver confirmed passenger is in the vehicle
   | 'FINALIZADA'        // app-side alias for CONCLUIDA
   | 'CONCLUIDA'         // backend canonical name
   | 'CANCELADA'
@@ -35,6 +36,7 @@ const VALID_STATUSES: ReadonlySet<CorridaStatus> = new Set([
   'EM_DESLOCAMENTO',
   'EM_ROTA',
   'PASSAGEIRO_EMBARCADO',
+  'PASSAGEIRO_A_BORDO',
   'FINALIZADA',
   'CONCLUIDA',
   'CANCELADA',

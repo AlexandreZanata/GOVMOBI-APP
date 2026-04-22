@@ -56,6 +56,7 @@ export interface MotoristaActiveSheetProps {
   onIniciarDeslocamento: () => void;
   onChegar: () => void;
   onConfirmarEmbarque: () => void;
+  onPassageiroABordo: () => void;
   onFinalizar: () => void;
   onCancelar: () => void;
 }
@@ -68,7 +69,8 @@ export interface MotoristaActiveSheetProps {
  *   SOLICITADA / AGUARDANDO_ACEITE → Aceitar + Recusar
  *   ACEITA                         → Iniciar Deslocamento + Confirmar Embarque
  *   EM_ROTA / EM_DESLOCAMENTO      → Chegar ao Local + Confirmar Embarque
- *   PASSAGEIRO_EMBARCADO           → Finalizar
+ *   PASSAGEIRO_EMBARCADO           → Passageiro a Bordo
+ *   PASSAGEIRO_A_BORDO             → Finalizar (only)
  */
 const getVisibleActions = (status: Corrida['status']) => ({
   showAceitar:             status === 'SOLICITADA' || status === 'AGUARDANDO_ACEITE',
@@ -76,7 +78,8 @@ const getVisibleActions = (status: Corrida['status']) => ({
   showIniciarDeslocamento: status === 'ACEITA',
   showChegar:              status === 'EM_ROTA' || status === 'EM_DESLOCAMENTO',
   showConfirmarEmbarque:   status === 'ACEITA' || status === 'EM_ROTA' || status === 'EM_DESLOCAMENTO',
-  showFinalizar:           status === 'PASSAGEIRO_EMBARCADO',
+  showPassageiroABordo:    status === 'PASSAGEIRO_EMBARCADO',
+  showFinalizar:           status === 'PASSAGEIRO_A_BORDO',
 });
 
 /**
@@ -104,6 +107,7 @@ export const MotoristaActiveSheet = ({
   onIniciarDeslocamento,
   onChegar,
   onConfirmarEmbarque,
+  onPassageiroABordo,
   onFinalizar,
   onCancelar,
 }: MotoristaActiveSheetProps): React.JSX.Element => {
@@ -282,7 +286,24 @@ export const MotoristaActiveSheet = ({
           </Pressable>
         )}
 
-        {/* PASSAGEIRO_EMBARCADO → Finalizar */}
+        {/* PASSAGEIRO_EMBARCADO → Passageiro a Bordo */}
+        {actions.showPassageiroABordo && (
+          <Pressable
+            accessibilityLabel={t('corridas.actions.passageiroABordo')}
+            accessibilityRole="button"
+            disabled={isActionLoading}
+            onPress={onPassageiroABordo}
+            style={[styles.actionButton, styles.actionButtonSuccess, isActionLoading && styles.actionButtonDisabled]}
+            testID="btn-passageiro-a-bordo">
+            {isActionLoading ? (
+              <ActivityIndicator color={C.textOnDark} size="small" />
+            ) : (
+              <Text style={styles.actionButtonText}>{t('corridas.actions.passageiroABordo')}</Text>
+            )}
+          </Pressable>
+        )}
+
+        {/* PASSAGEIRO_A_BORDO → Finalizar */}
         {actions.showFinalizar && (
           <Pressable
             accessibilityLabel={t('corridas.actions.finalizar')}

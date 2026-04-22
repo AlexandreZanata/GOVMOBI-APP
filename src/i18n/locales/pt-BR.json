@@ -437,6 +437,7 @@
       "EM_DESLOCAMENTO": "Em Deslocamento",
       "EM_ROTA": "Em Rota",
       "PASSAGEIRO_EMBARCADO": "Passageiro Embarcado",
+      "PASSAGEIRO_A_BORDO": "Passageiro a Bordo",
       "FINALIZADA": "Finalizada",
       "CANCELADA": "Cancelada",
       "AGUARDANDO_ACEITE": "Aguardando Aceite",
@@ -450,6 +451,7 @@
       "recusar": "Recusar Corrida",
       "iniciarDeslocamento": "Iniciar Deslocamento",
       "confirmarEmbarque": "Confirmar Embarque",
+      "passageiroABordo": "Passageiro a Bordo",
       "finalizar": "Finalizar Corrida"
     },
     "recusar": {
@@ -485,6 +487,7 @@
       "recusada": "Corrida recusada.",
       "emDeslocamento": "Deslocamento iniciado.",
       "embarcado": "Embarque confirmado.",
+      "passageiroABordo": "Passageiro a bordo confirmado.",
       "finalizada": "Corrida finalizada.",
       "cancelada": "Corrida cancelada."
     },
@@ -495,6 +498,7 @@
       "recusarFailed": "Não foi possível recusar a corrida.",
       "deslocamentoFailed": "Não foi possível iniciar o deslocamento.",
       "embarqueFailed": "Não foi possível confirmar o embarque.",
+      "passageiroABordoFailed": "Não foi possível confirmar passageiro a bordo.",
       "finalizarFailed": "Não foi possível finalizar a corrida.",
       "cancelarFailed": "Não foi possível cancelar a corrida."
     }

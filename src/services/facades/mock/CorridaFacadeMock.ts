@@ -182,6 +182,16 @@ export class CorridaFacadeMock implements ICorridaFacade {
   }
 
   /** @inheritdoc */
+  public async passageiroABordo(corridaId: string): Promise<Result<Corrida, FacadeError>> {
+    await delay(200);
+    const corrida = store.get(corridaId);
+    if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
+    const updated = transition(corrida, 'PASSAGEIRO_A_BORDO');
+    store.set(corridaId, updated);
+    return ok(updated);
+  }
+
+  /** @inheritdoc */
   public async finalizarCorrida(
     corridaId: string,
     _input: FinalizarCorridaInput,
@@ -204,7 +214,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
 
     // Enforce backend state machine: EM_ROTA / PASSAGEIRO_EMBARCADO → 409
-    if (corrida.status === 'EM_DESLOCAMENTO' || corrida.status === 'EM_ROTA' || corrida.status === 'PASSAGEIRO_EMBARCADO') {
+    if (corrida.status === 'EM_DESLOCAMENTO' || corrida.status === 'EM_ROTA' || corrida.status === 'PASSAGEIRO_EMBARCADO' || corrida.status === 'PASSAGEIRO_A_BORDO') {
       return fail({
         code: 'INVALID_STATE_TRANSITION',
         message: 'Corrida em andamento não pode ser cancelada.',

@@ -61,6 +61,7 @@ const normalizeStatus = (status: string): Corrida['status'] => {
     case 'recusada':         return 'RECUSADA';
     case 'em_rota':
     case 'em_deslocamento':  return 'EM_ROTA';    case 'passageiro_embarcado': return 'PASSAGEIRO_EMBARCADO';
+    case 'passageiro_a_bordo':   return 'PASSAGEIRO_A_BORDO';
     case 'concluida':
     case 'finalizada':       return 'CONCLUIDA';
     case 'avaliada':         return 'AVALIADA';
@@ -146,6 +147,9 @@ export interface ICorridaFacade {
 
   /** POST /corridas/:id/confirmar-embarque */
   confirmarEmbarque(corridaId: string, input: ConfirmarEmbarqueInput): Promise<Result<Corrida, FacadeError>>;
+
+  /** POST /corridas/:id/passageiro-a-bordo — driver confirms passenger is in the vehicle */
+  passageiroABordo(corridaId: string): Promise<Result<Corrida, FacadeError>>;
 
   /** POST /corridas/:id/finalizar */
   finalizarCorrida(corridaId: string, input: FinalizarCorridaInput): Promise<Result<Corrida, FacadeError>>;
@@ -319,6 +323,18 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       console.error(`[CorridaFacade] confirmarEmbarque FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
       console.log(`[CorridaFacade] confirmarEmbarque OK → status=${result.data?.status}`);
+    }
+    return result;
+  }
+
+  /** @inheritdoc */
+  public async passageiroABordo(corridaId: string): Promise<Result<Corrida, FacadeError>> {
+    console.log(`[CorridaFacade] POST /corridas/${corridaId}/passageiro-a-bordo`);
+    const result = await this.postCorrida(`/corridas/${corridaId}/passageiro-a-bordo`, {}, corridaId);
+    if (result.error) {
+      console.error(`[CorridaFacade] passageiroABordo FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] passageiroABordo OK → status=${result.data?.status}`);
     }
     return result;
   }
