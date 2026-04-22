@@ -70,8 +70,8 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
   }, [corridaId, onLoadCorrida]);
 
   const handleAceitar = useCallback(() => {
-    void onAceitar(corridaId, {motoristaId: userId, veiculoId: 'veiculo-mock-001'});
-  }, [corridaId, onAceitar, userId]);
+    void onAceitar(corridaId, {});
+  }, [corridaId, onAceitar]);
 
   const handleRecusar = useCallback(() => {
     void onRecusar(corridaId, recusaMotivo || undefined).then(() => navigation.goBack());
@@ -83,11 +83,10 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
 
   const handleConfirmarEmbarque = useCallback(() => {
     void onConfirmarEmbarque(corridaId, {
-      motoristaId: userId,
       posicaoLat: -16.6869,
       posicaoLng: -49.2648,
     });
-  }, [corridaId, onConfirmarEmbarque, userId]);
+  }, [corridaId, onConfirmarEmbarque]);
 
   const handleFinalizar = useCallback(() => {
     Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
@@ -96,14 +95,13 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
         text: t('common.confirm'),
         onPress: () => {
           void onFinalizar(corridaId, {
-            motoristaId: userId,
             posicaoFinalLat: -16.6869,
             posicaoFinalLng: -49.2648,
           }).then(() => navigation.goBack());
         },
       },
     ]);
-  }, [corridaId, navigation, onFinalizar, t, userId]);
+  }, [corridaId, navigation, onFinalizar, t]);
 
   const handleCancelar = useCallback(() => {
     Alert.alert(t('corridas.cancel.title'), t('corridas.cancel.confirm'), [

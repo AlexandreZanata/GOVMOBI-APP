@@ -72,7 +72,7 @@ export const MotoristaIdleSheet = ({
     ? t('motorista.status.disponivel')
     : statusOperacional === 'EM_ROTA' || isEmCorrida
       ? t('motorista.status.emCorrida')
-      : t('motorista.status.afastado');
+      : t('motorista.status.offline');
 
   return (
     <Animated.View
@@ -92,7 +92,7 @@ export const MotoristaIdleSheet = ({
         accessibilityState={{checked: isAvailable, busy: isTogglingStatus || isEmCorrida}}
         disabled={isTogglingStatus || isEmCorrida}
         onPress={onToggleStatus}
-      style={[
+        style={[
           styles.statusToggleBtn,
           {borderColor: toggleColor},
           (isTogglingStatus || isEmCorrida) && styles.statusToggleBtnDisabled,

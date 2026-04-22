@@ -116,7 +116,7 @@ const createDefaultFacades = (
     notificationFacade: new NotificationFacadeImpl(resolvedConfig),
     runFacade: new RunFacadeImpl(resolvedConfig),
     servidoresFacade: new ServidoresFacadeImpl(resolvedConfig),
-    frotaFacade: new FrotaFacadeImpl(resolvedConfig),
+    frotaFacade: new FrotaFacadeImpl({...resolvedConfig, getToken}),
     corridaFacade: new CorridaFacadeImpl({...resolvedConfig, getToken}),
     pesquisaFacade: new PesquisaFacadeImpl({...resolvedConfig, getToken}),
     cartografiaFacade: new CartografiaFacadeImpl({...resolvedConfig, getToken}),

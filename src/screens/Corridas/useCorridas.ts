@@ -177,10 +177,12 @@ export const useCorridas = (corridaId?: string): CorridasState => {
   );
 
   const onAceitar = useCallback(
-    async (id: string, input: AceitarCorridaInput): Promise<void> => {
+    async (id: string, _input: AceitarCorridaInput): Promise<void> => {
+      console.log(`[useCorridas] onAceitar → corridaId=${id}`);
       await withAction(
         async () => {
-          const r = await corridaFacade.aceitarCorrida(id, input);
+          // Backend spec: body is EMPTY — vehicle resolved server-side from JWT + association
+          const r = await corridaFacade.aceitarCorrida(id, {});
           if (r.error) {
             const msg = r.error.code === 'CONFLICT'
               ? t('corridas.errors.jaAceita')

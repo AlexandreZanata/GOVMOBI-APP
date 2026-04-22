@@ -115,8 +115,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   const handleAceitar = useCallback(() => {
     if (!activeCorrida) return;
-    // motoristaId and veiculoId are resolved inside onAceitar from auth state + API
-    void onAceitar(activeCorrida.id, {motoristaId: '', veiculoId: ''});
+    void onAceitar(activeCorrida.id, {});
   }, [activeCorrida, onAceitar]);
 
   const handleRecusar = useCallback(() => {
@@ -171,7 +170,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
 
   const handleAcceptOffer = useCallback((corridaId: string) => {
     dismissOffer();
-    void onAceitar(corridaId, {motoristaId: '', veiculoId: ''});
+    void onAceitar(corridaId, {});
   }, [dismissOffer, onAceitar]);
 
   const handleRefuseOffer = useCallback((corridaId: string) => {

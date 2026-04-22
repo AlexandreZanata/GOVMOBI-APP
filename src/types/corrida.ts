@@ -38,13 +38,12 @@ export interface SolicitarCorridaInput {
 
 /**
  * POST /corridas/:id/aceitar body.
- * The backend DTO requires motoristaId as @IsUUID('7') for validation,
- * but the controller ignores it and uses user.motoristaId from the JWT.
- * We send both fields to satisfy the validator.
+ * Backend spec: body is EMPTY — vehicle and driver are resolved server-side
+ * from the driver's JWT (user.motoristaId) and their active vehicle association.
+ * This type is kept for interface compatibility but the facade sends {}.
  */
 export interface AceitarCorridaInput {
-  motoristaId: string;
-  veiculoId: string;
+  // intentionally empty — all fields derived from JWT on the server
 }
 
 /**
@@ -57,7 +56,7 @@ export interface RecusarCorridaInput {
 
 /**
  * POST /corridas/:id/confirmar-embarque body.
- * motoristaId is derived from JWT (user.motoristaId) on the server.
+ * motoristaId is derived from JWT (user.motoristaId) on the server — do NOT send it.
  */
 export interface ConfirmarEmbarqueInput {
   posicaoLat: number;
@@ -66,7 +65,7 @@ export interface ConfirmarEmbarqueInput {
 
 /**
  * POST /corridas/:id/finalizar body.
- * motoristaId is derived from JWT (user.motoristaId) on the server.
+ * motoristaId is derived from JWT (user.motoristaId) on the server — do NOT send it.
  */
 export interface FinalizarCorridaInput {
   posicaoFinalLat: number;

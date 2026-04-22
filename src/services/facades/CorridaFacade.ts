@@ -184,14 +184,15 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   /** @inheritdoc */
   public async aceitarCorrida(
     corridaId: string,
-    input: AceitarCorridaInput,
+    _input: AceitarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
-    console.log(`[CorridaFacade] POST /corridas/${corridaId}/aceitar →`, JSON.stringify(input));
-    const result = await this.post<Corrida>(`/corridas/${corridaId}/aceitar`, input);
+    // Backend spec: body is EMPTY — vehicle resolved from driver's JWT + association
+    console.log(`[CorridaFacade] POST /corridas/${corridaId}/aceitar → body={} (vehicle resolved server-side)`);
+    const result = await this.post<Corrida>(`/corridas/${corridaId}/aceitar`, {});
     if (result.error) {
-      console.error('[CorridaFacade] aceitar FAILED →', JSON.stringify(result.error));
+      console.error(`[CorridaFacade] aceitar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {
-      console.log('[CorridaFacade] aceitar OK →', JSON.stringify(result.data));
+      console.log(`[CorridaFacade] aceitar OK → status=${result.data?.status}`);
     }
     return result;
   }
@@ -202,19 +203,37 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: RecusarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/recusar →`, JSON.stringify(input));
-    return this.post<Corrida>(`/corridas/${corridaId}/recusar`, input);
+    const result = await this.post<Corrida>(`/corridas/${corridaId}/recusar`, input);
+    if (result.error) {
+      console.error(`[CorridaFacade] recusar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] recusar OK → status=${result.data?.status}`);
+    }
+    return result;
   }
 
   /** @inheritdoc */
   public async iniciarDeslocamento(corridaId: string): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/iniciar-deslocamento`);
-    return this.post<Corrida>(`/corridas/${corridaId}/iniciar-deslocamento`, {});
+    const result = await this.post<Corrida>(`/corridas/${corridaId}/iniciar-deslocamento`, {});
+    if (result.error) {
+      console.error(`[CorridaFacade] iniciarDeslocamento FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] iniciarDeslocamento OK → status=${result.data?.status}`);
+    }
+    return result;
   }
 
   /** @inheritdoc */
   public async chegarAoLocal(corridaId: string): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/chegar`);
-    return this.post<Corrida>(`/corridas/${corridaId}/chegar`, {});
+    const result = await this.post<Corrida>(`/corridas/${corridaId}/chegar`, {});
+    if (result.error) {
+      console.error(`[CorridaFacade] chegar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] chegar OK → status=${result.data?.status}`);
+    }
+    return result;
   }
 
   /** @inheritdoc */
@@ -223,7 +242,13 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: ConfirmarEmbarqueInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/confirmar-embarque →`, JSON.stringify(input));
-    return this.post<Corrida>(`/corridas/${corridaId}/confirmar-embarque`, input);
+    const result = await this.post<Corrida>(`/corridas/${corridaId}/confirmar-embarque`, input);
+    if (result.error) {
+      console.error(`[CorridaFacade] confirmarEmbarque FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] confirmarEmbarque OK → status=${result.data?.status}`);
+    }
+    return result;
   }
 
   /** @inheritdoc */
@@ -232,7 +257,13 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: FinalizarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/finalizar →`, JSON.stringify(input));
-    return this.post<Corrida>(`/corridas/${corridaId}/finalizar`, input);
+    const result = await this.post<Corrida>(`/corridas/${corridaId}/finalizar`, input);
+    if (result.error) {
+      console.error(`[CorridaFacade] finalizar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] finalizar OK → status=${result.data?.status}`);
+    }
+    return result;
   }
 
   /** @inheritdoc */
@@ -241,7 +272,13 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     input: CancelarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/cancelar →`, JSON.stringify(input));
-    return this.post<Corrida>(`/corridas/${corridaId}/cancelar`, input);
+    const result = await this.post<Corrida>(`/corridas/${corridaId}/cancelar`, input);
+    if (result.error) {
+      console.error(`[CorridaFacade] cancelar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] cancelar OK → status=${result.data?.status}`);
+    }
+    return result;
   }
 
   /** @inheritdoc */

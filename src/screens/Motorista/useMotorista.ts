@@ -128,11 +128,12 @@ export const useMotorista = (): MotoristaState => {
   const mensagens = useAppSelector(s => s.corrida.mensagens);
   const isLoadingMensagens = useAppSelector(s => s.corrida.isLoadingMensagens);
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
-  const motoristaId = useAppSelector(s => s.auth.motoristaId ?? '');
-  const statusOperacional = useAppSelector(s => s.auth.statusOperacional);
+  const motoristaId = useAppSelector(s => s.auth.motoristaId ?? '');  const statusOperacional = useAppSelector(s => s.auth.statusOperacional);
   const locationCurrent = useAppSelector(s => s.location.current);
   const locationLastKnown = useAppSelector(s => s.location.lastKnown);
   const locationFixStatus = useAppSelector(s => s.location.fixStatus);
+
+  const papeis = useAppSelector(s => s.auth.papeis);
 
   // Driver = user with a non-null motoristaId from /auth/me
   const isMotorista = !!motoristaId;
@@ -289,35 +290,42 @@ export const useMotorista = (): MotoristaState => {
   // ---------------------------------------------------------------------------
 
   /**
-   * Toggles the driver's operational status between DISPONIVEL and AFASTADO.
-   * If currently DISPONIVEL or EM_ROTA → sets AFASTADO.
-   * If AFASTADO or null → sets DISPONIVEL.
+   * Toggles the driver's operational status between DISPONIVEL and OFFLINE.
+   * Calls PATCH /frota/motoristas/me/status.
+   * If currently DISPONIVEL or EM_ROTA → sets OFFLINE.
+   * If OFFLINE, AFASTADO, or null → sets DISPONIVEL.
    */
   const onToggleStatus = useCallback(async (): Promise<void> => {
     const next: MotoristaStatusOperacional =
       statusOperacional === 'DISPONIVEL' || statusOperacional === 'EM_ROTA'
-        ? 'AFASTADO'
+        ? 'OFFLINE'
         : 'DISPONIVEL';
 
+    console.log('[useMotorista] onToggleStatus → current:', statusOperacional, '→ next:', next, '| papeis:', papeis, '| PATCH /frota/motoristas/me/status');
     setIsTogglingStatus(true);
     try {
       const result = await frotaFacade.updateMyStatus(next);
       if (result.error) {
+        console.error('[useMotorista] onToggleStatus FAILED →', JSON.stringify(result.error));
         dispatch(addToast({id: `status-err-${Date.now()}`, message: result.error.message, type: 'error'}));
         return;
       }
-      dispatch(setStatusOperacional(next));
+      console.log('[useMotorista] onToggleStatus OK → new status:', result.data?.statusOperacional);
+      // Use the status returned by the server (source of truth)
+      const confirmedStatus = result.data?.statusOperacional ?? next;
+      dispatch(setStatusOperacional(confirmedStatus));
+      const msgKey = confirmedStatus === 'DISPONIVEL' ? 'motorista.status.disponivelMsg' : 'motorista.status.offlineMsg';
       dispatch(
         addToast({
           id: `status-${Date.now()}`,
-          message: t(next === 'DISPONIVEL' ? 'motorista.status.disponivelMsg' : 'motorista.status.afastadoMsg'),
-          type: next === 'DISPONIVEL' ? 'success' : 'info',
+          message: t(msgKey),
+          type: confirmedStatus === 'DISPONIVEL' ? 'success' : 'info',
         }),
       );
     } finally {
       setIsTogglingStatus(false);
     }
-  }, [frotaFacade, statusOperacional, dispatch, t]);
+  }, [frotaFacade, statusOperacional, papeis, dispatch, t]);
 
   // ---------------------------------------------------------------------------
   // Map controls
@@ -365,32 +373,18 @@ export const useMotorista = (): MotoristaState => {
 
   /**
    * Accepts a dispatched ride (POST /corridas/:id/aceitar).
-   * Fetches the driver's first active vehicle at call time to ensure
-   * a valid veiculoId is always sent to the API.
+   * Backend spec: body is EMPTY — vehicle and driver resolved server-side
+   * from the JWT (user.motoristaId) and the driver's active vehicle association.
    *
    * @param corridaId - Ride UUID.
-   * @param input - Optional pre-resolved input (veiculoId). If veiculoId is
-   *   empty the method fetches it from GET /frota/veiculos.
+   * @param _input - Ignored. Kept for interface compatibility.
    */
   const onAceitar = useCallback(
-    async (corridaId: string, input: AceitarCorridaInput): Promise<void> => {
+    async (corridaId: string, _input: AceitarCorridaInput): Promise<void> => {
+      console.log(`[useMotorista] onAceitar → corridaId=${corridaId}`);
       await withAction(
         async () => {
-          // Resolve veiculoId — fetch from API if not already provided
-          let veiculoId = input.veiculoId;
-          if (!veiculoId) {
-            const veiculosResult = await frotaFacade.listVeiculos();
-            const firstActive = veiculosResult.data?.find(v => v.ativo);
-            if (!firstActive) {
-              throw new Error(t('corridas.errors.noVehicleAvailable'));
-            }
-            veiculoId = firstActive.id;
-          }
-
-          const r = await corridaFacade.aceitarCorrida(corridaId, {
-            motoristaId,
-            veiculoId,
-          });
+          const r = await corridaFacade.aceitarCorrida(corridaId, {});
           if (r.error) {
             throw new Error(
               r.error.code === 'CONFLICT'
@@ -408,7 +402,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.aceitarFailed',
       );
     },
-    [corridaFacade, frotaFacade, motoristaId, dispatch, t, withAction],
+    [corridaFacade, dispatch, t, withAction],
   );
 
   /**
@@ -550,8 +544,8 @@ export const useMotorista = (): MotoristaState => {
           const r = await corridaFacade.cancelarCorrida(corridaId, {motivo});
           if (r.error) {
             throw new Error(
-              r.error.code === 'BAD_REQUEST'
-                ? t('corridas.errors.jaFinalizada')
+              r.error.code === 'INVALID_STATE_TRANSITION'
+                ? t('corridas.cancel.notAllowed')
                 : t('corridas.errors.cancelarFailed'),
             );
           }

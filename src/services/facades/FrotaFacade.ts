@@ -1,6 +1,7 @@
 /**
  * @fileoverview Facade contract and implementation for the Frota domain.
- * Covers: GET /frota/veiculos, GET /frota/motoristas (and by-ID variants).
+ * Covers: GET /frota/veiculos, GET /frota/motoristas (and by-ID variants),
+ * PATCH /frota/motoristas/me/statusAtualizar — driver's own status update.
  * Response envelope: { success, data, timestamp } — .data is unwrapped here.
  */
 import {type Motorista, type Veiculo} from '../../models';
@@ -78,10 +79,12 @@ export interface IFrotaFacade {
 export class FrotaFacadeImpl implements IFrotaFacade {
   private readonly mockMode: boolean;
   private readonly apiBaseUrl: string;
+  private readonly getToken: () => string | null;
 
-  constructor(config: FacadeConfig = {}) {
+  constructor(config: FrotaFacadeConfig = {}) {
     this.mockMode = config.mockMode ?? ENV.mockMode;
     this.apiBaseUrl = config.apiBaseUrl ?? ENV.apiUrl;
+    this.getToken = config.getToken ?? (() => null);
   }
 
   public async listVeiculos(): Promise<Result<Veiculo[], FacadeError>> {
@@ -125,20 +128,31 @@ export class FrotaFacadeImpl implements IFrotaFacade {
   ): Promise<Result<Motorista, FacadeError>> {
     if (this.mockMode) {
       await this.delay(200);
-      // Return a mock motorista with the updated status
       const mock: Motorista = {...MOCK_MOTORISTAS[0], statusOperacional: status, updatedAt: new Date().toISOString()};
+      console.log('[FrotaFacade] MOCK PATCH /frota/motoristas/me/status →', JSON.stringify({status}));
+      console.log('[FrotaFacade] MOCK response →', JSON.stringify(mock));
       return ok(mock);
     }
+    const body = {status};
+    const token = this.getToken();
+    console.log('[FrotaFacade] PATCH /frota/motoristas/me/status →', JSON.stringify(body), '| token present:', !!token, '| token prefix:', token ? token.substring(0, 30) : 'null');
     try {
       const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/status`, {
         method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({status}),
+        headers: this.authHeaders(),
+        body: JSON.stringify(body),
       });
-      if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
-      const envelope = (await res.json()) as {success: boolean; data: Motorista};
+      console.log('[FrotaFacade] PATCH /frota/motoristas/me/status ← HTTP', res.status);
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        console.error('[FrotaFacade] status FAILED →', res.status, errText);
+        return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
+      }
+      const envelope = (await res.json()) as {success: boolean; data: Motorista; timestamp: string};
+      console.log('[FrotaFacade] status OK →', JSON.stringify(envelope.data));
       return ok(envelope.data);
-    } catch {
+    } catch (err) {
+      console.error('[FrotaFacade] statusAtualizar EXCEPTION →', err);
       return fail({code: 'NETWORK_ERROR', message: 'Network error', retryable: true});
     }
   }
@@ -150,7 +164,7 @@ export class FrotaFacadeImpl implements IFrotaFacade {
     }
     try {
       const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/veiculo`, {
-        headers: {'Content-Type': 'application/json'},
+        headers: this.authHeaders(),
       });
       if (res.status === 404) return ok(null);
       if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
@@ -171,7 +185,7 @@ export class FrotaFacadeImpl implements IFrotaFacade {
     try {
       const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/veiculo`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: this.authHeaders(),
         body: JSON.stringify({veiculoId}),
       });
       if (res.status === 409) return fail({code: 'CONFLICT', message: 'Vehicle already in use', statusCode: 409});
@@ -191,7 +205,7 @@ export class FrotaFacadeImpl implements IFrotaFacade {
     try {
       const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/veiculo`, {
         method: 'DELETE',
-        headers: {'Content-Type': 'application/json'},
+        headers: this.authHeaders(),
       });
       if (res.status === 409) return fail({code: 'CONFLICT', message: 'Cannot disassociate vehicle during active ride', statusCode: 409});
       if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
@@ -201,9 +215,18 @@ export class FrotaFacadeImpl implements IFrotaFacade {
     }
   }
 
+  private authHeaders(): Record<string, string> {
+    const token = this.getToken();
+    const headers: Record<string, string> = {'Content-Type': 'application/json'};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  }
+
   private async getEnvelope<T>(path: string): Promise<Result<T, FacadeError>> {
     try {
-      const res = await fetch(`${this.apiBaseUrl}${path}`);
+      const res = await fetch(`${this.apiBaseUrl}${path}`, {
+        headers: this.authHeaders(),
+      });
       if (res.status === 404) return fail({code: 'NOT_FOUND', message: 'Resource not found', statusCode: 404});
       if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
       const envelope = (await res.json()) as {success: boolean; data: T};
@@ -216,4 +239,14 @@ export class FrotaFacadeImpl implements IFrotaFacade {
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+/** Extended facade config with optional token getter. */
+export interface FrotaFacadeConfig extends FacadeConfig {
+  /** Returns the current JWT access token. Called at request time. */
+  getToken?: () => string | null;
 }

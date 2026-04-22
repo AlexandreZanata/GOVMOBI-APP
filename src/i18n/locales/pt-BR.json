@@ -305,9 +305,11 @@
       "disponivel": "Disponível",
       "emRota": "Em Rota",
       "afastado": "Indisponível",
+      "offline": "Offline",
       "toggleLabel": "Alternar disponibilidade",
       "disponivelMsg": "Você está disponível para corridas.",
       "afastadoMsg": "Você está indisponível para corridas.",
+      "offlineMsg": "Você está offline.",
       "emCorrida": "Em Corrida",
       "managedBySystem": "Status gerenciado pelo sistema durante a corrida."
     },

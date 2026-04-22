@@ -279,9 +279,11 @@
       "disponivel": "Available",
       "emRota": "On Route",
       "afastado": "Off Duty",
+      "offline": "Offline",
       "toggleLabel": "Toggle availability",
       "disponivelMsg": "You are now available for rides.",
       "afastadoMsg": "You are now off duty.",
+      "offlineMsg": "You are now offline.",
       "emCorrida": "On Ride",
       "managedBySystem": "Status managed by the system during the ride."
     },

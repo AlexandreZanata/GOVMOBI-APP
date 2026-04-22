@@ -52,6 +52,8 @@ export interface MeResponse {
   motoristaId?: string;
   /** Present only for MOTORISTA users. UUID of the municipality. */
   municipioId?: string;
+  /** Present only for MOTORISTA users. Current operational status. */
+  statusOperacional?: import('../../models/Motorista').MotoristaStatusOperacional;
 }
 
 export interface AuthSession {
