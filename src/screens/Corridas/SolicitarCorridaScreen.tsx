@@ -106,7 +106,7 @@ export const SolicitarCorridaScreen = (): React.JSX.Element => {
       destinoLng: selectedDestino.longitude,
       motivoServico: motivoServico.trim(),
       observacoes: observacoes.trim() || undefined,
-      status: 'SOLICITADA',
+      status: 'solicitada',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }));

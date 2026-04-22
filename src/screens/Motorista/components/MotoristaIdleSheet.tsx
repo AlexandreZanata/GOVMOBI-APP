@@ -70,7 +70,7 @@ export const MotoristaIdleSheet = ({
   const toggleColor = isAvailable ? C.success : C.danger;
   const toggleLabel = isAvailable
     ? t('motorista.status.disponivel')
-    : statusOperacional === 'EM_ROTA' || isEmCorrida
+    : statusOperacional === 'EM_CORRIDA' || isEmCorrida
       ? t('motorista.status.emCorrida')
       : t('motorista.status.offline');
 

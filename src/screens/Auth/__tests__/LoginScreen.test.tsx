@@ -114,6 +114,7 @@ const buildStore = () =>
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       },
       ui: {
         themeMode: 'light' as const,

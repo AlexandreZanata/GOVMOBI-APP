@@ -2,7 +2,7 @@
 
 ## 🚀 5-Minute Setup
 
-This is a condensed guide for frontend developers. For complete details, see [ONESIGNAL_PUSH_NOTIFICATION_GUIDE.md](./ONESIGNAL_PUSH_NOTIFICATION_GUIDE.md).
+This is a condensed guide for frontend developers. For complete details, see [GovMob v1.2 Real-Time Integration Guide](./implementation/realtime-integration-govmob-v1.2.md).
 
 ---
 
@@ -128,6 +128,10 @@ interface NotificationData {
 
 ### Not receiving notifications?
 
+If Expo cannot resolve `onesignal-expo-plugin` during CI or a clean install, see:
+
+- [OneSignal Expo Dependency Troubleshooting](./implementation/onesignal-expo-dependency-troubleshooting.md)
+
 1. **Check device registration**:
    - Go to https://dashboard.onesignal.com/
    - Navigate to **Audience** → **All Users**
@@ -173,8 +177,8 @@ interface NotificationData {
 ## 🔗 Complete Documentation
 
 For detailed information:
-- **Implementation Guide**: [ONESIGNAL_PUSH_NOTIFICATION_GUIDE.md](./ONESIGNAL_PUSH_NOTIFICATION_GUIDE.md)
-- **Architecture Diagrams**: [NOTIFICATION_ARCHITECTURE.md](./NOTIFICATION_ARCHITECTURE.md)
+- **Implementation Guide**: [GovMob v1.2 Real-Time Integration Guide](./implementation/realtime-integration-govmob-v1.2.md)
+- **Architecture Diagrams**: [GovMob WebSocket Integration Guide](./implementation/websocket-integration-govmob.md)
 - **Backend Documentation**: [GOVMOB_DOCUMENTATION.md](./GOVMOB_DOCUMENTATION.md)
 
 ---
@@ -191,10 +195,10 @@ For detailed information:
 
 ## 🆘 Need Help?
 
-1. Check the complete guide: [ONESIGNAL_PUSH_NOTIFICATION_GUIDE.md](./ONESIGNAL_PUSH_NOTIFICATION_GUIDE.md)
-2. Check OneSignal docs: https://documentation.onesignal.com/
-3. Ask backend team to verify their logs
-4. Check OneSignal dashboard for delivery status
+- Check the complete guide: [GovMob v1.2 Real-Time Integration Guide](./implementation/realtime-integration-govmob-v1.2.md)
+- Check OneSignal docs: https://documentation.onesignal.com/
+- Ask backend team to verify their logs
+- Check OneSignal dashboard for delivery status
 
 ---
 

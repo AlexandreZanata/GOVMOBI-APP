@@ -94,7 +94,7 @@ const mockCorrida: Corrida = {
   destinoLat: -15.7801,
   destinoLng: -47.9292,
   motivoServico: 'Visita técnica',
-  status: 'SOLICITADA',
+  status: 'solicitada',
   createdAt: '2026-04-17T10:00:00.000Z',
   updatedAt: '2026-04-17T10:00:00.000Z',
 };
@@ -129,41 +129,34 @@ const buildMockFacade = (
   aceitarCorrida: jest
     .fn()
     .mockResolvedValue(
-      ok({
-        ...mockCorrida,
-        status: 'ACEITA',
-        motoristaId: 'motorista-001',
-      } as Corrida),
+      ok({...mockCorrida, status: 'aceita', motoristaId: 'motorista-001'} as Corrida),
     ),
   recusarCorrida: jest
     .fn()
-    .mockResolvedValue(ok({...mockCorrida, status: 'RECUSADA'} as Corrida)),
+    .mockResolvedValue(ok({...mockCorrida, status: 'cancelada'} as Corrida)),
   iniciarDeslocamento: jest
     .fn()
-    .mockResolvedValue(
-      ok({...mockCorrida, status: 'EM_DESLOCAMENTO'} as Corrida),
-    ),
+    .mockResolvedValue(ok({...mockCorrida, status: 'em_rota'} as Corrida)),
   chegarAoLocal: jest
     .fn()
-    .mockResolvedValue(
-      ok({...mockCorrida, status: 'EM_DESLOCAMENTO'} as Corrida),
-    ),
+    .mockResolvedValue(ok({...mockCorrida, status: 'em_rota'} as Corrida)),
   confirmarEmbarque: jest
     .fn()
-    .mockResolvedValue(
-      ok({...mockCorrida, status: 'PASSAGEIRO_EMBARCADO'} as Corrida),
-    ),
+    .mockResolvedValue(ok({...mockCorrida, status: 'passageiro_a_bordo'} as Corrida)),
+  passageiroABordo: jest
+    .fn()
+    .mockResolvedValue(ok({...mockCorrida, status: 'passageiro_a_bordo'} as Corrida)),
   finalizarCorrida: jest
     .fn()
-    .mockResolvedValue(ok({...mockCorrida, status: 'FINALIZADA'} as Corrida)),
+    .mockResolvedValue(ok({...mockCorrida, status: 'concluida'} as Corrida)),
   cancelarCorrida: jest
     .fn()
-    .mockResolvedValue(ok({...mockCorrida, status: 'CANCELADA'} as Corrida)),
+    .mockResolvedValue(ok({...mockCorrida, status: 'cancelada'} as Corrida)),
   getCorrida: jest.fn().mockResolvedValue(ok(mockCorrida)),
   getCorridaStatus: jest
     .fn()
     .mockResolvedValue(
-      ok<CorridaStatusResponse>({id: 'corrida-test-001', status: 'SOLICITADA'}),
+      ok<CorridaStatusResponse>({id: 'corrida-test-001', status: 'solicitada'}),
     ),
   getMensagens: jest.fn().mockResolvedValue(ok(mockMensagens)),
   searchLocations: jest.fn().mockResolvedValue(ok([])),
@@ -171,7 +164,7 @@ const buildMockFacade = (
   getActiveCorrida: jest.fn().mockResolvedValue(ok(null)),
   avaliarCorrida: jest
     .fn()
-    .mockResolvedValue(ok({...mockCorrida, status: 'AVALIADA'} as Corrida)),
+    .mockResolvedValue(ok({...mockCorrida, status: 'avaliada'} as Corrida)),
   getMotoristaPosition: jest.fn().mockResolvedValue(
     ok<import('../../../types').PosicaoMotoristaResponse>({
       corridaId: 'corrida-test-001',
@@ -241,6 +234,7 @@ const buildStore = (papeis: string[] = [], corridaOverrides?: Partial<CorridaSta
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       },
       corrida: {...DEFAULT_CORRIDA_STATE, ...corridaOverrides},
     } as Parameters<typeof configureStore>[0]['preloadedState'],
@@ -457,11 +451,7 @@ describe('MotoristaCorridaScreen (MOTORISTA)', () => {
     const aceitarMock = jest
       .fn()
       .mockResolvedValue(
-        ok({
-          ...mockCorrida,
-          status: 'ACEITA',
-          motoristaId: 'motorista-001',
-        } as Corrida),
+        ok({...mockCorrida, status: 'aceita', motoristaId: 'motorista-001'} as Corrida),
       );
     render(
       <Wrapper facade={{aceitarCorrida: aceitarMock}} papeis={['MOTORISTA']}>

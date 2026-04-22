@@ -70,7 +70,7 @@ const fail = <T,>(msg: string, code = 'NETWORK_ERROR', statusCode?: number): Res
 const makeCorrida = (status: CorridaStatus): Corrida => ({
   id: 'corrida-001',
   passageiroId: 'user-001',
-  motoristaId: status === 'ACEITA' ? 'motorista-001' : null,
+  motoristaId: status === 'aceita' ? 'motorista-001' : null,
   veiculoId: null,
   origemLat: -16.6869,
   origemLng: -49.2648,
@@ -85,15 +85,16 @@ const makeCorrida = (status: CorridaStatus): Corrida => ({
 const buildMockFacade = (overrides: Partial<ICorridaFacade> = {}): ICorridaFacade => ({
   solicitarCorrida: jest.fn().mockResolvedValue(ok<SolicitarCorridaResponse>({corridaId: 'corrida-001'})),
   createCorrida: jest.fn().mockResolvedValue(ok<SolicitarCorridaResponse>({corridaId: 'corrida-001'})),
-  aceitarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('ACEITA'))),
-  recusarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('RECUSADA'))),
-  iniciarDeslocamento: jest.fn().mockResolvedValue(ok(makeCorrida('EM_DESLOCAMENTO'))),
-  chegarAoLocal: jest.fn().mockResolvedValue(ok(makeCorrida('EM_DESLOCAMENTO'))),
-  confirmarEmbarque: jest.fn().mockResolvedValue(ok(makeCorrida('PASSAGEIRO_EMBARCADO'))),
-  finalizarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('FINALIZADA'))),
-  cancelarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('CANCELADA'))),
-  getCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('SOLICITADA'))),
-  getCorridaStatus: jest.fn().mockResolvedValue(ok<CorridaStatusResponse>({id: 'corrida-001', status: 'SOLICITADA'})),
+  aceitarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('aceita'))),
+  recusarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('cancelada'))),
+  iniciarDeslocamento: jest.fn().mockResolvedValue(ok(makeCorrida('em_rota'))),
+  chegarAoLocal: jest.fn().mockResolvedValue(ok(makeCorrida('em_rota'))),
+  confirmarEmbarque: jest.fn().mockResolvedValue(ok(makeCorrida('passageiro_a_bordo'))),
+  passageiroABordo: jest.fn().mockResolvedValue(ok(makeCorrida('passageiro_a_bordo'))),
+  finalizarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('concluida'))),
+  cancelarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('cancelada'))),
+  getCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('solicitada'))),
+  getCorridaStatus: jest.fn().mockResolvedValue(ok<CorridaStatusResponse>({id: 'corrida-001', status: 'solicitada'})),
   getMensagens: jest.fn().mockResolvedValue(ok([])),
   searchLocations: jest.fn().mockResolvedValue(ok([])),
   cancelCorrida: jest.fn().mockResolvedValue(ok(true)),
@@ -102,7 +103,7 @@ const buildMockFacade = (overrides: Partial<ICorridaFacade> = {}): ICorridaFacad
     usuario: {id: 'user-001', email: 'test@gov.br', papeis: ['USUARIO'], nome: 'Test User'},
     corridaAtiva: null,
   })),
-  avaliarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('AVALIADA'))),
+  avaliarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('avaliada'))),
   getMotoristaPosition: jest.fn().mockResolvedValue(fail('not found')),
   ...overrides,
 });
@@ -147,6 +148,8 @@ const buildStore = (corridaOverrides?: Partial<CorridaState>) =>
         motoristaId: null,
         municipioId: null,
         isHydrating: false,
+        statusOperacional: null,
+        servidorId: null,
       },
       corrida: {...DEFAULT_CORRIDA_STATE, ...corridaOverrides},
     } as Parameters<typeof configureStore>[0]['preloadedState'],
@@ -186,7 +189,7 @@ describe('Cancellation flow — state machine enforcement', () => {
 
   it('shows cancel button for SOLICITADA (cancellable)', async () => {
     render(
-      <Wrapper corridaState={{activeCorrida: makeCorrida('SOLICITADA')}}>
+      <Wrapper corridaState={{activeCorrida: makeCorrida('solicitada')}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -197,7 +200,7 @@ describe('Cancellation flow — state machine enforcement', () => {
 
   it('shows cancel button for AGUARDANDO_ACEITE (cancellable)', async () => {
     render(
-      <Wrapper corridaState={{activeCorrida: makeCorrida('AGUARDANDO_ACEITE')}}>
+      <Wrapper corridaState={{activeCorrida: makeCorrida('aguardando_aceite')}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -208,7 +211,7 @@ describe('Cancellation flow — state machine enforcement', () => {
 
   it('shows cancel button for ACEITA (cancellable)', async () => {
     render(
-      <Wrapper corridaState={{activeCorrida: makeCorrida('ACEITA')}}>
+      <Wrapper corridaState={{activeCorrida: makeCorrida('aceita')}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -219,7 +222,7 @@ describe('Cancellation flow — state machine enforcement', () => {
 
   it('hides cancel button and shows not-allowed message for EM_ROTA', async () => {
     render(
-      <Wrapper corridaState={{activeCorrida: makeCorrida('EM_ROTA')}}>
+      <Wrapper corridaState={{activeCorrida: makeCorrida('em_rota')}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -231,7 +234,7 @@ describe('Cancellation flow — state machine enforcement', () => {
 
   it('hides cancel button and shows not-allowed message for PASSAGEIRO_EMBARCADO', async () => {
     render(
-      <Wrapper corridaState={{activeCorrida: makeCorrida('PASSAGEIRO_EMBARCADO')}}>
+      <Wrapper corridaState={{activeCorrida: makeCorrida('passageiro_a_bordo')}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -243,7 +246,7 @@ describe('Cancellation flow — state machine enforcement', () => {
 
   it('hides cancel button for CANCELADA (terminal)', async () => {
     render(
-      <Wrapper corridaState={{activeCorrida: makeCorrida('CANCELADA')}}>
+      <Wrapper corridaState={{activeCorrida: makeCorrida('cancelada')}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -255,7 +258,7 @@ describe('Cancellation flow — state machine enforcement', () => {
 
   it('hides cancel button for EXPIRADA (terminal)', async () => {
     render(
-      <Wrapper corridaState={{activeCorrida: makeCorrida('EXPIRADA')}}>
+      <Wrapper corridaState={{activeCorrida: makeCorrida('expirada')}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -269,7 +272,7 @@ describe('Cancellation flow — motivo validation', () => {
 
   it('reveals motivo input when cancel button is pressed', async () => {
     render(
-      <Wrapper corridaState={{activeCorrida: makeCorrida('SOLICITADA')}}>
+      <Wrapper corridaState={{activeCorrida: makeCorrida('solicitada')}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
     );
@@ -282,10 +285,10 @@ describe('Cancellation flow — motivo validation', () => {
   });
 
   it('does NOT call cancelarCorrida when motivo is empty', async () => {
-    const cancelMock = jest.fn().mockResolvedValue(ok(makeCorrida('CANCELADA')));
+    const cancelMock = jest.fn().mockResolvedValue(ok(makeCorrida('cancelada')));
     render(
       <Wrapper
-        corridaState={{activeCorrida: makeCorrida('SOLICITADA')}}
+        corridaState={{activeCorrida: makeCorrida('solicitada')}}
         facade={{cancelarCorrida: cancelMock}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
@@ -304,10 +307,10 @@ describe('Cancellation flow — motivo validation', () => {
 describe('Cancellation flow — API success', () => {
 
   it('calls cancelarCorrida with only motivo (no solicitanteId / tipoSolicitante)', async () => {
-    const cancelMock = jest.fn().mockResolvedValue(ok(makeCorrida('CANCELADA')));
+    const cancelMock = jest.fn().mockResolvedValue(ok(makeCorrida('cancelada')));
     render(
       <Wrapper
-        corridaState={{activeCorrida: makeCorrida('SOLICITADA')}}
+        corridaState={{activeCorrida: makeCorrida('solicitada')}}
         facade={{cancelarCorrida: cancelMock}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
@@ -339,7 +342,7 @@ describe('Cancellation flow — API error handling', () => {
     );
     render(
       <Wrapper
-        corridaState={{activeCorrida: makeCorrida('ACEITA')}}
+        corridaState={{activeCorrida: makeCorrida('aceita')}}
         facade={{cancelarCorrida: cancelMock}}>
         <AcompanharCorridaScreen />
       </Wrapper>,
@@ -363,7 +366,7 @@ describe('Cancellation flow — API error handling', () => {
     );
     render(
       <Wrapper
-        corridaState={{activeCorrida: makeCorrida('SOLICITADA')}}
+        corridaState={{activeCorrida: makeCorrida('solicitada')}}
         facade={{cancelarCorrida: cancelMock}}>
         <AcompanharCorridaScreen />
       </Wrapper>,

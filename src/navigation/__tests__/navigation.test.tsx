@@ -122,6 +122,7 @@ const buildStore = (isAuthenticated: boolean) =>
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       },
     },
   });

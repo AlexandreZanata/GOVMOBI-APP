@@ -54,7 +54,7 @@ const makeCorrida = (overrides: Partial<Corrida> = {}): Corrida => ({
   destinoLat: -15.8,
   destinoLng: -47.95,
   motivoServico: 'Visita técnica',
-  status: 'SOLICITADA',
+  status: 'solicitada',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   ...overrides,
@@ -67,48 +67,52 @@ const makeMockFacade = (
   solicitarCorrida: async (
     _i: SolicitarCorridaInput,
   ): Promise<Result<SolicitarCorridaResponse, FacadeError>> =>
-    ok({corridaId: 'c1', status: 'SOLICITADA'}),
+    ok({corridaId: 'c1', status: 'solicitada'}),
   createCorrida: async (
     _i: CreateCorridaInput,
   ): Promise<Result<SolicitarCorridaResponse, FacadeError>> =>
-    ok({corridaId: 'c1', status: 'SOLICITADA'}),
+    ok({corridaId: 'c1', status: 'solicitada'}),
   aceitarCorrida: async (
     _id: string,
     _i: AceitarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> =>
-    ok(makeCorrida({status: 'ACEITA'})),
+    ok(makeCorrida({status: 'aceita'})),
   recusarCorrida: async (
     _id: string,
     _i: RecusarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> =>
-    ok(makeCorrida({status: 'RECUSADA'})),
+    ok(makeCorrida({status: 'cancelada'})),
   iniciarDeslocamento: async (
     _id: string,
   ): Promise<Result<Corrida, FacadeError>> =>
-    ok(makeCorrida({status: 'EM_DESLOCAMENTO'})),
+    ok(makeCorrida({status: 'em_rota'})),
   chegarAoLocal: async (_id: string): Promise<Result<Corrida, FacadeError>> =>
-    ok(makeCorrida({status: 'EM_DESLOCAMENTO'})),
+    ok(makeCorrida({status: 'em_rota'})),
   confirmarEmbarque: async (
     _id: string,
     _i: ConfirmarEmbarqueInput,
   ): Promise<Result<Corrida, FacadeError>> =>
-    ok(makeCorrida({status: 'PASSAGEIRO_EMBARCADO'})),
+    ok(makeCorrida({status: 'passageiro_a_bordo'})),
+  passageiroABordo: async (
+    _id: string,
+  ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'passageiro_a_bordo'})),
   finalizarCorrida: async (
     _id: string,
     _i: FinalizarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> =>
-    ok(makeCorrida({status: 'FINALIZADA'})),
+    ok(makeCorrida({status: 'concluida'})),
   cancelarCorrida: async (
     _id: string,
     _i: CancelarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> =>
-    ok(makeCorrida({status: 'CANCELADA'})),
+    ok(makeCorrida({status: 'cancelada'})),
   getCorrida: async (_id: string): Promise<Result<Corrida, FacadeError>> =>
     ok(makeCorrida()),
   getCorridaStatus: async (
     _id: string,
   ): Promise<Result<CorridaStatusResponse, FacadeError>> =>
-    ok({id: 'c1', status: 'SOLICITADA'}),
+    ok({id: 'c1', status: 'solicitada'}),
   getMensagens: async (
     _id: string,
   ): Promise<Result<CorridaMensagem[], FacadeError>> => ok([]),
@@ -125,7 +129,7 @@ const makeMockFacade = (
     _id: string,
     _i: AvaliarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> =>
-    ok(makeCorrida({status: 'AVALIADA'})),
+    ok(makeCorrida({status: 'avaliada'})),
   getMotoristaPosition: async (
     _id: string,
   ): Promise<Result<PosicaoMotoristaResponse, FacadeError>> =>
@@ -179,6 +183,7 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         municipioId: null,
         isHydrating: false,
         statusOperacional: 'DISPONIVEL' as MotoristaStatusOperacional,
+        servidorId: null,
       } satisfies ReturnType<typeof authReducer>,
       corrida: {
         activeCorrida: null,
@@ -267,7 +272,7 @@ describe('MotoristaScreen', () => {
   });
 
   it('renders the active ride sheet when a SOLICITADA ride is in Redux', async () => {
-    const corrida = makeCorrida({status: 'SOLICITADA'});
+    const corrida = makeCorrida({status: 'solicitada'});
     const store = makeStore({activeCorrida: corrida});
     const realtimeFacade = makeRealtimeFacade();
     const facade = makeMockFacade({
@@ -297,11 +302,11 @@ describe('MotoristaScreen', () => {
   });
 
   it('calls aceitarCorrida when Aceitar button is pressed', async () => {
-    const corrida = makeCorrida({status: 'SOLICITADA'});
+    const corrida = makeCorrida({status: 'solicitada'});
     const store = makeStore({activeCorrida: corrida});
     const aceitarMock = jest
       .fn()
-      .mockResolvedValue(ok(makeCorrida({status: 'ACEITA'})));
+      .mockResolvedValue(ok(makeCorrida({status: 'aceita'})));
     const realtimeFacade = makeRealtimeFacade();
     const facade = makeMockFacade({
       aceitarCorrida: aceitarMock,
@@ -338,7 +343,7 @@ describe('MotoristaScreen', () => {
   });
 
   it('shows the terminal sheet when ride is FINALIZADA', async () => {
-    const corrida = makeCorrida({status: 'FINALIZADA'});
+    const corrida = makeCorrida({status: 'concluida'});
     const store = makeStore({activeCorrida: corrida});
     const facade = makeMockFacade();
     const realtimeFacade = makeRealtimeFacade();
@@ -355,7 +360,7 @@ describe('MotoristaScreen', () => {
   });
 
   it('shows the Iniciar Deslocamento button when ride is ACEITA', async () => {
-    const corrida = makeCorrida({status: 'ACEITA', motoristaId: 'driver-001'});
+    const corrida = makeCorrida({status: 'aceita', motoristaId: 'driver-001'});
     const store = makeStore({activeCorrida: corrida});
     const facade = makeMockFacade();
     const realtimeFacade = makeRealtimeFacade();
@@ -373,7 +378,7 @@ describe('MotoristaScreen', () => {
 
   it('shows the Finalizar button when ride is PASSAGEIRO_EMBARCADO', async () => {
     const corrida = makeCorrida({
-      status: 'PASSAGEIRO_EMBARCADO',
+      status: 'passageiro_a_bordo',
       motoristaId: 'driver-001',
     });
     const store = makeStore({activeCorrida: corrida});

@@ -89,6 +89,7 @@ const buildStore = (overrides?: {unreadCount?: number}) =>
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       },
       notifications: {
         notifications: [],

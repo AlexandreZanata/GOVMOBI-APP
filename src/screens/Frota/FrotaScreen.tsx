@@ -65,8 +65,8 @@ export const FrotaScreen = (): React.JSX.Element => {
     () => [
       {key: 'all', label: t('frota.motoristas.filters.all')},
       {key: 'DISPONIVEL', label: t('frota.motoristas.status.DISPONIVEL')},
-      {key: 'EM_ROTA', label: t('frota.motoristas.status.EM_ROTA')},
-      {key: 'AFASTADO', label: t('frota.motoristas.status.AFASTADO')},
+      {key: 'EM_CORRIDA', label: t('frota.motoristas.status.EM_CORRIDA')},
+      {key: 'OFFLINE', label: t('frota.motoristas.status.OFFLINE')},
     ],
     [t],
   );

@@ -18,8 +18,8 @@ const MOCK_VEICULOS: Veiculo[] = [
 /** Mock fixture data — motoristas. */
 const MOCK_MOTORISTAS: Motorista[] = [
   {id: 'mot-1', servidorId: 'srv-1', cnhNumero: '1234567890', cnhCategoria: 'AB', statusOperacional: 'DISPONIVEL', ativo: true, createdAt: '2026-04-15T19:47:22.824Z', updatedAt: '2026-04-15T19:47:22.824Z', deletedAt: null},
-  {id: 'mot-2', servidorId: 'srv-2', cnhNumero: '0987654321', cnhCategoria: 'B', statusOperacional: 'EM_ROTA', ativo: true, createdAt: '2026-04-10T10:00:00.000Z', updatedAt: '2026-04-10T10:00:00.000Z', deletedAt: null},
-  {id: 'mot-3', servidorId: 'srv-3', cnhNumero: '1122334455', cnhCategoria: 'C', statusOperacional: 'AFASTADO', ativo: false, createdAt: '2026-03-01T08:00:00.000Z', updatedAt: '2026-04-01T08:00:00.000Z', deletedAt: '2026-04-01T08:00:00.000Z'},
+  {id: 'mot-2', servidorId: 'srv-2', cnhNumero: '0987654321', cnhCategoria: 'B', statusOperacional: 'EM_CORRIDA', ativo: true, createdAt: '2026-04-10T10:00:00.000Z', updatedAt: '2026-04-10T10:00:00.000Z', deletedAt: null},
+  {id: 'mot-3', servidorId: 'srv-3', cnhNumero: '1122334455', cnhCategoria: 'C', statusOperacional: 'OFFLINE', ativo: false, createdAt: '2026-03-01T08:00:00.000Z', updatedAt: '2026-04-01T08:00:00.000Z', deletedAt: '2026-04-01T08:00:00.000Z'},
 ];
 
 const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});

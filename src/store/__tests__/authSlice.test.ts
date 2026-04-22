@@ -56,6 +56,7 @@ describe('authSlice', () => {
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       };
       const state = authReducer(stateWithError, setUser(mockUser));
       expect(state.error).toBeNull();
@@ -88,6 +89,7 @@ describe('authSlice', () => {
         municipioId: 'muni-001',
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       };
       const state = authReducer(loggedInState, logout());
       expect(state.user).toBeNull();
@@ -118,6 +120,7 @@ describe('authSlice', () => {
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       };
       const state = authReducer(loadingState, setLoading(false));
       expect(state.isLoading).toBe(false);
@@ -137,6 +140,7 @@ describe('authSlice', () => {
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       };
       const state = authReducer(loadingState, setError('Invalid credentials'));
       expect(state.error).toBe('Invalid credentials');
@@ -155,6 +159,7 @@ describe('authSlice', () => {
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       };
       const state = authReducer(errorState, setError(null));
       expect(state.error).toBeNull();

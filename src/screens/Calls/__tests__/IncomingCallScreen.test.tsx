@@ -109,6 +109,7 @@ const buildStore = () =>
         municipioId: null,
         isHydrating: false,
         statusOperacional: null,
+        servidorId: null,
       },
       calls: {
         callHistory: [],
@@ -268,6 +269,7 @@ describe('IncomingCallScreen', () => {
             municipioId: null,
             isHydrating: false,
             statusOperacional: null,
+            servidorId: null,
           },
           ui: {
             themeMode: 'light' as const,

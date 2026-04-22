@@ -119,8 +119,8 @@ class RealtimeFacadeStub implements IRealtimeFacade {
 
   /** @inheritdoc */
   public mapCorridaStatus(status: string): CorridaStatus | null {
-    if (status === 'CorridaAceita') return 'ACEITA';
-    if (status === 'CorridaConcluida') return 'FINALIZADA';
+    if (status === 'CorridaAceita') return 'aceita';
+    if (status === 'CorridaConcluida') return 'concluida';
     return null;
   }
 

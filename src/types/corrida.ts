@@ -81,8 +81,8 @@ export interface FinalizarCorridaInput {
  */
 export interface CancelarCorridaInput {
   motivo: string;
-  solicitanteId: string;
-  tipoSolicitante: 'MOTORISTA' | 'PASSAGEIRO';
+  solicitanteId?: string;
+  tipoSolicitante?: 'MOTORISTA' | 'PASSAGEIRO';
 }
 
 /**
