@@ -25,14 +25,14 @@ Implements the two missing rating screens: an ADMIN-only list of all system rati
     - Export `AvaliacoesFacadeConfig` interface extending `FacadeConfig`
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 3. `AvaliacoesFacadeMock`
-  - [ ] 3.1 Create `src/services/facades/mock/AvaliacoesFacadeMock.ts`
+- [x] 3. `AvaliacoesFacadeMock`
+  - [x] 3.1 Create `src/services/facades/mock/AvaliacoesFacadeMock.ts`
     - Implement `IAvaliacoesFacade` with at least 3 `Avaliacao` fixture objects in `listAvaliacoes()`
     - `getMinhaAvaliacaoSummary()` returns a valid `AvaliacaoSummary` fixture
     - Simulated delay 150–300 ms on both methods; zero `any` types
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 4. Wire `AvaliacoesFacade` into `src/services/facades/index.ts`
+- [-] 4. Wire `AvaliacoesFacade` into `src/services/facades/index.ts`
   - [ ] 4.1 Add `avaliacoesFacade: IAvaliacoesFacade` to the `Facades` interface
   - [ ] 4.2 In the mock branch of `createDefaultFacades`, require and instantiate `AvaliacoesFacadeMock`
     - Follow the same `require('./mock/AvaliacoesFacadeMock')` pattern used for `FrotaFacadeMock`
