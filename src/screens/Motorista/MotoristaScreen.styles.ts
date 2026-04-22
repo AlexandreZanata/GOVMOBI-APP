@@ -394,6 +394,71 @@ export const createMotoristaStyles = (theme: Theme) => {
       fontSize: 10,
     },
 
+    // ── Finalizar confirmation modal ──────────────────────────────────────────
+    confirmBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing[5],
+    },
+    confirmCard: {
+      backgroundColor: C.cardBg,
+      borderRadius: borderRadius.radius.xl,
+      width: '100%',
+      maxWidth: 360,
+      paddingHorizontal: spacing[6],
+      paddingTop: spacing[6],
+      paddingBottom: spacing[5],
+      alignItems: 'center',
+      gap: spacing[3],
+      ...shadows.lg,
+    },
+    confirmIconWrap: {
+      marginBottom: spacing[1],
+    },
+    confirmTitle: {
+      ...typo.scale.headingMd,
+      color: C.textDark,
+      textAlign: 'center',
+    },
+    confirmBody: {
+      ...typo.scale.bodyMd,
+      color: C.textMuted,
+      textAlign: 'center',
+    },
+    confirmBtnRow: {
+      flexDirection: 'row',
+      gap: spacing[3],
+      marginTop: spacing[2],
+      width: '100%',
+    },
+    confirmBtnSecondary: {
+      flex: 1,
+      height: 48,
+      borderRadius: borderRadius.radius.md,
+      borderWidth: 1.5,
+      borderColor: theme.colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    confirmBtnSecondaryText: {
+      ...typo.scale.labelLg,
+      color: C.textMuted,
+    },
+    confirmBtnPrimary: {
+      flex: 1,
+      height: 48,
+      borderRadius: borderRadius.radius.md,
+      backgroundColor: C.success,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    confirmBtnPrimaryText: {
+      ...typo.scale.labelLg,
+      color: C.textOnDark,
+    },
+
     // ── Destination pin ───────────────────────────────────────────────────────
     destinationPin: {
       width: 20,

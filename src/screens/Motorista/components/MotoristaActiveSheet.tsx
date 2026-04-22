@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Modal,
   Pressable,
   Text,
   TextInput,
@@ -135,6 +136,9 @@ export const MotoristaActiveSheet = ({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const lastStatusRef = useRef(normalizedStatus);
 
+  // Custom confirmation modal for finalizar (replaces native Alert)
+  const [showFinalizarModal, setShowFinalizarModal] = useState(false);
+
   useEffect(() => {
     // Status changed → the WS event arrived → release the lock
     if (lastStatusRef.current !== normalizedStatus) {
@@ -158,11 +162,13 @@ export const MotoristaActiveSheet = ({
     isActionLoading || pendingAction === actionKey;
 
   const handleFinalizar = useCallback(() => {
-    Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
-      {text: t('common.cancel'), style: 'cancel'},
-      {text: t('common.confirm'), onPress: withLock('finalizar', onFinalizar)},
-    ]);
-  }, [t, withLock, onFinalizar]);
+    setShowFinalizarModal(true);
+  }, []);
+
+  const handleFinalizarConfirm = useCallback(() => {
+    setShowFinalizarModal(false);
+    withLock('finalizar', onFinalizar)();
+  }, [withLock, onFinalizar]);
 
   const handleCancelar = useCallback(() => {
     if (!cancelMotivo.trim()) {
@@ -388,6 +394,56 @@ export const MotoristaActiveSheet = ({
           </Pressable>
         ))}
       </View>
+
+      {/* ── Finalizar confirmation modal ─────────────────────────────────── */}
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setShowFinalizarModal(false)}
+        transparent
+        visible={showFinalizarModal}>
+        <View style={styles.confirmBackdrop}>
+          <View style={styles.confirmCard}>
+            {/* Icon */}
+            <View style={styles.confirmIconWrap}>
+              <MaterialIcons name="check-circle" size={40} color={C.success} />
+            </View>
+
+            {/* Title */}
+            <Text style={styles.confirmTitle}>
+              {t('corridas.finalizar.title')}
+            </Text>
+
+            {/* Body */}
+            <Text style={styles.confirmBody}>
+              {t('corridas.finalizar.confirm')}
+            </Text>
+
+            {/* Buttons */}
+            <View style={styles.confirmBtnRow}>
+              <Pressable
+                accessibilityLabel={t('common.cancel')}
+                accessibilityRole="button"
+                onPress={() => setShowFinalizarModal(false)}
+                style={styles.confirmBtnSecondary}
+                testID="finalizar-cancel-btn">
+                <Text style={styles.confirmBtnSecondaryText}>
+                  {t('common.cancel')}
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel={t('common.confirm')}
+                accessibilityRole="button"
+                onPress={handleFinalizarConfirm}
+                style={styles.confirmBtnPrimary}
+                testID="finalizar-confirm-btn">
+                <Text style={styles.confirmBtnPrimaryText}>
+                  {t('common.confirm')}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Animated.View>
   );
 };
