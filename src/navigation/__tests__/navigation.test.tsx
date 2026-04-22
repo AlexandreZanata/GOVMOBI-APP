@@ -121,6 +121,7 @@ const buildStore = (isAuthenticated: boolean) =>
         motoristaId: null,
         municipioId: null,
         isHydrating: false,
+        statusOperacional: null,
       },
     },
   });

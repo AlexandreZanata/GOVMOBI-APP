@@ -116,6 +116,7 @@ const buildStore = (userOverride?: Partial<typeof MOCK_USER> | null) =>
         motoristaId: null,
         municipioId: null,
         isHydrating: false,
+        statusOperacional: null,
       },
       ui: {
         themeMode: 'light' as const,

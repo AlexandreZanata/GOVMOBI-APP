@@ -88,6 +88,7 @@ const buildStore = (overrides?: {unreadCount?: number}) =>
         motoristaId: null,
         municipioId: null,
         isHydrating: false,
+        statusOperacional: null,
       },
       notifications: {
         notifications: [],

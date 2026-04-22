@@ -289,9 +289,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
           dispatch(setIsActionLoading(true));
           void corridaFacade
             .cancelarCorrida(activeCorrida.id, {
-              solicitanteId: 'current-user',
               motivo: cancelMotivo.trim(),
-              tipoSolicitante: 'passageiro',
             })
             .then(result => {
               dispatch(setIsActionLoading(false));

@@ -28,7 +28,7 @@ import {ThemeProvider} from '@theme/index';
 import {FacadeProvider} from '@services/facades';
 import {i18n} from '../../../i18n';
 import corridaReducer from '../../../store/slices/corridaSlice';
-import type {CorridaState} from '../../../store/slices/corridaSlice';
+import type {CorridaState} from '@store/slices/corridaSlice';
 import authReducer from '../../../store/slices/authSlice';
 import uiReducer from '../../../store/slices/uiSlice';
 import {PassageiroCorridasListScreen} from '../PassageiroCorridasListScreen';
@@ -117,7 +117,6 @@ const buildMockFacade = (
     .mockResolvedValue(
       ok<SolicitarCorridaResponse>({
         corridaId: 'corrida-test-001',
-        status: 'SOLICITADA',
       }),
     ),
   createCorrida: jest
@@ -125,7 +124,6 @@ const buildMockFacade = (
     .mockResolvedValue(
       ok<SolicitarCorridaResponse>({
         corridaId: 'corrida-test-001',
-        status: 'SOLICITADA',
       }),
     ),
   aceitarCorrida: jest
@@ -141,6 +139,11 @@ const buildMockFacade = (
     .fn()
     .mockResolvedValue(ok({...mockCorrida, status: 'RECUSADA'} as Corrida)),
   iniciarDeslocamento: jest
+    .fn()
+    .mockResolvedValue(
+      ok({...mockCorrida, status: 'EM_DESLOCAMENTO'} as Corrida),
+    ),
+  chegarAoLocal: jest
     .fn()
     .mockResolvedValue(
       ok({...mockCorrida, status: 'EM_DESLOCAMENTO'} as Corrida),
@@ -166,6 +169,19 @@ const buildMockFacade = (
   searchLocations: jest.fn().mockResolvedValue(ok([])),
   cancelCorrida: jest.fn().mockResolvedValue(ok(true)),
   getActiveCorrida: jest.fn().mockResolvedValue(ok(null)),
+  avaliarCorrida: jest
+    .fn()
+    .mockResolvedValue(ok({...mockCorrida, status: 'AVALIADA'} as Corrida)),
+  getMotoristaPosition: jest.fn().mockResolvedValue(
+    ok<import('../../../types').PosicaoMotoristaResponse>({
+      corridaId: 'corrida-test-001',
+      lat: -16.6869,
+      lng: -49.2648,
+      velocidade: 0,
+      heading: 0,
+      timestamp: new Date().toISOString(),
+    }),
+  ),
   getContexto: jest.fn().mockResolvedValue(
     ok<CorridaContexto>({
       usuario: {
@@ -205,6 +221,8 @@ const DEFAULT_CORRIDA_STATE: CorridaState = {
   isLoadingMensagens: false,
   posicaoMotoristaAtual: null,
   corridaHistory: [],
+  ratingSubmitted: false,
+  driverPosition: null,
 };
 
 const buildStore = (papeis: string[] = [], corridaOverrides?: Partial<CorridaState>) =>
@@ -222,6 +240,7 @@ const buildStore = (papeis: string[] = [], corridaOverrides?: Partial<CorridaSta
         motoristaId: null,
         municipioId: null,
         isHydrating: false,
+        statusOperacional: null,
       },
       corrida: {...DEFAULT_CORRIDA_STATE, ...corridaOverrides},
     } as Parameters<typeof configureStore>[0]['preloadedState'],

@@ -30,6 +30,7 @@ import {
 import {addToast} from '@store/slices/uiSlice';
 import {setStatusOperacional} from '@store/slices/authSlice';
 import type {Corrida, CorridaMensagem, Coordenada} from '@models/Corrida';
+import {normalizeStatus} from '@models/Corrida';
 import {TERMINAL_STATUSES} from '@models/Corrida';
 import type {MotoristaStatusOperacional} from '@models/Motorista';
 import type {
@@ -273,8 +274,9 @@ export const useMotorista = (): MotoristaState => {
     const poll = async (): Promise<void> => {
       const result = await corridaFacade.getCorridaStatus(targetId);
       if (result.data) {
-        dispatch(updateCorridaStatus(result.data.status as Corrida['status']));
-        if (TERMINAL_STATUSES.has(result.data.status as Corrida['status'])) {
+        const normalizedStatus = normalizeStatus(result.data.status);
+        dispatch(updateCorridaStatus(normalizedStatus));
+        if (TERMINAL_STATUSES.has(normalizedStatus)) {
           if (pollRef.current) {
             clearInterval(pollRef.current);
             pollRef.current = null;

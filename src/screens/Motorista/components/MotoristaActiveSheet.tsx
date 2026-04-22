@@ -25,7 +25,7 @@ import {createMotoristaStyles, MotoristaColors as C} from '../MotoristaScreen.st
 import {statusColor} from '@screens/Corridas/CorridasScreens.styles';
 import {useTheme} from '@theme/index';
 import type {Corrida} from '@models/Corrida';
-import {podeSerCancelada} from '@models/Corrida';
+import {normalizeStatus, podeSerCancelada} from '@models/Corrida';
 import {useReverseGeocode} from '@hooks/useReverseGeocode';
 
 export interface MotoristaActiveSheetProps {
@@ -110,14 +110,15 @@ export const MotoristaActiveSheet = ({
   const {t} = useTranslation();
   const theme = useTheme();
   const styles = createMotoristaStyles(theme);
-  const badgeColor = statusColor(corrida.status, theme);
-  const canCancel = podeSerCancelada(corrida.status);
+  const normalizedStatus = normalizeStatus(corrida.status);
+  const badgeColor = statusColor(normalizedStatus, theme);
+  const canCancel = podeSerCancelada(normalizedStatus);
 
   // Reverse geocode origin and destination — never show raw coordinates
   const origemAddress = useReverseGeocode(corrida.origemLat, corrida.origemLng);
   const destinoAddress = useReverseGeocode(corrida.destinoLat, corrida.destinoLng);
 
-  const actions = getVisibleActions(corrida.status);
+  const actions = getVisibleActions(normalizedStatus);
 
   const handleFinalizar = () => {
     Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
@@ -152,7 +153,7 @@ export const MotoristaActiveSheet = ({
         <Text style={styles.activeSheetTitle}>{t('motorista.activeRide.title')}</Text>
         <View style={[styles.statusBadge, {backgroundColor: badgeColor}]}>
           <Text style={styles.statusBadgeText}>
-            {t(`corridas.status.${corrida.status}`, {defaultValue: corrida.status})}
+            {t(`corridas.status.${normalizedStatus}`, {defaultValue: normalizedStatus})}
           </Text>
         </View>
       </View>

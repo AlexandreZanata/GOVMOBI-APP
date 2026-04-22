@@ -36,13 +36,12 @@ import {MotoristaIdleSheet} from './components/MotoristaIdleSheet';
 import {MotoristaTerminalSheet} from './components/MotoristaTerminalSheet';
 import {MotoristaActiveSheet} from './components/MotoristaActiveSheet';
 import type {MotoristaTabParamList, MotoristaCorridasStackParamList} from '@navigation/types';
+import {normalizeStatus, TERMINAL_STATUSES} from '@models/Corrida';
 
 type MotoristaNavProp = CompositeNavigationProp<
   BottomTabNavigationProp<MotoristaTabParamList, 'MotoristaHome'>,
   NativeStackNavigationProp<MotoristaCorridasStackParamList>
 >;
-
-const TERMINAL_STATUSES = new Set<string>(['FINALIZADA', 'CANCELADA', 'RECUSADA']);
 
 /**
  * Driver home screen — map + active ride panel.
@@ -100,8 +99,17 @@ export const MotoristaScreen = (): React.JSX.Element => {
   // Measured height of the bottom sheet — used to position the chat FAB above it
   const [sheetHeight, setSheetHeight] = useState(0);
 
-  const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
-  const isTerminal = activeCorrida !== null && TERMINAL_STATUSES.has(activeCorrida.status);
+  const normalizedActiveStatus = activeCorrida
+    ? normalizeStatus(activeCorrida.status)
+    : null;
+  const hasActiveRide =
+    activeCorrida !== null &&
+    normalizedActiveStatus !== null &&
+    !TERMINAL_STATUSES.has(normalizedActiveStatus);
+  const isTerminal =
+    activeCorrida !== null &&
+    normalizedActiveStatus !== null &&
+    TERMINAL_STATUSES.has(normalizedActiveStatus);
 
   const onSheetLayout = useCallback((event: LayoutChangeEvent) => {
     const h = event.nativeEvent.layout.height;
@@ -259,7 +267,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
         </View>
         <Text style={hs.headerTitle}>
           {hasActiveRide && activeCorrida
-            ? t(`corridas.status.${activeCorrida.status}`)
+            ? t(`corridas.status.${normalizedActiveStatus}`, {defaultValue: normalizedActiveStatus})
             : t('motorista.status.disponivel')}
         </Text>
       </View>

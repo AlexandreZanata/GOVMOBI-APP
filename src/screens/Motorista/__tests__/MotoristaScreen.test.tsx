@@ -18,6 +18,7 @@ import corridaReducer from '@store/slices/corridaSlice';
 import authReducer from '@store/slices/authSlice';
 import realtimeReducer from '@store/slices/realtimeSlice';
 import uiReducer from '@store/slices/uiSlice';
+import locationReducer from '@store/slices/locationSlice';
 import type {ICorridaFacade} from '@services/facades/CorridaFacade';
 import type {IRealtimeFacade} from '@services/facades/RealtimeFacade';
 import type {FacadeError, Result} from '@services/facades/types';
@@ -26,12 +27,14 @@ import type {
   SolicitarCorridaResponse,
   CorridaStatusResponse,
   CorridaContexto,
+  AvaliarCorridaInput,
   AceitarCorridaInput,
   RecusarCorridaInput,
   ConfirmarEmbarqueInput,
   FinalizarCorridaInput,
   CancelarCorridaInput,
   CreateCorridaInput,
+  PosicaoMotoristaResponse,
   SolicitarCorridaInput,
   SearchResult,
 } from '../../../types';
@@ -117,6 +120,22 @@ const makeMockFacade = (
   ): Promise<Result<boolean, FacadeError>> => ok(true),
   getActiveCorrida: async (): Promise<Result<Corrida | null, FacadeError>> =>
     ok(null),
+  avaliarCorrida: async (
+    _id: string,
+    _i: AvaliarCorridaInput,
+  ): Promise<Result<Corrida, FacadeError>> =>
+    ok(makeCorrida({status: 'AVALIADA'})),
+  getMotoristaPosition: async (
+    _id: string,
+  ): Promise<Result<PosicaoMotoristaResponse, FacadeError>> =>
+    ok({
+      corridaId: 'c1',
+      lat: -15.78,
+      lng: -47.93,
+      velocidade: 0,
+      heading: 0,
+      timestamp: new Date().toISOString(),
+    }),
   getContexto: async (): Promise<Result<CorridaContexto, FacadeError>> =>
     ok({
       usuario: {
@@ -128,7 +147,7 @@ const makeMockFacade = (
       corridaAtiva: null,
     }),
   ...overrides,
-});
+} as ICorridaFacade);
 
 const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
   configureStore({
@@ -137,6 +156,7 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
       auth: authReducer,
       realtime: realtimeReducer,
       ui: uiReducer,
+      location: locationReducer,
     },
     preloadedState: {
       auth: {
@@ -157,6 +177,7 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         motoristaId: 'driver-001',
         municipioId: null,
         isHydrating: false,
+        statusOperacional: 'DISPONIVEL',
       },
       corrida: {
         activeCorrida: null,
@@ -173,6 +194,16 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         posicaoMotoristaAtual: null,
         corridaHistory: [],
         ...corridaState,
+        ratingSubmitted: corridaState?.ratingSubmitted ?? false,
+        driverPosition: corridaState?.driverPosition ?? null,
+      },
+      location: {
+        permissionStatus: 'granted' as const,
+        fixStatus: 'ready' as const,
+        current: {latitude: -15.78, longitude: -47.93},
+        lastKnown: {latitude: -15.78, longitude: -47.93},
+        lastFixAt: Date.now(),
+        error: null,
       },
     },
   });
@@ -301,7 +332,7 @@ describe('MotoristaScreen', () => {
 
     expect(aceitarMock).toHaveBeenCalledWith(
       corrida.id,
-      expect.objectContaining({motoristaId: 'driver-001'}),
+      {},
     );
   });
 

@@ -116,7 +116,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
   /** @inheritdoc */
   public async aceitarCorrida(
     corridaId: string,
-    input: AceitarCorridaInput,
+    _input: AceitarCorridaInput,
   ): Promise<Result<Corrida, FacadeError>> {
     await delay(250);
     const corrida = store.get(corridaId);
@@ -124,7 +124,6 @@ export class CorridaFacadeMock implements ICorridaFacade {
     if (corrida.status !== 'SOLICITADA') return fail(toError('Corrida já aceita', 'CONFLICT'));
     const updated = transition(corrida, 'ACEITA', {
       motoristaId: 'mock-motorista',
-      veiculoId: input.veiculoId,
     });
     store.set(corridaId, updated);
     mensagensStore.set(corridaId, seedMensagens(corridaId));

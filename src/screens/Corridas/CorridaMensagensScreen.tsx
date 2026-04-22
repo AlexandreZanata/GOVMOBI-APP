@@ -1,19 +1,21 @@
 /**
- * @fileoverview CorridaMensagensScreen — full chat screen for an active ride.
+ * @fileoverview CorridaMensagensScreen — full-screen chat for an active ride.
  *
- * Pushed from the chat FAB on the PassageiroScreen (Home tab).
- * Loads and displays the message history for the active corrida.
- *
- * GET /corridas/:id/mensagens — message history
+ * Loads message history via GET /corridas/:id/mensagens and appends real-time
+ * messages received via the `nova-mensagem` WebSocket event.
+ * Allows sending messages via the `enviar-mensagem` WebSocket event.
  */
-/* eslint-disable react-native/no-unused-styles */
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   BackHandler,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  StyleSheet,
   Text,
+  TextInput,
   View,
   type ListRenderItem,
 } from 'react-native';
@@ -25,17 +27,22 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles} from './CorridasScreens.styles';
+import {useAppDispatch, useAppSelector} from '../../store';
+import {addMensagem} from '@store/slices/corridaSlice';
+import {useFacades} from '@services/facades';
 import type {CorridaMensagem} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
-import {StyleSheet} from 'react-native';
 
 type RouteProps = RouteProp<
   PassageiroCorridasStackParamList,
   'CorridaMensagens'
 >;
 
+const MAX_MESSAGE_LENGTH = 1000;
+
 /**
  * Full-screen chat view for a corrida's message history.
+ * Supports real-time message sending and receiving via WebSocket.
  *
  * @returns JSX element for the CorridaMensagensScreen.
  */
@@ -45,29 +52,65 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
+  const {realtimeFacade} = useFacades();
   const {corridaId} = route.params;
 
   const shared = useMemo(() => createCorridasStyles(theme), [theme]);
   const styles = useMemo(() => createMensagensStyles(theme), [theme]);
 
-  const {mensagens, isLoadingMensagens, onLoadMensagens} =
-    usePassageiroCorrida(corridaId);
+  const currentUserId = useAppSelector(s => s.auth.user?.id ?? '');
+  const mensagens = useAppSelector(s => s.corrida.mensagens);
 
-  const navigateToHome = useCallback((): void => {
+  const {isLoadingMensagens, onLoadMensagens} = usePassageiroCorrida(corridaId);
+
+  const [messageText, setMessageText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const listRef = useRef<FlatList<CorridaMensagem>>(null);
+
+  const navigateBack = useCallback((): void => {
     navigation.goBack();
   }, [navigation]);
 
+  // Load message history on mount
   useEffect(() => {
     void onLoadMensagens(corridaId);
   }, [corridaId, onLoadMensagens]);
 
+  // Subscribe to nova-mensagem events and append to Redux
+  useEffect(() => {
+    const unsubscribe = realtimeFacade.onEvent(event => {
+      if (event.type === 'nova-mensagem') {
+        const msg = realtimeFacade.normalizeCorridaMensagem({
+          id: event.payload.id,
+          corridaId: event.payload.corridaId,
+          remetenteId: event.payload.remetenteId,
+          conteudo: event.payload.conteudo,
+          timestamp: event.payload.timestamp,
+        });
+        dispatch(addMensagem(msg));
+      }
+    });
+    return unsubscribe;
+  }, [dispatch, realtimeFacade]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (mensagens.length > 0) {
+      setTimeout(() => {
+        listRef.current?.scrollToEnd({animated: true});
+      }, 100);
+    }
+  }, [mensagens.length]);
+
+  // Header back button
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
         <Pressable
-          accessibilityLabel={t('passageiro.tabs.home')}
+          accessibilityLabel={t('common.back')}
           accessibilityRole="button"
-          onPress={navigateToHome}
+          onPress={navigateBack}
           testID="mensagens-back-home">
           <MaterialIcons
             color={theme.design.textOnDark}
@@ -78,44 +121,66 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
       ),
       gestureEnabled: false,
     });
-  }, [navigateToHome, navigation, t, theme.design.textOnDark]);
+  }, [navigateBack, navigation, t, theme.design.textOnDark]);
 
+  // Hardware back button
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
-        navigateToHome();
+        navigateBack();
         return true;
       },
     );
+    return () => subscription.remove();
+  }, [navigateBack]);
 
-    return () => {
-      subscription.remove();
-    };
-  }, [navigateToHome]);
+  const handleSend = useCallback(async (): Promise<void> => {
+    const text = messageText.trim();
+    if (!text || isSending) return;
+
+    setIsSending(true);
+    setMessageText('');
+
+    await realtimeFacade.sendCorridaMessage({
+      corridaId,
+      conteudo: text,
+    });
+
+    setIsSending(false);
+  }, [corridaId, isSending, messageText, realtimeFacade]);
 
   const renderMessage: ListRenderItem<CorridaMensagem> = useCallback(
     ({item}) => {
+      const isOwn = item.remetenteId === currentUserId;
       const time = new Date(item.createdAt).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
       });
       return (
-        <View style={styles.messageRow} testID={`message-${item.id}`}>
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>{item.conteudo}</Text>
-            <Text style={styles.bubbleTime}>{time}</Text>
+        <View
+          style={[styles.messageRow, isOwn && styles.messageRowOwn]}
+          testID={`message-${item.id}`}>
+          <View style={[styles.bubble, isOwn && styles.bubbleOwn]}>
+            <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
+              {item.conteudo}
+            </Text>
+            <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>
+              {time}
+            </Text>
           </View>
         </View>
       );
     },
-    [styles],
+    [currentUserId, styles],
   );
 
   return (
-    <View
-      style={[styles.root, {paddingBottom: insets.bottom}]}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.root}
       testID="mensagens-screen">
+      {/* Message list */}
       {isLoadingMensagens ? (
         <View style={shared.emptyContainer}>
           <ActivityIndicator
@@ -130,9 +195,11 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
         </View>
       ) : (
         <FlatList
+          ref={listRef}
           contentContainerStyle={styles.listContent}
           data={mensagens}
           keyExtractor={item => item.id}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({animated: false})}
           removeClippedSubviews
           renderItem={renderMessage}
           showsVerticalScrollIndicator={false}
@@ -140,7 +207,39 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
           windowSize={5}
         />
       )}
-    </View>
+
+      {/* Message input */}
+      <View style={[styles.inputRow, {paddingBottom: insets.bottom > 0 ? insets.bottom : 12}]}>
+        <TextInput
+          accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
+          editable={!isSending}
+          maxLength={MAX_MESSAGE_LENGTH}
+          multiline
+          onChangeText={setMessageText}
+          placeholder={t('corridas.mensagens.inputPlaceholder')}
+          placeholderTextColor={theme.design.textTertiary}
+          style={styles.input}
+          testID="message-input"
+          value={messageText}
+        />
+        <Pressable
+          accessibilityLabel={t('chat.send')}
+          accessibilityRole="button"
+          disabled={!messageText.trim() || isSending}
+          onPress={() => void handleSend()}
+          style={[
+            styles.sendBtn,
+            (!messageText.trim() || isSending) && styles.sendBtnDisabled,
+          ]}
+          testID="send-btn">
+          {isSending ? (
+            <ActivityIndicator color={theme.design.textOnDark} size="small" />
+          ) : (
+            <MaterialIcons color={theme.design.textOnDark} name="send" size={20} />
+          )}
+        </Pressable>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -167,6 +266,9 @@ const createMensagensStyles = (
       marginBottom: spacing[3],
       alignItems: 'flex-start',
     },
+    messageRowOwn: {
+      alignItems: 'flex-end',
+    },
     bubble: {
       backgroundColor: design.surface100,
       borderRadius: borderRadius.radius.lg,
@@ -176,9 +278,17 @@ const createMensagensStyles = (
       maxWidth: '80%',
       ...theme.shadows.card,
     },
+    bubbleOwn: {
+      backgroundColor: design.navy700,
+      borderBottomLeftRadius: borderRadius.radius.lg,
+      borderBottomRightRadius: borderRadius.radius.sm,
+    },
     bubbleText: {
       ...typo.scale.bodyMd,
       color: design.textPrimary,
+    },
+    bubbleTextOwn: {
+      color: design.textOnDark,
     },
     bubbleTime: {
       ...typo.scale.caption,
@@ -186,10 +296,44 @@ const createMensagensStyles = (
       marginTop: spacing[1],
       alignSelf: 'flex-end',
     },
+    bubbleTimeOwn: {
+      color: design.textOnDarkMuted,
+    },
     emptyText: {
       ...typo.scale.bodyMd,
       color: design.textTertiary,
       textAlign: 'center',
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingHorizontal: spacing[4],
+      paddingTop: spacing[3],
+      backgroundColor: design.surface100,
+      borderTopWidth: 1,
+      borderTopColor: design.surface300,
+      gap: spacing[3],
+    },
+    input: {
+      flex: 1,
+      ...typo.scale.bodyMd,
+      color: design.textPrimary,
+      backgroundColor: design.surface200,
+      borderRadius: borderRadius.radius.lg,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
+      maxHeight: 100,
+    },
+    sendBtn: {
+      backgroundColor: design.navy700,
+      borderRadius: borderRadius.radius.full,
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendBtnDisabled: {
+      opacity: 0.4,
     },
   });
 };

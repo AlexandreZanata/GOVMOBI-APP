@@ -84,8 +84,7 @@ export const useRideReconnection = (): void => {
         reconexaoConcluida.current = true;
         clearTimer();
         // Use the event payload to restore ride state
-        const payload = event.payload as {corridaAtiva?: {id: string; status: string} | null};
-        if (payload?.corridaAtiva) {
+        if (event.payload?.corridaAtiva) {
           // The full corrida object will be fetched; for now just mark as active
           void corridaFacadeRef.current.getActiveCorrida().then(result => {
             if (!result.error && result.data) {

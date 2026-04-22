@@ -83,6 +83,15 @@ export interface NovaCorridaDisponivelPayload {
   prioridade?: number;
 }
 
+/**
+ * Server-sent reconnection event payload.
+ * Emitted by the backend after a WebSocket reconnect to restore ride state.
+ */
+export interface ReconexaoConcluida {
+  /** Active ride at the time of reconnection, or null if none. */
+  corridaAtiva?: {id: string; status: string} | null;
+}
+
 /** Unified event envelope consumed by hooks and facades. */
 export type RealtimeEvent =
   | {type: 'historico-mensagens'; payload: HistoricoMensagemPayload[]}
@@ -90,4 +99,5 @@ export type RealtimeEvent =
   | {type: 'nova-mensagem'; payload: NovaMensagemPayload}
   | {type: 'status-corrida-alterado'; payload: StatusCorridaAlteradoPayload}
   | {type: 'nova-corrida-disponivel'; payload: NovaCorridaDisponivelPayload}
-  | {type: 'estado-operacional'; payload: {status: MotoristaStatusOperacional}};
+  | {type: 'estado-operacional'; payload: {status: MotoristaStatusOperacional}}
+  | {type: 'reconexao-concluida'; payload: ReconexaoConcluida};

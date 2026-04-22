@@ -149,6 +149,7 @@ const buildStore = () =>
         motoristaId: null,
         municipioId: null,
         isHydrating: false,
+        statusOperacional: null,
       },
       ui: {
         themeMode: 'light' as const,
