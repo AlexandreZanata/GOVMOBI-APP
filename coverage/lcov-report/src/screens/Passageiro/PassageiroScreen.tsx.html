@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.06% </span>
+                <span class="strong">63.01% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>146/221</span>
+                <span class='fraction'>138/219</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">52.12% </span>
+                <span class="strong">46.01% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>86/165</span>
+                <span class='fraction'>75/163</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">57.77% </span>
+                <span class="strong">56.81% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>26/45</span>
+                <span class='fraction'>25/44</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">67.02% </span>
+                <span class="strong">64.7% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>126/188</span>
+                <span class='fraction'>121/187</span>
             </div>
         
             
@@ -701,14 +701,7 @@
 <a name='L636'></a><a href='#L636'>636</a>
 <a name='L637'></a><a href='#L637'>637</a>
 <a name='L638'></a><a href='#L638'>638</a>
-<a name='L639'></a><a href='#L639'>639</a>
-<a name='L640'></a><a href='#L640'>640</a>
-<a name='L641'></a><a href='#L641'>641</a>
-<a name='L642'></a><a href='#L642'>642</a>
-<a name='L643'></a><a href='#L643'>643</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L639'></a><a href='#L639'>639</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -887,7 +880,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">126x</span>
 <span class="cline-any cline-yes">126x</span>
 <span class="cline-any cline-yes">126x</span>
 <span class="cline-any cline-yes">126x</span>
@@ -1092,10 +1084,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">74x</span>
 <span class="cline-any cline-yes">21x</span>
-<span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1395,10 +1387,7 @@ import {
 } from '@store/slices/corridaSlice';
 import {addToast} from '@store/slices/uiSlice';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
-import type {Corrida} from '@models/Corrida';
 import {TERMINAL_STATUSES as CORRIDA_TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
-&nbsp;
-// ── Navigation types ──────────────────────────────────────────────────────────
 type PassageiroTabParamList = {
   PassageiroHome: undefined;
   PassageiroCorridas: NavigatorScreenParams&lt;PassageiroCorridasStackParamList&gt;;
@@ -1532,7 +1521,6 @@ export const PassageiroScreen = (): React.JSX.Element =&gt; {
   const activeCorrida = useAppSelector(s =&gt; s.corrida.activeCorrida);
   const isActionLoading = useAppSelector(s =&gt; s.corrida.isActionLoading);
   const pendingCorridaId = useAppSelector(s =&gt; s.corrida.pendingCorridaId);
-  const servidorId = useAppSelector(s =&gt; s.auth.servidorId ?? '');
   const hasActiveRide = activeCorrida !== null &amp;&amp; !TERMINAL_STATUSES.has(activeCorrida.status);
   // Driver name from WS cache — avoids REST round-trips on every render and
   // survives tab navigation / foreground transitions.
@@ -1733,11 +1721,11 @@ export const PassageiroScreen = (): React.JSX.Element =&gt; {
 &nbsp;
   // ── Mapbox token phase-2 ────────────────────────────────────────────────────
   useEffect(() =&gt; {
-    if (!MapboxGL) { setIsMapboxTokenApplied(false); return; }
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (mapboxToken === null &amp;&amp; ENV.MAPBOX_ACCESS_TOKEN) { <span class="cstat-no" title="statement not covered" >setIsMapboxTokenApplied(true); <span class="cstat-no" title="statement not covered" ></span>return; </span>}
-    if (!mapboxToken) { setIsMapboxTokenApplied(false); return; }
-    MapboxGL.setAccessToken(mapboxToken);
-    setIsMapboxTokenApplied(true);
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (!MapboxGL) { setIsMapboxTokenApplied(false); return; }
+<span class="cstat-no" title="statement not covered" >    if (mapboxToken === null &amp;&amp; ENV.MAPBOX_ACCESS_TOKEN) { <span class="cstat-no" title="statement not covered" >setIsMapboxTokenApplied(true); <span class="cstat-no" title="statement not covered" ></span>return; </span>}</span>
+<span class="cstat-no" title="statement not covered" >    if (!mapboxToken) { <span class="cstat-no" title="statement not covered" >setIsMapboxTokenApplied(false); <span class="cstat-no" title="statement not covered" ></span>return; </span>}</span>
+<span class="cstat-no" title="statement not covered" >    MapboxGL.setAccessToken(mapboxToken);</span>
+<span class="cstat-no" title="statement not covered" >    setIsMapboxTokenApplied(true);</span>
   }, [mapboxToken]);
 &nbsp;
   // ── Sheet slide-up ──────────────────────────────────────────────────────────
@@ -1798,7 +1786,7 @@ export const PassageiroScreen = (): React.JSX.Element =&gt; {
 &nbsp;
   // ── Map content ─────────────────────────────────────────────────────────────
   const mapContent =
-    MapboxGL &amp;&amp; isMapboxTokenApplied &amp;&amp; isContainerReady ? (
+    MapboxGL &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >isMapboxTokenApplied </span>&amp;&amp; <span class="branch-2 cbranch-no" title="branch not covered" >isContainerReady </span>? (
 <span class="branch-0 cbranch-no" title="branch not covered" >      &lt;MapboxGL.MapView</span>
         accessibilityLabel={t('passageiro.map.label')}
         logoEnabled={false}
@@ -1861,7 +1849,7 @@ export const PassageiroScreen = (): React.JSX.Element =&gt; {
             &lt;MaterialIcons name="map" size={56} color={C.textMuted} /&gt;
           &lt;/&gt;
         ) : (
-          &lt;ActivityIndicator color={C.interactive} size="large" testID="map-token-loading" /&gt;
+<span class="branch-1 cbranch-no" title="branch not covered" >          &lt;ActivityIndicator color={C.interactive} size="large" testID="map-token-loading" /&gt;</span>
         )}
       &lt;/View&gt;
     );
@@ -1996,7 +1984,7 @@ PassageiroScreen.displayName = 'PassageiroScreen';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-23T16:01:16.708Z
+                at 2026-04-23T17:52:53.378Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

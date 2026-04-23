@@ -141,7 +141,10 @@
       "dismiss": "Dispensar notificacao"
     },
     "network": {
-      "offline": "Voce esta offline"
+      "offline": "Voce esta offline",
+      "reconnecting_plain": "Reconectando...",
+      "reconnecting": "Reconectando... (tentativa {{count}})",
+      "recovered": "Conexao restaurada"
     }
   },
   "servidores": {

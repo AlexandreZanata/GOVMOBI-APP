@@ -33,6 +33,7 @@ import {useCorridaContexto} from '@hooks/useCorridaContexto';
 import {useDriverLocationStream} from '@hooks/useDriverLocationStream';
 import {useRideReconnection} from '@hooks/useRideReconnection';
 import {FacadeProvider} from '@services/facades';
+import {NetworkProvider} from './context/NetworkContext';
 
 /**
  * Startup side-effect hooks that depend on app providers.
@@ -89,19 +90,21 @@ const AppShell = (): React.JSX.Element => {
   return (
     <ThemeProvider mode={themeMode}>
       <FacadeProvider getToken={getToken} refreshToken={refreshToken}>
-        <AppStartupEffects />
-        <StatusBar
-          style="light"
-          backgroundColor={designColors.navy800}
-          translucent={false}
-        />
-        <View style={styles.container}>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
-          <NetworkBanner />
-          <GlobalToast />
-        </View>
+        <NetworkProvider>
+          <AppStartupEffects />
+          <StatusBar
+            style="light"
+            backgroundColor={designColors.navy800}
+            translucent={false}
+          />
+          <View style={styles.container}>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+            <NetworkBanner />
+            <GlobalToast />
+          </View>
+        </NetworkProvider>
       </FacadeProvider>
     </ThemeProvider>
   );

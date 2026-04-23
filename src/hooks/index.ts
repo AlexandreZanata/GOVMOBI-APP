@@ -4,5 +4,6 @@
 export * from './useAuthSession';
 export * from './useAppLocationBootstrap';
 export * from './useNetworkStatus';
+export * from './useNetworkManager';
 export * from './useNotifications';
 export * from './useRealtimeSession';

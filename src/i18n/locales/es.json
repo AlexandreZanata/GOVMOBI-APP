@@ -141,7 +141,10 @@
       "dismiss": "Descartar notificacion"
     },
     "network": {
-      "offline": "No tienes conexion"
+      "offline": "No tienes conexion",
+      "reconnecting_plain": "Reconectando...",
+      "reconnecting": "Reconectando... (intento {{count}})",
+      "recovered": "Conexion restaurada"
     }
   },
   "servidores": {
