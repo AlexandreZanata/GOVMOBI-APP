@@ -107,6 +107,24 @@ export interface CorridaStatusResponse {
   status: string;
 }
 
+/**
+ * Response from GET /corridas/:id/posicao-fila.
+ *
+ * Three possible shapes:
+ *  - `naFilaDeEspera: true`  → passenger is queued; position/time fields are populated.
+ *  - `naFilaDeEspera: false, status: 'aguardando_aceite'` → active dispatch cycle (no queue).
+ *  - `status: 'aceita'`      → ride was already accepted; queue is irrelevant.
+ */
+export interface PosicaoFilaResponse {
+  corridaId: string;
+  status: string;
+  naFilaDeEspera: boolean;
+  posicaoNaFila: number | null;
+  totalNaFila: number | null;
+  tempoEsperaSeg: number | null;
+  estimativaAtendimentoSeg: number | null;
+}
+
 /** Response from GET /corridas/:id/posicao-motorista. */
 export interface PosicaoMotoristaResponse {
   corridaId: string;

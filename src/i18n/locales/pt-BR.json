@@ -460,6 +460,15 @@
     "acompanhar": {
       "title": "Acompanhar Corrida"
     },
+    "fila": {
+      "title": "Posição na Fila",
+      "posicao": "Posição",
+      "total": "Na Fila",
+      "esperaMin": "Espera (min)",
+      "estimativa": "Previsão de atendimento: ~{{min}} min",
+      "dispatchCycle": "Buscando motorista disponível...",
+      "loading": "Verificando posição na fila..."
+    },
     "solicitar": {
       "title": "Solicitar Corrida",
       "modalTitle": "Detalhes da Corrida",

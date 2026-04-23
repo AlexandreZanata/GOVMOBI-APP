@@ -23,13 +23,18 @@ import {
   setMensagens,
   setPendingCorridaId,
   updateCorridaStatus,
+  setPosicaoFila,
 } from '@store/slices/corridaSlice';
 import {addToast} from '@store/slices/uiSlice';
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
 import {podeSerCancelada, normalizeStatus} from '@models/Corrida';
+import type {PosicaoFilaResponse} from '../../types';
 
 /** Polling interval for GET /corridas/:id/status (ms). */
 const STATUS_POLL_INTERVAL_MS = 5_000;
+
+/** Polling interval for GET /corridas/:id/posicao-fila (ms). */
+const FILA_POLL_INTERVAL_MS = 10_000;
 
 /** All state and handlers exposed by usePassageiroCorrida. */
 export interface PassageiroCorridaState {
@@ -45,6 +50,11 @@ export interface PassageiroCorridaState {
   mensagens: CorridaMensagem[];
   /** Whether messages are being loaded. */
   isLoadingMensagens: boolean;
+  /**
+   * Latest queue position snapshot from GET /corridas/:id/posicao-fila.
+   * Null when not in queue or ride already accepted.
+   */
+  posicaoFila: PosicaoFilaResponse | null;
   /**
    * Loads full corrida details from GET /corridas/:id and stores in Redux.
    * @param corridaId - Ride UUID.
@@ -82,12 +92,14 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
   const error = useAppSelector(s => s.corrida.error);
   const mensagens = useAppSelector(s => s.corrida.mensagens);
   const isLoadingMensagens = useAppSelector(s => s.corrida.isLoadingMensagens);
+  const posicaoFila = useAppSelector(s => s.corrida.posicaoFila);
 
   // ---------------------------------------------------------------------------
   // Status polling — GET /corridas/:id/status (Redis-optimised)
   // ---------------------------------------------------------------------------
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const filaRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const targetId = corridaId ?? pendingCorridaId ?? activeCorrida?.id;
 
   useEffect(() => {
@@ -117,6 +129,48 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
       if (pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;
+      }
+    };
+  }, [targetId, corridaFacade, dispatch]);
+
+  // ---------------------------------------------------------------------------
+  // Queue polling — GET /corridas/:id/posicao-fila
+  // Only active while status is 'aguardando_aceite'.
+  // Stops automatically once the ride is accepted or reaches a terminal state.
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!targetId) return;
+
+    const pollFila = async (): Promise<void> => {
+      const result = await corridaFacade.getPosicaoFila(targetId);
+      if (result.data) {
+        dispatch(setPosicaoFila(result.data));
+        // Stop polling once the ride leaves aguardando_aceite
+        const stopStatuses = new Set(['aceita', 'em_rota', 'passageiro_a_bordo', 'concluida', 'cancelada', 'expirada', 'avaliada']);
+        if (stopStatuses.has(result.data.status)) {
+          if (filaRef.current) {
+            clearInterval(filaRef.current);
+            filaRef.current = null;
+          }
+          // Clear queue state once ride is accepted
+          if (result.data.status !== 'aguardando_aceite') {
+            dispatch(setPosicaoFila(null));
+          }
+        }
+      }
+    };
+
+    // Run immediately, then on interval
+    void pollFila();
+    filaRef.current = setInterval(() => {
+      void pollFila();
+    }, FILA_POLL_INTERVAL_MS);
+
+    return () => {
+      if (filaRef.current) {
+        clearInterval(filaRef.current);
+        filaRef.current = null;
       }
     };
   }, [targetId, corridaFacade, dispatch]);
@@ -220,6 +274,7 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
     error,
     mensagens,
     isLoadingMensagens,
+    posicaoFila,
     onLoadCorrida,
     onLoadMensagens,
     onCancelar,

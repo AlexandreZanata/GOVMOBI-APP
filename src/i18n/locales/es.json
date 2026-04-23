@@ -431,6 +431,15 @@
     "acompanhar": {
       "title": "Seguir Viaje"
     },
+    "fila": {
+      "title": "Posición en Cola",
+      "posicao": "Posición",
+      "total": "En Cola",
+      "esperaMin": "Espera (min)",
+      "estimativa": "Atención estimada: ~{{min}} min",
+      "dispatchCycle": "Buscando conductor disponible...",
+      "loading": "Verificando posición en cola..."
+    },
     "solicitar": {
       "title": "Solicitar Viaje",
       "modalTitle": "Detalles del Viaje",

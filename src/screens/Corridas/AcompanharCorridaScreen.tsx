@@ -27,6 +27,7 @@ import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import {createAcompanharStyles} from './AcompanharCorrida.styles';
+import {FilaEsperaCard} from './FilaEsperaCard';
 import type {CorridaMensagem} from '@models/Corrida';
 import {podeSerCancelada, TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
@@ -58,6 +59,7 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
     isActionLoading,
     mensagens,
     isLoadingMensagens,
+    posicaoFila,
     onCancelar,
     onLoadCorrida,
     onLoadMensagens,
@@ -158,6 +160,11 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
           </Text>
         </View>
       </View>
+
+      {/* Queue position — visible only while status is aguardando_aceite */}
+      {activeCorrida.status === 'aguardando_aceite' && (
+        <FilaEsperaCard posicaoFila={posicaoFila} />
+      )}
 
       {/* Driver position */}
       {driverPosition && !isTerminal && (

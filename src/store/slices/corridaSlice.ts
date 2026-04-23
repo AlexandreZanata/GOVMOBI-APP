@@ -8,7 +8,7 @@ import type {
   CorridaStatus,
   Localizacao,
 } from '@models/Corrida';
-import type {SearchResult} from '../../types';
+import type {SearchResult, PosicaoFilaResponse} from '../../types';
 import type {Coordenada} from '@models/Corrida';
 
 /** Driver telemetry snapshot received from realtime updates. */
@@ -55,6 +55,11 @@ export interface CorridaState {
   ratingSubmitted: boolean;
   /** Latest driver position received from the posicao-atualizada WebSocket event. */
   driverPosition: PosicaoMotorista | null;
+  /**
+   * Latest queue position snapshot from GET /corridas/:id/posicao-fila.
+   * Null when the ride is not in the queue (active dispatch cycle or already accepted).
+   */
+  posicaoFila: PosicaoFilaResponse | null;
   /** Count of unread messages from the other party (resets when chat is opened). */
   unreadMensagens: number;
   /** Count of messages not yet visualized (blue tick) — from GET /nao-visualizadas. */
@@ -90,6 +95,7 @@ const initialState: CorridaState = {
   corridaHistory: [],
   ratingSubmitted: false,
   driverPosition: null,
+  posicaoFila: null,
   unreadMensagens: 0,
   naoVisualizadasCount: 0,
   isChatScreenOpen: false,
@@ -312,6 +318,14 @@ const corridaSlice = createSlice({
     },
 
     /**
+     * Stores the latest queue position snapshot from GET /corridas/:id/posicao-fila.
+     * Pass null to clear (e.g. when the ride is accepted or cancelled).
+     */
+    setPosicaoFila(state, action: PayloadAction<PosicaoFilaResponse | null>) {
+      state.posicaoFila = action.payload;
+    },
+
+    /**
      * Resets all corrida state (on logout or after ride completes).
      */
     resetCorrida() {
@@ -359,6 +373,7 @@ export const {
   setRatingSubmitted,
   setDriverPosition,
   setMotoristaNomeCache,
+  setPosicaoFila,
 } = corridaSlice.actions;
 
 export default corridaSlice.reducer;

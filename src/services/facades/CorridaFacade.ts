@@ -35,6 +35,7 @@ import type {
   CorridaContexto,
   MapboxGeocodingResponse,
   PosicaoMotoristaResponse,
+  PosicaoFilaResponse,
   SearchResult,
 } from '../../types';
 import {type FacadeConfig, type FacadeError, type Result} from './types';
@@ -289,6 +290,14 @@ export interface ICorridaFacade {
 
   /** GET /corridas/:id/posicao-motorista */
   getMotoristaPosition(corridaId: string): Promise<Result<PosicaoMotoristaResponse, FacadeError>>;
+
+  /**
+   * GET /corridas/:id/posicao-fila
+   * Returns the passenger's current queue position while the ride is in
+   * `aguardando_aceite` status. Returns null fields when not in the queue
+   * (active dispatch cycle) or when the ride has already been accepted.
+   */
+  getPosicaoFila(corridaId: string): Promise<Result<PosicaoFilaResponse, FacadeError>>;
 }
 
 // ---------------------------------------------------------------------------
@@ -743,6 +752,11 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   /** @inheritdoc */
   public async getMotoristaPosition(corridaId: string): Promise<Result<PosicaoMotoristaResponse, FacadeError>> {
     return this.get<PosicaoMotoristaResponse>(`/corridas/${corridaId}/posicao-motorista`);
+  }
+
+  /** @inheritdoc */
+  public async getPosicaoFila(corridaId: string): Promise<Result<PosicaoFilaResponse, FacadeError>> {
+    return this.get<PosicaoFilaResponse>(`/corridas/${corridaId}/posicao-fila`);
   }
 
   // ---------------------------------------------------------------------------

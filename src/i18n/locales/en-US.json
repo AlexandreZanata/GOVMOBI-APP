@@ -441,6 +441,15 @@
     "acompanhar": {
       "title": "Track Ride"
     },
+    "fila": {
+      "title": "Queue Position",
+      "posicao": "Position",
+      "total": "In Queue",
+      "esperaMin": "Wait (min)",
+      "estimativa": "Estimated service: ~{{min}} min",
+      "dispatchCycle": "Looking for an available driver...",
+      "loading": "Checking queue position..."
+    },
     "solicitar": {
       "title": "Request Ride",
       "modalTitle": "Ride Details",

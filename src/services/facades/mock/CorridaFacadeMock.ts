@@ -17,6 +17,7 @@ import type {
   CorridaStatusResponse,
   CreateCorridaInput,
   PosicaoMotoristaResponse,
+  PosicaoFilaResponse,
   SearchResult,
 } from '../../../types';
 import type {ICorridaFacade} from '../CorridaFacade';
@@ -388,6 +389,50 @@ export class CorridaFacadeMock implements ICorridaFacade {
       velocidade: 30 + Math.random() * 40,
       heading: Math.random() * 360,
       timestamp: new Date().toISOString(),
+    });
+  }
+
+  /** @inheritdoc */
+  public async getPosicaoFila(corridaId: string): Promise<Result<PosicaoFilaResponse, FacadeError>> {
+    await delay(100);
+    const corrida = store.get(corridaId);
+    if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
+
+    // Simulate: if already accepted, return accepted shape
+    if (corrida.status === 'aceita' || corrida.status === 'em_rota' || corrida.status === 'passageiro_a_bordo') {
+      return ok({
+        corridaId,
+        status: corrida.status,
+        naFilaDeEspera: false,
+        posicaoNaFila: null,
+        totalNaFila: null,
+        tempoEsperaSeg: null,
+        estimativaAtendimentoSeg: null,
+      });
+    }
+
+    // Simulate queue position for aguardando_aceite
+    if (corrida.status === 'aguardando_aceite') {
+      return ok({
+        corridaId,
+        status: 'aguardando_aceite',
+        naFilaDeEspera: true,
+        posicaoNaFila: 2,
+        totalNaFila: 5,
+        tempoEsperaSeg: 180,
+        estimativaAtendimentoSeg: 120,
+      });
+    }
+
+    // Default: not in queue (active dispatch cycle)
+    return ok({
+      corridaId,
+      status: corrida.status,
+      naFilaDeEspera: false,
+      posicaoNaFila: null,
+      totalNaFila: null,
+      tempoEsperaSeg: null,
+      estimativaAtendimentoSeg: null,
     });
   }
 }
