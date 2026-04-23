@@ -14,6 +14,10 @@
  *  - `ficar-disponivel` is re-emitted on every connect / reconnect AND on
  *    every AppState foreground transition so the server always has the driver
  *    in the broadcast pool — this fixes the "second ride not received" bug.
+ *  - `ficar-disponivel` is ONLY emitted when statusOperacional === 'DISPONIVEL'.
+ *    Drivers in OFFLINE or EM_CORRIDA must not be indexed in the dispatch pool.
+ *  - When the driver transitions OFFLINE → DISPONIVEL while already connected,
+ *    `ficar-disponivel` is re-emitted immediately so the server indexes them.
  */
 import {useEffect, useRef} from 'react';
 import {AppState, type AppStateStatus} from 'react-native';
@@ -134,18 +138,37 @@ export const useDriverLocationStream = (): void => {
   }, [dispatch, isMotorista]);
 
   // ---------------------------------------------------------------------------
-  // Emit ficar-disponivel on every connect / reconnect.
+  // Emit ficar-disponivel when connected AND driver has no active ride.
+  //
+  // Triggers on:
+  //   - Initial connect / reconnect (connectionStatus changes to 'connected')
+  //   - Driver switches from OFFLINE → DISPONIVEL while already connected
+  //
+  // Conditions:
+  //   - statusOperacional === 'DISPONIVEL' OR null (null = status not yet received
+  //     from server; we optimistically index the driver so they don't miss offers
+  //     during the cold-start window before estado-operacional arrives)
+  //   - No active non-terminal ride (EM_CORRIDA drivers must not re-enter the pool)
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!isMotorista || connectionStatus !== 'connected') return;
-    console.log('[useDriverLocationStream] connectionStatus=connected — emitting ficar-disponivel');
+    // Block only when the server has explicitly set the driver OFFLINE or EM_CORRIDA.
+    if (statusOperacional === 'OFFLINE' || statusOperacional === 'EM_CORRIDA') return;
+
+    console.log(
+      '[useDriverLocationStream] connected + eligible — emitting ficar-disponivel (status=',
+      statusOperacional,
+      ')',
+    );
     void realtimeFacade.setDriverAvailable();
-  }, [isMotorista, connectionStatus, realtimeFacade]);
+  }, [isMotorista, connectionStatus, statusOperacional, realtimeFacade]);
 
   // ---------------------------------------------------------------------------
   // Re-emit ficar-disponivel on AppState foreground transition.
   // The socket may have silently dropped while in background; even if it
   // reconnected, the server may have removed the driver from the dispatch pool.
+  // Only re-indexes the driver when they are not explicitly OFFLINE/EM_CORRIDA
+  // and have no active ride.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const subscription = AppState.addEventListener(
@@ -158,7 +181,9 @@ export const useDriverLocationStream = (): void => {
           (prev === 'background' || prev === 'inactive') &&
           nextState === 'active' &&
           isMotoristaRef.current &&
-          connectionStatusRef.current === 'connected'
+          connectionStatusRef.current === 'connected' &&
+          statusOperacionalRef.current !== 'OFFLINE' &&
+          statusOperacionalRef.current !== 'EM_CORRIDA'
         ) {
           const corrida = activeCorridaRef.current;
           const hasActiveRide = corrida && !TERMINAL_STATUSES.has(corrida.status);
@@ -174,36 +199,54 @@ export const useDriverLocationStream = (): void => {
   }, [realtimeFacade]);
 
   // ---------------------------------------------------------------------------
-  // Telemetry interval — always-on while connected as MOTORISTA.
-  // Skips the emit when GPS is unavailable or driver is offline/off-duty.
+  // Telemetry interval — runs while connected as MOTORISTA with an active
+  // or unknown operational status.
+  //
+  // - DISPONIVEL / null: emits position without corridaId so the server can
+  //   update the driver's location in the dispatch index.
+  // - EM_CORRIDA: emits position with corridaId so the passenger can track
+  //   the driver on the map.
+  // - OFFLINE: interval is stopped — no position updates sent.
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (!isMotorista || connectionStatus !== 'connected') {
+    const shouldRun =
+      isMotorista &&
+      connectionStatus === 'connected' &&
+      statusOperacional !== 'OFFLINE';
+
+    if (!shouldRun) {
       if (telemetryRef.current) {
         clearInterval(telemetryRef.current);
         telemetryRef.current = null;
+        console.log(
+          '[useDriverLocationStream] telemetry stopped — status=',
+          statusOperacional,
+          'connected=',
+          connectionStatus,
+        );
       }
       return;
     }
 
-    // Clear any stale interval (e.g. after reconnect).
+    // Clear any stale interval before starting a fresh one.
     if (telemetryRef.current) {
       clearInterval(telemetryRef.current);
     }
 
+    console.log(
+      '[useDriverLocationStream] telemetry started — status=',
+      statusOperacional,
+    );
+
     telemetryRef.current = setInterval(() => {
       const loc = locationRef.current;
       const corrida = activeCorridaRef.current;
-      const status = statusOperacionalRef.current;
 
       // Skip when GPS unavailable
       if (!loc) {
         console.log('[useDriverLocationStream] GPS unavailable — skipping telemetry emit');
         return;
       }
-
-      // Skip when driver is offline or off-duty
-      if (!status || status === 'OFFLINE') return;
 
       const hasActiveRide = corrida && !TERMINAL_STATUSES.has(corrida.status);
 
@@ -222,5 +265,5 @@ export const useDriverLocationStream = (): void => {
         telemetryRef.current = null;
       }
     };
-  }, [isMotorista, connectionStatus, realtimeFacade, statusOperacional]);
+  }, [isMotorista, connectionStatus, statusOperacional, realtimeFacade]);
 };

@@ -103,9 +103,18 @@ export const useMotoristaRealtime = (
     const unsubscribe = realtimeFacade.onEvent(event => {
       switch (event.type) {
         case 'estado-operacional': {
-          const payload = event.payload as {status: MotoristaStatusOperacional};
-          console.log('[useMotoristaRealtime] estado-operacional →', payload.status);
-          dispatchRef.current(setStatusOperacional(payload.status));
+          const payload = event.payload as {status?: MotoristaStatusOperacional};
+          // Guard: only dispatch if the server sent a valid known status.
+          // An empty payload {} (malformed server event) must not overwrite
+          // the local status with null — that would stop telemetry and remove
+          // the driver from the dispatch pool.
+          const VALID_STATUSES: ReadonlySet<string> = new Set(['DISPONIVEL', 'EM_CORRIDA', 'OFFLINE']);
+          if (payload.status && VALID_STATUSES.has(payload.status)) {
+            console.log('[useMotoristaRealtime] estado-operacional →', payload.status);
+            dispatchRef.current(setStatusOperacional(payload.status));
+          } else {
+            console.warn('[useMotoristaRealtime] estado-operacional — ignoring empty/invalid payload:', JSON.stringify(payload));
+          }
           break;
         }
         case 'status-corrida-alterado': {
