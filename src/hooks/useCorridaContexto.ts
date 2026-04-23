@@ -5,6 +5,11 @@
  *   1. Initial mount (cold start / app open)
  *   2. Every time AppState transitions from background → active
  *
+ * After seeding an active ride from the server, it also:
+ *   - Emits `assinar-corrida` so the socket joins the ride room.
+ *   - For drivers without an active ride, emits `ficar-disponivel` to
+ *     re-enter the dispatch queue (critical for the "second ride" bug).
+ *
  * IMPORTANT: Never clears an existing non-terminal activeCorrida from Redux
  * based on a contexto response. The local state is authoritative during an
  * active ride — the server contexto may lag behind real-time events.
@@ -19,28 +24,50 @@ import {
   setActiveCorrida,
   setPendingCorridaId,
 } from '@store/slices/corridaSlice';
+import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
 import {TERMINAL_STATUSES} from '@models/Corrida';
 
+const TAG = '[useCorridaContexto]';
+
 /**
- * Syncs corrida context on app foreground.
- * Seeds `activeCorrida` and `pendingCorridaId` into Redux if the server
- * reports an active ride that the client doesn't know about.
+ * Syncs corrida context on app foreground and cold start.
  *
- * Does NOT clear an existing non-terminal activeCorrida — the local Redux
- * state is authoritative during an active ride.
+ * Seeds `activeCorrida` and `pendingCorridaId` into Redux if the server
+ * reports an active ride that the client doesn't know about. Also ensures
+ * the WebSocket is subscribed to the correct ride room after a foreground
+ * transition.
  *
  * @returns Void — side-effect only hook.
  */
 export const useCorridaContexto = (): void => {
   const dispatch = useAppDispatch();
-  const {corridaFacade} = useFacades();
+  const {corridaFacade, realtimeFacade} = useFacades();
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
+  const motoristaId = useAppSelector(s => s.auth.motoristaId);
+  const connectionStatus = useAppSelector(s => s.realtime.connectionStatus);
+
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const isSyncingRef = useRef(false);
-  // Keep a ref to the latest activeCorrida so the sync closure always sees current value
+
+  // Keep refs to latest values so the sync closure is always current.
   const activaRef = useRef(activeCorrida);
   activaRef.current = activeCorrida;
+
+  const motoristaIdRef = useRef(motoristaId);
+  motoristaIdRef.current = motoristaId;
+
+  const connectionStatusRef = useRef(connectionStatus);
+  connectionStatusRef.current = connectionStatus;
+
+  const corridaFacadeRef = useRef(corridaFacade);
+  corridaFacadeRef.current = corridaFacade;
+
+  const realtimeFacadeRef = useRef(realtimeFacade);
+  realtimeFacadeRef.current = realtimeFacade;
+
+  const dispatchRef = useRef(dispatch);
+  dispatchRef.current = dispatch;
 
   const sync = async (): Promise<void> => {
     if (!isAuthenticated || isSyncingRef.current) return;
@@ -48,26 +75,51 @@ export const useCorridaContexto = (): void => {
     isSyncingRef.current = true;
 
     try {
-      const result = await corridaFacade.getContexto();
+      const result = await corridaFacadeRef.current.getContexto();
       if (!result.data) return;
 
       const {corridaAtiva} = result.data;
       const localActiva = activaRef.current;
+      const isConnected = connectionStatusRef.current === 'connected';
 
       if (corridaAtiva) {
-        // Server has an active ride — seed it if we don't have one locally
-        dispatch(setActiveCorrida(corridaAtiva));
-        dispatch(setPendingCorridaId(corridaAtiva.id));
+        const isNewRide = !localActiva || localActiva.id !== corridaAtiva.id;
+        const localIsTerminal = localActiva ? TERMINAL_STATUSES.has(localActiva.status) : true;
+
+        if (isNewRide || localIsTerminal) {
+          // Server has a ride we don't know about locally — seed it.
+          console.log(TAG, 'seeding active ride from server →', corridaAtiva.id);
+          dispatchRef.current(setActiveCorrida(corridaAtiva));
+          dispatchRef.current(setPendingCorridaId(corridaAtiva.id));
+
+          // Re-subscribe to the ride room if the socket is connected.
+          if (isConnected) {
+            console.log(TAG, 'subscribing to ride room →', corridaAtiva.id);
+            await realtimeFacadeRef.current.subscribeToCorrida({corridaId: corridaAtiva.id});
+            dispatchRef.current(addRealtimeSubscription(corridaAtiva.id));
+          }
+        } else {
+          // Local state already has this ride — just ensure WS subscription is active.
+          if (isConnected && localActiva && !TERMINAL_STATUSES.has(localActiva.status)) {
+            console.log(TAG, 're-subscribing to existing ride room →', localActiva.id);
+            await realtimeFacadeRef.current.subscribeToCorrida({corridaId: localActiva.id});
+            dispatchRef.current(addRealtimeSubscription(localActiva.id));
+          }
+        }
       } else {
         // Server reports no active ride.
-        // Only clear local state if we don't have a non-terminal ride in Redux.
-        // If we do, the local state is more up-to-date than the contexto response.
         const hasNonTerminalLocal =
           localActiva !== null && !TERMINAL_STATUSES.has(localActiva.status);
 
         if (!hasNonTerminalLocal) {
-          dispatch(setActiveCorrida(null));
-          dispatch(setPendingCorridaId(null));
+          dispatchRef.current(setActiveCorrida(null));
+          dispatchRef.current(setPendingCorridaId(null));
+
+          // Driver without active ride must re-enter the dispatch queue.
+          if (motoristaIdRef.current && isConnected) {
+            console.log(TAG, 'no active ride — emitting ficar-disponivel');
+            await realtimeFacadeRef.current.setDriverAvailable();
+          }
         }
       }
     } finally {
@@ -93,6 +145,7 @@ export const useCorridaContexto = (): void => {
           (prev === 'background' || prev === 'inactive') &&
           nextState === 'active'
         ) {
+          console.log(TAG, 'AppState foreground — syncing corrida context');
           void sync();
         }
       },

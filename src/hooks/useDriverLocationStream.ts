@@ -11,10 +11,12 @@
  *    ride exists.
  *  - The interval runs as soon as the driver is connected so the first tick
  *    fires immediately after a ride is accepted (no cold-start delay).
- *  - `ficar-disponivel` is re-emitted on every connect / reconnect so the
- *    server keeps the driver in the broadcast pool.
+ *  - `ficar-disponivel` is re-emitted on every connect / reconnect AND on
+ *    every AppState foreground transition so the server always has the driver
+ *    in the broadcast pool — this fixes the "second ride not received" bug.
  */
 import {useEffect, useRef} from 'react';
+import {AppState, type AppStateStatus} from 'react-native';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
 import {
@@ -56,22 +58,18 @@ export const useDriverLocationStream = (): void => {
   const locationRef = useRef<Coordenada | null>(null);
   const activeCorridaRef = useRef(activeCorrida);
   const statusOperacionalRef = useRef(statusOperacional);
+  const connectionStatusRef = useRef(connectionStatus);
+  const isMotoristaRef = useRef(isMotorista);
   const telemetryRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const watchSubRef = useRef<{remove: () => void} | null>(null);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
-  // Keep activeCorrida ref in sync.
-  useEffect(() => {
-    activeCorridaRef.current = activeCorrida;
-  }, [activeCorrida]);
-
-  // Keep statusOperacional ref in sync.
-  useEffect(() => {
-    statusOperacionalRef.current = statusOperacional;
-  }, [statusOperacional]);
-
-  useEffect(() => {
-    locationRef.current = sharedLocation;
-  }, [sharedLocation]);
+  // Keep refs in sync.
+  useEffect(() => { activeCorridaRef.current = activeCorrida; }, [activeCorrida]);
+  useEffect(() => { statusOperacionalRef.current = statusOperacional; }, [statusOperacional]);
+  useEffect(() => { connectionStatusRef.current = connectionStatus; }, [connectionStatus]);
+  useEffect(() => { isMotoristaRef.current = isMotorista; }, [isMotorista]);
+  useEffect(() => { locationRef.current = sharedLocation; }, [sharedLocation]);
 
   // ---------------------------------------------------------------------------
   // GPS watch — runs while the user is a MOTORISTA.
@@ -143,6 +141,37 @@ export const useDriverLocationStream = (): void => {
     console.log('[useDriverLocationStream] connectionStatus=connected — emitting ficar-disponivel');
     void realtimeFacade.setDriverAvailable();
   }, [isMotorista, connectionStatus, realtimeFacade]);
+
+  // ---------------------------------------------------------------------------
+  // Re-emit ficar-disponivel on AppState foreground transition.
+  // The socket may have silently dropped while in background; even if it
+  // reconnected, the server may have removed the driver from the dispatch pool.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      'change',
+      (nextState: AppStateStatus) => {
+        const prev = appStateRef.current;
+        appStateRef.current = nextState;
+
+        if (
+          (prev === 'background' || prev === 'inactive') &&
+          nextState === 'active' &&
+          isMotoristaRef.current &&
+          connectionStatusRef.current === 'connected'
+        ) {
+          const corrida = activeCorridaRef.current;
+          const hasActiveRide = corrida && !TERMINAL_STATUSES.has(corrida.status);
+          if (!hasActiveRide) {
+            console.log('[useDriverLocationStream] AppState foreground — re-emitting ficar-disponivel');
+            void realtimeFacade.setDriverAvailable();
+          }
+        }
+      },
+    );
+
+    return () => subscription.remove();
+  }, [realtimeFacade]);
 
   // ---------------------------------------------------------------------------
   // Telemetry interval — always-on while connected as MOTORISTA.

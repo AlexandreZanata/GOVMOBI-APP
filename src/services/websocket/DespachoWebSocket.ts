@@ -90,6 +90,12 @@ export interface IDespachoWebSocketClient {
   ficarDisponivel(): void;
   atualizarPosicao(payload: AtualizarPosicaoPayload): void;
   enviarMensagem(payload: EnviarMensagemPayload): void;
+  /**
+   * Clears all tracked ride room subscriptions and resets the availability flag.
+   * Call this when a ride ends so the next reconnect doesn't re-subscribe to
+   * a stale room.
+   */
+  clearCorridaSubscriptions(): void;
   onConnected(handler: ConnectionHandler): () => void;
   onDisconnected(handler: ConnectionHandler): () => void;
   onError(handler: ErrorHandler): () => void;
@@ -141,6 +147,8 @@ const createSocket: DespachoSocketFactory = (url, token): DespachoSocket => {
 export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   private socket: DespachoSocket | null = null;
   private readonly subscribedCorridaIds = new Set<string>();
+  /** True when the driver has declared availability (ficar-disponivel emitted). */
+  private isAvailable = false;
   private readonly connectedHandlers = new Set<ConnectionHandler>();
   private readonly disconnectedHandlers = new Set<ConnectionHandler>();
   private readonly errorHandlers = new Set<ErrorHandler>();
@@ -196,12 +204,21 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   public assinarCorrida(payload: AssinarCorridaPayload): void {
     wsLog('EMIT assinar-corrida →', JSON.stringify(payload));
     this.subscribedCorridaIds.add(payload.corridaId);
+    // When the driver joins a ride room they are no longer in the available pool.
+    this.isAvailable = false;
     this.socket?.emit('assinar-corrida', payload);
   }
 
   public ficarDisponivel(): void {
     wsLog('EMIT ficar-disponivel → {}');
+    this.isAvailable = true;
     this.socket?.emit('ficar-disponivel', {});
+  }
+
+  public clearCorridaSubscriptions(): void {
+    wsLog(`clearCorridaSubscriptions — clearing ${this.subscribedCorridaIds.size} room(s)`);
+    this.subscribedCorridaIds.clear();
+    this.isAvailable = true; // driver is now available again
   }
 
   public atualizarPosicao(payload: AtualizarPosicaoPayload): void {
@@ -298,6 +315,13 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
         wsLog(`RE-EMIT assinar-corrida (reconnect) → corridaId="${corridaId}"`);
         this.socket?.emit('assinar-corrida', {corridaId});
       });
+      // Re-declare availability if the driver was available before the disconnect.
+      // This ensures the server re-adds the driver to the dispatch pool after
+      // any reconnect — critical for receiving the second ride offer.
+      if (this.isAvailable && this.subscribedCorridaIds.size === 0) {
+        wsLog('RE-EMIT ficar-disponivel (reconnect) — driver was available');
+        this.socket?.emit('ficar-disponivel', {});
+      }
     });
 
     this.socket.on('disconnect', reason => {

@@ -113,6 +113,16 @@ const toCorridaMensagem = (payload: {
  */
 export interface IRealtimeFacade {
   /**
+   * Clears all tracked ride room subscriptions on the transport layer.
+   * Must be called when a ride ends so the next reconnect doesn't re-subscribe
+   * to a stale room and the driver is correctly re-added to the dispatch pool.
+   *
+   * @returns Void.
+   * @throws Never.
+   */
+  clearCorridaSubscriptions(): void;
+
+  /**
    * Connects the authenticated websocket session.
    *
    * @param accessToken - Active JWT access token.
@@ -291,6 +301,11 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
 
     this.client.connect(accessToken);
     return ok('connecting');
+  }
+
+  /** @inheritdoc */
+  public clearCorridaSubscriptions(): void {
+    this.client.clearCorridaSubscriptions();
   }
 
   /** @inheritdoc */

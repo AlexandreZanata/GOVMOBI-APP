@@ -4,16 +4,17 @@
  * Responsibilities:
  *  - Subscribes to the active ride room (`assinar-corrida`) as soon as a
  *    `pendingCorridaId` or `activeCorrida.id` is available and the socket is connected.
- *  - Handles `status-corrida-alterado` to update Redux in real time (replaces polling
- *    for status changes while the socket is alive).
+ *  - Re-subscribes on every AppState foreground transition so the passenger
+ *    never misses status updates after the app returns from background.
+ *  - Handles `status-corrida-alterado` to update Redux in real time.
  *  - When the status implies a driver is assigned (`aceita`, `em_rota`,
  *    `passageiro_a_bordo`), fetches the full corrida via GET /corridas/:id to
- *    hydrate `motoristaId` and `veiculoId` into Redux — these fields are absent
- *    from the WebSocket payload but required by MotoristaInfoModal.
+ *    hydrate `motoristaId` and `veiculoId` into Redux.
  *  - Handles `posicao-atualizada` to keep the driver marker on the passenger map fresh.
- *  - Re-subscribes automatically after a reconnect.
+ *  - Re-subscribes automatically after a reconnect (connectionStatus change).
  */
 import {useEffect, useRef} from 'react';
+import {AppState, type AppStateStatus} from 'react-native';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
 import {
@@ -25,6 +26,8 @@ import {
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
 import type {Corrida} from '@models/Corrida';
 import {normalizeStatus} from '@models/Corrida';
+
+const TAG = '[usePassageiroRealtime]';
 
 /** Statuses that imply a driver has been assigned — trigger a full corrida fetch. */
 const DRIVER_ASSIGNED_STATUSES = new Set<string>(['aceita', 'em_rota', 'passageiro_a_bordo']);
@@ -51,11 +54,31 @@ export const usePassageiroRealtime = (): void => {
   // fall back to the pending ID returned by POST /corridas (202 async).
   const corridaId = activeCorrida?.id ?? pendingCorridaId;
 
+  // Stable refs for use in AppState listener and async callbacks.
+  const corridaIdRef = useRef(corridaId);
+  corridaIdRef.current = corridaId;
+
+  const connectionStatusRef = useRef(connectionStatus);
+  connectionStatusRef.current = connectionStatus;
+
+  const subscribedIdsRef = useRef(subscribedIds);
+  subscribedIdsRef.current = subscribedIds;
+
+  const dispatchRef = useRef(dispatch);
+  dispatchRef.current = dispatch;
+
+  const realtimeFacadeRef = useRef(realtimeFacade);
+  realtimeFacadeRef.current = realtimeFacade;
+
+  const corridaFacadeRef = useRef(corridaFacade);
+  corridaFacadeRef.current = corridaFacade;
+
   // Track the last subscribed ID so we don't re-emit on every render.
   const lastSubscribedRef = useRef<string | null>(null);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   // ---------------------------------------------------------------------------
-  // Subscribe to ride room when corridaId becomes available or socket reconnects
+  // Subscribe to ride room when corridaId becomes available or socket reconnects.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!corridaId || connectionStatus !== 'connected') return;
@@ -69,6 +92,7 @@ export const usePassageiroRealtime = (): void => {
     }
 
     lastSubscribedRef.current = corridaId;
+    console.log(TAG, 'subscribing to ride room →', corridaId);
 
     void realtimeFacade.subscribeToCorrida({corridaId}).then(result => {
       if (result.data) {
@@ -78,25 +102,61 @@ export const usePassageiroRealtime = (): void => {
   }, [corridaId, connectionStatus, dispatch, realtimeFacade, subscribedIds]);
 
   // ---------------------------------------------------------------------------
-  // Handle realtime events relevant to the passenger
+  // Re-subscribe on AppState foreground transition.
+  // The socket may have silently dropped while in background; even if it
+  // reconnected, the passenger may have missed status updates.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      'change',
+      (nextState: AppStateStatus) => {
+        const prev = appStateRef.current;
+        appStateRef.current = nextState;
+
+        if (
+          (prev === 'background' || prev === 'inactive') &&
+          nextState === 'active'
+        ) {
+          const id = corridaIdRef.current;
+          if (id && connectionStatusRef.current === 'connected') {
+            console.log(TAG, 'AppState foreground — re-subscribing to ride room →', id);
+            // Force re-subscription by resetting the last subscribed ref.
+            lastSubscribedRef.current = null;
+            void realtimeFacadeRef.current.subscribeToCorrida({corridaId: id}).then(result => {
+              if (result.data) {
+                dispatchRef.current(addRealtimeSubscription(id));
+              }
+            });
+          }
+        }
+      },
+    );
+
+    return () => subscription.remove();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------------------------------------
+  // Handle realtime events relevant to the passenger.
+  // Registered once per facade instance — stable via ref pattern.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const unsubscribe = realtimeFacade.onEvent(event => {
       switch (event.type) {
         case 'status-corrida-alterado': {
           const mapped =
-            realtimeFacade.mapCorridaStatus(event.payload.status) ??
+            realtimeFacadeRef.current.mapCorridaStatus(event.payload.status) ??
             normalizeStatus(event.payload.status);
-          dispatch(updateCorridaStatus(mapped as Corrida['status']));
+          console.log(TAG, 'status-corrida-alterado →', mapped);
+          dispatchRef.current(updateCorridaStatus(mapped as Corrida['status']));
 
           // The WS payload does not carry motoristaId / veiculoId.
           // When the driver is assigned we must fetch the full corrida so
           // MotoristaInfoModal can display driver and vehicle details.
           if (DRIVER_ASSIGNED_STATUSES.has(mapped)) {
             const id = event.payload.corridaId;
-            void corridaFacade.getCorrida(id).then(result => {
+            void corridaFacadeRef.current.getCorrida(id).then(result => {
               if (result.data) {
-                dispatch(setActiveCorrida(result.data as Corrida));
+                dispatchRef.current(setActiveCorrida(result.data as Corrida));
               }
             });
           }
@@ -104,13 +164,13 @@ export const usePassageiroRealtime = (): void => {
         }
         case 'historico-mensagens': {
           const normalizedMessages = event.payload.map(item =>
-            realtimeFacade.normalizeCorridaMensagem(item),
+            realtimeFacadeRef.current.normalizeCorridaMensagem(item),
           );
-          dispatch(setMensagens(normalizedMessages));
+          dispatchRef.current(setMensagens(normalizedMessages));
           break;
         }
         case 'posicao-atualizada': {
-          dispatch(
+          dispatchRef.current(
             setDriverPosition({
               motoristaId: event.payload.motoristaId,
               lat: event.payload.lat,
@@ -131,5 +191,6 @@ export const usePassageiroRealtime = (): void => {
     });
 
     return unsubscribe;
-  }, [dispatch, realtimeFacade, corridaFacade]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realtimeFacade]);
 };

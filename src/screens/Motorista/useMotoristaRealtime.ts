@@ -7,20 +7,31 @@
  * This hook is responsible for:
  *  - Subscribing to the active ride room (`assinar-corrida`) when a ride
  *    becomes active so the driver receives ride-scoped events.
+ *  - Handling `estado-operacional` events to keep Redux in sync.
+ *  - Handling `status-corrida-alterado` to update the active ride status.
+ *  - After a ride reaches terminal status: clearing Redux, re-entering the
+ *    dispatch queue via `ficar-disponivel`, and resetting the offer modal.
  *  - Surfacing the pending ride offer from Redux so the screen can render
- *    the accept/refuse modal (offer is set by the app-level useRealtimeSession).
+ *    the accept/refuse modal (offer is set by the always-mounted useRealtimeSession).
+ *
+ * Fix for "second ride not received" bug:
+ *  - After a terminal status, `ficar-disponivel` is emitted immediately so
+ *    the server re-adds the driver to the dispatch pool without waiting for
+ *    a reconnect or AppState change.
+ *  - The `assinar-corrida` subscription is re-emitted whenever `activeCorrida`
+ *    changes to a new non-terminal ride (covers the case where the server
+ *    sends a second offer and the driver accepts it).
  */
-import {useCallback, useEffect} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setPendingOffer} from '@store/slices/realtimeSlice';
 import {setStatusOperacional} from '@store/slices/authSlice';
-import {setActiveCorrida, addToHistory} from '@store/slices/corridaSlice';
+import {setActiveCorrida, addToHistory, updateCorridaStatus} from '@store/slices/corridaSlice';
 import type {NovaCorridaDisponivelPayload} from '../../types';
-import type {Coordenada} from '@models/Corrida';
+import type {Coordenada, CorridaStatus} from '@models/Corrida';
 import type {MotoristaStatusOperacional} from '@models/Motorista';
-
-const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
+import {TERMINAL_STATUSES} from '@models/Corrida';
 
 /** State and commands exposed by `useMotoristaRealtime`. */
 export interface MotoristaRealtimeState {
@@ -47,59 +58,108 @@ export const useMotoristaRealtime = (
   const {realtimeFacade} = useFacades();
   const dispatch = useAppDispatch();
 
-  // Driver = user with a non-null motoristaId from /auth/me
   const isMotorista = useAppSelector(s => !!s.auth.motoristaId);
   const connectionStatus = useAppSelector(s => s.realtime.connectionStatus);
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
-
-  // Read pending offer from Redux — set by the always-mounted useRealtimeSession.
   const pendingOffer = useAppSelector(s => s.realtime.pendingOffer);
+
+  // Stable refs to avoid stale closures in event handlers.
+  const isMotoristaRef = useRef(isMotorista);
+  isMotoristaRef.current = isMotorista;
+
+  const connectionStatusRef = useRef(connectionStatus);
+  connectionStatusRef.current = connectionStatus;
+
+  const dispatchRef = useRef(dispatch);
+  dispatchRef.current = dispatch;
+
+  const realtimeFacadeRef = useRef(realtimeFacade);
+  realtimeFacadeRef.current = realtimeFacade;
+
+  // Track the last subscribed ride ID to avoid redundant re-subscriptions.
+  const lastSubscribedCorridaIdRef = useRef<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // Subscribe to active ride room when a ride becomes active.
+  // Re-subscribes whenever the ride ID changes (covers second ride scenario).
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!activeCorrida || !isMotorista || connectionStatus !== 'connected') return;
     if (TERMINAL_STATUSES.has(activeCorrida.status)) return;
 
+    // Only re-subscribe if this is a different ride than the last one.
+    if (lastSubscribedCorridaIdRef.current === activeCorrida.id) return;
+
+    lastSubscribedCorridaIdRef.current = activeCorrida.id;
+    console.log('[useMotoristaRealtime] subscribing to ride room →', activeCorrida.id);
     void realtimeFacade.subscribeToCorrida({corridaId: activeCorrida.id});
   }, [activeCorrida, isMotorista, connectionStatus, realtimeFacade]);
 
   // ---------------------------------------------------------------------------
-  // Handle estado-operacional events from the server.
+  // Handle realtime events: estado-operacional + status-corrida-alterado.
+  // Registered once per facade instance — stable via ref pattern.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const unsubscribe = realtimeFacade.onEvent(event => {
-      if (event.type === 'estado-operacional') {
-        const payload = event.payload as {status: MotoristaStatusOperacional};
-        dispatch(setStatusOperacional(payload.status));
+      switch (event.type) {
+        case 'estado-operacional': {
+          const payload = event.payload as {status: MotoristaStatusOperacional};
+          console.log('[useMotoristaRealtime] estado-operacional →', payload.status);
+          dispatchRef.current(setStatusOperacional(payload.status));
+          break;
+        }
+        case 'status-corrida-alterado': {
+          // Keep the active ride status in sync from WS events.
+          // The full corrida fetch is handled by usePassageiroRealtime for passengers;
+          // for drivers we just update the status field.
+          const mapped = realtimeFacadeRef.current.mapCorridaStatus(event.payload.status);
+          if (mapped) {
+            console.log('[useMotoristaRealtime] status-corrida-alterado →', mapped);
+            dispatchRef.current(updateCorridaStatus(mapped as CorridaStatus));
+          }
+          break;
+        }
+        default:
+          break;
       }
     });
+
     return unsubscribe;
-  }, [dispatch, realtimeFacade]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realtimeFacade]);
 
   // ---------------------------------------------------------------------------
-  // Clear the pending offer when the driver gets an active ride
-  // (they accepted it — no need to keep showing the modal).
-  // After a terminal status, re-enter the dispatch queue.
+  // React to activeCorrida changes:
+  //  - Terminal status → archive ride, clear Redux, re-enter dispatch queue.
+  //  - Non-terminal → clear pending offer (driver accepted this ride).
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!activeCorrida) return;
 
     if (TERMINAL_STATUSES.has(activeCorrida.status)) {
-      // Ride reached terminal status — re-enter dispatch queue and reset UI
-      if (isMotorista && connectionStatus === 'connected') {
-        void realtimeFacade.setDriverAvailable();
-        dispatch(setStatusOperacional('DISPONIVEL'));
+      console.log('[useMotoristaRealtime] ride terminal →', activeCorrida.status, '— clearing and re-entering queue');
+
+      // Archive the completed ride.
+      dispatchRef.current(addToHistory(activeCorrida));
+      // Clear active ride so the idle sheet renders.
+      dispatchRef.current(setActiveCorrida(null));
+      // Reset the subscribed ride tracker so the next ride triggers a fresh subscription.
+      lastSubscribedCorridaIdRef.current = null;
+      // Clear stale room subscriptions on the transport so reconnects don't
+      // re-subscribe to the finished ride room.
+      realtimeFacadeRef.current.clearCorridaSubscriptions();
+
+      // Re-enter the dispatch queue immediately — critical for receiving the second ride.
+      if (isMotoristaRef.current && connectionStatusRef.current === 'connected') {
+        console.log('[useMotoristaRealtime] emitting ficar-disponivel after terminal status');
+        void realtimeFacadeRef.current.setDriverAvailable();
+        dispatchRef.current(setStatusOperacional('DISPONIVEL'));
       }
-      // Clear activeCorrida so the terminal sheet disappears and idle sheet shows
-      dispatch(addToHistory(activeCorrida));
-      dispatch(setActiveCorrida(null));
     } else {
-      // Active non-terminal ride — clear pending offer
-      dispatch(setPendingOffer(null));
+      // Active non-terminal ride — clear any pending offer modal.
+      dispatchRef.current(setPendingOffer(null));
     }
-  }, [activeCorrida, dispatch, isMotorista, connectionStatus, realtimeFacade]);
+  }, [activeCorrida]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismissOffer = useCallback(() => {
     dispatch(setPendingOffer(null));
