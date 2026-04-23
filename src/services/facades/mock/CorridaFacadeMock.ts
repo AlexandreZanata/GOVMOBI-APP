@@ -21,6 +21,7 @@ import type {
   SearchResult,
 } from '../../../types';
 import type {ICorridaFacade} from '../CorridaFacade';
+import type {CorridasPage} from '../CorridaFacade';
 import type {FacadeError, Result} from '../types';
 import type {CorridaContexto} from '../../../types';
 
@@ -390,6 +391,13 @@ export class CorridaFacadeMock implements ICorridaFacade {
       heading: Math.random() * 360,
       timestamp: new Date().toISOString(),
     });
+  }
+
+  /** @inheritdoc */
+  public async listCorridas(_page: number, _limit: number): Promise<Result<CorridasPage, FacadeError>> {
+    await delay(150);
+    const all = [...store.values()];
+    return ok({data: all, total: all.length, page: _page, limit: _limit, totalPages: 1});
   }
 
   /** @inheritdoc */

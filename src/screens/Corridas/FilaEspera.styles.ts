@@ -48,7 +48,7 @@ export const createFilaEsperaStyles = (theme: Theme) => {
       flex: 1,
     },
     statValue: {
-      ...typo.scale.displaySm,
+      ...typo.scale.displayMd,
       color: design.amber500,
     },
     statLabel: {

@@ -202,6 +202,11 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         ...corridaState,
         ratingSubmitted: corridaState?.ratingSubmitted ?? false,
         driverPosition: corridaState?.driverPosition ?? null,
+        posicaoFila: corridaState?.posicaoFila ?? null,
+        unreadMensagens: corridaState?.unreadMensagens ?? 0,
+        naoVisualizadasCount: corridaState?.naoVisualizadasCount ?? 0,
+        isChatScreenOpen: corridaState?.isChatScreenOpen ?? false,
+        motoristaNomeCache: corridaState?.motoristaNomeCache ?? null,
       },
       location: {
         permissionStatus: 'granted' as const,

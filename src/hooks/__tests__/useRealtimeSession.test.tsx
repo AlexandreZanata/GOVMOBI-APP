@@ -55,6 +55,23 @@ class RealtimeFacadeStub implements IRealtimeFacade {
   >();
 
   /** @inheritdoc */
+  public clearCorridaSubscriptions(): void {}
+
+  /** @inheritdoc */
+  public async visualizarMensagens(
+    _payload: import('../../types').VisualizarMensagensPayload,
+  ): Promise<Result<boolean, FacadeError>> {
+    return ok(true);
+  }
+
+  /** @inheritdoc */
+  public async contarNaoVisualizadas(
+    _payload: import('../../types').ContarNaoVisualizadasPayload,
+  ): Promise<Result<boolean, FacadeError>> {
+    return ok(true);
+  }
+
+  /** @inheritdoc */
   public async connect(
     accessToken: string,
   ): Promise<Result<RealtimeConnectionStatus, FacadeError>> {
@@ -130,6 +147,9 @@ class RealtimeFacadeStub implements IRealtimeFacade {
     corridaId: string;
     remetenteId: string;
     conteudo: string;
+    lida?: boolean;
+    visualizadaEm?: string | null;
+    visualizadaPor?: string | null;
     timestamp: string | number;
   }) {
     return {
@@ -137,6 +157,9 @@ class RealtimeFacadeStub implements IRealtimeFacade {
       corridaId: payload.corridaId,
       remetenteId: payload.remetenteId,
       conteudo: payload.conteudo,
+      lida: payload.lida ?? true,
+      visualizadaEm: payload.visualizadaEm ?? null,
+      visualizadaPor: payload.visualizadaPor ?? null,
       createdAt:
         typeof payload.timestamp === 'number'
           ? new Date(payload.timestamp).toISOString()

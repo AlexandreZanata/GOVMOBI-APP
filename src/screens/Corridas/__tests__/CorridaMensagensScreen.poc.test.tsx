@@ -107,6 +107,8 @@ const buildStore = (mensagens: CorridaMensagem[] = [], loading = false) => {
         unreadMensagens: 3,
         naoVisualizadasCount: 3,
         isChatScreenOpen: false,
+        posicaoFila: null,
+        motoristaNomeCache: null,
       },
       auth: {
         isAuthenticated: true,

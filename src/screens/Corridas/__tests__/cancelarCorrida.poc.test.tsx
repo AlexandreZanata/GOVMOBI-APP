@@ -105,6 +105,18 @@ const buildMockFacade = (overrides: Partial<ICorridaFacade> = {}): ICorridaFacad
   })),
   avaliarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('avaliada'))),
   getMotoristaPosition: jest.fn().mockResolvedValue(fail('not found')),
+  listCorridas: jest.fn().mockResolvedValue(ok({data: [], total: 0, page: 1, limit: 10, totalPages: 0})),
+  visualizarMensagens: jest.fn().mockResolvedValue(ok(undefined)),
+  getNaoVisualizadasCount: jest.fn().mockResolvedValue(ok({corridaId: 'corrida-001', count: 0})),
+  getPosicaoFila: jest.fn().mockResolvedValue(ok({
+    corridaId: 'corrida-001',
+    status: 'aguardando_aceite',
+    naFilaDeEspera: false,
+    posicaoNaFila: null,
+    totalNaFila: null,
+    tempoEsperaSeg: null,
+    estimativaAtendimentoSeg: null,
+  })),
   ...overrides,
 });
 
@@ -124,6 +136,11 @@ const DEFAULT_CORRIDA_STATE: CorridaState = {
   corridaHistory: [],
   ratingSubmitted: false,
   driverPosition: null,
+  posicaoFila: null,
+  unreadMensagens: 0,
+  naoVisualizadasCount: 0,
+  isChatScreenOpen: false,
+  motoristaNomeCache: null,
 };
 
 const buildStore = (corridaOverrides?: Partial<CorridaState>) =>
