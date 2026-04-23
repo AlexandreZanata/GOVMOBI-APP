@@ -198,6 +198,7 @@ const makeFacade = (
     ),
     mapCorridaStatus: jest.fn(),
     normalizeCorridaMensagem: jest.fn(),
+    confirmConnected: jest.fn(),
   };
   return facade;
 };
