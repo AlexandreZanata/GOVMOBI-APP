@@ -22,6 +22,7 @@ import {getValidToken} from '@utils/tokenUtils';
 import {ENV} from './config/env';
 import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
+import {navigationRef} from './navigation/navigationRef';
 import {GlobalToast, NetworkBanner} from '@components/organisms';
 import {
   useAppLocationBootstrap,
@@ -129,7 +130,7 @@ const AppShell = (): React.JSX.Element => {
             translucent={false}
           />
           <View style={styles.container}>
-            <NavigationContainer>
+            <NavigationContainer ref={navigationRef}>
               <RootNavigator />
             </NavigationContainer>
             <NetworkBanner />

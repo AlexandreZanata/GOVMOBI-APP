@@ -8,6 +8,7 @@ export {ChatNavigator} from './ChatNavigator';
 export {CallsNavigator} from './CallsNavigator';
 export {AppHeader, BottomTabBar} from '../components/organisms';
 export {useAppNavigation} from './useAppNavigation';
+export {navigationRef} from './navigationRef';
 export type {
   RootStackParamList,
   AuthStackParamList,

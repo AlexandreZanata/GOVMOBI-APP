@@ -15,10 +15,17 @@
  * 3. **Proactive interval refresh** — a `setInterval` fires every
  *    `CHECK_INTERVAL_MS` while the user is authenticated. If the token will
  *    expire within `REFRESH_THRESHOLD_SECONDS` it is refreshed silently.
+ *
+ * 4. **Driver status restoration** — if the driver had `DISPONIVEL` persisted
+ *    in Redux but the server returns `OFFLINE` (backend auto-sets OFFLINE on
+ *    WebSocket disconnect), we restore `DISPONIVEL` via PATCH so the driver
+ *    doesn't have to manually re-toggle every time they reopen the app.
+ *    `OFFLINE` is only kept when the driver explicitly set it themselves.
  */
 import {useEffect, useRef} from 'react';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
+import {UserRole, UserStatus} from '../models';
 import {
   logout,
   setUser,
@@ -96,13 +103,21 @@ const isTokenExpiringSoon = (token: string, thresholdSeconds: number): boolean =
  */
 export const useAuthSession = (): void => {
   const dispatch = useAppDispatch();
-  const {authFacade} = useFacades();
+  const {authFacade, frotaFacade} = useFacades();
   const {t} = useTranslation();
 
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
   const token = useAppSelector(state => state.auth.token);
+  // Persisted operational status — the driver's last known intent.
+  // Captured via ref so the async hydration closure always reads the latest value.
+  const statusOperacional = useAppSelector(state => state.auth.statusOperacional);
 
   const hasHydratedRef = useRef(false);
+
+  // Stable ref so async callbacks always read the latest persisted status
+  // without needing to be re-created when statusOperacional changes.
+  const statusOperacionalRef = useRef(statusOperacional);
+  statusOperacionalRef.current = statusOperacional;
 
   // ---------------------------------------------------------------------------
   // Shared refresh helper
@@ -175,12 +190,21 @@ export const useAuthSession = (): void => {
 
   /**
    * Calls `getMe()` and dispatches user + role fields into Redux.
-   * Passes the current Redux token directly to avoid stale SecureStore reads.
+   *
+   * Driver status restoration:
+   * The backend auto-sets drivers to `OFFLINE` when their WebSocket disconnects.
+   * If the driver had `DISPONIVEL` persisted in Redux (their last manual intent),
+   * we restore it via `PATCH /frota/motoristas/me/status` so they don't have to
+   * manually re-toggle every time they reopen the app.
+   * `OFFLINE` is only kept when the driver explicitly set it themselves.
    *
    * @returns True on success, false on failure (session ended).
    */
   const doGetMe = async (): Promise<boolean> => {
-    // Pass the current Redux token so getMe() doesn't read a stale SecureStore value.
+    // Snapshot the persisted status BEFORE getMe() can overwrite it.
+    // This is the driver's last known intent from the previous session.
+    const previousStatus = statusOperacionalRef.current;
+
     const currentToken = token;
     const meResult = await authFacade.getMe(currentToken ?? undefined);
     if (!meResult.data) {
@@ -189,17 +213,16 @@ export const useAuthSession = (): void => {
       return false;
     }
     const me = meResult.data;
-    const {UserRole: UR, UserStatus: US} = await import('../models');
-    const roleMap: Record<string, typeof UR[keyof typeof UR]> = {
-      ADMIN: UR.ADMIN,
-      USUARIO: UR.OFFICER,
+    const roleMap: Record<string, typeof UserRole[keyof typeof UserRole]> = {
+      ADMIN: UserRole.ADMIN,
+      USUARIO: UserRole.OFFICER,
     };
     dispatch(setUser({
       id: me.id,
       fullName: me.nome,
       email: me.email,
-      role: me.papeis.map(p => roleMap[p]).find(Boolean) ?? UR.OFFICER,
-      status: US.ACTIVE,
+      role: me.papeis.map(p => roleMap[p]).find(Boolean) ?? UserRole.OFFICER,
+      status: UserStatus.ACTIVE,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }));
@@ -207,9 +230,37 @@ export const useAuthSession = (): void => {
     dispatch(setMotoristaId(me.motoristaId ?? null));
     dispatch(setMunicipioId(me.municipioId ?? null));
     dispatch(setServidorId(me.id));
+
     if (me.statusOperacional) {
       dispatch(setStatusOperacional(me.statusOperacional));
     }
+
+    // ── Driver status restoration ──────────────────────────────────────────
+    // If the driver was DISPONIVEL before closing the app but the server now
+    // reports OFFLINE (auto-set on WS disconnect), restore DISPONIVEL via PATCH.
+    // This preserves the driver's intent without requiring a manual re-toggle.
+    if (
+      me.motoristaId &&
+      previousStatus === 'DISPONIVEL' &&
+      me.statusOperacional === 'OFFLINE'
+    ) {
+      logger.info(
+        'useAuthSession',
+        'Restoring DISPONIVEL status — server returned OFFLINE after reconnect',
+      );
+      const restoreResult = await frotaFacade.updateMyStatus('DISPONIVEL');
+      if (restoreResult.data) {
+        dispatch(setStatusOperacional('DISPONIVEL'));
+        logger.info('useAuthSession', 'Driver status restored to DISPONIVEL');
+      } else {
+        logger.warn(
+          'useAuthSession',
+          'Failed to restore DISPONIVEL status',
+          restoreResult.error,
+        );
+      }
+    }
+
     return true;
   };
 

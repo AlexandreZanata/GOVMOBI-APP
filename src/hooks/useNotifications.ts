@@ -15,6 +15,7 @@
  *     OneSignal external user ID so the backend can target this device.
  *  3. When `servidorId` is cleared (logout) — remove the external user ID.
  *  4. Register the notification-opened handler for deep-link navigation.
+ *     Uses `navigationRef` so navigation works even when the app was killed.
  */
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useFacades} from '@services/facades';
@@ -30,10 +31,52 @@ import {
   setOneSignalExternalUserId,
   type NotificationOpenedEvent,
 } from '@services/notifications/OneSignalService';
+import {navigationRef} from '@navigation/navigationRef';
 
 export interface UseNotificationsResult {
   /** Whether the OS has granted push notification permission. */
   permissionGranted: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Navigation helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Navigates to the appropriate ride screen based on the notification status.
+ * Routes drivers to MotoristaCorridaAction and passengers to AcompanharCorrida.
+ *
+ * @param corridaId - UUID of the ride from the notification payload.
+ * @param status - Ride status string from the notification payload.
+ */
+function navigateToRide(corridaId: string, status: string | undefined): void {
+  if (!navigationRef.isReady()) return;
+
+  // Determine the current root route to decide which navigator to use.
+  const rootState = navigationRef.getRootState();
+  const isMotoristaNav = rootState?.routes?.some(r => r.name === 'Motorista');
+
+  if (isMotoristaNav) {
+    // Driver: navigate to the ride action screen inside MotoristaNavigator
+    navigationRef.navigate('Motorista', {
+      screen: 'MotoristaCorridas',
+      params: {
+        screen: 'MotoristaCorridaAction',
+        params: {corridaId},
+      },
+    } as never);
+  } else {
+    // Passenger: navigate to the ride tracking screen inside PassageiroNavigator
+    navigationRef.navigate('Passageiro', {
+      screen: 'PassageiroCorridas',
+      params: {
+        screen: 'AcompanharCorrida',
+        params: {corridaId},
+      },
+    } as never);
+  }
+
+  logger.info('useNotifications', `Navigated to ride ${corridaId} (status: ${status ?? 'unknown'})`);
 }
 
 // ---------------------------------------------------------------------------
@@ -100,10 +143,27 @@ export const useNotifications = (): UseNotificationsResult => {
   // ---------------------------------------------------------------------------
   const handleNotificationOpened = useCallback((event: NotificationOpenedEvent) => {
     logger.info('useNotifications', `Notification opened: ${event.title}`, event.data);
-    // Navigation is handled by the consumer (RootNavigator) via Redux state.
-    // We dispatch a corridaId update here so the navigator can react.
-    // The actual navigation logic lives in the navigator to keep this hook lean.
-  }, []);
+
+    const {corridaId, status} = event.data;
+    if (!corridaId) {
+      logger.warn('useNotifications', 'Notification opened without corridaId — skipping navigation');
+      return;
+    }
+
+    // Wait until the navigator is ready (handles killed-app cold-start scenario).
+    if (!navigationRef.isReady()) {
+      logger.warn('useNotifications', 'Navigator not ready — queuing navigation');
+      // Retry after a short delay to allow the navigator to mount.
+      setTimeout(() => {
+        if (navigationRef.isReady()) {
+          navigateToRide(corridaId, status);
+        }
+      }, 1_000);
+      return;
+    }
+
+    navigateToRide(corridaId, status);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const cleanup = registerNotificationOpenedHandler(handleNotificationOpened);
