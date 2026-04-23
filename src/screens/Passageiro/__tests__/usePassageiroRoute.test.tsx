@@ -12,6 +12,7 @@ import {i18n} from '@i18n/index';
 import authReducer, {setPapeis, setToken} from '@store/slices/authSlice';
 import corridaReducer from '@store/slices/corridaSlice';
 import uiReducer from '@store/slices/uiSlice';
+import locationReducer from '@store/slices/locationSlice';
 import {usePassageiro} from '../usePassageiro';
 import type {
   GeocodingResult,
@@ -136,6 +137,17 @@ const renderProbe = (facade: IPesquisaFacade) => {
       auth: authReducer,
       corrida: corridaReducer,
       ui: uiReducer,
+      location: locationReducer,
+    },
+    preloadedState: {
+      location: {
+        permissionStatus: 'granted' as const,
+        fixStatus: 'ready' as const,
+        current: {latitude: -23.5505, longitude: -46.6333},
+        lastKnown: {latitude: -23.5505, longitude: -46.6333},
+        lastFixAt: Date.now(),
+        error: null,
+      },
     },
   });
 

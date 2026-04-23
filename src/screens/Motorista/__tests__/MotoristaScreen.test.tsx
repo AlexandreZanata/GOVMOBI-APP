@@ -14,6 +14,12 @@ import {i18n} from '../../../i18n';
 import {ThemeProvider} from '@theme/index';
 import {FacadeProvider} from '@services/facades';
 import {MotoristaScreen} from '../MotoristaScreen';
+
+// Mock useMotoristaRealtime to prevent it from clearing terminal corrida state in tests
+jest.mock('../useMotoristaRealtime', () => ({
+  useMotoristaRealtime: () => ({pendingOffer: null, dismissOffer: jest.fn()}),
+}));
+
 import corridaReducer from '@store/slices/corridaSlice';
 import authReducer from '@store/slices/authSlice';
 import realtimeReducer from '@store/slices/realtimeSlice';
@@ -223,6 +229,7 @@ const makeRealtimeFacade = (): IRealtimeFacade =>
   ({
     connect: jest.fn().mockResolvedValue({data: 'connected', error: null}),
     disconnect: jest.fn(),
+    clearCorridaSubscriptions: jest.fn(),
     subscribeToCorrida: jest.fn().mockResolvedValue({data: true, error: null}),
     setDriverAvailable: jest.fn().mockResolvedValue({data: true, error: null}),
     updateDriverPosition: jest
@@ -350,7 +357,13 @@ describe('MotoristaScreen', () => {
   it('shows the terminal sheet when ride is FINALIZADA', async () => {
     const corrida = makeCorrida({status: 'concluida'});
     const store = makeStore({activeCorrida: corrida});
-    const facade = makeMockFacade();
+    const facade = makeMockFacade({
+      getContexto: async () =>
+        ok({
+          usuario: {id: 'u1', email: 'driver@gov.br', papeis: ['MOTORISTA'], nome: 'Driver'},
+          corridaAtiva: corrida,
+        }),
+    });
     const realtimeFacade = makeRealtimeFacade();
 
     const {getByTestId} = render(

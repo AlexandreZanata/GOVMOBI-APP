@@ -227,6 +227,14 @@ const buildStore = () =>
         statusOperacional: null,
         servidorId: null,
       },
+      location: {
+        permissionStatus: 'granted' as const,
+        fixStatus: 'ready' as const,
+        current: {latitude: -15.7801, longitude: -47.9292},
+        lastKnown: {latitude: -15.7801, longitude: -47.9292},
+        lastFixAt: Date.now(),
+        error: null,
+      },
     },
   });
 

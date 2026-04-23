@@ -190,7 +190,7 @@ export const ProfileScreen = (): React.JSX.Element => {
         {/* ── Minha Nota — inline star card, MOTORISTA only ── */}
         {motoristaId ? (
           <View style={styles.section} testID="profile-minha-nota-card">
-            <View style={styles.ratingCard}>
+            <View style={styles.ratingCard} testID="profile-minha-nota-row">
 
               {ratingLoading ? (
                 <ActivityIndicator

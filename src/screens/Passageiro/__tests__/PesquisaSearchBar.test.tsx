@@ -23,6 +23,7 @@ import corridaReducer from '../../../store/slices/corridaSlice';
 import uiReducer from '../../../store/slices/uiSlice';
 import authReducer from '../../../store/slices/authSlice';
 import realtimeReducer from '../../../store/slices/realtimeSlice';
+import locationReducer from '../../../store/slices/locationSlice';
 import {PassageiroScreen} from '../PassageiroScreen';
 
 // ---------------------------------------------------------------------------
@@ -89,6 +90,7 @@ const makeStore = () =>
       ui: uiReducer,
       auth: authReducer,
       realtime: realtimeReducer,
+      location: locationReducer,
     },
   });
 

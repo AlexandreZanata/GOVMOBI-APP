@@ -23,6 +23,7 @@ module.exports = function (api) {
             '@i18n': './src/i18n',
             '@theme': './src/theme',
             '@utils': './src/utils',
+            '@config': './src/config',
           },
         },
       ],

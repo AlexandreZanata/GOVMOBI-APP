@@ -47,6 +47,9 @@
       ],
       "@utils/*": [
         "utils/*"
+      ],
+      "@config/*": [
+        "config/*"
       ]
     },
     "declaration": false,

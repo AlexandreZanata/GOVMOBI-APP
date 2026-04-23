@@ -219,7 +219,26 @@
     "empty": {
       "title": "No notifications",
       "message": "You have no notifications at this time."
-    }
+    },
+    "push": {
+      "corridaAceita": {
+        "title": "Ride Accepted",
+        "body": "Your driver is on the way."
+      },
+      "motoristaChegando": {
+        "title": "Driver Arriving",
+        "body": "Your driver is near the pickup point."
+      },
+      "corridaCancelada": {
+        "title": "Ride Cancelled",
+        "body": "Your ride was cancelled."
+      },
+      "corridaConcluida": {
+        "title": "Ride Completed",
+        "body": "Your ride has ended. Rate your experience."
+      }
+    },
+    "permissionDenied": "Notification permission denied. Enable it in your device settings."
   },
   "profile": {
     "save": "Save",

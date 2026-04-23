@@ -116,7 +116,12 @@
 <a name='L51'></a><a href='#L51'>51</a>
 <a name='L52'></a><a href='#L52'>52</a>
 <a name='L53'></a><a href='#L53'>53</a>
-<a name='L54'></a><a href='#L54'>54</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -130,6 +135,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -138,19 +156,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -172,7 +182,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview PassageiroNavigator — bottom-tab navigator for the passenger experience.
  *
- * Tabs: Início (map), Corridas, Notificações, Perfil
+ * TAB_CONFIG and PassageiroTabBar are defined at module level so React Navigation
+ * never sees a new function reference between renders — preventing unnecessary
+ * tab bar remounts that caused stale badge values.
  */
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -192,13 +204,15 @@ type PassageiroTabParamList = {
 &nbsp;
 const Tab = <span class="cstat-no" title="statement not covered" >createBottomTabNavigator&lt;PassageiroTabParamList&gt;();</span>
 &nbsp;
+// Defined outside the component — stable reference, never causes remount.
 const TAB_CONFIG: Record&lt;keyof PassageiroTabParamList, TabConfig&gt; = <span class="cstat-no" title="statement not covered" >{</span>
-  PassageiroHome:         {activeIcon: 'home',           inactiveIcon: 'home',              labelKey: 'passageiro.tabs.home'},
-  PassageiroCorridas:     {activeIcon: 'directions-car', inactiveIcon: 'directions-car',    labelKey: 'passageiro.tabs.corridas'},
+  PassageiroHome:         {activeIcon: 'home',           inactiveIcon: 'home',               labelKey: 'passageiro.tabs.home'},
+  PassageiroCorridas:     {activeIcon: 'directions-car', inactiveIcon: 'directions-car',     labelKey: 'passageiro.tabs.corridas'},
   PassageiroNotificacoes: {activeIcon: 'notifications',  inactiveIcon: 'notifications-none', labelKey: 'passageiro.tabs.notificacoes'},
-  PassageiroProfile:      {activeIcon: 'person',         inactiveIcon: 'person-outline',    labelKey: 'passageiro.tabs.perfil'},
+  PassageiroProfile:      {activeIcon: 'person',         inactiveIcon: 'person-outline',     labelKey: 'passageiro.tabs.perfil'},
 };
 &nbsp;
+// Stable component reference — RoleTabBar reads the badge from Redux internally.
 const PassageiroTabBar = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(p</span>rops: BottomTabBarProps): React.JSX.Element =&gt; (</span>
 <span class="cstat-no" title="statement not covered" >  &lt;RoleTabBar {...props} tabConfig={TAB_CONFIG} testIdPrefix="passageiro" /&gt;</span>
 );
@@ -207,6 +221,7 @@ const NotificacoesPlaceholder = <span class="cstat-no" title="statement not cove
 &nbsp;
 /**
  * Bottom-tab navigator for the passenger (USUARIO/ADMIN) experience.
+ * Badge on the Corridas tab is driven by Redux inside RoleTabBar directly.
  *
  * @returns JSX element for the PassageiroNavigator.
  */
@@ -229,7 +244,7 @@ export const PassageiroNavigator = <span class="cstat-no" title="statement not c
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-22T19:00:58.510Z
+                at 2026-04-23T15:38:31.879Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

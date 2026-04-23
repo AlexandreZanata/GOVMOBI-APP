@@ -219,7 +219,26 @@
     "empty": {
       "title": "Sin notificaciones",
       "message": "No tienes notificaciones en este momento."
-    }
+    },
+    "push": {
+      "corridaAceita": {
+        "title": "Viaje Aceptado",
+        "body": "Tu conductor está en camino."
+      },
+      "motoristaChegando": {
+        "title": "Conductor Llegando",
+        "body": "Tu conductor está cerca del punto de recogida."
+      },
+      "corridaCancelada": {
+        "title": "Viaje Cancelado",
+        "body": "Tu viaje fue cancelado."
+      },
+      "corridaConcluida": {
+        "title": "Viaje Completado",
+        "body": "Tu viaje ha finalizado. Califica tu experiencia."
+      }
+    },
+    "permissionDenied": "Permiso de notificación denegado. Actívalo en la configuración de tu dispositivo."
   },
   "profile": {
     "save": "Guardar",

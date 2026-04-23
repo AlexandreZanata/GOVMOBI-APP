@@ -83,6 +83,12 @@ jest.mock('../../../services/facades', () => ({
     authFacade: {
       updateProfile: jest.fn().mockResolvedValue({error: null}),
     },
+    avaliacoesFacade: {
+      getMinhaAvaliacaoSummary: jest.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      }),
+    },
   }),
 }));
 

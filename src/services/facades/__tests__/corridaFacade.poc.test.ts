@@ -147,7 +147,7 @@ describe('CorridaFacadeMock.avaliarCorrida', () => {
       const freshId = freshResult.data!.corridaId;
       const result = await freshMock.avaliarCorrida(freshId, {nota});
       expect(result.error).toBeNull();
-      expect(result.data?.status).toBe('AVALIADA');
+      expect(result.data?.status).toBe('avaliada');
     }
   });
 });

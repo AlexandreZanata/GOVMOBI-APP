@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">45% </span>
+                <span class="strong">40% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>9/20</span>
+                <span class='fraction'>8/20</span>
             </div>
         
             
@@ -178,13 +178,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -228,22 +228,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -255,12 +239,28 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview Mock implementation of {@link IPesquisaFacade} for MOCK_MODE.
  * Returns deterministic fixtures — no network calls, no token required.
@@ -277,7 +277,7 @@ import type {
 } from '../../../types/pesquisa';
 import type {FacadeError, Result} from '../types';
 &nbsp;
-const ok = &lt;T&gt;(data: T): Result&lt;T, FacadeError&gt; =&gt; ({data, error: null});
+const ok = <span class="fstat-no" title="function not covered" >&lt;T</span>&gt;(data: T): Result&lt;T, FacadeError&gt; =&gt; (<span class="cstat-no" title="statement not covered" >{data, error: null})</span>;
 &nbsp;
 const MOCK_CONFIG: PesquisaConfig = {
   mapboxPublicToken: 'pk.mock_token_govmobile_test',
@@ -327,7 +327,7 @@ export class PesquisaFacadeMock implements IPesquisaFacade {
     input: ReverseGeocodeInput,
   ): Promise&lt;Result&lt;ReverseGeocodingResult, FacadeError&gt;&gt; {
     await delay(150);
-    return ok({
+<span class="cstat-no" title="statement not covered" >    return ok({</span>
       address: 'Rua das Flores, Goiânia - Goiás, Brasil',
       lat: input.lat,
       lng: input.lng,
@@ -335,10 +335,10 @@ export class PesquisaFacadeMock implements IPesquisaFacade {
   }
 &nbsp;
   /** @inheritdoc */
-<span class="fstat-no" title="function not covered" >  pu</span>blic async getRouteBetweenPoints(
+  public async getRouteBetweenPoints(
     input: GetRouteInput,
   ): Promise&lt;Result&lt;PesquisaRouteResult, FacadeError&gt;&gt; {
-<span class="cstat-no" title="statement not covered" >    await delay(180);</span>
+    await delay(180);
 &nbsp;
     const middleLng = <span class="cstat-no" title="statement not covered" >(input.origemLng + input.destinoLng) / 2;</span>
     const middleLat = <span class="cstat-no" title="statement not covered" >(input.origemLat + input.destinoLat) / 2;</span>
@@ -367,7 +367,7 @@ const delay = (ms: number): Promise&lt;void&gt; =&gt;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-22T19:00:58.510Z
+                at 2026-04-23T15:38:31.879Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

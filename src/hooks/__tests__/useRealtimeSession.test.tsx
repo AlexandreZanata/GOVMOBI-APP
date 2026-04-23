@@ -9,6 +9,7 @@ import {Text, Pressable, View} from 'react-native';
 import {FacadeProvider} from '@services/facades';
 import authReducer, {
   setPapeis,
+  setMotoristaId,
   setToken,
   setUser,
 } from '@store/slices/authSlice';
@@ -285,6 +286,9 @@ describe('useRealtimeSession', () => {
     testStore.dispatch(setUser(buildUser()));
     testStore.dispatch(setToken('jwt-access-token'));
     testStore.dispatch(setPapeis(motorista ? ['MOTORISTA'] : ['USUARIO']));
+    if (motorista) {
+      testStore.dispatch(setMotoristaId('motorista-test-001'));
+    }
 
     const ui = render(
       <Provider store={testStore}>

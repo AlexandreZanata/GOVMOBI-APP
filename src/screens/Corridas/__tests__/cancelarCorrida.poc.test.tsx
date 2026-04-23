@@ -57,6 +57,15 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
+// Auto-confirm all Alert dialogs so cancel flow tests can proceed
+jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(
+  (...args: unknown[]) => {
+    const buttons = args[2] as Array<{onPress?: () => void; style?: string}> | undefined;
+    const confirm = buttons?.find(b => b.style !== 'cancel');
+    confirm?.onPress?.();
+  },
+);
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

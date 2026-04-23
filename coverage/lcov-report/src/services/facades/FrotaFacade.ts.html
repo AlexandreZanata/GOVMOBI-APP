@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">21.62% </span>
+                <span class="strong">20.33% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>24/111</span>
+                <span class='fraction'>24/118</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.68% </span>
+                <span class="strong">15.09% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>8/51</span>
+                <span class='fraction'>8/53</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25% </span>
+                <span class="strong">23.8% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/20</span>
+                <span class='fraction'>5/21</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">24.17% </span>
+                <span class="strong">22.44% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>22/91</span>
+                <span class='fraction'>22/98</span>
             </div>
         
             
@@ -315,7 +315,16 @@
 <a name='L250'></a><a href='#L250'>250</a>
 <a name='L251'></a><a href='#L251'>251</a>
 <a name='L252'></a><a href='#L252'>252</a>
-<a name='L253'></a><a href='#L253'>253</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -326,21 +335,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -548,7 +557,16 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -797,10 +815,19 @@ export class FrotaFacadeImpl implements IFrotaFacade {
         headers: this.authHeaders(),
       });
 <span class="cstat-no" title="statement not covered" >      if (res.status === 404) <span class="cstat-no" title="statement not covered" >return fail({code: 'NOT_FOUND', message: 'Resource not found', statusCode: 404});</span></span>
-<span class="cstat-no" title="statement not covered" >      if (!res.ok) <span class="cstat-no" title="statement not covered" >return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});</span></span>
-      const envelope = <span class="cstat-no" title="statement not covered" >(await res.json()) as {success: boolean; data: T};</span>
-<span class="cstat-no" title="statement not covered" >      return ok(envelope.data);</span>
-    } catch {
+<span class="cstat-no" title="statement not covered" >      if (!res.ok) {</span>
+        const body = <span class="cstat-no" title="statement not covered" >await res.text().catch(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >'')</span>;</span>
+<span class="cstat-no" title="statement not covered" >        console.warn('[FrotaFacade] getEnvelope', path, '← HTTP', res.status, body);</span>
+<span class="cstat-no" title="statement not covered" >        return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});</span>
+      }
+      const raw = <span class="cstat-no" title="statement not covered" >(await res.json()) as unknown;</span>
+<span class="cstat-no" title="statement not covered" >      console.log('[FrotaFacade] getEnvelope', path, '← raw:', JSON.stringify(raw));</span>
+      // Handle both { success, data } envelope and direct object responses.
+      const envelope = <span class="cstat-no" title="statement not covered" >raw as {success?: boolean; data?: T};</span>
+      const result = <span class="cstat-no" title="statement not covered" >envelope.data !== undefined ? envelope.data : (raw as T);</span>
+<span class="cstat-no" title="statement not covered" >      return ok(result);</span>
+    } catch (err) {
+<span class="cstat-no" title="statement not covered" >      console.error('[FrotaFacade] getEnvelope', path, 'EXCEPTION →', err);</span>
 <span class="cstat-no" title="statement not covered" >      return fail({code: 'NETWORK_ERROR', message: 'Network error', retryable: true});</span>
     }
   }
@@ -826,7 +853,7 @@ export interface FrotaFacadeConfig extends FacadeConfig {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-22T19:00:58.510Z
+                at 2026-04-23T15:38:31.879Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

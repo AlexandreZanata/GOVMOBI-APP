@@ -27,7 +27,7 @@ import type {FacadeError, Result} from '@services/facades';
 // ---------------------------------------------------------------------------
 
 const ok = <T,>(data: T): Result<T, FacadeError> => ({data, error: null});
-const fail = <T,>(msg: string, code = 'NETWORK_ERROR'): Result<T, FacadeError> => ({
+const _fail = <T,>(msg: string, code = 'NETWORK_ERROR'): Result<T, FacadeError> => ({
   data: null,
   error: {code, message: msg},
 });
@@ -81,7 +81,13 @@ const Wrapper = ({
   motoristaId?: string | null;
 }) => {
   const storeRef = useRef(buildStore(motoristaId));
-  const facadesRef = useRef({authFacade});
+  const facadesRef = useRef({
+    authFacade,
+    avaliacoesFacade: {
+      getMinhaAvaliacaoSummary: jest.fn().mockResolvedValue({data: null, error: null}),
+      listAvaliacoes: jest.fn().mockResolvedValue({data: [], error: null}),
+    },
+  });
   return (
     <Provider store={storeRef.current}>
       <I18nextProvider i18n={i18n}>
@@ -104,15 +110,20 @@ const Wrapper = ({
 describe('ProfileScreen — change password', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('renders the change-password card with all inputs and submit button', () => {
+  it('renders the change-password card with all inputs and submit button', async () => {
     const facade = buildMockAuthFacade();
     render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
 
-    expect(screen.getByTestId('profile-change-password-card')).toBeTruthy();
-    expect(screen.getByTestId('input-senha-antiga')).toBeTruthy();
-    expect(screen.getByTestId('input-nova-senha')).toBeTruthy();
-    expect(screen.getByTestId('input-confirmar-senha')).toBeTruthy();
-    expect(screen.getByTestId('btn-change-password')).toBeTruthy();
+    // Open the collapsible password section first
+    fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('profile-change-password-card')).toBeTruthy();
+      expect(screen.getByTestId('input-senha-antiga')).toBeTruthy();
+      expect(screen.getByTestId('input-nova-senha')).toBeTruthy();
+      expect(screen.getByTestId('input-confirmar-senha')).toBeTruthy();
+      expect(screen.getByTestId('btn-change-password')).toBeTruthy();
+    });
   });
 
   it('calls changePassword facade and shows loading indicator while pending', async () => {
@@ -121,6 +132,10 @@ describe('ProfileScreen — change password', () => {
     const facade = buildMockAuthFacade({changePassword: changePasswordMock});
 
     render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
+
+    // Open the collapsible password section
+    fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
+    await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
 
     fireEvent.changeText(screen.getByTestId('input-senha-antiga'), 'OldPass@1');
     fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
@@ -143,6 +158,10 @@ describe('ProfileScreen — change password', () => {
     const facade = buildMockAuthFacade({changePassword: changePasswordMock});
 
     render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
+
+    // Open the collapsible password section
+    fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
+    await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
 
     fireEvent.changeText(screen.getByTestId('input-senha-antiga'), 'OldPass@1');
     fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
@@ -170,6 +189,10 @@ describe('ProfileScreen — change password', () => {
 
     render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
 
+    // Open the collapsible password section
+    fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
+    await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
+
     fireEvent.changeText(screen.getByTestId('input-senha-antiga'), 'OldPass@1');
     fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
     fireEvent.changeText(screen.getByTestId('input-confirmar-senha'), 'DifferentPass@2026');
@@ -186,6 +209,10 @@ describe('ProfileScreen — change password', () => {
     const facade = buildMockAuthFacade({changePassword: changePasswordMock});
 
     render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
+
+    // Open the collapsible password section
+    fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
+    await waitFor(() => expect(screen.getByTestId('btn-change-password')).toBeTruthy());
 
     await act(async () => {
       fireEvent.press(screen.getByTestId('btn-change-password'));

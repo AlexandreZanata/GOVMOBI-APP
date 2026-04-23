@@ -48,6 +48,19 @@ const mockFacades = {
   corridaFacade: {
     visualizarMensagens: mockVisualizarMensagensRest,
     getMensagens: mockGetMensagens,
+    getPosicaoFila: jest.fn().mockResolvedValue({
+      data: {
+        corridaId: 'corrida-test-001',
+        status: 'aguardando_aceite',
+        naFilaDeEspera: false,
+        posicaoNaFila: null,
+        totalNaFila: null,
+        tempoEsperaSeg: null,
+        estimativaAtendimentoSeg: null,
+      },
+      error: null,
+    }),
+    getCorridaStatus: jest.fn().mockResolvedValue({data: {id: 'corrida-test-001', status: 'aguardando_aceite'}, error: null}),
   },
   realtimeFacade: {
     visualizarMensagens: mockVisualizarMensagensWS,

@@ -23,6 +23,10 @@ const mockDispatch = jest.fn();
 
 const mockRealtimeFacade = {
   subscribeToCorrida: mockSubscribeToCorrida,
+  onEvent: jest.fn(() => () => undefined),
+  onConnectionStatusChange: jest.fn(() => () => undefined),
+  clearCorridaSubscriptions: jest.fn(),
+  setDriverAvailable: jest.fn().mockResolvedValue({data: true, error: null}),
 };
 
 let mockPapeis: string[] = ['MOTORISTA'];
@@ -42,7 +46,7 @@ jest.mock('@services/facades', () => ({
 jest.mock('../../../store', () => ({
   useAppSelector: (selector: (s: unknown) => unknown) =>
     selector({
-      auth: {papeis: mockPapeis},
+      auth: {papeis: mockPapeis, motoristaId: mockPapeis.includes('MOTORISTA') ? 'motorista-mock-001' : null},
       realtime: {
         connectionStatus: mockConnectionStatus,
         pendingOffer: mockPendingOffer,
@@ -104,7 +108,7 @@ describe('useMotoristaRealtime', () => {
   });
 
   it('does NOT emit assinar-corrida for terminal rides', async () => {
-    mockActiveCorrida = {id: 'ride-done', status: 'FINALIZADA'};
+    mockActiveCorrida = {id: 'ride-done', status: 'concluida'};
     renderHook(() => useMotoristaRealtime(null));
     await act(async () => {});
     expect(mockSubscribeToCorrida).not.toHaveBeenCalled();
