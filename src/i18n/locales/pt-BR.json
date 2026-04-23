@@ -496,7 +496,10 @@
     "mensagens": {
       "title": "Mensagens",
       "empty": "Nenhuma mensagem ainda.",
-      "inputPlaceholder": "Digite uma mensagem..."
+      "inputPlaceholder": "Digite uma mensagem...",
+      "tickSent": "Enviada",
+      "tickRead": "Lida",
+      "tickViewed": "Visualizada"
     },
     "terminal": {
       "concluida": "Corrida concluída com sucesso.",

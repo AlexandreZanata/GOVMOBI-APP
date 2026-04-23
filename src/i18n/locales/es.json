@@ -434,7 +434,7 @@
       "title": "Finalizar Viaje",
       "confirm": "¿Confirmar finalización del viaje?"
     },
-    "mensagens": {"title": "Mensajes", "empty": "Sin mensajes aún.", "inputPlaceholder": "Escribe un mensaje..."},
+    "mensagens": {"title": "Mensajes", "empty": "Sin mensajes aún.", "inputPlaceholder": "Escribe un mensaje...", "tickSent": "Enviado", "tickRead": "Leído", "tickViewed": "Visto"},
     "terminal": {
       "FINALIZADA": "Viaje finalizado con éxito.",
       "CONCLUIDA": "Viaje completado con éxito.",

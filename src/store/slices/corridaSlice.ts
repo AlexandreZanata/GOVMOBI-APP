@@ -59,6 +59,12 @@ export interface CorridaState {
   unreadMensagens: number;
   /** Count of messages not yet visualized (blue tick) — from GET /nao-visualizadas. */
   naoVisualizadasCount: number;
+  /**
+   * True while CorridaMensagensScreen is mounted and focused.
+   * Used by useNotifications to suppress foreground push banners for messages
+   * that the user is already reading in real time.
+   */
+  isChatScreenOpen: boolean;
 }
 
 const initialState: CorridaState = {
@@ -79,6 +85,7 @@ const initialState: CorridaState = {
   driverPosition: null,
   unreadMensagens: 0,
   naoVisualizadasCount: 0,
+  isChatScreenOpen: false,
 };
 
 /**
@@ -98,6 +105,7 @@ const corridaSlice = createSlice({
         state.driverPosition = null;
         state.unreadMensagens = 0;
         state.naoVisualizadasCount = 0;
+        state.isChatScreenOpen = false;
       }
     },
 
@@ -187,8 +195,9 @@ const corridaSlice = createSlice({
 
     /**
      * Appends a new live chat message to the active ride room.
-     * Also increments the unread counter — caller must pass the current user's
-     * servidorId so messages from self are not counted.
+     * Increments both `unreadMensagens` and `naoVisualizadasCount` for messages
+     * from the other party — unless the chat screen is currently open, in which
+     * case only `unreadMensagens` is incremented (the screen calls visualizar on mount).
      */
     addMensagem(state, action: PayloadAction<{mensagem: CorridaMensagem; currentServidorId: string}>) {
       const {mensagem, currentServidorId} = action.payload;
@@ -198,6 +207,12 @@ const corridaSlice = createSlice({
         // Only count messages from the other party
         if (mensagem.remetenteId !== currentServidorId) {
           state.unreadMensagens += 1;
+          // Only increment the badge when the chat screen is NOT open.
+          // When it IS open, the screen calls visualizarMensagens immediately,
+          // so the message is already being seen — no badge needed.
+          if (!state.isChatScreenOpen) {
+            state.naoVisualizadasCount += 1;
+          }
         }
       }
     },
@@ -207,6 +222,20 @@ const corridaSlice = createSlice({
      */
     clearUnreadMensagens(state) {
       state.unreadMensagens = 0;
+    },
+
+    /**
+     * Marks the chat screen as open or closed.
+     * When open: new incoming messages do NOT increment the badge or trigger push banners.
+     * When closed: new messages increment the badge and push is allowed.
+     */
+    setChatScreenOpen(state, action: PayloadAction<boolean>) {
+      state.isChatScreenOpen = action.payload;
+      // When the screen opens, immediately zero out both counters
+      if (action.payload) {
+        state.unreadMensagens = 0;
+        state.naoVisualizadasCount = 0;
+      }
     },
 
     /**
@@ -302,6 +331,7 @@ export const {
   setMensagens,
   addMensagem,
   clearUnreadMensagens,
+  setChatScreenOpen,
   updateMensagensVisualizadas,
   setNaoVisualizadasCount,
   setIsLoadingMensagens,

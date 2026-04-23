@@ -2,9 +2,16 @@
 /**
  * @fileoverview CorridaMensagensScreen — full-screen chat for an active ride.
  *
- * Loads message history via GET /corridas/:id/mensagens and appends real-time
- * messages received via the `nova-mensagem` WebSocket event.
- * Allows sending messages via the `enviar-mensagem` WebSocket event.
+ * Read-receipt semantics (WhatsApp-style):
+ *  - Single grey tick  → message sent (own message, not yet fetched by other party)
+ *  - Double grey tick  → message read (lida = true, fetched via GET /mensagens)
+ *  - Double blue tick  → message viewed (visualizadaEm set via PATCH or WS)
+ *
+ * On mount:
+ *  1. Loads history via GET /corridas/:id/mensagens (marks received as lida=true)
+ *  2. Calls PATCH /corridas/:id/mensagens/visualizar + WS visualizar-mensagens
+ *     to mark all received messages as viewed (blue ticks for the sender)
+ *  3. Requests unread count via WS contar-nao-visualizadas for badge refresh
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
@@ -22,29 +29,89 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
-import {useRoute, type RouteProp} from '@react-navigation/native';
-import {useNavigation} from '@react-navigation/native';
+import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles} from './CorridasScreens.styles';
-import {useAppSelector} from '../../store';
-import {useAppDispatch} from '../../store';
-import {clearUnreadMensagens} from '@store/slices/corridaSlice';
+import {useAppSelector, useAppDispatch} from '../../store';
+import {setChatScreenOpen} from '@store/slices/corridaSlice';
 import {useFacades} from '@services/facades';
 import type {CorridaMensagem} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
+import type {MotoristaCorridasStackParamList} from '@navigation/types';
 
-type RouteProps = RouteProp<
-  PassageiroCorridasStackParamList,
-  'CorridaMensagens'
->;
+type PassageiroRouteProps = RouteProp<PassageiroCorridasStackParamList, 'CorridaMensagens'>;
+type MotoristaRouteProps = RouteProp<MotoristaCorridasStackParamList, 'CorridaMensagens'>;
 
 const MAX_MESSAGE_LENGTH = 1000;
 
+// ---------------------------------------------------------------------------
+// Tick icon component — renders WhatsApp-style read receipts
+// ---------------------------------------------------------------------------
+
+interface TickProps {
+  /** True when the message was fetched by the recipient (lida). */
+  lida: boolean;
+  /** ISO timestamp when the recipient explicitly viewed the message. */
+  visualizadaEm: string | null;
+  /** Icon size in dp. */
+  size?: number;
+}
+
+/**
+ * Renders a WhatsApp-style read-receipt indicator for own messages.
+ *
+ * - Single grey check  → sent (not yet fetched)
+ * - Double grey check  → delivered/read (lida = true)
+ * - Double blue check  → viewed (visualizadaEm set)
+ *
+ * @param props - {@link TickProps}
+ * @returns JSX element or null.
+ */
+const MessageTick = ({lida, visualizadaEm, size = 14}: TickProps): React.JSX.Element => {
+  const theme = useTheme();
+  const isViewed = !!visualizadaEm;
+  const color = isViewed ? theme.design.blue500 : theme.design.textOnDarkMuted;
+
+  if (!lida) {
+    // Single tick — sent but not yet fetched by recipient
+    return (
+      <MaterialIcons
+        color={color}
+        name="done"
+        size={size}
+        testID="tick-sent"
+      />
+    );
+  }
+
+  // Double tick — lida=true (grey) or visualizada (blue)
+  return (
+    <View style={tickStyles.double} testID={isViewed ? 'tick-viewed' : 'tick-read'}>
+      <MaterialIcons color={color} name="done" size={size} style={tickStyles.first} />
+      <MaterialIcons color={color} name="done" size={size} />
+    </View>
+  );
+};
+
+const tickStyles = StyleSheet.create({
+  double: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  first: {
+    marginRight: -6,
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
+
 /**
  * Full-screen chat view for a corrida's message history.
- * Supports real-time message sending and receiving via WebSocket.
+ * Supports real-time message sending/receiving and read receipts.
  *
  * @returns JSX element for the CorridaMensagensScreen.
  */
@@ -52,15 +119,15 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const route = useRoute<RouteProps>();
+  const route = useRoute<PassageiroRouteProps | MotoristaRouteProps>();
   const navigation = useNavigation();
-  const {realtimeFacade} = useFacades();
+  const {realtimeFacade, corridaFacade} = useFacades();
   const {corridaId} = route.params;
 
   const shared = useMemo(() => createCorridasStyles(theme), [theme]);
   const styles = useMemo(() => createMensagensStyles(theme), [theme]);
 
-  const currentUserId = useAppSelector(s => s.auth.user?.id ?? '');
+  const currentUserId = useAppSelector(s => s.auth.servidorId ?? s.auth.user?.id ?? '');
   const mensagens = useAppSelector(s => s.corrida.mensagens);
   const dispatch = useAppDispatch();
 
@@ -69,19 +136,30 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const listRef = useRef<FlatList<CorridaMensagem>>(null);
+  const visualizadoRef = useRef(false);
 
   const navigateBack = useCallback((): void => {
     navigation.goBack();
   }, [navigation]);
 
-  // Load message history on mount + reset unread counter
+  // On mount: mark chat as open (zeroes badge + suppresses push), load history, visualize
   useEffect(() => {
+    // Signal that the chat screen is open — suppresses badge increments and push banners
+    dispatch(setChatScreenOpen(true));
     void onLoadMensagens(corridaId);
-    dispatch(clearUnreadMensagens());
-  }, [corridaId, dispatch, onLoadMensagens]);
 
-  // nova-mensagem is handled globally by useRealtimeSession → addMensagem.
-  // No local listener needed — reading from Redux is sufficient.
+    // Mark all received messages as viewed (blue ticks) — fire both REST + WS
+    if (!visualizadoRef.current) {
+      visualizadoRef.current = true;
+      void corridaFacade.visualizarMensagens(corridaId);
+      void realtimeFacade.visualizarMensagens({corridaId});
+    }
+
+    // On unmount: mark chat as closed so new messages resume incrementing the badge
+    return () => {
+      dispatch(setChatScreenOpen(false));
+    };
+  }, [corridaId, corridaFacade, dispatch, onLoadMensagens, realtimeFacade]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -114,13 +192,10 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
 
   // Hardware back button
   useEffect(() => {
-    const subscription = BackHandler.addEventListener(
-      'hardwareBackPress',
-      () => {
-        navigateBack();
-        return true;
-      },
-    );
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      navigateBack();
+      return true;
+    });
     return () => subscription.remove();
   }, [navigateBack]);
 
@@ -131,11 +206,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     setIsSending(true);
     setMessageText('');
 
-    await realtimeFacade.sendCorridaMessage({
-      corridaId,
-      conteudo: text,
-    });
-
+    await realtimeFacade.sendCorridaMessage({corridaId, conteudo: text});
     setIsSending(false);
   }, [corridaId, isSending, messageText, realtimeFacade]);
 
@@ -154,9 +225,21 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
             <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
               {item.conteudo}
             </Text>
-            <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>
-              {time}
-            </Text>
+            <View style={styles.bubbleMeta}>
+              <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>
+                {time}
+              </Text>
+              {/* Double-tick only shown on own messages */}
+              {isOwn && (
+                <View style={styles.tickWrapper}>
+                  <MessageTick
+                    lida={item.lida}
+                    size={13}
+                    visualizadaEm={item.visualizadaEm}
+                  />
+                </View>
+              )}
+            </View>
           </View>
         </View>
       );
@@ -171,7 +254,6 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.root}
       testID="mensagens-screen">
-      {/* Message list */}
       {isLoadingMensagens ? (
         <View style={shared.emptyContainer}>
           <ActivityIndicator
@@ -199,7 +281,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
         />
       )}
 
-      {/* Message input — available to all roles */}
+      {/* Input bar */}
       <View style={[styles.inputRow, {paddingBottom: bottomPad}]}>
         <TextInput
           accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
@@ -281,14 +363,22 @@ const createMensagensStyles = (
     bubbleTextOwn: {
       color: design.textOnDark,
     },
+    bubbleMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      marginTop: spacing[1],
+      gap: spacing[1],
+    },
     bubbleTime: {
       ...typo.scale.caption,
       color: design.textTertiary,
-      marginTop: spacing[1],
-      alignSelf: 'flex-end',
     },
     bubbleTimeOwn: {
       color: design.textOnDarkMuted,
+    },
+    tickWrapper: {
+      marginLeft: spacing[1],
     },
     emptyText: {
       ...typo.scale.bodyMd,

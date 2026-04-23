@@ -212,22 +212,35 @@ export function removeOneSignalExternalUserId(): void {
 
 /**
  * Registers a handler for notifications received while the app is in the
- * foreground. Suppresses the OS banner — WebSocket handles foreground delivery.
+ * foreground. Suppresses the OS banner for ride-message notifications when
+ * the user already has the chat open (unread count is 0).
+ * All other notification types are suppressed too — WebSocket handles delivery.
  *
+ * @param isChatOpen - Optional callback returning true when the chat screen is active.
  * @returns Cleanup function that removes the listener.
  */
-export function registerForegroundHandler(): () => void {
+export function registerForegroundHandler(isChatOpen?: () => boolean): () => void {
   const OneSignal = getOneSignal();
   if (!OneSignal) return () => {};
 
   const handler = (event: ForegroundWillDisplayEvent): void => {
     const notification = event.getNotification();
+    const data = notification.additionalData;
+
+    // Suppress ride-message pushes when the user already has the chat open
+    const isMessageNotification = data?.status === 'nova_mensagem' || !data?.status;
+    if (isMessageNotification && isChatOpen?.()) {
+      logger.info('OneSignalService', 'Foreground message push suppressed — chat is open');
+      event.preventDefault();
+      return;
+    }
+
     logger.info(
       'OneSignalService',
       'Foreground push received (suppressed — WS handles this):',
       notification.title,
     );
-    // preventDefault() suppresses the OS banner; WebSocket already delivered this.
+    // Suppress all foreground banners — WebSocket already delivered this.
     event.preventDefault();
   };
 

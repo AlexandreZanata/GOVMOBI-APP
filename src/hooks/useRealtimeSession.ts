@@ -14,6 +14,8 @@ import {
   setMensagens,
   setPosicaoMotoristaAtual,
   updateCorridaStatus,
+  updateMensagensVisualizadas,
+  setNaoVisualizadasCount,
 } from '@store/slices/corridaSlice';
 import {
   addAvailableCorrida,
@@ -30,6 +32,8 @@ import type {
   EnviarMensagemPayload,
   HistoricoMensagemPayload,
   RealtimeConnectionStatus,
+  VisualizarMensagensPayload,
+  ContarNaoVisualizadasPayload,
 } from '../types/realtime';
 import {logger} from '@utils/logger';
 
@@ -43,6 +47,10 @@ export interface UseRealtimeSessionState {
   setDriverAvailable: () => Promise<boolean>;
   updateDriverPosition: (payload: AtualizarPosicaoPayload) => Promise<boolean>;
   sendCorridaMessage: (payload: EnviarMensagemPayload) => Promise<boolean>;
+  /** Emits `visualizar-mensagens` WS event to mark all received messages as viewed. */
+  visualizarMensagens: (payload: VisualizarMensagensPayload) => Promise<boolean>;
+  /** Emits `contar-nao-visualizadas` WS event to request the unread count. */
+  contarNaoVisualizadas: (payload: ContarNaoVisualizadasPayload) => Promise<boolean>;
 }
 
 /**
@@ -128,6 +136,19 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
           console.log('[useRealtimeSession] nova-corrida-disponivel received →', JSON.stringify(event.payload));
           dispatchRef.current(addAvailableCorrida(event.payload.corridaId));
           dispatchRef.current(setPendingOffer(event.payload));
+          break;
+        case 'mensagens-visualizadas':
+          // The other party viewed our messages — update tick state to blue
+          dispatchRef.current(
+            updateMensagensVisualizadas({
+              visualizadaPor: event.payload.visualizadaPor,
+              visualizadaEm: event.payload.visualizadaEm,
+              currentServidorId: servidorIdRef.current,
+            }),
+          );
+          break;
+        case 'contagem-nao-visualizadas':
+          dispatchRef.current(setNaoVisualizadasCount(event.payload.count));
           break;
       }
     });
@@ -218,6 +239,26 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
     [dispatch, realtimeFacade],
   );
 
+  const visualizarMensagens = useCallback(
+    async (payload: VisualizarMensagensPayload): Promise<boolean> => {
+      const result = await realtimeFacade.visualizarMensagens(payload);
+      if (result.data) return true;
+      dispatch(setRealtimeError(result.error?.message ?? null));
+      return false;
+    },
+    [dispatch, realtimeFacade],
+  );
+
+  const contarNaoVisualizadas = useCallback(
+    async (payload: ContarNaoVisualizadasPayload): Promise<boolean> => {
+      const result = await realtimeFacade.contarNaoVisualizadas(payload);
+      if (result.data) return true;
+      dispatch(setRealtimeError(result.error?.message ?? null));
+      return false;
+    },
+    [dispatch, realtimeFacade],
+  );
+
   return {
     connectionStatus,
     lastError,
@@ -227,5 +268,7 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
     setDriverAvailable,
     updateDriverPosition,
     sendCorridaMessage,
+    visualizarMensagens,
+    contarNaoVisualizadas,
   };
 };

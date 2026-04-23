@@ -443,7 +443,7 @@
       "title": "Complete Ride",
       "confirm": "Confirm ride completion?"
     },
-    "mensagens": {"title": "Messages", "empty": "No messages yet.", "inputPlaceholder": "Type a message..."},
+    "mensagens": {"title": "Messages", "empty": "No messages yet.", "inputPlaceholder": "Type a message...", "tickSent": "Sent", "tickRead": "Read", "tickViewed": "Viewed"},
     "terminal": {
       "FINALIZADA": "Ride completed successfully.",
       "CONCLUIDA": "Ride completed successfully.",

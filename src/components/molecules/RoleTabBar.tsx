@@ -29,6 +29,8 @@ export interface TabConfig {
   inactiveIcon: TabIconName;
   /** i18n key for the tab label. */
   labelKey: string;
+  /** Optional badge count. When > 0 a red dot is shown. */
+  badge?: number;
 }
 
 export interface RoleTabBarProps extends BottomTabBarProps {
@@ -90,11 +92,20 @@ export const RoleTabBar = ({
             style={styles.tab}
             testID={`${testIdPrefix}-tab-${route.name}`}>
             {isFocused && <View style={styles.activeIndicator} />}
-            <MaterialIcons
-              color={isFocused ? INTERACTIVE : TEXT_MUTED}
-              name={isFocused ? cfg.activeIcon : cfg.inactiveIcon}
-              size={24}
-            />
+            <View style={styles.iconWrapper}>
+              <MaterialIcons
+                color={isFocused ? INTERACTIVE : TEXT_MUTED}
+                name={isFocused ? cfg.activeIcon : cfg.inactiveIcon}
+                size={24}
+              />
+              {!!cfg.badge && cfg.badge > 0 && (
+                <View style={styles.badge} testID={`badge-${route.name}`}>
+                  <Text style={styles.badgeText}>
+                    {cfg.badge > 99 ? '99+' : String(cfg.badge)}
+                  </Text>
+                </View>
+              )}
+            </View>
             <Text style={[styles.label, {color: isFocused ? INTERACTIVE : TEXT_MUTED}]}>
               {label}
             </Text>
@@ -135,6 +146,29 @@ const createStyles = (_theme: Theme, bottomInset: number) =>
       backgroundColor: INTERACTIVE,
       position: 'absolute',
       top: 0,
+    },
+    iconWrapper: {
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badge: {
+      position: 'absolute',
+      top: -4,
+      right: -8,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: _theme.colors.error,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 3,
+    },
+    badgeText: {
+      color: _theme.colors.textInverse,
+      fontSize: 10,
+      fontWeight: '700',
+      lineHeight: 12,
     },
     label: {
       fontSize: 11,

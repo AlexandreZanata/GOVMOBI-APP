@@ -54,10 +54,14 @@ export const useNotifications = (): UseNotificationsResult => {
 
   const servidorId = useAppSelector(s => s.auth.servidorId);
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
+  const isChatScreenOpen = useAppSelector(s => s.corrida.isChatScreenOpen);
 
   const [permissionGranted, setPermissionGranted] = useState(false);
   const sdkInitialized = useRef(false);
   const lastLinkedServidorId = useRef<string | null>(null);
+  // Stable ref so the foreground handler closure always reads the latest value
+  const isChatOpenRef = useRef(isChatScreenOpen);
+  isChatOpenRef.current = isChatScreenOpen;
 
   // ---------------------------------------------------------------------------
   // One-time SDK init + permission request
@@ -69,9 +73,10 @@ export const useNotifications = (): UseNotificationsResult => {
     const initialized = initOneSignal();
     if (!initialized) return;
 
-    // Suppress foreground banners — WebSocket handles in-app delivery.
-    // v5 addEventListener returns nothing; we keep the cleanup ref ourselves.
-    const cleanupForeground = registerForegroundHandler();
+    // Suppress foreground message banners when the chat screen is currently open
+    const cleanupForeground = registerForegroundHandler(
+      () => isChatOpenRef.current,
+    );
 
     // Request OS permission and update Redux.
     requestPushPermission(accepted => {
