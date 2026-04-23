@@ -69,6 +69,8 @@ const SUCCESS_FLASH_MS = 2_000;
 
 const toBannerMode = (isOnline: boolean, wsStatus: string): BannerMode => {
   if (!isOnline) return 'offline';
+  // 'idle' means the WS hasn't started yet — not a failure state, don't block UI
+  if (wsStatus === 'idle' || wsStatus === 'connected') return 'hidden';
   if (
     wsStatus === 'connecting' ||
     wsStatus === 'disconnected' ||
@@ -108,7 +110,17 @@ export const NetworkBanner = (): React.JSX.Element | null => {
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
-  const targetMode = toBannerMode(isOnline, wsStatus);
+  // Only show reconnecting banner after the first successful WS connection.
+  // This prevents the banner from blocking the UI during the initial connect.
+  const hasEverConnectedRef = useRef(false);
+  if (wsStatus === 'connected') {
+    hasEverConnectedRef.current = true;
+  }
+
+  const targetMode = toBannerMode(
+    isOnline,
+    hasEverConnectedRef.current ? wsStatus : 'connected',
+  );
 
   useEffect(() => {
     const prev = prevModeRef.current;
