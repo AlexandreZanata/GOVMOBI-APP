@@ -410,7 +410,23 @@
       "metadata": "Información",
       "coordsUnavailable": "Coordenadas no disponibles",
       "addressLoading": "Cargando dirección...",
-      "addressUnavailable": "Dirección no disponible"
+      "addressUnavailable": "Dirección no disponible",
+      "distancia": "Distancia",
+      "duracao": "Duración",
+      "duracaoValue": "{{min}} min",
+      "distanciaValue": "{{km}} km",
+      "veiculo": "Vehículo",
+      "placa": "Placa",
+      "modelo": "Modelo",
+      "timestamps": "Línea de Tiempo",
+      "solicitadaEm": "Solicitado en",
+      "aceitaEm": "Aceptado en",
+      "iniciadaEm": "Iniciado en",
+      "embarqueEm": "Abordaje en",
+      "finalizadaEm": "Finalizado en",
+      "canceladaEm": "Cancelado en",
+      "motoristaNome": "Conductor",
+      "cnhCategoria": "Categoría Licencia"
     },
     "acompanhar": {
       "title": "Seguir Viaje"

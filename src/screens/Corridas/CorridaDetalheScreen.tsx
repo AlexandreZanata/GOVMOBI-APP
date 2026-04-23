@@ -1,37 +1,83 @@
 /**
  * @fileoverview CorridaDetalheScreen — full ride details view (read-only).
  *
- * Accessible to any authenticated role (passenger and driver).
- * Loads corrida details once on mount via a ref guard — never re-fetches
- * on Redux state changes to avoid the infinite dispatch loop.
+ * Shows address (never raw coordinates), duration, distance, vehicle,
+ * driver info, and lifecycle timestamps. Accessible to passenger and driver.
  */
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import {ActivityIndicator, ScrollView, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useRoute, type RouteProp} from '@react-navigation/native';
 import {useTheme} from '../../theme';
 import {createCorridasStyles} from './CorridasScreens.styles';
-import {CorridaStatusBadge} from '@components/molecules/CorridaStatusBadge';
-import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
 import {useFacades} from '@services/facades';
 import type {Corrida} from '@models/Corrida';
-import type {PassageiroCorridasStackParamList, MotoristaCorridasStackParamList} from '@navigation/types';
+import type {
+  PassageiroCorridasStackParamList,
+  MotoristaCorridasStackParamList,
+} from '@navigation/types';
 
 type RouteProps =
   | RouteProp<PassageiroCorridasStackParamList, 'CorridaDetalhe'>
   | RouteProp<MotoristaCorridasStackParamList, 'MotoristaCorridaDetalhe'>;
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const formatDuration = (seconds: number): string => {
+  const m = Math.round(seconds / 60);
+  if (m < 60) return `${m} min`;
+  return `${Math.floor(m / 60)} h ${m % 60} min`;
+};
+
+const formatDistance = (metres: number): string => {
+  if (metres >= 1000) return `${(metres / 1000).toFixed(1)} km`;
+  return `${metres} m`;
+};
+
+const fmtTs = (iso: string | undefined): string | null => {
+  if (!iso) return null;
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+};
+
+// ---------------------------------------------------------------------------
+// InfoRow sub-component
+// ---------------------------------------------------------------------------
+
+interface InfoRowProps {
+  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  label: string;
+  value: string;
+  iconColor: string;
+  labelStyle: object;
+  valueStyle: object;
+  rowStyle: object;
+  iconStyle: object;
+}
+
+const InfoRow = ({icon, label, value, iconColor, labelStyle, valueStyle, rowStyle, iconStyle}: InfoRowProps) => (
+  <View style={rowStyle}>
+    <MaterialIcons name={icon} size={18} color={iconColor} style={iconStyle} />
+    <View style={{flex: 1}}>
+      <Text style={labelStyle}>{label}</Text>
+      <Text style={valueStyle}>{value}</Text>
+    </View>
+  </View>
+);
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
+
 /**
  * Full corrida details screen — shared between passenger and driver.
- * Fetches the corrida directly from the facade (not from Redux) to avoid
- * polluting the shared activeCorrida state and triggering re-render loops.
+ * Always shows human-readable addresses; never raw coordinates.
  *
  * @returns JSX element for the CorridaDetalheScreen.
  */
@@ -44,8 +90,8 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
   const {corridaFacade} = useFacades();
 
   const styles = useMemo(() => createCorridasStyles(theme), [theme]);
+  const muted = theme.colors.textMuted;
 
-  // Local state — does NOT touch Redux activeCorrida to avoid re-render loops
   const [corrida, setCorrida] = useState<Corrida | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,18 +107,21 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
       setIsLoading(false);
       if (result.data) {
         const raw = result.data as Corrida & Record<string, unknown>;
+        const origemRaw = raw['origem'] as {lat?: number; lng?: number; endereco?: string} | undefined;
+        const destinoRaw = raw['destino'] as {lat?: number; lng?: number; endereco?: string} | undefined;
         setCorrida({
           ...raw,
-          origemLat: (raw.origemLat ?? raw['origem_lat'] ?? 0) as number,
-          origemLng: (raw.origemLng ?? raw['origem_lng'] ?? 0) as number,
-          destinoLat: (raw.destinoLat ?? raw['destino_lat'] ?? 0) as number,
-          destinoLng: (raw.destinoLng ?? raw['destino_lng'] ?? 0) as number,
+          origemLat: (raw.origemLat ?? origemRaw?.lat ?? 0) as number,
+          origemLng: (raw.origemLng ?? origemRaw?.lng ?? 0) as number,
+          origemEndereco: raw.origemEndereco ?? origemRaw?.endereco,
+          destinoLat: (raw.destinoLat ?? destinoRaw?.lat ?? 0) as number,
+          destinoLng: (raw.destinoLng ?? destinoRaw?.lng ?? 0) as number,
+          destinoEndereco: raw.destinoEndereco ?? destinoRaw?.endereco,
         });
       } else {
         setError(result.error?.message ?? t('errors.unknownError'));
       }
     })();
-  // corridaId is stable for the lifetime of this screen — intentional single-run
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,71 +142,107 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
     );
   }
 
+  const rowProps = {
+    iconColor: muted,
+    labelStyle: styles.cardLabel,
+    valueStyle: styles.cardValue,
+    rowStyle: styles.cardRow,
+    iconStyle: styles.cardRowIcon,
+  };
+
+  const ts = corrida.timestamps;
+
   return (
     <View style={[styles.container, {paddingBottom: insets.bottom}]} testID="detalhe-screen">
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        <CorridaStatusBadge status={corrida.status} testID="status-badge" />
 
         {/* Route card */}
         <View style={styles.card} testID="route-card">
           <Text style={styles.cardTitle}>{t('corridas.detail.route')}</Text>
-          <RouteInfoRow
-            type="origin"
+          <InfoRow
+            {...rowProps}
+            icon="trip-origin"
+            iconColor={theme.colors.success}
             label={t('corridas.detail.origem')}
-            value={`${corrida.origemLat.toFixed(5)}, ${corrida.origemLng.toFixed(5)}`}
+            value={corrida.origemEndereco ?? t('corridas.detail.addressUnavailable')}
           />
-          <RouteInfoRow
-            type="destination"
+          <InfoRow
+            {...rowProps}
+            icon="location-on"
+            iconColor={theme.colors.error}
             label={t('corridas.detail.destino')}
-            value={`${corrida.destinoLat.toFixed(5)}, ${corrida.destinoLng.toFixed(5)}`}
+            value={corrida.destinoEndereco ?? t('corridas.detail.addressUnavailable')}
           />
+          {corrida.distanciaMetros != null && corrida.distanciaMetros > 0 ? (
+            <InfoRow {...rowProps} icon="straighten" label={t('corridas.detail.distancia')} value={formatDistance(corrida.distanciaMetros)} />
+          ) : null}
+          {corrida.duracaoSegundos != null && corrida.duracaoSegundos > 0 ? (
+            <InfoRow {...rowProps} icon="timer" label={t('corridas.detail.duracao')} value={formatDuration(corrida.duracaoSegundos)} />
+          ) : null}
           {corrida.motivoServico ? (
-            <View style={styles.cardRow}>
-              <MaterialIcons name="work-outline" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
-              <View>
-                <Text style={styles.cardLabel}>{t('corridas.detail.motivo')}</Text>
-                <Text style={styles.cardValue}>{corrida.motivoServico}</Text>
-              </View>
-            </View>
+            <InfoRow {...rowProps} icon="work-outline" label={t('corridas.detail.motivo')} value={corrida.motivoServico} />
           ) : null}
           {corrida.observacoes ? (
-            <View style={styles.cardRow}>
-              <MaterialIcons name="notes" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
-              <View>
-                <Text style={styles.cardLabel}>{t('corridas.detail.observacoes')}</Text>
-                <Text style={styles.cardValue}>{corrida.observacoes}</Text>
-              </View>
-            </View>
+            <InfoRow {...rowProps} icon="notes" label={t('corridas.detail.observacoes')} value={corrida.observacoes} />
           ) : null}
         </View>
 
-        {/* Metadata card */}
+        {/* Vehicle card */}
+        {corrida.veiculo ? (
+          <View style={styles.card} testID="veiculo-card">
+            <Text style={styles.cardTitle}>{t('corridas.detail.veiculo')}</Text>
+            {corrida.veiculo.modelo ? (
+              <InfoRow
+                {...rowProps}
+                icon="directions-car"
+                label={t('corridas.detail.modelo')}
+                value={`${corrida.veiculo.modelo}${corrida.veiculo.ano ? ` (${corrida.veiculo.ano})` : ''}`}
+              />
+            ) : null}
+            {corrida.veiculo.placa ? (
+              <InfoRow {...rowProps} icon="confirmation-number" label={t('corridas.detail.placa')} value={corrida.veiculo.placa} />
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Driver card */}
+        {corrida.motorista ? (
+          <View style={styles.card} testID="motorista-card">
+            <Text style={styles.cardTitle}>{t('corridas.detail.motoristaNome')}</Text>
+              <InfoRow
+                {...rowProps}
+                icon="star"
+                iconColor={theme.design.amber500}
+                label={t('avaliacoes.minhaNota.mediaLabel')}
+                value={`${corrida.motorista.notaMedia.toFixed(1)} (${corrida.motorista.totalAvaliacoes ?? 0})`}
+              />
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Timeline card */}
+        {ts ? (
+          <View style={styles.card} testID="timestamps-card">
+            <Text style={styles.cardTitle}>{t('corridas.detail.timestamps')}</Text>
+            {fmtTs(ts.solicitadaEm) ? <InfoRow {...rowProps} icon="schedule" label={t('corridas.detail.solicitadaEm')} value={fmtTs(ts.solicitadaEm)!} /> : null}
+            {fmtTs(ts.aceitaEm) ? <InfoRow {...rowProps} icon="check-circle-outline" label={t('corridas.detail.aceitaEm')} value={fmtTs(ts.aceitaEm)!} /> : null}
+            {fmtTs(ts.iniciadaEm) ? <InfoRow {...rowProps} icon="directions-car" label={t('corridas.detail.iniciadaEm')} value={fmtTs(ts.iniciadaEm)!} /> : null}
+            {fmtTs(ts.embarqueEm) ? <InfoRow {...rowProps} icon="person-pin" label={t('corridas.detail.embarqueEm')} value={fmtTs(ts.embarqueEm)!} /> : null}
+            {fmtTs(ts.finalizadaEm) ? <InfoRow {...rowProps} icon="flag" label={t('corridas.detail.finalizadaEm')} value={fmtTs(ts.finalizadaEm)!} /> : null}
+            {fmtTs(ts.canceladaEm) ? <InfoRow {...rowProps} icon="cancel" iconColor={theme.colors.error} label={t('corridas.detail.canceladaEm')} value={fmtTs(ts.canceladaEm)!} /> : null}
+          </View>
+        ) : null}
+
+        {/* Metadata */}
         <View style={styles.card} testID="meta-card">
           <Text style={styles.cardTitle}>{t('corridas.detail.metadata')}</Text>
-          <View style={styles.cardRow}>
-            <MaterialIcons name="person-outline" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.passageiroId')}</Text>
-              <Text style={styles.cardValue} numberOfLines={1}>{corrida.passageiroId}</Text>
-            </View>
-          </View>
-          {corrida.motoristaId ? (
-            <View style={styles.cardRow}>
-              <MaterialIcons name="drive-eta" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
-              <View>
-                <Text style={styles.cardLabel}>{t('corridas.detail.motoristaId')}</Text>
-                <Text style={styles.cardValue} numberOfLines={1}>{corrida.motoristaId}</Text>
-              </View>
-            </View>
-          ) : null}
-          <View style={styles.cardRow}>
-            <MaterialIcons name="schedule" size={18} color={theme.colors.textMuted} style={styles.cardRowIcon} />
-            <View>
-              <Text style={styles.cardLabel}>{t('corridas.detail.createdAt')}</Text>
-              <Text style={styles.cardValue}>{new Date(corrida.createdAt).toLocaleString()}</Text>
-            </View>
-          </View>
+          <InfoRow
+            {...rowProps}
+            icon="schedule"
+            label={t('corridas.detail.createdAt')}
+            value={new Date(corrida.createdAt).toLocaleString('pt-BR')}
+          />
         </View>
 
       </ScrollView>

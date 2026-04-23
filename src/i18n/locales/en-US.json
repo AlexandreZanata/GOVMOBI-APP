@@ -420,7 +420,23 @@
       "metadata": "Information",
       "coordsUnavailable": "Coordinates unavailable",
       "addressLoading": "Loading address...",
-      "addressUnavailable": "Address unavailable"
+      "addressUnavailable": "Address unavailable",
+      "distancia": "Distance",
+      "duracao": "Duration",
+      "duracaoValue": "{{min}} min",
+      "distanciaValue": "{{km}} km",
+      "veiculo": "Vehicle",
+      "placa": "Plate",
+      "modelo": "Model",
+      "timestamps": "Timeline",
+      "solicitadaEm": "Requested at",
+      "aceitaEm": "Accepted at",
+      "iniciadaEm": "Started at",
+      "embarqueEm": "Boarded at",
+      "finalizadaEm": "Completed at",
+      "canceladaEm": "Cancelled at",
+      "motoristaNome": "Driver",
+      "cnhCategoria": "License Category"
     },
     "acompanhar": {
       "title": "Track Ride"

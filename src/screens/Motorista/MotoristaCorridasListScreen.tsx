@@ -92,14 +92,14 @@ const RideListCard = React.memo(({item, onPress, theme, t}: RideCardProps) => {
         <View style={s.routeRow}>
           <MaterialIcons name="trip-origin" size={13} color={theme.colors.success} style={s.icon} />
           <Text style={s.routeText} numberOfLines={1}>
-            {`${item.origemLat.toFixed(5)}, ${item.origemLng.toFixed(5)}`}
+            {item.origemEndereco ?? `${item.origemLat.toFixed(4)}, ${item.origemLng.toFixed(4)}`}
           </Text>
         </View>
 
         <View style={s.routeRow}>
           <MaterialIcons name="location-on" size={13} color={theme.colors.error} style={s.icon} />
           <Text style={s.routeText} numberOfLines={1}>
-            {`${item.destinoLat.toFixed(5)}, ${item.destinoLng.toFixed(5)}`}
+            {item.destinoEndereco ?? `${item.destinoLat.toFixed(4)}, ${item.destinoLng.toFixed(4)}`}
           </Text>
         </View>
       </View>

@@ -439,7 +439,23 @@
       "metadata": "Informações",
       "coordsUnavailable": "Coordenadas não disponíveis",
       "addressLoading": "Carregando endereço...",
-      "addressUnavailable": "Endereço não disponível"
+      "addressUnavailable": "Endereço não disponível",
+      "distancia": "Distância",
+      "duracao": "Duração",
+      "duracaoValue": "{{min}} min",
+      "distanciaValue": "{{km}} km",
+      "veiculo": "Veículo",
+      "placa": "Placa",
+      "modelo": "Modelo",
+      "timestamps": "Linha do Tempo",
+      "solicitadaEm": "Solicitada em",
+      "aceitaEm": "Aceita em",
+      "iniciadaEm": "Iniciada em",
+      "embarqueEm": "Embarque em",
+      "finalizadaEm": "Finalizada em",
+      "canceladaEm": "Cancelada em",
+      "motoristaNome": "Motorista",
+      "cnhCategoria": "Categoria CNH"
     },
     "acompanhar": {
       "title": "Acompanhar Corrida"
