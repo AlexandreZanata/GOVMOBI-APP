@@ -356,10 +356,14 @@ export class ReconnectionManager {
   }
 
   /**
-   * Waits up to 10 s for the facade to emit a `connected` status.
+   * Waits up to 10 s for the facade to emit a `connected` or `reconnecting`
+   * status. `reconnecting` means the transport handshake succeeded and the
+   * server is processing the auth — `useRideReconnection` will call
+   * `confirmConnected()` once the session is fully restored.
+   *
    * Resolves immediately if already connected.
    *
-   * @returns Promise that resolves on connect or rejects on timeout.
+   * @returns Promise that resolves on connect/reconnecting or rejects on timeout.
    */
   private waitForConnection(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
@@ -373,13 +377,17 @@ export class ReconnectionManager {
       };
 
       unsub = this.facade.onConnectionStatusChange((status, error) => {
-        if (status === 'connected') {
+        // Resolve as soon as the transport is up — either fully connected or
+        // in the reconnecting state (awaiting server auth ack / reconexao-concluida).
+        if (status === 'connected' || status === 'reconnecting') {
           cleanup();
           resolve();
-        } else if (status === 'error' || status === 'disconnected') {
+        } else if (status === 'error') {
           cleanup();
           reject(new Error(error?.message ?? `Connection failed with status: ${status}`));
         }
+        // 'disconnected' alone is not a failure — the socket may still be
+        // attempting to reconnect via Socket.io's built-in mechanism.
       });
 
       timer = setTimeout(() => {

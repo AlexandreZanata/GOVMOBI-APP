@@ -24,6 +24,7 @@ import {
   setPendingCorridaId,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
+import {tokenRefreshed} from '@store/slices/authSlice';
 import {TERMINAL_STATUSES} from '@models/Corrida';
 import {getValidToken} from '@utils/tokenUtils';
 import type {ReconexaoConcluida} from '../types/realtime';
@@ -244,11 +245,11 @@ export const useRideReconnection = (): void => {
           nextState === 'active'
         ) {
           console.log(TAG, 'AppState foreground — forcing REST reconciliation');
-          // P4 fix: call getValidToken() to ensure the token is fresh before
-          // useRealtimeSession's effect re-runs and reconnects the WebSocket.
+          // Ensure the token is fresh before the WebSocket reconnects.
+          // The refreshed token is dispatched to Redux so useRealtimeSession
+          // and the WS 401 handler both see the latest value.
           const currentToken = tokenRef.current;
           if (currentToken) {
-            // Decode token expiry from JWT payload inline (same pattern as useRealtimeSession).
             const parts = currentToken.split('.');
             let tokenExpiresAt = 0;
             if (parts.length === 3) {
@@ -270,6 +271,10 @@ export const useRideReconnection = (): void => {
             }
             const refreshFn = async (): Promise<string | null> => {
               const result = await authFacadeRef.current.refreshToken();
+              if (result.data?.accessToken) {
+                // Dispatch the refreshed token to Redux so all consumers see it.
+                dispatchRef.current(tokenRefreshed(result.data.accessToken));
+              }
               return result.data?.accessToken ?? null;
             };
             void getValidToken(currentToken, tokenExpiresAt, refreshFn);

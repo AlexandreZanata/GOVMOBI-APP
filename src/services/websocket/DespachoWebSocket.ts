@@ -177,8 +177,12 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
   }
 
   public connect(accessToken: string): void {
-    if (this.socket?.connected) {
-      wsLog('connect() — already connected, skipping');
+    // Guard against duplicate connections: skip if the socket is already
+    // connected OR actively reconnecting. A socket in the reconnecting state
+    // will recover on its own — creating a second socket on top of it causes
+    // the old socket's connect_error to fire and triggers an infinite retry loop.
+    if (this.socket && (this.socket.connected || this.socket.active)) {
+      wsLog('connect() — already connected or reconnecting, skipping');
       return;
     }
     wsLog(`connect() → "${this.baseUrl}/despacho" token="${accessToken.slice(0, 20)}..."`);

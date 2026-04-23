@@ -23,6 +23,7 @@ import {NetworkMonitor, type NetworkConnectionState} from '@services/network/Net
 import {ReconnectionManager} from '@services/network/ReconnectionManager';
 import {AuthFacadeImpl} from '@services/facades';
 import {tokenRefreshed, logout} from '@store/slices/authSlice';
+import {getValidToken} from '@utils/tokenUtils';
 import {ENV} from '../config/env';
 
 /** State returned by useNetworkManager, consumed by NetworkContext. */
@@ -72,16 +73,45 @@ export const useNetworkManager = (): NetworkManagerState => {
   // Stable token getter
   const getToken = useCallback(() => tokenRef.current, []);
 
-  // Stable token refresher — mirrors the one in AppShell
+  // Stable token refresher — routes through the shared getValidToken() mutex
+  // so this path and the WS 401 handler never issue concurrent refresh calls.
   const refreshToken = useCallback(async (): Promise<string | null> => {
-    const authFacade = new AuthFacadeImpl({apiBaseUrl: ENV.apiUrl});
-    const result = await authFacade.refreshToken();
-    if (result.error || !result.data) {
-      dispatchRef.current(logout());
-      return null;
+    const currentToken = tokenRef.current;
+    if (!currentToken) return null;
+
+    // Decode expiry from the current token.
+    let tokenExpiresAt = 0;
+    const parts = currentToken.split('.');
+    if (parts.length === 3) {
+      try {
+        const decode = (globalThis as {atob?: (v: string) => string}).atob;
+        if (typeof decode === 'function') {
+          const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(decode(normalized)) as {exp?: number};
+          tokenExpiresAt = typeof payload.exp === 'number' ? payload.exp : 0;
+        } else {
+          const payload = JSON.parse(
+            Buffer.from(parts[1], 'base64').toString('utf-8'),
+          ) as {exp?: number};
+          tokenExpiresAt = typeof payload.exp === 'number' ? payload.exp : 0;
+        }
+      } catch {
+        tokenExpiresAt = 0;
+      }
     }
-    dispatchRef.current(tokenRefreshed(result.data.accessToken));
-    return result.data.accessToken;
+
+    const refreshFn = async (): Promise<string | null> => {
+      const authFacade = new AuthFacadeImpl({apiBaseUrl: ENV.apiUrl});
+      const result = await authFacade.refreshToken();
+      if (result.error || !result.data) {
+        dispatchRef.current(logout());
+        return null;
+      }
+      dispatchRef.current(tokenRefreshed(result.data.accessToken));
+      return result.data.accessToken;
+    };
+
+    return getValidToken(currentToken, tokenExpiresAt, refreshFn);
   }, []);
 
   // ---------------------------------------------------------------------------

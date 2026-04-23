@@ -177,9 +177,27 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
 
   // ---------------------------------------------------------------------------
   // Connect / disconnect based on auth state.
+  //
+  // IMPORTANT: This effect intentionally does NOT depend on `token`. Token
+  // rotations (from proactive refresh or 401 recovery) must NOT trigger a
+  // reconnect — that would tear down the active socket and create a duplicate.
+  // The WS 401 handler in DespachoWebSocket and the ReconnectionManager both
+  // handle token refresh transparently without needing a new connect() call.
   // ---------------------------------------------------------------------------
+  const tokenRef2 = useRef(token);
+  tokenRef2.current = token;
+
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated) {
+      realtimeFacade.disconnect();
+      dispatch(resetRealtime());
+      return;
+    }
+
+    // Read the latest token from the ref — not from the effect closure —
+    // so we always use the most current value without re-running on token change.
+    const currentToken = tokenRef2.current;
+    if (!currentToken) {
       realtimeFacade.disconnect();
       dispatch(resetRealtime());
       return;
@@ -189,7 +207,7 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
 
     const connect = async (): Promise<void> => {
       // Decode token expiry from JWT payload (no signature verification needed).
-      const parts = token.split('.');
+      const parts = currentToken.split('.');
       let tokenExpiresAt = 0;
       if (parts.length === 3) {
         try {
@@ -216,7 +234,7 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
         return result.data.accessToken;
       };
 
-      const freshToken = await getValidToken(token, tokenExpiresAt, refreshFn);
+      const freshToken = await getValidToken(currentToken, tokenExpiresAt, refreshFn);
       if (!freshToken || cancelled) return;
 
       console.log('[useRealtimeSession] connecting — token_prefix=', freshToken.slice(0, 20));
@@ -237,7 +255,8 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
     return () => {
       cancelled = true;
     };
-  }, [dispatch, isAuthenticated, realtimeFacade, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, isAuthenticated, realtimeFacade]); // ← token intentionally excluded
 
   // ---------------------------------------------------------------------------
   // Command handlers
