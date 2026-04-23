@@ -57,7 +57,7 @@ const StarRow = ({rating, color}: {rating: number; color: string}): React.JSX.El
   return (
     <>
       {stars.map((name, i) => (
-        <MaterialIcons key={i} name={name} size={22} color={color} />
+        <MaterialIcons key={i} name={name} size={23} color={color} />
       ))}
     </>
   );
@@ -191,7 +191,6 @@ export const ProfileScreen = (): React.JSX.Element => {
         {motoristaId ? (
           <View style={styles.section} testID="profile-minha-nota-card">
             <View style={styles.ratingCard}>
-              <Text style={styles.ratingLabel}>{t('avaliacoes.minhaNota.title')}</Text>
 
               {ratingLoading ? (
                 <ActivityIndicator
