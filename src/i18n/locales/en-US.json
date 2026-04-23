@@ -340,6 +340,7 @@
     "info": {
       "title": "Driver Information",
       "nomeLabel": "Driver",
+      "fallbackNome": "Driver on the way",
       "cnhLabel": "Driver License",
       "cnhCategoriaLabel": "License Category",
       "veiculoLabel": "Vehicle",

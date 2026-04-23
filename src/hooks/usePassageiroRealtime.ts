@@ -22,6 +22,7 @@ import {
   setDriverPosition,
   setMensagens,
   updateCorridaStatus,
+  setMotoristaNomeCache,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
 import type {Corrida} from '@models/Corrida';
@@ -148,6 +149,14 @@ export const usePassageiroRealtime = (): void => {
             normalizeStatus(event.payload.status);
           console.log(TAG, 'status-corrida-alterado →', mapped);
           dispatchRef.current(updateCorridaStatus(mapped as Corrida['status']));
+
+          // Cache driver name from the CorridaAceita event payload.
+          // The backend enriches this event with nomeMotorista — cache it so
+          // the UI doesn't need a REST round-trip on every render.
+          if (event.payload.status === 'CorridaAceita' && event.payload.nomeMotorista) {
+            console.log(TAG, 'caching nomeMotorista from WS →', event.payload.nomeMotorista);
+            dispatchRef.current(setMotoristaNomeCache(event.payload.nomeMotorista));
+          }
 
           // The WS payload does not carry motoristaId / veiculoId.
           // When the driver is assigned we must fetch the full corrida so

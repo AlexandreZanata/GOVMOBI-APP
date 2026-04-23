@@ -228,10 +228,19 @@ export class FrotaFacadeImpl implements IFrotaFacade {
         headers: this.authHeaders(),
       });
       if (res.status === 404) return fail({code: 'NOT_FOUND', message: 'Resource not found', statusCode: 404});
-      if (!res.ok) return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
-      const envelope = (await res.json()) as {success: boolean; data: T};
-      return ok(envelope.data);
-    } catch {
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        console.warn('[FrotaFacade] getEnvelope', path, '← HTTP', res.status, body);
+        return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
+      }
+      const raw = (await res.json()) as unknown;
+      console.log('[FrotaFacade] getEnvelope', path, '← raw:', JSON.stringify(raw));
+      // Handle both { success, data } envelope and direct object responses.
+      const envelope = raw as {success?: boolean; data?: T};
+      const result = envelope.data !== undefined ? envelope.data : (raw as T);
+      return ok(result);
+    } catch (err) {
+      console.error('[FrotaFacade] getEnvelope', path, 'EXCEPTION →', err);
       return fail({code: 'NETWORK_ERROR', message: 'Network error', retryable: true});
     }
   }

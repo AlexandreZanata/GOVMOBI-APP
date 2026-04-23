@@ -98,6 +98,21 @@ export interface ContagemNaoVisualizadasPayload {
 export interface StatusCorridaAlteradoPayload {
   corridaId: string;
   status: string;
+  /**
+   * Driver UUID — present on all status changes that involve a driver.
+   * May be absent on early status transitions (e.g. solicitada).
+   */
+  motoristaId?: string | null;
+  /**
+   * Driver name — enriched by the backend only for the `CorridaAceita` event.
+   * May be null if the backend lookup failed transiently.
+   * Frontend must display a fallback (e.g. "Motorista a caminho") when null.
+   */
+  nomeMotorista?: string | null;
+  /** Vehicle UUID — present when a driver is assigned. */
+  veiculoId?: string | null;
+  /** ETA in seconds — present on CorridaAceita. */
+  etaSegundos?: number | null;
   metadata?: Record<string, unknown>;
 }
 

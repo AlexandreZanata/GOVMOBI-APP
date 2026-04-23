@@ -385,6 +385,7 @@
     "info": {
       "title": "Informações do Motorista",
       "nomeLabel": "Motorista",
+      "fallbackNome": "Motorista a caminho",
       "cnhLabel": "CNH",
       "cnhCategoriaLabel": "Categoria CNH",
       "veiculoLabel": "Veículo",

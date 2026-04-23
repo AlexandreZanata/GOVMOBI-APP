@@ -75,16 +75,33 @@ export interface IServidoresFacade {
   getServidorById(input: GetServidorByIdInput): Promise<Result<Servidor, FacadeError>>;
 }
 
+/** Extended config with optional token getter for authenticated endpoints. */
+export interface ServidoresFacadeConfig extends FacadeConfig {
+  /** Returns the current JWT access token. Called at request time. */
+  getToken?: () => string | null;
+}
+
 /**
  * API-backed implementation. Unwraps the { success, data, timestamp } envelope.
+ * Sends Bearer auth on all requests — the backend requires authentication on
+ * /servidores/:id.
  */
 export class ServidoresFacadeImpl implements IServidoresFacade {
   private readonly mockMode: boolean;
   private readonly apiBaseUrl: string;
+  private readonly getToken: () => string | null;
 
-  constructor(config: FacadeConfig = {}) {
+  constructor(config: ServidoresFacadeConfig = {}) {
     this.mockMode = config.mockMode ?? ENV.mockMode;
     this.apiBaseUrl = config.apiBaseUrl ?? ENV.apiUrl;
+    this.getToken = config.getToken ?? (() => null);
+  }
+
+  private authHeaders(): Record<string, string> {
+    const token = this.getToken();
+    const headers: Record<string, string> = {'Content-Type': 'application/json'};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
   }
 
   public async listServidores(): Promise<Result<Servidor[], FacadeError>> {
@@ -93,8 +110,11 @@ export class ServidoresFacadeImpl implements IServidoresFacade {
       return ok(MOCK_SERVIDORES);
     }
     try {
-      const res = await fetch(`${this.apiBaseUrl}/servidores`);
+      const res = await fetch(`${this.apiBaseUrl}/servidores`, {
+        headers: this.authHeaders(),
+      });
       if (!res.ok) {
+        console.warn('[ServidoresFacade] listServidores HTTP', res.status);
         return fail({code: 'NETWORK_ERROR', message: 'Failed to load servidores', statusCode: res.status});
       }
       const envelope = (await res.json()) as {success: boolean; data: Servidor[]};
@@ -116,16 +136,31 @@ export class ServidoresFacadeImpl implements IServidoresFacade {
       return ok(found);
     }
     try {
-      const res = await fetch(`${this.apiBaseUrl}/servidores/${input.id}`);
+      console.log('[ServidoresFacade] GET /servidores/', input.id, '| auth:', !!this.getToken());
+      const res = await fetch(`${this.apiBaseUrl}/servidores/${input.id}`, {
+        headers: this.authHeaders(),
+      });
+      console.log('[ServidoresFacade] GET /servidores/', input.id, '← HTTP', res.status);
       if (res.status === 404) {
         return fail({code: 'NOT_FOUND', message: 'Servidor not found', statusCode: 404});
       }
       if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        console.warn('[ServidoresFacade] getServidorById failed →', res.status, body);
         return fail({code: 'NETWORK_ERROR', message: 'Failed to load servidor', statusCode: res.status});
       }
-      const envelope = (await res.json()) as {success: boolean; data: Servidor};
-      return ok(envelope.data);
-    } catch {
+      const raw = (await res.json()) as unknown;
+      console.log('[ServidoresFacade] getServidorById raw response →', JSON.stringify(raw));
+      // Handle both envelope { success, data } and direct object responses.
+      const envelope = raw as {success?: boolean; data?: Servidor; nome?: string};
+      const servidor = envelope.data ?? (envelope.nome ? (raw as Servidor) : null);
+      if (!servidor) {
+        console.warn('[ServidoresFacade] getServidorById — could not extract servidor from response');
+        return fail({code: 'NETWORK_ERROR', message: 'Unexpected response shape', statusCode: 200});
+      }
+      return ok(servidor);
+    } catch (err) {
+      console.error('[ServidoresFacade] getServidorById EXCEPTION →', err);
       return fail({code: 'NETWORK_ERROR', message: 'Network error loading servidor', retryable: true});
     }
   }

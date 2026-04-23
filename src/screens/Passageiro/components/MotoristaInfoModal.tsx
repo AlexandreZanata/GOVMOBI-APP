@@ -43,6 +43,13 @@ export interface MotoristaInfoModalProps {
   corridaStatus: CorridaStatus | null;
   /** Called when the user dismisses the modal. */
   onDismiss: () => void;
+  /**
+   * Driver name pre-resolved from the `CorridaAceita` WebSocket event.
+   * When provided, the modal skips the REST fetch for the driver name and
+   * displays this value immediately — avoids a round-trip on every open.
+   * Pass null to fall back to the REST fetch.
+   */
+  nomeMotorista?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -81,60 +88,88 @@ export const MotoristaInfoModal = ({
   veiculoId,
   corridaStatus,
   onDismiss,
+  nomeMotorista: nomeProp = null,
 }: MotoristaInfoModalProps): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const {frotaFacade, servidoresFacade} = useFacades();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
-  const [motoristaNome, setMotoristaNome] = useState<string | null>(null);
+  const [motoristaNome, setMotoristaNome] = useState<string | null>(nomeProp);
   const [veiculo, setVeiculo] = useState<Veiculo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync the prop into local state whenever it changes (e.g. WS cache populated
+  // after the modal was already open).
+  useEffect(() => {
+    if (nomeProp) setMotoristaNome(nomeProp);
+  }, [nomeProp]);
+
   useEffect(() => {
     if (!visible || !motoristaId) {
-      setMotoristaNome(null);
+      // Only clear name if we don't have a cached value from the prop.
+      if (!nomeProp) setMotoristaNome(null);
       setVeiculo(null);
       setError(null);
       return;
     }
 
     let cancelled = false;
-    setIsLoading(true);
+    // Only show loading spinner if we still need to fetch the name.
+    setIsLoading(!nomeProp);
     setError(null);
 
     const load = async (): Promise<void> => {
       // Step 1: get the Motorista record to obtain servidorId
+      console.log('[MotoristaInfoModal] load() → getMotoristaById', motoristaId);
       const motResult = await frotaFacade.getMotoristaById(motoristaId);
+      console.log('[MotoristaInfoModal] getMotoristaById result →', JSON.stringify({
+        data: motResult.data,
+        error: motResult.error,
+      }));
       if (cancelled) return;
 
       if (motResult.error || !motResult.data) {
-        setError(t('errors.unknownError'));
+        console.warn('[MotoristaInfoModal] getMotoristaById failed — showing error');
+        if (!nomeProp) setError(t('errors.unknownError'));
         setIsLoading(false);
         return;
       }
 
       const {servidorId} = motResult.data;
+      console.log('[MotoristaInfoModal] servidorId →', servidorId, '| veiculoId →', veiculoId, '| nomeProp →', nomeProp);
 
-      // Step 2: fetch Servidor (for nome) and Veiculo in parallel
+      // Step 2: fetch Servidor (for nome) and Veiculo in parallel.
+      // Skip the servidor fetch if we already have the name from the WS cache.
       const [srvResult, veiResult] = await Promise.all([
-        servidoresFacade.getServidorById({id: servidorId}),
+        nomeProp
+          ? Promise.resolve({data: null, error: null})
+          : servidoresFacade.getServidorById({id: servidorId}),
         veiculoId
           ? frotaFacade.getVeiculoById(veiculoId)
           : Promise.resolve({data: null, error: null}),
       ]);
 
+      console.log('[MotoristaInfoModal] getServidorById result →', JSON.stringify({
+        data: srvResult.data,
+        error: srvResult.error,
+      }));
+      console.log('[MotoristaInfoModal] getVeiculoById result →', JSON.stringify({
+        data: veiResult.data,
+        error: veiResult.error,
+      }));
+
       if (cancelled) return;
 
-      setMotoristaNome(srvResult.data?.nome ?? null);
+      if (!nomeProp) setMotoristaNome(srvResult.data?.nome ?? null);
       setVeiculo(veiResult.data ?? null);
       setIsLoading(false);
     };
 
     void load();
     return () => { cancelled = true; };
-  }, [visible, motoristaId, veiculoId, frotaFacade, servidoresFacade, t]);
+  }, [visible, motoristaId, veiculoId, nomeProp, frotaFacade, servidoresFacade, t]);
 
   const handleDismiss = useCallback(() => { onDismiss(); }, [onDismiss]);
 
@@ -180,7 +215,7 @@ export const MotoristaInfoModal = ({
                 <View style={styles.driverInfo}>
                   <Text style={styles.driverLabel}>{t('motorista.info.nomeLabel')}</Text>
                   <Text style={styles.driverName} numberOfLines={1}>
-                    {motoristaNome ?? '—'}
+                    {motoristaNome ?? t('motorista.info.fallbackNome', 'Motorista a caminho')}
                   </Text>
                 </View>
               </View>

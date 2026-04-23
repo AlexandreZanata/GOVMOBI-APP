@@ -185,6 +185,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const pendingCorridaId = useAppSelector(s => s.corrida.pendingCorridaId);
   const servidorId = useAppSelector(s => s.auth.servidorId ?? '');
   const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
+  // Driver name from WS cache — avoids REST round-trips on every render and
+  // survives tab navigation / foreground transitions.
+  const motoristaNomeCache = useAppSelector(s => s.corrida.motoristaNomeCache);
 
   // ── MotoristaInfoModal state ────────────────────────────────────────────────
   const [showMotoristaModal, setShowMotoristaModal] = useState<boolean>(false);
@@ -265,6 +268,10 @@ export const PassageiroScreen = (): React.JSX.Element => {
   }, [activeCorrida, hasActiveRide, pesquisaFacade, t]);
 
   // ── Driver name + vehicle label for active ride panel ──────────────────────
+  // Primary source: motoristaNomeCache (set by WS CorridaAceita event).
+  // Fallback: REST fetch via frotaFacade + servidoresFacade.
+  // This ensures the name is always visible even after tab navigation or
+  // app foreground transitions without an extra network round-trip.
   useEffect(() => {
     const motoristaId = activeCorrida?.motoristaId;
     const veiculoId = activeCorrida?.veiculoId;
@@ -276,24 +283,40 @@ export const PassageiroScreen = (): React.JSX.Element => {
       return;
     }
 
+    // Use the WS cache if available — no REST needed.
+    if (motoristaNomeCache) {
+      setMotoristaNome(motoristaNomeCache);
+    }
+
+    // Always fetch vehicle label (not in WS payload) and REST-fallback for name.
     let cancelled = false;
     void (async () => {
+      console.log('[PassageiroScreen] fetching driver info — motoristaId:', motoristaId, 'veiculoId:', veiculoId, 'cache:', motoristaNomeCache);
       const motResult = await frotaFacade.getMotoristaById(motoristaId);
+      console.log('[PassageiroScreen] getMotoristaById →', JSON.stringify({data: motResult.data, error: motResult.error}));
       if (cancelled || motResult.error || !motResult.data) return;
 
       const [srvResult, veiResult] = await Promise.all([
-        servidoresFacade.getServidorById({id: motResult.data.servidorId}),
+        // Only fetch name via REST if the WS cache is empty.
+        motoristaNomeCache
+          ? Promise.resolve({data: null, error: null})
+          : servidoresFacade.getServidorById({id: motResult.data.servidorId}),
         veiculoId ? frotaFacade.getVeiculoById(veiculoId) : Promise.resolve({data: null, error: null}),
       ]);
+      console.log('[PassageiroScreen] getServidorById →', JSON.stringify({data: srvResult.data, error: srvResult.error}));
+      console.log('[PassageiroScreen] getVeiculoById →', JSON.stringify({data: veiResult.data, error: veiResult.error}));
       if (cancelled) return;
 
-      setMotoristaNome(srvResult.data?.nome ?? null);
+      // Only overwrite name from REST if the cache didn't provide it.
+      if (!motoristaNomeCache && srvResult.data?.nome) {
+        setMotoristaNome(srvResult.data.nome);
+      }
       if (veiResult.data) {
         setVeiculoLabel(`${veiResult.data.modelo} · ${veiResult.data.placa}`);
       }
     })();
     return () => { cancelled = true; };
-  }, [activeCorrida?.motoristaId, activeCorrida?.veiculoId, activeCorrida?.status, hasActiveRide, frotaFacade, servidoresFacade]);
+  }, [activeCorrida?.motoristaId, activeCorrida?.veiculoId, activeCorrida?.status, hasActiveRide, motoristaNomeCache, frotaFacade, servidoresFacade]);
 
   // ── Route line for active ride ──────────────────────────────────────────────
   useEffect(() => {
@@ -609,6 +632,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
       <MotoristaInfoModal
         corridaStatus={activeCorrida?.status ?? null}
         motoristaId={activeCorrida?.motoristaId ?? null}
+        nomeMotorista={motoristaNomeCache}
         onDismiss={() => setShowMotoristaModal(false)}
         veiculoId={activeCorrida?.veiculoId ?? null}
         visible={showMotoristaModal}

@@ -65,6 +65,13 @@ export interface CorridaState {
    * that the user is already reading in real time.
    */
   isChatScreenOpen: boolean;
+  /**
+   * Driver name received from the `CorridaAceita` WebSocket event payload.
+   * Cached here so it survives tab navigation and app foreground transitions
+   * without requiring a REST round-trip on every render.
+   * Cleared when the active ride is cleared.
+   */
+  motoristaNomeCache: string | null;
 }
 
 const initialState: CorridaState = {
@@ -86,6 +93,7 @@ const initialState: CorridaState = {
   unreadMensagens: 0,
   naoVisualizadasCount: 0,
   isChatScreenOpen: false,
+  motoristaNomeCache: null,
 };
 
 /**
@@ -106,6 +114,7 @@ const corridaSlice = createSlice({
         state.unreadMensagens = 0;
         state.naoVisualizadasCount = 0;
         state.isChatScreenOpen = false;
+        state.motoristaNomeCache = null;
       }
     },
 
@@ -294,6 +303,15 @@ const corridaSlice = createSlice({
     },
 
     /**
+     * Caches the driver name received from the `CorridaAceita` WebSocket event.
+     * Avoids REST round-trips on every render and survives tab navigation.
+     * Pass null to clear (e.g. when the ride ends).
+     */
+    setMotoristaNomeCache(state, action: PayloadAction<string | null>) {
+      state.motoristaNomeCache = action.payload;
+    },
+
+    /**
      * Resets all corrida state (on logout or after ride completes).
      */
     resetCorrida() {
@@ -340,6 +358,7 @@ export const {
   resetCorrida,
   setRatingSubmitted,
   setDriverPosition,
+  setMotoristaNomeCache,
 } = corridaSlice.actions;
 
 export default corridaSlice.reducer;
