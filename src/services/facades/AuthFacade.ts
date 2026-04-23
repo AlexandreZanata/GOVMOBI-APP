@@ -101,6 +101,15 @@ export interface IAuthFacade {
    * Indicates whether a valid token exists in secure storage.
    */
   isAuthenticated(): Promise<Result<boolean, FacadeError>>;
+
+  /**
+   * Changes the authenticated user's password.
+   * POST /auth/change-password
+   * @param senhaAntiga - Current password.
+   * @param novaSenha - New password.
+   * @returns Result wrapping true on success or a FacadeError.
+   */
+  changePassword(senhaAntiga: string, novaSenha: string): Promise<Result<boolean, FacadeError>>;
 }
 
 const ok = <T>(data: T): Result<T, FacadeError> => ({data, error: null});
@@ -417,6 +426,41 @@ export class AuthFacadeImpl implements IAuthFacade {
       return ok(Boolean(token));
     } catch {
       return fail(toFacadeError('Unable to check auth state'));
+    }
+  }
+
+  /**
+   * Changes the authenticated user's password via POST /auth/change-password.
+   *
+   * @param senhaAntiga - The user's current password.
+   * @param novaSenha - The desired new password.
+   * @returns Result wrapping true on success or a FacadeError.
+   */
+  public async changePassword(
+    senhaAntiga: string,
+    novaSenha: string,
+  ): Promise<Result<boolean, FacadeError>> {
+    if (this.mockMode) {
+      await new Promise(r => setTimeout(r, 300));
+      return ok(true);
+    }
+    try {
+      const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+      const response = await fetch(`${this.apiBaseUrl}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? {Authorization: `Bearer ${token}`} : {}),
+        },
+        body: JSON.stringify({senhaAntiga, novaSenha}),
+      });
+      if (!response.ok) {
+        const errBody = (await response.json().catch(() => ({}))) as Partial<{message: string; code: string}>;
+        return fail(toFacadeError(errBody.message ?? 'Password change failed', errBody.code ?? 'UNAUTHORIZED'));
+      }
+      return ok(true);
+    } catch {
+      return fail(toFacadeError('Network error while changing password', 'NETWORK_ERROR'));
     }
   }
 

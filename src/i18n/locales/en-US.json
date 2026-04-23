@@ -148,7 +148,11 @@
     "list": {
       "title": "Public Servants",
       "searchPlaceholder": "Search by name or email",
-      "filters": {"all": "All", "active": "Active", "inactive": "Inactive"},
+      "filters": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
       "empty": {
         "title": "No servants found",
         "message": "No servants match the selected filters."
@@ -164,22 +168,41 @@
       "papeis": "Roles",
       "status": "Status"
     },
-    "status": {"active": "Active", "inactive": "Inactive"},
-    "papeis": {"USUARIO": "User", "ADMIN": "Admin", "MOTORISTA": "Driver"}
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "papeis": {
+      "USUARIO": "User",
+      "ADMIN": "Admin",
+      "MOTORISTA": "Driver"
+    }
   },
   "frota": {
     "title": "Fleet",
-    "tabs": {"veiculos": "Vehicles", "motoristas": "Drivers"},
-    "status": {"active": "Active", "inactive": "Inactive"},
+    "tabs": {
+      "veiculos": "Vehicles",
+      "motoristas": "Drivers"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
     "veiculos": {
-      "filters": {"all": "All", "active": "Active", "inactive": "Inactive"},
+      "filters": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
       "empty": {
         "title": "No vehicles found",
         "message": "No vehicles match the selected filter."
       }
     },
     "motoristas": {
-      "filters": {"all": "All"},
+      "filters": {
+        "all": "All"
+      },
       "status": {
         "DISPONIVEL": "Available",
         "EM_ROTA": "On route",
@@ -213,6 +236,18 @@
     "toast": {
       "updated": "Profile updated.",
       "updateFailed": "Could not update profile."
+    },
+    "changePassword": {
+      "sectionTitle": "Change Password",
+      "senhaAntiga": "Current password",
+      "novaSenha": "New password",
+      "confirmarSenha": "Confirm new password",
+      "submit": "Change Password",
+      "success": "Password changed successfully.",
+      "failed": "Could not change password.",
+      "wrongPassword": "Current password is incorrect.",
+      "mismatch": "Passwords do not match.",
+      "required": "Please fill in all fields."
     }
   },
   "settings": {
@@ -222,7 +257,10 @@
       "notifications": "Notifications",
       "about": "About"
     },
-    "about": {"version": "Version", "build": "Build"}
+    "about": {
+      "version": "Version",
+      "build": "Build"
+    }
   },
   "passageiro": {
     "currentLocation": "My location",
@@ -384,7 +422,9 @@
       "addressLoading": "Loading address...",
       "addressUnavailable": "Address unavailable"
     },
-    "acompanhar": {"title": "Track Ride"},
+    "acompanhar": {
+      "title": "Track Ride"
+    },
     "solicitar": {
       "title": "Request Ride",
       "modalTitle": "Ride Details",
@@ -396,7 +436,9 @@
       "observacoesPlaceholder": "e.g. Bring measuring equipment",
       "submit": "Request Ride"
     },
-    "motorista": {"title": "Driver Action"},
+    "motorista": {
+      "title": "Driver Action"
+    },
     "avaliar": {
       "title": "Rate Ride",
       "notaLabel": "Your rating",
@@ -431,7 +473,9 @@
       "passageiroABordo": "Passenger On Board",
       "finalizar": "Complete Ride"
     },
-    "recusar": {"motivoPlaceholder": "Reason for refusal (optional)"},
+    "recusar": {
+      "motivoPlaceholder": "Reason for refusal (optional)"
+    },
     "cancel": {
       "title": "Cancel Ride",
       "confirm": "Confirm cancellation",
@@ -444,7 +488,14 @@
       "title": "Complete Ride",
       "confirm": "Confirm ride completion?"
     },
-    "mensagens": {"title": "Messages", "empty": "No messages yet.", "inputPlaceholder": "Type a message...", "tickSent": "Sent", "tickRead": "Read", "tickViewed": "Viewed"},
+    "mensagens": {
+      "title": "Messages",
+      "empty": "No messages yet.",
+      "inputPlaceholder": "Type a message...",
+      "tickSent": "Sent",
+      "tickRead": "Read",
+      "tickViewed": "Viewed"
+    },
     "terminal": {
       "FINALIZADA": "Ride completed successfully.",
       "CONCLUIDA": "Ride completed successfully.",
@@ -488,7 +539,8 @@
       "totalLabel": "Total ratings",
       "errorMessage": "Could not load your rating.",
       "retry": "Retry",
-      "noRatingsYet": "You have no ratings yet."
+      "noRatingsYet": "No ratings yet.",
+      "totalCount": "({{count}})"
     }
   },
   "pesquisa": {

@@ -195,6 +195,24 @@ export class AuthFacadeMock implements IAuthFacade {
   }
 
   /**
+   * Simulates a password change — always succeeds in mock mode.
+   *
+   * @param _senhaAntiga - Ignored in mock mode.
+   * @param _novaSenha - Ignored in mock mode.
+   * @returns True on success.
+   */
+  public async changePassword(
+    _senhaAntiga: string,
+    _novaSenha: string,
+  ): Promise<Result<boolean, FacadeError>> {
+    await delay(300);
+    if (shouldFail('auth.changePassword')) {
+      return fail(toError('Mock change-password failed', 'UNAUTHORIZED'));
+    }
+    return ok(true);
+  }
+
+  /**
    * Maps shared User contract into existing facade session contract.
    *
    * @param user Shared user contract.

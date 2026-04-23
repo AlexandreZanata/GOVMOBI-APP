@@ -196,6 +196,42 @@ export const createProfileStyles = (theme: Theme) => {
       minWidth: 44,
     },
 
+    // ── Password submit row ───────────────────────────────────────────────────
+    pwdSubmitRow: {
+      justifyContent: 'center',
+    },
+
+    // ── Inline star rating (Minha Nota) ───────────────────────────────────────
+    ratingCard: {
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[4],
+    },
+    ratingLabel: {
+      ...typo.scale.caption,
+      color: design.textTertiary,
+      marginBottom: spacing[2],
+    },
+    ratingStarsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing[1],
+    },
+    ratingScore: {
+      ...typo.scale.labelLg,
+      color: design.textPrimary,
+      marginLeft: spacing[2],
+    },
+    ratingCount: {
+      ...typo.scale.caption,
+      color: design.textTertiary,
+      marginLeft: spacing[1],
+    },
+    ratingEmpty: {
+      ...typo.scale.caption,
+      color: design.textTertiary,
+      marginTop: spacing[1],
+    },
+
     // ── Danger row (sign out) ─────────────────────────────────────────────────
     dangerRow: {
       alignItems: 'center',

@@ -18,9 +18,12 @@ export interface Avaliacao {
 
 /**
  * Aggregated rating data for a driver.
+ * Field names match the mobile app model — the facade maps from the API's
+ * `notaMedia` field to `mediaNotas` at the boundary.
  */
 export interface AvaliacaoSummary {
   motoristaId: string;
+  /** Average rating in [1, 5]. Mapped from API field `notaMedia`. */
   mediaNotas: number;
   totalAvaliacoes: number;
 }

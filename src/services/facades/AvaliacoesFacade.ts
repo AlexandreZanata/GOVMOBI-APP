@@ -64,8 +64,14 @@ export class AvaliacoesFacadeImpl implements IAvaliacoesFacade {
       if (!res.ok) {
         return fail({code: 'NETWORK_ERROR', message: 'Request failed', statusCode: res.status});
       }
-      const envelope = (await res.json()) as {success: boolean; data: AvaliacaoSummary};
-      return ok(envelope.data);
+      // API returns { notaMedia, totalAvaliacoes } — map to app model field name.
+      const raw = (await res.json()) as {notaMedia?: number; mediaNotas?: number; totalAvaliacoes: number};
+      const summary: AvaliacaoSummary = {
+        motoristaId: '',
+        mediaNotas: raw.notaMedia ?? raw.mediaNotas ?? 0,
+        totalAvaliacoes: raw.totalAvaliacoes,
+      };
+      return ok(summary);
     } catch {
       return fail({code: 'NETWORK_ERROR', message: 'Network error', retryable: true});
     }

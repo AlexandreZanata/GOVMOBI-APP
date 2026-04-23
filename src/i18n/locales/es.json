@@ -148,7 +148,11 @@
     "list": {
       "title": "Servidores",
       "searchPlaceholder": "Buscar por nombre o email",
-      "filters": {"all": "Todos", "active": "Activos", "inactive": "Inactivos"},
+      "filters": {
+        "all": "Todos",
+        "active": "Activos",
+        "inactive": "Inactivos"
+      },
       "empty": {
         "title": "Sin servidores",
         "message": "Ningun servidor coincide con los filtros."
@@ -164,22 +168,41 @@
       "papeis": "Roles",
       "status": "Estado"
     },
-    "status": {"active": "Activo", "inactive": "Inactivo"},
-    "papeis": {"USUARIO": "Usuario", "ADMIN": "Admin", "MOTORISTA": "Conductor"}
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "papeis": {
+      "USUARIO": "Usuario",
+      "ADMIN": "Admin",
+      "MOTORISTA": "Conductor"
+    }
   },
   "frota": {
     "title": "Flota",
-    "tabs": {"veiculos": "Vehiculos", "motoristas": "Conductores"},
-    "status": {"active": "Activo", "inactive": "Inactivo"},
+    "tabs": {
+      "veiculos": "Vehiculos",
+      "motoristas": "Conductores"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
     "veiculos": {
-      "filters": {"all": "Todos", "active": "Activos", "inactive": "Inactivos"},
+      "filters": {
+        "all": "Todos",
+        "active": "Activos",
+        "inactive": "Inactivos"
+      },
       "empty": {
         "title": "Sin vehiculos",
         "message": "Ningun vehiculo coincide con el filtro."
       }
     },
     "motoristas": {
-      "filters": {"all": "Todos"},
+      "filters": {
+        "all": "Todos"
+      },
       "status": {
         "DISPONIVEL": "Disponible",
         "EM_ROTA": "En ruta",
@@ -213,6 +236,18 @@
     "toast": {
       "updated": "Perfil actualizado.",
       "updateFailed": "No se pudo actualizar el perfil."
+    },
+    "changePassword": {
+      "sectionTitle": "Cambiar Contrasena",
+      "senhaAntiga": "Contrasena actual",
+      "novaSenha": "Nueva contrasena",
+      "confirmarSenha": "Confirmar nueva contrasena",
+      "submit": "Cambiar Contrasena",
+      "success": "Contrasena cambiada con exito.",
+      "failed": "No se pudo cambiar la contrasena.",
+      "wrongPassword": "La contrasena actual es incorrecta.",
+      "mismatch": "Las contrasenas no coinciden.",
+      "required": "Complete todos los campos."
     }
   },
   "settings": {
@@ -222,7 +257,10 @@
       "notifications": "Notificaciones",
       "about": "Acerca de"
     },
-    "about": {"version": "Version", "build": "Build"}
+    "about": {
+      "version": "Version",
+      "build": "Build"
+    }
   },
   "passageiro": {
     "currentLocation": "Mi ubicación",
@@ -374,7 +412,9 @@
       "addressLoading": "Cargando dirección...",
       "addressUnavailable": "Dirección no disponible"
     },
-    "acompanhar": {"title": "Seguir Viaje"},
+    "acompanhar": {
+      "title": "Seguir Viaje"
+    },
     "solicitar": {
       "title": "Solicitar Viaje",
       "modalTitle": "Detalles del Viaje",
@@ -386,7 +426,9 @@
       "observacoesPlaceholder": "Ej: Llevar material de medición",
       "submit": "Solicitar Viaje"
     },
-    "motorista": {"title": "Acción del Conductor"},
+    "motorista": {
+      "title": "Acción del Conductor"
+    },
     "avaliar": {
       "title": "Calificar Viaje",
       "notaLabel": "Tu calificación",
@@ -421,7 +463,9 @@
       "passageiroABordo": "Pasajero a Bordo",
       "finalizar": "Finalizar Viaje"
     },
-    "recusar": {"motivoPlaceholder": "Motivo del rechazo (opcional)"},
+    "recusar": {
+      "motivoPlaceholder": "Motivo del rechazo (opcional)"
+    },
     "cancel": {
       "title": "Cancelar Viaje",
       "confirm": "Confirmar cancelación",
@@ -434,7 +478,14 @@
       "title": "Finalizar Viaje",
       "confirm": "¿Confirmar finalización del viaje?"
     },
-    "mensagens": {"title": "Mensajes", "empty": "Sin mensajes aún.", "inputPlaceholder": "Escribe un mensaje...", "tickSent": "Enviado", "tickRead": "Leído", "tickViewed": "Visto"},
+    "mensagens": {
+      "title": "Mensajes",
+      "empty": "Sin mensajes aún.",
+      "inputPlaceholder": "Escribe un mensaje...",
+      "tickSent": "Enviado",
+      "tickRead": "Leído",
+      "tickViewed": "Visto"
+    },
     "terminal": {
       "FINALIZADA": "Viaje finalizado con éxito.",
       "CONCLUIDA": "Viaje completado con éxito.",
@@ -478,7 +529,8 @@
       "totalLabel": "Total de calificaciones",
       "errorMessage": "No se pudo cargar tu calificación.",
       "retry": "Reintentar",
-      "noRatingsYet": "Aún no tienes calificaciones."
+      "noRatingsYet": "Sin calificaciones aún.",
+      "totalCount": "({{count}})"
     }
   },
   "pesquisa": {

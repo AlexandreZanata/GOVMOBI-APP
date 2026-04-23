@@ -27,7 +27,8 @@ import type {CompositeNavigationProp} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useMotorista} from './useMotorista';
-import {useMotoristaRealtime} from './useMotoristaRealtime';import {NovaCorridaModal} from './components/NovaCorridaModal';
+import {useMotoristaRealtime} from './useMotoristaRealtime';
+import {NovaCorridaModal} from './components/NovaCorridaModal';
 import {createMotoristaStyles, MotoristaColors as C} from './MotoristaScreen.styles';
 import {useTheme} from '../../theme';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
@@ -63,7 +64,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
   const styles = useMemo(() => createMotoristaStyles(theme), [theme]);
   const navigation = useNavigation<MotoristaNavProp>();
 
-  const {corridaFacade, pesquisaFacade} = useFacades();
+  const {pesquisaFacade} = useFacades();
   const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
 
   const {

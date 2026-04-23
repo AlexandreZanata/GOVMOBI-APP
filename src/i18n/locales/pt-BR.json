@@ -255,6 +255,18 @@
     "toast": {
       "updated": "Perfil atualizado com sucesso.",
       "updateFailed": "Nao foi possivel atualizar o perfil."
+    },
+    "changePassword": {
+      "sectionTitle": "Alterar Senha",
+      "senhaAntiga": "Senha atual",
+      "novaSenha": "Nova senha",
+      "confirmarSenha": "Confirmar nova senha",
+      "submit": "Alterar Senha",
+      "success": "Senha alterada com sucesso.",
+      "failed": "Nao foi possivel alterar a senha.",
+      "wrongPassword": "Senha atual incorreta.",
+      "mismatch": "As senhas nao coincidem.",
+      "required": "Preencha todos os campos."
     }
   },
   "settings": {
@@ -545,7 +557,8 @@
       "totalLabel": "Total de avaliações",
       "errorMessage": "Não foi possível carregar sua nota.",
       "retry": "Tentar novamente",
-      "noRatingsYet": "Você ainda não possui avaliações."
+      "noRatingsYet": "Sem avaliações ainda.",
+      "totalCount": "({{count}})"
     }
   },
   "pesquisa": {
