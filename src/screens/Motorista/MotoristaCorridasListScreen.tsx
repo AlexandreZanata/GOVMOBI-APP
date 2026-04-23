@@ -77,8 +77,6 @@ const RideListCard = React.memo(({item, onPress, theme, t}: RideCardProps) => {
       style={({pressed}) => [s.card, pressed && s.cardPressed]}
       testID={`ride-card-${item.id}`}>
 
-      <View style={[s.statusBar, {backgroundColor: dot}]} />
-
       <View style={s.body}>
         <View style={s.topRow}>
           <View style={[s.statusPill, {backgroundColor: dot}]}>
@@ -103,8 +101,6 @@ const RideListCard = React.memo(({item, onPress, theme, t}: RideCardProps) => {
           </Text>
         </View>
       </View>
-
-      <MaterialIcons name="chevron-right" size={20} color={theme.design.textTertiary} style={s.chevron} />
     </Pressable>
   );
 });
