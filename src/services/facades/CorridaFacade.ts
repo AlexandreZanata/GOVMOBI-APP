@@ -60,10 +60,34 @@ interface RawCorridaListItem {
   passageiroId: string;
   motoristaId: string | null;
   veiculoId?: string | null;
-  origem: {lat: number; lng: number};
-  destino: {lat: number; lng: number};
+  origem: {lat: number; lng: number; endereco?: string};
+  destino: {lat: number; lng: number; endereco?: string};
+  motivoServico?: string;
   distanciaMetros?: number;
   duracaoSegundos?: number;
+  timestamps?: {
+    solicitadaEm?: string;
+    aceitaEm?: string;
+    iniciadaEm?: string;
+    embarqueEm?: string;
+    finalizadaEm?: string;
+    canceladaEm?: string;
+  };
+  motorista?: {
+    id: string;
+    servidorId?: string;
+    cnhCategoria?: string;
+    statusOperacional?: string;
+    notaMedia?: number;
+    totalAvaliacoes?: number;
+  };
+  veiculo?: {
+    id: string;
+    placa?: string;
+    modelo?: string;
+    ano?: number;
+    tipo?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -113,16 +137,43 @@ interface RawCorrida {
   status: string;
   motivoServico?: string;
   observacoes?: string;
+  distanciaMetros?: number;
+  duracaoSegundos?: number;
+  canceladoPor?: string | null;
+  motivoCancelamento?: string | null;
   createdAt?: string;
   updatedAt?: string;
-  // Nested shape (backend canonical)
-  origem?: {lat: number; lng: number};
-  destino?: {lat: number; lng: number};
+  // Nested shape (backend canonical) — may include endereco
+  origem?: {lat: number; lng: number; endereco?: string};
+  destino?: {lat: number; lng: number; endereco?: string};
   // Flat shape (some endpoints)
   origemLat?: number;
   origemLng?: number;
   destinoLat?: number;
   destinoLng?: number;
+  timestamps?: {
+    solicitadaEm?: string;
+    aceitaEm?: string;
+    iniciadaEm?: string;
+    embarqueEm?: string;
+    finalizadaEm?: string;
+    canceladaEm?: string;
+  };
+  motorista?: {
+    id: string;
+    servidorId?: string;
+    cnhCategoria?: string;
+    statusOperacional?: string;
+    notaMedia?: number;
+    totalAvaliacoes?: number;
+  };
+  veiculo?: {
+    id: string;
+    placa?: string;
+    modelo?: string;
+    ano?: number;
+    tipo?: string;
+  };
 }
 
 /**
@@ -139,11 +190,18 @@ const normalizeCorrida = (raw: RawCorrida): Corrida => ({
   veiculoId: raw.veiculoId ?? null,
   origemLat: raw.origemLat ?? raw.origem?.lat ?? 0,
   origemLng: raw.origemLng ?? raw.origem?.lng ?? 0,
+  origemEndereco: raw.origem?.endereco,
   destinoLat: raw.destinoLat ?? raw.destino?.lat ?? 0,
   destinoLng: raw.destinoLng ?? raw.destino?.lng ?? 0,
+  destinoEndereco: raw.destino?.endereco,
   status: normalizeStatus(raw.status),
   motivoServico: raw.motivoServico ?? '',
   observacoes: raw.observacoes,
+  distanciaMetros: raw.distanciaMetros,
+  duracaoSegundos: raw.duracaoSegundos,
+  timestamps: raw.timestamps,
+  motorista: raw.motorista,
+  veiculo: raw.veiculo,
   createdAt: raw.createdAt ?? new Date().toISOString(),
   updatedAt: raw.updatedAt ?? new Date().toISOString(),
 });
@@ -658,10 +716,17 @@ export class CorridaFacadeImpl implements ICorridaFacade {
           veiculoId: item.veiculoId ?? null,
           origemLat: item.origem.lat,
           origemLng: item.origem.lng,
+          origemEndereco: item.origem.endereco,
           destinoLat: item.destino.lat,
           destinoLng: item.destino.lng,
+          destinoEndereco: item.destino.endereco,
           status: normalizeStatus(item.status),
-          motivoServico: '',
+          motivoServico: item.motivoServico ?? '',
+          distanciaMetros: item.distanciaMetros,
+          duracaoSegundos: item.duracaoSegundos,
+          timestamps: item.timestamps,
+          motorista: item.motorista,
+          veiculo: item.veiculo,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         })),

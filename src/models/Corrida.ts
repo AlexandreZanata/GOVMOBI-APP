@@ -96,10 +96,44 @@ export interface Corrida {
   veiculoId: string | null;
   origemLat: number;
   origemLng: number;
+  /** Human-readable origin address from the API. */
+  origemEndereco?: string;
   destinoLat: number;
   destinoLng: number;
+  /** Human-readable destination address from the API. */
+  destinoEndereco?: string;
   motivoServico: string;
   observacoes?: string;
+  /** Distance in metres. */
+  distanciaMetros?: number;
+  /** Duration in seconds. */
+  duracaoSegundos?: number;
+  /** Lifecycle timestamps from the API. */
+  timestamps?: {
+    solicitadaEm?: string;
+    aceitaEm?: string;
+    iniciadaEm?: string;
+    embarqueEm?: string;
+    finalizadaEm?: string;
+    canceladaEm?: string;
+  };
+  /** Driver summary embedded in the list response. */
+  motorista?: {
+    id: string;
+    servidorId?: string;
+    cnhCategoria?: string;
+    statusOperacional?: string;
+    notaMedia?: number;
+    totalAvaliacoes?: number;
+  };
+  /** Vehicle summary embedded in the list response. */
+  veiculo?: {
+    id: string;
+    placa?: string;
+    modelo?: string;
+    ano?: number;
+    tipo?: string;
+  };
   status: CorridaStatus;
   createdAt: string;
   updatedAt: string;
