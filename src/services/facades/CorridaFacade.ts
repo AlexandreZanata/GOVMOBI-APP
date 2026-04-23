@@ -492,6 +492,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
         headers: this.authHeaders(),
       });
       if (!response.ok) {
+        console.warn('[CorridaFacade] getContexto HTTP', response.status);
         return fail(toError('Unable to fetch corrida context', 'NETWORK_ERROR', response.status));
       }
       const raw = (await response.json()) as {
@@ -502,16 +503,19 @@ export class CorridaFacadeImpl implements ICorridaFacade {
           origem: {lat: number; lng: number};
           destino: {lat: number; lng: number};
           motoristaId: string | null;
+          veiculoId?: string | null;
           passageiroId: string;
         } | null;
       };
+
+      console.log('[CorridaFacade] getContexto corridaAtiva →', JSON.stringify(raw.corridaAtiva));
 
       const corridaAtiva: Corrida | null = raw.corridaAtiva
         ? {
             id: raw.corridaAtiva.id,
             passageiroId: raw.corridaAtiva.passageiroId,
             motoristaId: raw.corridaAtiva.motoristaId,
-            veiculoId: null,
+            veiculoId: raw.corridaAtiva.veiculoId ?? null,
             origemLat: raw.corridaAtiva.origem.lat,
             origemLng: raw.corridaAtiva.origem.lng,
             destinoLat: raw.corridaAtiva.destino.lat,
@@ -524,7 +528,8 @@ export class CorridaFacadeImpl implements ICorridaFacade {
         : null;
 
       return ok({usuario: raw.usuario, corridaAtiva});
-    } catch {
+    } catch (err) {
+      console.error('[CorridaFacade] getContexto EXCEPTION →', err);
       return fail(toError('Network error while fetching corrida context', 'NETWORK_ERROR'));
     }
   }
@@ -544,9 +549,19 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       });
       if (response.status === 404) return ok(null);
       if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
-      const raw = (await response.json()) as RawCorrida;
+
+      // Backend returns { corridaAtiva: RawCorrida | null }
+      const body = (await response.json()) as {corridaAtiva?: RawCorrida | null} | RawCorrida;
+
+      // Handle both envelope shape { corridaAtiva } and direct corrida shape
+      const raw = 'corridaAtiva' in body
+        ? (body as {corridaAtiva: RawCorrida | null}).corridaAtiva
+        : (body as RawCorrida);
+
+      if (!raw) return ok(null);
       return ok(normalizeCorrida(raw));
-    } catch {
+    } catch (err) {
+      console.error('[CorridaFacade] getActiveCorrida EXCEPTION →', err);
       return fail(toError('Network error', 'NETWORK_ERROR'));
     }
   }

@@ -93,8 +93,9 @@ export interface IAuthFacade {
    * Uses the stored access token. Call after login and on cold start.
    * Returns the raw MeResponse so callers can access driver-specific fields
    * (`motoristaId`, `municipioId`) for role-based routing.
+   * @param accessToken - Optional token override (prefers over SecureStore).
    */
-  getMe(): Promise<Result<MeResponse, FacadeError>>;
+  getMe(accessToken?: string): Promise<Result<MeResponse, FacadeError>>;
 
   /**
    * Indicates whether a valid token exists in secure storage.
@@ -363,12 +364,13 @@ export class AuthFacadeImpl implements IAuthFacade {
 
   /**
    * Fetches the authenticated user profile from GET /auth/me.
-   * Requires a valid access token in SecureStore.
-   * Returns the raw MeResponse — callers map to User as needed.
+   * Prefers the provided `accessToken` over SecureStore to avoid stale reads
+   * after a token refresh that updated Redux but not yet SecureStore.
    *
+   * @param accessToken - Optional token override. Falls back to SecureStore.
    * @returns Raw MeResponse from the server.
    */
-  public async getMe(): Promise<Result<MeResponse, FacadeError>> {
+  public async getMe(accessToken?: string): Promise<Result<MeResponse, FacadeError>> {
     if (this.mockMode) {
       await delay(120);
       const user = this.currentUser ?? createMockUser();
@@ -381,8 +383,8 @@ export class AuthFacadeImpl implements IAuthFacade {
     }
 
     try {
-      const accessToken = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
-      if (!accessToken) {
+      const token = accessToken ?? await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+      if (!token) {
         return fail(toFacadeError('No access token available', 'UNAUTHORIZED'));
       }
 
@@ -390,7 +392,7 @@ export class AuthFacadeImpl implements IAuthFacade {
         method: 'GET',
         headers: {
           Accept: 'application/json',
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -399,7 +401,6 @@ export class AuthFacadeImpl implements IAuthFacade {
       }
 
       const me = (await response.json()) as MeResponse;
-      // Keep currentUser in sync for getCurrentUser() calls
       this.currentUser = userFromMe(me);
       return ok(me);
     } catch {

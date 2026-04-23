@@ -142,12 +142,14 @@ export const useAuthSession = (): void => {
 
   /**
    * Calls `getMe()` and dispatches user + role fields into Redux.
-   * Always runs on cold start to ensure `motoristaId` is current.
+   * Passes the current Redux token directly to avoid stale SecureStore reads.
    *
    * @returns True on success, false on failure (session ended).
    */
   const doGetMe = async (): Promise<boolean> => {
-    const meResult = await authFacade.getMe();
+    // Pass the current Redux token so getMe() doesn't read a stale SecureStore value.
+    const currentToken = token;
+    const meResult = await authFacade.getMe(currentToken ?? undefined);
     if (!meResult.data) {
       logger.warn('useAuthSession', 'getMe failed — ending session');
       dispatch(logout());

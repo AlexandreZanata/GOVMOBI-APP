@@ -42,6 +42,8 @@ export const useRideReconnection = (): void => {
 
   const motoristaId = useAppSelector(state => state.auth.motoristaId);
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
+  // Read activeCorrida so the REST fallback can skip when state is already hydrated.
+  const activeCorrida = useAppSelector(state => state.corrida.activeCorrida);
 
   // ── Stable refs — avoid stale closures in async callbacks ──────────────────
   const motoristaIdRef = useRef(motoristaId);
@@ -49,6 +51,9 @@ export const useRideReconnection = (): void => {
 
   const isAuthenticatedRef = useRef(isAuthenticated);
   isAuthenticatedRef.current = isAuthenticated;
+
+  const activeCorridaRef = useRef(activeCorrida);
+  activeCorridaRef.current = activeCorrida;
 
   const dispatchRef = useRef(dispatch);
   dispatchRef.current = dispatch;
@@ -68,6 +73,17 @@ export const useRideReconnection = (): void => {
   const handleRestFallback = async (): Promise<void> => {
     if (!isAuthenticatedRef.current) return;
 
+    // If useCorridaContexto already seeded an active non-terminal ride,
+    // skip the REST call — the state is already correct.
+    const localCorrida = activeCorridaRef.current;
+    if (localCorrida && !TERMINAL_STATUSES.has(localCorrida.status)) {
+      console.log(TAG, 'REST fallback skipped — active ride already in Redux:', localCorrida.id);
+      // Still ensure the WS room subscription is active.
+      await realtimeFacadeRef.current.subscribeToCorrida({corridaId: localCorrida.id});
+      dispatchRef.current(addRealtimeSubscription(localCorrida.id));
+      return;
+    }
+
     console.log(TAG, 'REST fallback → GET /corridas/ativa');
     const result = await corridaFacadeRef.current.getActiveCorrida();
     if (result.error) {
@@ -80,12 +96,10 @@ export const useRideReconnection = (): void => {
 
     if (corrida && !TERMINAL_STATUSES.has(corrida.status)) {
       console.log(TAG, 'REST fallback — active ride found, re-subscribing →', corrida.id);
-      // Re-subscribe to the ride room so realtime events resume.
       await realtimeFacadeRef.current.subscribeToCorrida({corridaId: corrida.id});
       dispatchRef.current(addRealtimeSubscription(corrida.id));
       dispatchRef.current(setPendingCorridaId(corrida.id));
     } else {
-      // No active ride — driver must re-enter the dispatch queue.
       dispatchRef.current(setPendingCorridaId(null));
       if (motoristaIdRef.current) {
         console.log(TAG, 'REST fallback — no active ride, emitting ficar-disponivel');

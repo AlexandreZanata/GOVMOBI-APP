@@ -215,7 +215,7 @@ export const MotoristaInfoModal = ({
                 <View style={styles.driverInfo}>
                   <Text style={styles.driverLabel}>{t('motorista.info.nomeLabel')}</Text>
                   <Text style={styles.driverName} numberOfLines={1}>
-                    {motoristaNome ?? t('motorista.info.fallbackNome', 'Motorista a caminho')}
+                    {motoristaNome ?? t('motorista.info.fallbackNome')}
                   </Text>
                 </View>
               </View>

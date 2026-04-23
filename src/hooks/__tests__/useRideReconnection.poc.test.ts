@@ -57,6 +57,7 @@ jest.mock('@store/index', () => ({
   useAppSelector: (selector: (s: unknown) => unknown) =>
     selector({
       auth: {motoristaId: 'driver-1', isAuthenticated: true},
+      corrida: {activeCorrida: null},
     }),
 }));
 
