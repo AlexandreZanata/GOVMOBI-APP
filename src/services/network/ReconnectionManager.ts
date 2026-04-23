@@ -325,14 +325,14 @@ export class ReconnectionManager {
       return;
     }
 
-    // 2. Attempt to connect
+    // 2. Register connection watcher BEFORE calling connect so we don't miss
+    //    a synchronous status emission from the mock/facade.
+    const connectionPromise = this.waitForConnection();
+
+    // 3. Attempt to connect
     try {
       this.facade.connect(token);
-      // Connection is async — success is signalled by the 'connected' event
-      // which the caller wires up via onReconnected. We treat the connect()
-      // call itself as the attempt; the facade's own Socket.io layer handles
-      // the TCP handshake timeout.
-      await this.waitForConnection();
+      await connectionPromise;
 
       // 3. Reconnect succeeded
       console.log(TAG, `reconnect succeeded after ${this.retryCount} attempt(s)`);
@@ -376,9 +376,9 @@ export class ReconnectionManager {
         if (status === 'connected') {
           cleanup();
           resolve();
-        } else if (status === 'error' || (status === 'disconnected' && error)) {
+        } else if (status === 'error' || status === 'disconnected') {
           cleanup();
-          reject(new Error(error?.message ?? 'Connection failed'));
+          reject(new Error(error?.message ?? `Connection failed with status: ${status}`));
         }
       });
 
@@ -405,7 +405,16 @@ export class ReconnectionManager {
 
   private notifyReconnected(): void {
     this.reconnectedCallbacks.forEach(cb => {
-      void Promise.resolve(cb());
+      try {
+        const result = cb();
+        if (result instanceof Promise) {
+          result.catch(err => {
+            console.warn(TAG, 'onReconnected callback threw:', err);
+          });
+        }
+      } catch (err) {
+        console.warn(TAG, 'onReconnected callback threw:', err);
+      }
     });
   }
 }

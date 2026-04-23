@@ -142,8 +142,10 @@
     },
     "network": {
       "offline": "Voce esta offline",
+      "offlineSubtitle": "Verifique sua conexão com a internet.",
       "reconnecting_plain": "Reconectando...",
       "reconnecting": "Reconectando... (tentativa {{count}})",
+      "reconnectingSubtitle": "Aguarde enquanto restabelecemos a conexão.",
       "recovered": "Conexao restaurada"
     }
   },

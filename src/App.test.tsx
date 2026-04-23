@@ -8,6 +8,13 @@ import App from './App';
 jest.mock('./hooks', () => ({
   useAuthSession: jest.fn(),
   useNetworkStatus: jest.fn(() => true),
+  useNetworkManager: jest.fn(() => ({
+    isOnline: true,
+    connectionType: 'WIFI',
+    wsStatus: 'connected',
+    retryCount: 0,
+    reconnectNow: jest.fn(),
+  })),
   useNotifications: jest.fn(() => ({permissionGranted: false, fcmToken: null})),
   useRealtimeSession: jest.fn(),
   useAppLocationBootstrap: jest.fn(),
@@ -72,8 +79,20 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 jest.mock('expo-network', () => ({
+  NetworkStateType: {
+    WIFI: 'WIFI',
+    CELLULAR: 'CELLULAR',
+    ETHERNET: 'ETHERNET',
+    BLUETOOTH: 'BLUETOOTH',
+    WIMAX: 'WIMAX',
+    VPN: 'VPN',
+    UNKNOWN: 'UNKNOWN',
+    NONE: 'NONE',
+  },
   getNetworkStateAsync: jest.fn(async () => ({
     isConnected: true,
+    isInternetReachable: true,
+    type: 'WIFI',
   })),
   addNetworkStateListener: jest.fn(
     (listener: (state: {isConnected: boolean}) => void) => {

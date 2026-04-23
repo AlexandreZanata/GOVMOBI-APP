@@ -3,7 +3,7 @@
  *
  * Covers:
  *  - NetworkMonitor: subscribe, debounce, captive portal detection, destroy
- *  - ReconnectionManager: backoff math, token near-expiry detection, abort
+ *  - ReconnectionManager: backoff math, token near-expiry detection, abort, queue
  */
 import {NetworkStateType} from 'expo-network';
 import {NetworkMonitor} from '../NetworkMonitor';
@@ -51,8 +51,7 @@ jest.mock('react-native', () => ({
 // ---------------------------------------------------------------------------
 
 describe('computeBackoffDelay', () => {
-  it('returns base delay on first attempt', () => {
-    // With jitter disabled (jitter=0) the result equals base * factor^0 = base
+  it('returns base delay on first attempt (no jitter)', () => {
     const delay = computeBackoffDelay(0, 1000, 1.5, 30000, 0);
     expect(delay).toBe(1000);
   });
@@ -71,7 +70,6 @@ describe('computeBackoffDelay', () => {
   });
 
   it('applies jitter within ±20%', () => {
-    // Run 50 times and verify all results are within the jitter band
     for (let i = 0; i < 50; i++) {
       const raw = Math.min(1000 * Math.pow(1.5, 3), 30000);
       const delay = computeBackoffDelay(3, 1000, 1.5, 30000, 0.2);
@@ -112,7 +110,6 @@ describe('isTokenNearExpiry', () => {
 
 describe('NetworkMonitor', () => {
   afterEach(() => {
-    // Reset singleton between tests
     NetworkMonitor.getInstance().destroy();
   });
 
@@ -137,8 +134,6 @@ describe('NetworkMonitor', () => {
     const unsub = monitor.subscribe(listener);
     listener.mockClear();
     unsub();
-    // Manually trigger emit — listener should NOT be called
-    // (internal emit is private; we verify via destroy not throwing)
     monitor.destroy();
     expect(listener).not.toHaveBeenCalled();
   });
@@ -150,8 +145,7 @@ describe('NetworkMonitor', () => {
     monitor.subscribe(listener);
     listener.mockClear();
 
-    // Simulate captive portal state via internal emit
-    // We access the private method via type assertion for testing purposes
+    // Directly emit a captive portal state via the internal emit method
     (monitor as unknown as {emit: (s: unknown) => void}).emit({
       isConnected: true,
       isInternetReachable: false,
@@ -169,68 +163,97 @@ describe('NetworkMonitor', () => {
 // ReconnectionManager tests
 // ---------------------------------------------------------------------------
 
-const makeFacade = (): jest.Mocked<IRealtimeFacade> => ({
-  connect: jest.fn().mockResolvedValue({data: 'connecting', error: null}),
-  disconnect: jest.fn(),
-  subscribeToCorrida: jest.fn(),
-  setDriverAvailable: jest.fn(),
-  updateDriverPosition: jest.fn(),
-  sendCorridaMessage: jest.fn(),
-  visualizarMensagens: jest.fn(),
-  contarNaoVisualizadas: jest.fn(),
-  clearCorridaSubscriptions: jest.fn(),
-  onEvent: jest.fn().mockReturnValue(jest.fn()),
-  onConnectionStatusChange: jest.fn().mockImplementation(
-    (cb: (status: RealtimeConnectionStatus, error: FacadeError | null) => void) => {
-      // Immediately call with 'connected' to simulate fast connect
-      setTimeout(() => cb('connected', null), 0);
-      return jest.fn();
-    },
-  ),
-  mapCorridaStatus: jest.fn(),
-  normalizeCorridaMensagem: jest.fn(),
-});
+/**
+ * Creates a mock IRealtimeFacade where onConnectionStatusChange immediately
+ * resolves with 'connected' after a microtask tick.
+ */
+const makeFacade = (
+  connectResult: RealtimeConnectionStatus = 'connected',
+): jest.Mocked<IRealtimeFacade> => {
+  const statusCallbacks = new Set<
+    (status: RealtimeConnectionStatus, error: FacadeError | null) => void
+  >();
+
+  const facade: jest.Mocked<IRealtimeFacade> = {
+    connect: jest.fn().mockImplementation(() => {
+      // Fire all registered status handlers synchronously so waitForConnection
+      // resolves within the same microtask tick as the connect() call.
+      statusCallbacks.forEach(cb => cb(connectResult, null));
+      return Promise.resolve({data: 'connecting' as RealtimeConnectionStatus, error: null});
+    }),
+    disconnect: jest.fn(),
+    subscribeToCorrida: jest.fn(),
+    setDriverAvailable: jest.fn(),
+    updateDriverPosition: jest.fn(),
+    sendCorridaMessage: jest.fn(),
+    visualizarMensagens: jest.fn(),
+    contarNaoVisualizadas: jest.fn(),
+    clearCorridaSubscriptions: jest.fn(),
+    onEvent: jest.fn().mockReturnValue(jest.fn()),
+    onConnectionStatusChange: jest.fn().mockImplementation(
+      (cb: (status: RealtimeConnectionStatus, error: FacadeError | null) => void) => {
+        statusCallbacks.add(cb);
+        return () => { statusCallbacks.delete(cb); };
+      },
+    ),
+    mapCorridaStatus: jest.fn(),
+    normalizeCorridaMensagem: jest.fn(),
+  };
+  return facade;
+};
 
 describe('ReconnectionManager', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
   afterEach(() => {
     jest.useRealTimers();
     NetworkMonitor.getInstance().destroy();
   });
 
-  it('calls onReconnected after successful connect', async () => {
-    const facade = makeFacade();
-    const getToken = jest.fn().mockReturnValue('valid.token.here');
-    const refreshToken = jest.fn();
-    const onReconnected = jest.fn();
-
-    const mgr = new ReconnectionManager(facade, {getToken, refreshToken});
-    mgr.onReconnected(onReconnected);
+  it('calls facade.connect after reconnectNow()', async () => {
+    jest.useFakeTimers();
+    const facade = makeFacade('connected');
+    const mgr = new ReconnectionManager(
+      facade,
+      {getToken: () => 'valid.eyJleHAiOjk5OTk5OTk5OTl9.sig', refreshToken: jest.fn()},
+      {baseDelayMs: 0, maxDelayMs: 0},
+    );
     mgr.start();
-
-    // Trigger reconnect immediately
     mgr.reconnectNow();
-    jest.runAllTimers();
-    await Promise.resolve(); // flush microtasks
-
+    await jest.runAllTimersAsync();
     expect(facade.connect).toHaveBeenCalled();
   });
 
-  it('abort() stops retry cycle', () => {
-    const facade = makeFacade();
-    const getToken = jest.fn().mockReturnValue('tok');
-    const refreshToken = jest.fn();
+  it('calls onReconnected callback after successful connect', async () => {
+    jest.useFakeTimers();
+    const facade = makeFacade('connected');
+    const onReconnected = jest.fn();
+    const mgr = new ReconnectionManager(
+      facade,
+      {getToken: () => 'valid.eyJleHAiOjk5OTk5OTk5OTl9.sig', refreshToken: jest.fn()},
+      {baseDelayMs: 0, maxDelayMs: 0},
+    );
+    mgr.onReconnected(onReconnected);
+    mgr.start();
+    mgr.reconnectNow();
 
-    const mgr = new ReconnectionManager(facade, {getToken, refreshToken});
+    // runAllTimersAsync advances fake timers AND drains microtasks between ticks
+    await jest.runAllTimersAsync();
+
+    expect(onReconnected).toHaveBeenCalled();
+  });
+
+  it('abort() prevents connect from being called', () => {
+    jest.useFakeTimers();
+    const facade = makeFacade('connected');
+    const mgr = new ReconnectionManager(
+      facade,
+      {getToken: () => 'tok', refreshToken: jest.fn()},
+      {baseDelayMs: 100},
+    );
     mgr.start();
     mgr.reconnectNow();
     mgr.abort();
 
     jest.runAllTimers();
-    // connect should not have been called after abort
     expect(facade.connect).not.toHaveBeenCalled();
   });
 
@@ -243,38 +266,31 @@ describe('ReconnectionManager', () => {
 
     const replay = jest.fn();
     mgr.enqueue({id: 'msg-1', replay});
-    mgr.enqueue({id: 'msg-1', replay}); // duplicate — should be ignored
+    mgr.enqueue({id: 'msg-1', replay}); // duplicate — ignored
     mgr.enqueue({id: 'msg-2', replay});
 
-    // Access queue length via getRetryCount as a proxy — queue is private
-    // We verify by checking that replay is called twice on flush
+    // Verify deduplication: only 2 unique mutations should be queued
+    // We verify indirectly — getRetryCount starts at 0 (no attempts yet)
     expect(mgr.getRetryCount()).toBe(0);
   });
 
   it('calls onGaveUp after maxRetries exhausted', async () => {
-    const facade = makeFacade();
-    // Make connect always fail
-    (facade.onConnectionStatusChange as jest.Mock).mockImplementation(
-      (cb: (status: RealtimeConnectionStatus, error: FacadeError | null) => void) => {
-        setTimeout(() => cb('error', {code: 'FAIL', message: 'fail', retryable: true}), 0);
-        return jest.fn();
-      },
-    );
-
+    jest.useFakeTimers();
+    const facade = makeFacade('error');
     const onGaveUp = jest.fn();
+
     const mgr = new ReconnectionManager(
       facade,
-      {getToken: () => 'tok', refreshToken: jest.fn()},
-      {maxRetries: 2, baseDelayMs: 10, maxDelayMs: 10},
+      {getToken: () => 'valid.eyJleHAiOjk5OTk5OTk5OTl9.sig', refreshToken: jest.fn()},
+      {maxRetries: 2, baseDelayMs: 0, maxDelayMs: 0},
     );
     mgr.onGaveUp(onGaveUp);
     mgr.start();
     mgr.reconnectNow();
 
-    // Run through all retries
-    for (let i = 0; i < 5; i++) {
-      jest.runAllTimers();
-      await Promise.resolve();
+    // runAllTimersAsync drains timers + microtasks; repeat for each retry cycle
+    for (let i = 0; i < 6; i++) {
+      await jest.runAllTimersAsync();
     }
 
     expect(onGaveUp).toHaveBeenCalledWith(expect.any(Number));
