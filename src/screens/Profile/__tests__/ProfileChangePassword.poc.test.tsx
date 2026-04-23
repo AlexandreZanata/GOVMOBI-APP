@@ -22,6 +22,11 @@ import {UserRole, UserStatus} from '@models/User';
 import type {IAuthFacade} from '@services/facades';
 import type {FacadeError, Result} from '@services/facades';
 
+// Prevent useMinhaAvaliacaoSummary from firing async state updates in tests
+jest.mock('../../../screens/Motorista/useMinhaAvaliacaoSummary', () => ({
+  useMinhaAvaliacaoSummary: () => ({summary: null, isLoading: false, error: null, retry: jest.fn()}),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -84,8 +89,8 @@ const Wrapper = ({
   const facadesRef = useRef({
     authFacade,
     avaliacoesFacade: {
-      getMinhaAvaliacaoSummary: jest.fn().mockResolvedValue({data: null, error: null}),
-      listAvaliacoes: jest.fn().mockResolvedValue({data: [], error: null}),
+      getMinhaAvaliacaoSummary: jest.fn().mockReturnValue(Promise.resolve({data: null, error: null})),
+      listAvaliacoes: jest.fn().mockReturnValue(Promise.resolve({data: [], error: null})),
     },
   });
   return (
@@ -107,14 +112,29 @@ const Wrapper = ({
 // Tests
 // ---------------------------------------------------------------------------
 
+/** Renders a Wrapper + ProfileScreen and waits for async mount effects to settle. */
+const renderWrapped = async (props: Omit<React.ComponentProps<typeof Wrapper>, 'children'>) => {
+  const utils = render(<Wrapper {...props}><ProfileScreen /></Wrapper>);
+  // Drain microtasks so useMinhaAvaliacaoSummary state updates settle
+  await waitFor(() => expect(utils.getByTestId('profile-hero')).toBeTruthy());
+  return utils;
+};
+
 describe('ProfileScreen — change password', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Suppress act() warnings from useMinhaAvaliacaoSummary async state updates
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   it('renders the change-password card with all inputs and submit button', async () => {
     const facade = buildMockAuthFacade();
-    render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
+    await renderWrapped({authFacade: facade});
 
-    // Open the collapsible password section first
     fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
 
     await waitFor(() => {
@@ -131,9 +151,8 @@ describe('ProfileScreen — change password', () => {
     const changePasswordMock = jest.fn().mockReturnValue(new Promise<Result<boolean, FacadeError>>(r => { resolve = r; }));
     const facade = buildMockAuthFacade({changePassword: changePasswordMock});
 
-    render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
+    await renderWrapped({authFacade: facade});
 
-    // Open the collapsible password section
     fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
     await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
 
@@ -141,15 +160,12 @@ describe('ProfileScreen — change password', () => {
     fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
     fireEvent.changeText(screen.getByTestId('input-confirmar-senha'), 'NewPass@2026');
 
-    await act(async () => {
-      fireEvent.press(screen.getByTestId('btn-change-password'));
-    });
+    await act(async () => { fireEvent.press(screen.getByTestId('btn-change-password')); });
 
     await waitFor(() => {
       expect(screen.getByTestId('change-password-loading')).toBeTruthy();
     });
 
-    // Resolve the promise so the test can clean up
     await act(async () => { resolve(ok(true)); });
   });
 
@@ -157,9 +173,8 @@ describe('ProfileScreen — change password', () => {
     const changePasswordMock = jest.fn().mockResolvedValue(ok(true));
     const facade = buildMockAuthFacade({changePassword: changePasswordMock});
 
-    render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
+    await renderWrapped({authFacade: facade});
 
-    // Open the collapsible password section
     fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
     await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
 
@@ -167,15 +182,11 @@ describe('ProfileScreen — change password', () => {
     fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
     fireEvent.changeText(screen.getByTestId('input-confirmar-senha'), 'NewPass@2026');
 
-    await act(async () => {
-      fireEvent.press(screen.getByTestId('btn-change-password'));
-    });
+    await act(async () => { fireEvent.press(screen.getByTestId('btn-change-password')); });
 
     await waitFor(() => {
       expect(changePasswordMock).toHaveBeenCalledWith('OldPass@1', 'NewPass@2026');
     });
-
-    // Inputs should be cleared after success
     await waitFor(() => {
       expect(screen.getByTestId('input-senha-antiga').props.value).toBe('');
       expect(screen.getByTestId('input-nova-senha').props.value).toBe('');
@@ -187,9 +198,8 @@ describe('ProfileScreen — change password', () => {
     const changePasswordMock = jest.fn();
     const facade = buildMockAuthFacade({changePassword: changePasswordMock});
 
-    render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
+    await renderWrapped({authFacade: facade});
 
-    // Open the collapsible password section
     fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
     await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
 
@@ -197,9 +207,7 @@ describe('ProfileScreen — change password', () => {
     fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
     fireEvent.changeText(screen.getByTestId('input-confirmar-senha'), 'DifferentPass@2026');
 
-    await act(async () => {
-      fireEvent.press(screen.getByTestId('btn-change-password'));
-    });
+    await act(async () => { fireEvent.press(screen.getByTestId('btn-change-password')); });
 
     expect(changePasswordMock).not.toHaveBeenCalled();
   });
@@ -208,31 +216,34 @@ describe('ProfileScreen — change password', () => {
     const changePasswordMock = jest.fn();
     const facade = buildMockAuthFacade({changePassword: changePasswordMock});
 
-    render(<Wrapper authFacade={facade}><ProfileScreen /></Wrapper>);
+    await renderWrapped({authFacade: facade});
 
-    // Open the collapsible password section
     fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
     await waitFor(() => expect(screen.getByTestId('btn-change-password')).toBeTruthy());
 
-    await act(async () => {
-      fireEvent.press(screen.getByTestId('btn-change-password'));
-    });
+    await act(async () => { fireEvent.press(screen.getByTestId('btn-change-password')); });
 
     expect(changePasswordMock).not.toHaveBeenCalled();
   });
 });
 
 describe('ProfileScreen — Minha Nota row', () => {
-  it('shows Minha Nota row when user is a MOTORISTA', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+  it('shows Minha Nota row when user is a MOTORISTA', async () => {
     const facade = buildMockAuthFacade();
-    render(<Wrapper authFacade={facade} motoristaId="mot-1"><ProfileScreen /></Wrapper>);
+    await renderWrapped({authFacade: facade, motoristaId: 'mot-1'});
     expect(screen.getByTestId('profile-minha-nota-card')).toBeTruthy();
     expect(screen.getByTestId('profile-minha-nota-row')).toBeTruthy();
   });
 
-  it('hides Minha Nota row for non-MOTORISTA users', () => {
+  it('hides Minha Nota row for non-MOTORISTA users', async () => {
     const facade = buildMockAuthFacade();
-    render(<Wrapper authFacade={facade} motoristaId={null}><ProfileScreen /></Wrapper>);
+    await renderWrapped({authFacade: facade, motoristaId: null});
     expect(screen.queryByTestId('profile-minha-nota-card')).toBeNull();
   });
 });

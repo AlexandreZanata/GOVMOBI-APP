@@ -14,6 +14,7 @@ import {
   render,
   screen,
   waitFor,
+  act,
 } from '@testing-library/react-native';
 import {Provider} from 'react-redux';
 import {configureStore} from '@reduxjs/toolkit';
@@ -63,6 +64,11 @@ jest.mock('react-native-safe-area-context', () => {
 
 jest.mock('@expo/vector-icons', () => ({MaterialIcons: 'MaterialIcons'}));
 
+// Prevent useMinhaAvaliacaoSummary from firing async state updates in tests
+jest.mock('../../../screens/Motorista/useMinhaAvaliacaoSummary', () => ({
+  useMinhaAvaliacaoSummary: () => ({summary: null, isLoading: false, error: null, retry: jest.fn()}),
+}));
+
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 const mockCanGoBack = jest.fn(() => true);
@@ -84,10 +90,9 @@ jest.mock('../../../services/facades', () => ({
       updateProfile: jest.fn().mockResolvedValue({error: null}),
     },
     avaliacoesFacade: {
-      getMinhaAvaliacaoSummary: jest.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      }),
+      getMinhaAvaliacaoSummary: jest.fn().mockReturnValue(
+        Promise.resolve({data: null, error: null}),
+      ),
     },
   }),
 }));
@@ -194,56 +199,50 @@ describe('ProfileScreen', () => {
   // ── 1. Render ──────────────────────────────────────────────────────────────
 
   describe('render', () => {
-    it('renders the hero header', () => {
-      renderScreen();
+    it('renders the hero header', async () => {
+      await renderScreen();
       expect(screen.getByTestId('profile-hero')).toBeTruthy();
     });
 
-    it('renders the avatar with correct initials', () => {
-      renderScreen();
+    it('renders the avatar with correct initials', async () => {
+      await renderScreen();
       expect(screen.getByTestId('profile-avatar')).toBeTruthy();
-      // initials are accessibilityElementsHidden — query by testID only
     });
 
-    it('renders the user name in the hero', () => {
-      renderScreen();
+    it('renders the user name in the hero', async () => {
+      await renderScreen();
       expect(screen.getByTestId('profile-name')).toBeTruthy();
-      // name appears in both hero and info card — use testID to target hero
-      expect(screen.getByTestId('profile-name').props.children).toBe(
-        'Ana Silva',
-      );
+      expect(screen.getByTestId('profile-name').props.children).toBe('Ana Silva');
     });
 
-    it('renders the user email in the hero', () => {
-      renderScreen();
+    it('renders the user email in the hero', async () => {
+      await renderScreen();
       expect(screen.getByTestId('profile-email')).toBeTruthy();
-      expect(screen.getByTestId('profile-email').props.children).toBe(
-        'ana.silva@govmobile.gov',
-      );
+      expect(screen.getByTestId('profile-email').props.children).toBe('ana.silva@govmobile.gov');
     });
 
-    it('renders the role badge', () => {
-      renderScreen();
+    it('renders the role badge', async () => {
+      await renderScreen();
       expect(screen.getByTestId('profile-role-badge')).toBeTruthy();
     });
 
-    it('renders the info card', () => {
-      renderScreen();
+    it('renders the info card', async () => {
+      await renderScreen();
       expect(screen.getByTestId('profile-info-card')).toBeTruthy();
     });
 
-    it('renders the settings card', () => {
-      renderScreen();
+    it('renders the settings card', async () => {
+      await renderScreen();
       expect(screen.getByTestId('profile-settings-card')).toBeTruthy();
     });
 
-    it('renders the sign-out card', () => {
-      renderScreen();
+    it('renders the sign-out card', async () => {
+      await renderScreen();
       expect(screen.getByTestId('profile-signout-card')).toBeTruthy();
     });
 
-    it('does not render email when user has no email', () => {
-      renderScreen({email: undefined});
+    it('does not render email when user has no email', async () => {
+      await renderScreen({email: undefined});
       expect(screen.queryByTestId('profile-email')).toBeNull();
     });
   });
@@ -251,72 +250,59 @@ describe('ProfileScreen', () => {
   // ── 2. Edit flow ───────────────────────────────────────────────────────────
 
   describe('edit flow', () => {
-    it('shows text input when edit button is pressed', () => {
-      renderScreen();
+    it('shows text input when edit button is pressed', async () => {
+      await renderScreen();
       fireEvent.press(screen.getByTestId('profile-edit-toggle'));
       expect(screen.getByTestId('profile-name-input')).toBeTruthy();
     });
 
     it('saves updated name and dispatches setUser', async () => {
-      const {store} = renderScreen();
+      const {store} = await renderScreen();
       fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-      fireEvent.changeText(
-        screen.getByTestId('profile-name-input'),
-        'Ana Costa',
-      );
+      fireEvent.changeText(screen.getByTestId('profile-name-input'), 'Ana Costa');
       fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-
       await waitFor(() => {
         expect(store.getState().auth.user?.fullName).toBe('Ana Costa');
       });
     });
 
     it('hides text input after saving', async () => {
-      renderScreen();
+      await renderScreen();
       fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-      fireEvent.changeText(
-        screen.getByTestId('profile-name-input'),
-        'Ana Costa',
-      );
+      fireEvent.changeText(screen.getByTestId('profile-name-input'), 'Ana Costa');
       fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-
       await waitFor(() => {
         expect(screen.queryByTestId('profile-name-input')).toBeNull();
       });
     });
   });
 
-  // ── 3. Sign-out ────────────────────────────────────────────────────────────
-
   describe('sign-out', () => {
-    it('dispatches logout when sign-out is pressed', () => {
-      const {store} = renderScreen();
+    it('dispatches logout when sign-out is pressed', async () => {
+      const {store} = await renderScreen();
       fireEvent.press(screen.getByTestId('profile-signout-card'));
       expect(store.getState().auth.isAuthenticated).toBe(false);
       expect(store.getState().auth.user).toBeNull();
     });
   });
 
-  // ── 4. Settings navigation ─────────────────────────────────────────────────
-
   describe('settings navigation', () => {
-    it('calls navigate("Settings") when settings row is pressed', () => {
-      renderScreen();
+    it('calls navigate("Settings") when settings row is pressed', async () => {
+      await renderScreen();
       fireEvent.press(screen.getByTestId('profile-settings-row'));
       expect(mockNavigate).toHaveBeenCalledWith('Settings');
     });
 
-    it('calls goBack when header back button is pressed on Settings', () => {
+    it('calls goBack when header back button is pressed on Settings', async () => {
       renderSettingsScreen();
+      await waitFor(() => screen.getByTestId('header-back-button'));
       fireEvent.press(screen.getByTestId('header-back-button'));
       expect(mockGoBack).toHaveBeenCalledTimes(1);
     });
 
-    it('back navigation uses goBack (pop), not navigate("Profile") (push)', () => {
-      // Verifies the regression fix: back must be a pop, not a new push.
-      // A push would cause a white flash because it creates a new screen instance
-      // instead of reversing the existing transition animation.
+    it('back navigation uses goBack (pop), not navigate("Profile") (push)', async () => {
       renderSettingsScreen();
+      await waitFor(() => screen.getByTestId('header-back-button'));
       fireEvent.press(screen.getByTestId('header-back-button'));
       expect(mockGoBack).toHaveBeenCalledTimes(1);
       expect(mockNavigate).not.toHaveBeenCalledWith('Profile');
