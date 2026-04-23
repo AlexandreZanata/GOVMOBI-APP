@@ -484,11 +484,24 @@ export const useMotorista = (): MotoristaState => {
   /**
    * Confirms passenger boarded (POST /corridas/:id/confirmar-embarque).
    *
+   * Includes a client-side state machine guard: if the ride is already in
+   * `passageiro_a_bordo` (or any post-boarding state), the call is silently
+   * dropped to prevent the 409 INVALID_STATE_TRANSITION that occurs when the
+   * driver taps the button a second time before the UI re-renders.
+   *
    * @param corridaId - Ride UUID.
    * @param input - Driver ID and current position.
    */
   const onConfirmarEmbarque = useCallback(
     async (corridaId: string, input: ConfirmarEmbarqueInput): Promise<void> => {
+      // Guard: only valid from em_rota — drop silently if already past this step
+      const currentStatus = activaRef.current?.status;
+      if (currentStatus && currentStatus !== 'em_rota') {
+        console.warn(
+          `[useMotorista] onConfirmarEmbarque skipped — invalid transition from '${currentStatus}'`,
+        );
+        return;
+      }
       await withAction(
         async () => {
           const r = await corridaFacade.confirmarEmbarque(corridaId, input);
