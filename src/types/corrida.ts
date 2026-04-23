@@ -57,20 +57,18 @@ export interface RecusarCorridaInput {
 
 /**
  * POST /corridas/:id/confirmar-embarque body.
- * The backend requires motoristaId in the body (validated as UUID).
+ * The backend derives the driver identity from the JWT — do NOT send motoristaId.
  */
 export interface ConfirmarEmbarqueInput {
-  motoristaId: string;
   posicaoLat: number;
   posicaoLng: number;
 }
 
 /**
  * POST /corridas/:id/finalizar body.
- * The backend requires motoristaId in the body (validated as UUID).
+ * The backend derives the driver identity from the JWT — do NOT send motoristaId.
  */
 export interface FinalizarCorridaInput {
-  motoristaId: string;
   posicaoFinalLat: number;
   posicaoFinalLng: number;
 }

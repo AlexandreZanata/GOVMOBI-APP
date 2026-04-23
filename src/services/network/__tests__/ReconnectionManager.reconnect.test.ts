@@ -8,6 +8,23 @@
  * 4. Token refresh is called before reconnect when token is near expiry
  * 5. Abort stops the retry cycle
  */
+
+// ---------------------------------------------------------------------------
+// expo-network must be mocked before any import that pulls in NetworkMonitor
+// ---------------------------------------------------------------------------
+jest.mock('expo-network', () => ({
+  NetworkStateType: {
+    WIFI: 'WIFI', CELLULAR: 'CELLULAR', ETHERNET: 'ETHERNET',
+    BLUETOOTH: 'BLUETOOTH', WIMAX: 'WIMAX', VPN: 'VPN',
+    UNKNOWN: 'UNKNOWN', NONE: 'NONE',
+  },
+  getNetworkStateAsync: jest.fn().mockResolvedValue({
+    isConnected: true,
+    isInternetReachable: true,
+    type: 'WIFI',
+  }),
+  addNetworkStateListener: jest.fn().mockReturnValue({remove: jest.fn()}),
+}));
 import {ReconnectionManager, computeBackoffDelay, isTokenNearExpiry} from '../ReconnectionManager';
 import type {IRealtimeFacade} from '@services/facades/RealtimeFacade';
 import type {RealtimeConnectionStatus} from '../../../types/realtime';

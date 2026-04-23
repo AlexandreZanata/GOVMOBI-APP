@@ -7,32 +7,10 @@
  *  - Foreground handler suppresses OS banners (WebSocket handles delivery)
  *  - Notification-opened handler fires with correct data shape
  *  - Graceful no-op when SDK is unavailable (Jest / web / Expo Go)
+ *
+ * The global src/__mocks__/react-native-onesignal.ts auto-mock is active for
+ * all tests. Individual tests access mock functions via jest.mocked().
  */
-
-// ---------------------------------------------------------------------------
-// Mock react-native-onesignal v5
-// ---------------------------------------------------------------------------
-
-const mockInitialize = jest.fn();
-const mockLogin = jest.fn();
-const mockLogout = jest.fn();
-const mockRequestPermission = jest.fn().mockResolvedValue(true);
-const mockAddEventListener = jest.fn();
-const mockRemoveEventListener = jest.fn();
-
-jest.mock('react-native-onesignal', () => ({
-  __esModule: true,
-  OneSignal: {
-    initialize: mockInitialize,
-    login: mockLogin,
-    logout: mockLogout,
-    Notifications: {
-      requestPermission: mockRequestPermission,
-      addEventListener: mockAddEventListener,
-      removeEventListener: mockRemoveEventListener,
-    },
-  },
-}));
 
 jest.mock('@config/env', () => ({
   ENV: {ONESIGNAL_APP_ID: '8723fa88-19eb-4f95-8478-50ba9c1b5d90'},
@@ -43,9 +21,10 @@ jest.mock('@utils/logger', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Import after mocks
+// Import after mocks — module cache is reset per test via _resetCacheForTesting
 // ---------------------------------------------------------------------------
 
+import {OneSignal} from 'react-native-onesignal';
 import {
   initOneSignal,
   requestPushPermission,
@@ -53,15 +32,21 @@ import {
   removeOneSignalExternalUserId,
   registerForegroundHandler,
   registerNotificationOpenedHandler,
+  _resetCacheForTesting,
 } from '../OneSignalService';
+
+// Typed references to the auto-mock functions
+const mockInitialize = jest.mocked(OneSignal.initialize);
+const mockLogin = jest.mocked(OneSignal.login);
+const mockLogout = jest.mocked(OneSignal.logout);
+const mockRequestPermission = jest.mocked(OneSignal.Notifications.requestPermission);
+const mockAddEventListener = jest.mocked(OneSignal.Notifications.addEventListener);
+const mockRemoveEventListener = jest.mocked(OneSignal.Notifications.removeEventListener);
 
 beforeEach(() => {
   jest.clearAllMocks();
-  // Reset the module cache so each test gets a fresh loader state
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const svc = require('../OneSignalService') as Record<string, unknown>;
-  // Force re-evaluation of the cached module reference
-  Object.defineProperty(svc, '_cachedModule', {value: undefined, writable: true, configurable: true});
+  // Reset the service's module-level cache so each test gets a fresh getOneSignal() call.
+  _resetCacheForTesting();
 });
 
 // ---------------------------------------------------------------------------
@@ -76,7 +61,7 @@ describe('initOneSignal', () => {
   });
 
   it('returns false on web platform', () => {
-    const Platform = require('react-native').Platform;
+    const Platform = require('react-native').Platform as {OS: string};
     const original = Platform.OS;
     Platform.OS = 'web';
     const result = initOneSignal();
@@ -100,7 +85,7 @@ describe('requestPushPermission', () => {
     mockRequestPermission.mockResolvedValueOnce(true);
     const onResponse = jest.fn();
     requestPushPermission(onResponse);
-    await Promise.resolve(); // flush microtask
+    await Promise.resolve();
     expect(onResponse).toHaveBeenCalledWith(true);
   });
 });
@@ -142,7 +127,7 @@ describe('registerForegroundHandler', () => {
 
   it('calls preventDefault() to suppress the OS banner', () => {
     registerForegroundHandler();
-    const handler = mockAddEventListener.mock.calls[0][1] as (event: {
+    const handler = (mockAddEventListener.mock.calls[0][1] as unknown) as (event: {
       getNotification: () => object;
       preventDefault: jest.Mock;
     }) => void;
@@ -227,27 +212,28 @@ describe('registerNotificationOpenedHandler', () => {
 
 describe('graceful no-op when SDK unavailable', () => {
   it('initOneSignal returns false when the native module throws at load time', () => {
-    jest.resetModules();
-    jest.doMock('react-native-onesignal', () => {
-      // Simulate TurboModuleRegistry.getEnforcing throwing at module eval time
-      throw new Error("Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'OneSignal' could not be found.");
+    jest.isolateModules(() => {
+      jest.doMock('react-native-onesignal', () => {
+        throw new Error("Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'OneSignal' could not be found.");
+      });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const {initOneSignal: init} = require('../OneSignalService') as typeof import('../OneSignalService');
+      expect(init()).toBe(false);
     });
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const {initOneSignal: init} = require('../OneSignalService') as typeof import('../OneSignalService');
-    expect(init()).toBe(false);
   });
 
   it('all service functions are no-ops when SDK is unavailable', () => {
-    jest.resetModules();
-    jest.doMock('react-native-onesignal', () => {
-      throw new Error('Module not found');
+    jest.isolateModules(() => {
+      jest.doMock('react-native-onesignal', () => {
+        throw new Error('Module not found');
+      });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const svc = require('../OneSignalService') as typeof import('../OneSignalService');
+      expect(() => svc.requestPushPermission()).not.toThrow();
+      expect(() => svc.setOneSignalExternalUserId('id')).not.toThrow();
+      expect(() => svc.removeOneSignalExternalUserId()).not.toThrow();
+      expect(() => svc.registerForegroundHandler()).not.toThrow();
+      expect(() => svc.registerNotificationOpenedHandler(jest.fn())).not.toThrow();
     });
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const svc = require('../OneSignalService') as typeof import('../OneSignalService');
-    expect(() => svc.requestPushPermission()).not.toThrow();
-    expect(() => svc.setOneSignalExternalUserId('id')).not.toThrow();
-    expect(() => svc.removeOneSignalExternalUserId()).not.toThrow();
-    expect(() => svc.registerForegroundHandler()).not.toThrow();
-    expect(() => svc.registerNotificationOpenedHandler(jest.fn())).not.toThrow();
   });
 });

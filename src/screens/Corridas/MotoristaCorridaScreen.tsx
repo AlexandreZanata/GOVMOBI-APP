@@ -27,6 +27,7 @@ import {useCorridas} from './useCorridas';
 import {createCorridasStyles} from './CorridasScreens.styles';
 import {CorridaStatusBadge} from '@components/molecules/CorridaStatusBadge';
 import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
+import {useAppSelector} from '@store/index';
 import type {CorridasStackParamList} from '@navigation/types';
 
 type RouteProps = RouteProp<CorridasStackParamList, 'MotoristaCorridaAction'>;
@@ -46,6 +47,9 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
   const {corridaId} = route.params;
 
   const styles = useMemo(() => createCorridasStyles(theme), [theme]);
+
+  // Real GPS — falls back to ride origin/destination if GPS not yet acquired
+  const gpsLocation = useAppSelector(s => s.location.current ?? s.location.lastKnown);
 
   const {
     activeCorrida,
@@ -81,11 +85,10 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
 
   const handleConfirmarEmbarque = useCallback(() => {
     void onConfirmarEmbarque(corridaId, {
-      motoristaId: activeCorrida?.motoristaId ?? '',
-      posicaoLat: -16.6869,
-      posicaoLng: -49.2648,
+      posicaoLat: gpsLocation?.latitude ?? activeCorrida?.origemLat ?? 0,
+      posicaoLng: gpsLocation?.longitude ?? activeCorrida?.origemLng ?? 0,
     });
-  }, [activeCorrida?.motoristaId, corridaId, onConfirmarEmbarque]);
+  }, [activeCorrida, corridaId, gpsLocation, onConfirmarEmbarque]);
 
   const handleFinalizar = useCallback(() => {
     Alert.alert(t('corridas.finalizar.title'), t('corridas.finalizar.confirm'), [
@@ -94,14 +97,13 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
         text: t('common.confirm'),
         onPress: () => {
           void onFinalizar(corridaId, {
-            motoristaId: activeCorrida?.motoristaId ?? '',
-            posicaoFinalLat: -16.6869,
-            posicaoFinalLng: -49.2648,
+            posicaoFinalLat: gpsLocation?.latitude ?? activeCorrida?.destinoLat ?? 0,
+            posicaoFinalLng: gpsLocation?.longitude ?? activeCorrida?.destinoLng ?? 0,
           }).then(() => navigation.goBack());
         },
       },
     ]);
-  }, [corridaId, navigation, onFinalizar, t]);
+  }, [activeCorrida, corridaId, gpsLocation, navigation, onFinalizar, t]);
 
   const handleCancelar = useCallback(() => {
     Alert.alert(t('corridas.cancel.title'), t('corridas.cancel.confirm'), [

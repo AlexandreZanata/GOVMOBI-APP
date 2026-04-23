@@ -111,6 +111,14 @@ export type NotificationOpenedHandler = (event: NotificationOpenedEvent) => void
 let _cachedModule: OneSignalV5 | null | undefined = undefined;
 
 /**
+ * Resets the module cache. Exposed for testing only — do not call in production.
+ * @internal
+ */
+export function _resetCacheForTesting(): void {
+  _cachedModule = undefined;
+}
+
+/**
  * Safely loads the `react-native-onesignal` v5 module.
  *
  * `TurboModuleRegistry.getEnforcing` runs at module evaluation time in v5,

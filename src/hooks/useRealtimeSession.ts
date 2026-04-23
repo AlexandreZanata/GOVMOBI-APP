@@ -234,7 +234,12 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
         return result.data.accessToken;
       };
 
-      const freshToken = await getValidToken(currentToken, tokenExpiresAt, refreshFn);
+      // When tokenExpiresAt is 0 the expiry could not be decoded (non-standard
+      // token format, test token, etc.). Connect optimistically — the WS 401
+      // handler will recover if the token is actually expired.
+      const freshToken = tokenExpiresAt === 0
+        ? currentToken
+        : await getValidToken(currentToken, tokenExpiresAt, refreshFn);
       if (!freshToken || cancelled) return;
 
       console.log('[useRealtimeSession] connecting — token_prefix=', freshToken.slice(0, 20));

@@ -193,7 +193,6 @@ export const MotoristaScreen = (): React.JSX.Element => {
   const handleConfirmarEmbarque = useCallback(() => {
     if (!activeCorrida) return;
     void onConfirmarEmbarque(activeCorrida.id, {
-      motoristaId: activeCorrida.motoristaId ?? '',
       posicaoLat: userLocation?.latitude ?? activeCorrida.origemLat,
       posicaoLng: userLocation?.longitude ?? activeCorrida.origemLng,
     });
@@ -208,7 +207,6 @@ export const MotoristaScreen = (): React.JSX.Element => {
     if (!activeCorrida) return;
     // ficar-disponivel is emitted by useMotoristaRealtime when activeCorrida reaches terminal status
     void onFinalizar(activeCorrida.id, {
-      motoristaId: activeCorrida.motoristaId ?? '',
       posicaoFinalLat: userLocation?.latitude ?? activeCorrida.destinoLat,
       posicaoFinalLng: userLocation?.longitude ?? activeCorrida.destinoLng,
     });
