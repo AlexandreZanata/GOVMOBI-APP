@@ -69,6 +69,7 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
   const servidorId = useAppSelector(state => state.auth.servidorId ?? '');
   const connectionStatus = useAppSelector(state => state.realtime.connectionStatus);
   const lastError = useAppSelector(state => state.realtime.lastError);
+  const isChatScreenOpen = useAppSelector(state => state.corrida.isChatScreenOpen);
 
   // Driver = user with a non-null motoristaId from /auth/me
   const canDeclareDriverAvailability = useMemo(() => !!motoristaId, [motoristaId]);
@@ -85,6 +86,12 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
 
   const servidorIdRef = useRef(servidorId);
   servidorIdRef.current = servidorId;
+
+  // Tracks whether the chat screen is currently mounted — used to suppress
+  // badge updates from server-sent contagem-nao-visualizadas events that
+  // arrive after the user has already opened the chat.
+  const isChatOpenRef = useRef(isChatScreenOpen);
+  isChatOpenRef.current = isChatScreenOpen;
 
   // ---------------------------------------------------------------------------
   // Register listeners — runs once per facade instance.
@@ -148,7 +155,11 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
           );
           break;
         case 'contagem-nao-visualizadas':
-          dispatchRef.current(setNaoVisualizadasCount(event.payload.count));
+          // Ignore server count when the chat screen is open — the user is
+          // already reading the messages, so the badge must stay at 0.
+          if (!isChatOpenRef.current) {
+            dispatchRef.current(setNaoVisualizadasCount(event.payload.count));
+          }
           break;
       }
     });

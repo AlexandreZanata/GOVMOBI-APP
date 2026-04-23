@@ -2,8 +2,10 @@
  * @fileoverview RoleTabBar — shared dark-navy bottom tab bar used by both
  * MotoristaNavigator and PassageiroNavigator.
  *
- * Both navigators share identical visual design (dark-navy bg, white active,
- * muted inactive, top-edge active indicator). Only the tab config differs.
+ * Badge count is read directly from Redux inside this component so it always
+ * reflects the latest value without any prop-drilling or stale-closure risk.
+ * The tab bar component itself is defined outside navigator render functions
+ * so React Navigation never sees a new reference and never remounts it.
  */
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
@@ -12,12 +14,19 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {type BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {type Theme, useTheme} from '../../theme';
+import {useAppSelector} from '../../store';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const INTERACTIVE = '#FFFFFF';
 const TEXT_MUTED = 'rgba(255,255,255,0.45)';
 const NAV_BG = '#0D1B2A';
 const SHADOW_COLOR = '#000000';
+
+/**
+ * Route names that should display the message badge.
+ * Both the passenger Corridas tab and the driver Corridas tab show it.
+ */
+const BADGE_ROUTES = new Set(['PassageiroCorridas', 'MotoristaCorridas']);
 
 type TabIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
@@ -29,8 +38,6 @@ export interface TabConfig {
   inactiveIcon: TabIconName;
   /** i18n key for the tab label. */
   labelKey: string;
-  /** Optional badge count. When > 0 a red dot is shown. */
-  badge?: number;
 }
 
 export interface RoleTabBarProps extends BottomTabBarProps {
@@ -46,6 +53,9 @@ export interface RoleTabBarProps extends BottomTabBarProps {
 /**
  * Shared dark-navy bottom tab bar for role-specific navigators.
  *
+ * Reads `naoVisualizadasCount` directly from Redux so the badge is always
+ * live — no prop needed, no stale closure possible.
+ *
  * @param props - {@link RoleTabBarProps}
  * @returns JSX element for the tab bar.
  */
@@ -60,6 +70,10 @@ export const RoleTabBar = ({
   const insets = useSafeAreaInsets();
   const styles = createStyles(theme, insets.bottom);
 
+  // Read badge count directly — this subscription is always live regardless
+  // of how the parent navigator renders.
+  const naoVisualizadasCount = useAppSelector(s => s.corrida.naoVisualizadasCount);
+
   return (
     <View style={styles.container}>
       {state.routes.map((route, index) => {
@@ -70,6 +84,7 @@ export const RoleTabBar = ({
           labelKey: route.name,
         };
         const label = t(cfg.labelKey);
+        const badgeCount = BADGE_ROUTES.has(route.name) ? naoVisualizadasCount : 0;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -98,10 +113,10 @@ export const RoleTabBar = ({
                 name={isFocused ? cfg.activeIcon : cfg.inactiveIcon}
                 size={24}
               />
-              {!!cfg.badge && cfg.badge > 0 && (
+              {badgeCount > 0 && (
                 <View style={styles.badge} testID={`badge-${route.name}`}>
                   <Text style={styles.badgeText}>
-                    {cfg.badge > 99 ? '99+' : String(cfg.badge)}
+                    {badgeCount > 99 ? '99+' : String(badgeCount)}
                   </Text>
                 </View>
               )}

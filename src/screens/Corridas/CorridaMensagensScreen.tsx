@@ -13,7 +13,7 @@
  *     to mark all received messages as viewed (blue ticks for the sender)
  *  3. Requests unread count via WS contar-nao-visualizadas for badge refresh
  */
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   BackHandler,
@@ -142,24 +142,25 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     navigation.goBack();
   }, [navigation]);
 
-  // On mount: mark chat as open (zeroes badge + suppresses push), load history, visualize
-  useEffect(() => {
-    // Signal that the chat screen is open — suppresses badge increments and push banners
+  // useLayoutEffect fires synchronously before paint — sets the flag before
+  // any WS event can arrive and increment the badge on this render cycle.
+  useLayoutEffect(() => {
     dispatch(setChatScreenOpen(true));
+    return () => {
+      dispatch(setChatScreenOpen(false));
+    };
+  }, [dispatch]);
+
+  // On mount: load history and mark all received messages as viewed (blue ticks)
+  useEffect(() => {
     void onLoadMensagens(corridaId);
 
-    // Mark all received messages as viewed (blue ticks) — fire both REST + WS
     if (!visualizadoRef.current) {
       visualizadoRef.current = true;
       void corridaFacade.visualizarMensagens(corridaId);
       void realtimeFacade.visualizarMensagens({corridaId});
     }
-
-    // On unmount: mark chat as closed so new messages resume incrementing the badge
-    return () => {
-      dispatch(setChatScreenOpen(false));
-    };
-  }, [corridaId, corridaFacade, dispatch, onLoadMensagens, realtimeFacade]);
+  }, [corridaId, corridaFacade, onLoadMensagens, realtimeFacade]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
