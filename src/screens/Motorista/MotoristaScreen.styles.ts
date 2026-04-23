@@ -459,7 +459,7 @@ export const createMotoristaStyles = (theme: Theme) => {
     // ── Finalizar confirmation modal ──────────────────────────────────────────
     confirmBackdrop: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.55)',
+      backgroundColor: C.overlay,
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: spacing[5],

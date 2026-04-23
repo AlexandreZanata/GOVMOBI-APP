@@ -25,10 +25,15 @@ import type {Veiculo} from '../../models';
 
 // eslint-disable-next-line react-native/no-unused-styles
 const createStyles = (theme: Theme, paddingTop: number) =>
-  StyleSheet.create({    root: {
+  StyleSheet.create({
+    root: {
       flex: 1,
       backgroundColor: theme.design.surface200,
       paddingTop,
+    },
+    rootLoading: {
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     header: {
       backgroundColor: theme.design.navy800,
@@ -56,7 +61,7 @@ const createStyles = (theme: Theme, paddingTop: number) =>
       padding: theme.spacing[4],
       marginBottom: theme.spacing[2],
       borderWidth: 2,
-      borderColor: 'transparent',
+      borderColor: theme.colors.surface,
     },
     vehicleItemSelected: {
       borderColor: theme.colors.primary,
@@ -193,7 +198,7 @@ export const VeiculoAssociationScreen = (): React.JSX.Element => {
 
   if (isLoading) {
     return (
-      <View style={[styles.root, {alignItems: 'center', justifyContent: 'center'}]} testID="veiculo-loading">
+      <View style={[styles.root, styles.rootLoading]} testID="veiculo-loading">
         <ActivityIndicator color={theme.colors.primary} size="large" />
       </View>
     );

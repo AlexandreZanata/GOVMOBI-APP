@@ -261,8 +261,9 @@ CorridaDetalheScreen.displayName = 'CorridaDetalheScreen';
 // Local styles — column-layout field rows + star rating
 // ---------------------------------------------------------------------------
 
-const createLocalStyles = (theme: ReturnType<typeof useTheme>) =>
-  StyleSheet.create({
+const createLocalStyles = (theme: ReturnType<typeof useTheme>) => {
+  /* eslint-disable react-native/no-unused-styles */
+  return StyleSheet.create({
     /** Column container: label on top, value below, with bottom spacing. */
     field: {
       flexDirection: 'column',
@@ -295,3 +296,5 @@ const createLocalStyles = (theme: ReturnType<typeof useTheme>) =>
       marginLeft: theme.spacing[1],
     },
   });
+  /* eslint-enable react-native/no-unused-styles */
+};

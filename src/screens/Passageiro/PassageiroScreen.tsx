@@ -46,10 +46,7 @@ import {
 } from '@store/slices/corridaSlice';
 import {addToast} from '@store/slices/uiSlice';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
-import type {Corrida} from '@models/Corrida';
 import {TERMINAL_STATUSES as CORRIDA_TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
-
-// ── Navigation types ──────────────────────────────────────────────────────────
 type PassageiroTabParamList = {
   PassageiroHome: undefined;
   PassageiroCorridas: NavigatorScreenParams<PassageiroCorridasStackParamList>;
@@ -183,7 +180,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
   const isActionLoading = useAppSelector(s => s.corrida.isActionLoading);
   const pendingCorridaId = useAppSelector(s => s.corrida.pendingCorridaId);
-  const servidorId = useAppSelector(s => s.auth.servidorId ?? '');
   const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
   // Driver name from WS cache — avoids REST round-trips on every render and
   // survives tab navigation / foreground transitions.
