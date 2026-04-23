@@ -92,9 +92,36 @@ export const useRideReconnection = (): void => {
     }
 
     const corrida = result.data;
+
+    // SAFETY: if the REST call returns null but we have a non-terminal local
+    // ride, trust the local state — the server may be lagging behind a
+    // real-time event that hasn't been committed yet.
+    if (!corrida) {
+      const localCorrida = activeCorridaRef.current;
+      const hasNonTerminalLocal =
+        localCorrida !== null && !TERMINAL_STATUSES.has(localCorrida.status);
+
+      if (hasNonTerminalLocal) {
+        console.log(TAG, 'REST fallback returned null but local ride is active — keeping local state →', localCorrida.id);
+        // Re-subscribe to ensure the WS room is active.
+        await realtimeFacadeRef.current.subscribeToCorrida({corridaId: localCorrida.id});
+        dispatchRef.current(addRealtimeSubscription(localCorrida.id));
+        return;
+      }
+
+      // No local ride either — clear state.
+      dispatchRef.current(setActiveCorrida(null));
+      dispatchRef.current(setPendingCorridaId(null));
+      if (motoristaIdRef.current) {
+        console.log(TAG, 'REST fallback — no active ride, emitting ficar-disponivel');
+        await realtimeFacadeRef.current.setDriverAvailable();
+      }
+      return;
+    }
+
     dispatchRef.current(setActiveCorrida(corrida));
 
-    if (corrida && !TERMINAL_STATUSES.has(corrida.status)) {
+    if (!TERMINAL_STATUSES.has(corrida.status)) {
       console.log(TAG, 'REST fallback — active ride found, re-subscribing →', corrida.id);
       await realtimeFacadeRef.current.subscribeToCorrida({corridaId: corrida.id});
       dispatchRef.current(addRealtimeSubscription(corrida.id));
@@ -102,7 +129,7 @@ export const useRideReconnection = (): void => {
     } else {
       dispatchRef.current(setPendingCorridaId(null));
       if (motoristaIdRef.current) {
-        console.log(TAG, 'REST fallback — no active ride, emitting ficar-disponivel');
+        console.log(TAG, 'REST fallback — terminal ride, emitting ficar-disponivel');
         await realtimeFacadeRef.current.setDriverAvailable();
       }
     }
@@ -160,12 +187,26 @@ export const useRideReconnection = (): void => {
           }
         });
       } else {
-        // No active ride on server — clear local state and re-enter dispatch queue.
-        dispatchRef.current(setActiveCorrida(null));
-        dispatchRef.current(setPendingCorridaId(null));
-        if (motoristaIdRef.current) {
-          console.log(TAG, 'reconexao-concluida — no active ride, emitting ficar-disponivel');
-          void realtimeFacadeRef.current.setDriverAvailable();
+        // Server reports no active ride on reconexao-concluida.
+        // SAFETY: never clear a non-terminal local ride based on this event —
+        // the server payload may lag behind real-time state transitions.
+        // Only clear if the local state is already terminal or absent.
+        const localCorrida = activeCorridaRef.current;
+        const hasNonTerminalLocal =
+          localCorrida !== null && !TERMINAL_STATUSES.has(localCorrida.status);
+
+        if (!hasNonTerminalLocal) {
+          dispatchRef.current(setActiveCorrida(null));
+          dispatchRef.current(setPendingCorridaId(null));
+          if (motoristaIdRef.current) {
+            console.log(TAG, 'reconexao-concluida — no active ride, emitting ficar-disponivel');
+            void realtimeFacadeRef.current.setDriverAvailable();
+          }
+        } else {
+          // Local ride is still active — keep it and re-subscribe to the room.
+          console.log(TAG, 'reconexao-concluida — server has no ride but local ride is active, keeping local state →', localCorrida.id);
+          void realtimeFacadeRef.current.subscribeToCorrida({corridaId: localCorrida.id});
+          dispatchRef.current(addRealtimeSubscription(localCorrida.id));
         }
       }
     });

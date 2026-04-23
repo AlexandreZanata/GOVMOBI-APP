@@ -108,6 +108,9 @@ export const useCorridaContexto = (): void => {
         }
       } else {
         // Server reports no active ride.
+        // SAFETY: never clear a non-terminal local ride based on a contexto
+        // response — the server may lag behind real-time WS events.
+        // Only clear when the local state is already terminal or absent.
         const hasNonTerminalLocal =
           localActiva !== null && !TERMINAL_STATUSES.has(localActiva.status);
 
@@ -119,6 +122,13 @@ export const useCorridaContexto = (): void => {
           if (motoristaIdRef.current && isConnected) {
             console.log(TAG, 'no active ride — emitting ficar-disponivel');
             await realtimeFacadeRef.current.setDriverAvailable();
+          }
+        } else {
+          // Local ride is still active — keep it and ensure WS subscription.
+          console.log(TAG, 'contexto returned no ride but local ride is active — keeping local state →', localActiva.id);
+          if (isConnected) {
+            await realtimeFacadeRef.current.subscribeToCorrida({corridaId: localActiva.id});
+            dispatchRef.current(addRealtimeSubscription(localActiva.id));
           }
         }
       }
