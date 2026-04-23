@@ -2,6 +2,7 @@
  * @fileoverview Redux slice for websocket connection and audit-friendly realtime state.
  */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
+import {REHYDRATE} from 'redux-persist';
 import type {RealtimeConnectionStatus, NovaCorridaDisponivelPayload} from '../../types';
 
 export interface RealtimeState {
@@ -105,6 +106,17 @@ const realtimeSlice = createSlice({
     resetRealtime() {
       return initialState;
     },
+  },
+  extraReducers: builder => {
+    /**
+     * On Redux Persist rehydration, force connectionStatus back to 'idle'.
+     * This prevents a stale 'connected' or 'connecting' status from a previous
+     * session from triggering the NetworkBanner on cold start.
+     */
+    builder.addCase(REHYDRATE, state => {
+      state.connectionStatus = 'idle';
+      state.lastError = null;
+    });
   },
 });
 

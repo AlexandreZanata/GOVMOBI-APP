@@ -19,6 +19,8 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
+  AppState,
+  type AppStateStatus,
   Modal,
   Pressable,
   StyleSheet,
@@ -67,6 +69,16 @@ type BannerMode = 'hidden' | 'offline' | 'reconnecting' | 'recovered';
 
 const SUCCESS_FLASH_MS = 2_000;
 
+/**
+ * How long after the app becomes active (cold start or foreground) to suppress
+ * the reconnecting banner. This prevents the overlay from blocking the UI
+ * during the initial WebSocket handshake on every app open.
+ *
+ * Value chosen to be longer than the first backoff attempt (1 000 ms base)
+ * but short enough that a genuine persistent failure is still surfaced quickly.
+ */
+const STARTUP_GRACE_MS = 8_000;
+
 const toBannerMode = (isOnline: boolean, wsStatus: string): BannerMode => {
   if (!isOnline) return 'offline';
   // 'idle' means the WS hasn't started yet — not a failure state, don't block UI
@@ -110,17 +122,52 @@ export const NetworkBanner = (): React.JSX.Element | null => {
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
-  // Only show reconnecting banner after the first successful WS connection.
-  // This prevents the banner from blocking the UI during the initial connect.
-  const hasEverConnectedRef = useRef(false);
-  if (wsStatus === 'connected') {
-    hasEverConnectedRef.current = true;
-  }
+  // ---------------------------------------------------------------------------
+  // Startup grace period — suppress the reconnecting banner for STARTUP_GRACE_MS
+  // after every app activation (cold start or foreground transition).
+  //
+  // This prevents the overlay from blocking the UI during the initial WS
+  // handshake on every app open, while still surfacing genuine persistent
+  // failures after the grace window expires.
+  // ---------------------------------------------------------------------------
+  const [isInGracePeriod, setIsInGracePeriod] = useState(true);
+  const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const targetMode = toBannerMode(
-    isOnline,
-    hasEverConnectedRef.current ? wsStatus : 'connected',
-  );
+  const startGracePeriod = useCallback(() => {
+    setIsInGracePeriod(true);
+    if (graceTimerRef.current) clearTimeout(graceTimerRef.current);
+    graceTimerRef.current = setTimeout(() => {
+      setIsInGracePeriod(false);
+    }, STARTUP_GRACE_MS);
+  }, []);
+
+  // Start grace period on mount (cold start) and on every foreground transition
+  useEffect(() => {
+    startGracePeriod();
+
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next === 'active') {
+        startGracePeriod();
+      }
+    });
+
+    return () => {
+      sub.remove();
+      if (graceTimerRef.current) clearTimeout(graceTimerRef.current);
+    };
+  }, [startGracePeriod]);
+
+  // Grace period ends immediately when WS connects successfully — no need to wait
+  useEffect(() => {
+    if (wsStatus === 'connected' && isInGracePeriod) {
+      if (graceTimerRef.current) clearTimeout(graceTimerRef.current);
+      setIsInGracePeriod(false);
+    }
+  }, [wsStatus, isInGracePeriod]);
+
+  // While in grace period, treat the status as 'connected' so the banner stays hidden
+  const effectiveWsStatus = isInGracePeriod ? 'connected' : wsStatus;
+  const targetMode = toBannerMode(isOnline, effectiveWsStatus);
 
   useEffect(() => {
     const prev = prevModeRef.current;
