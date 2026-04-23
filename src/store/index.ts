@@ -34,7 +34,15 @@ const authPersistConfig = {
   // motoristaId + municipioId are the authoritative driver signals —
   // without them persisted, drivers always land on PassageiroNavigator
   // until the async getMe() resolves.
-  whitelist: ['user', 'token', 'isAuthenticated', 'papeis', 'motoristaId', 'municipioId'],
+  //
+  // statusOperacional: persisted so the driver's last known operational status
+  // (DISPONIVEL, OFFLINE, etc.) is restored immediately on cold start, without
+  // waiting for getMe() to resolve or requiring a manual re-toggle.
+  //
+  // servidorId: persisted so useNotifications can call setOneSignalExternalUserId
+  // immediately after rehydration, eliminating the race-condition window where
+  // the device is not registered with OneSignal while getMe() is in-flight.
+  whitelist: ['user', 'token', 'isAuthenticated', 'papeis', 'motoristaId', 'municipioId', 'statusOperacional', 'servidorId'],
 };
 
 const uiPersistConfig = {

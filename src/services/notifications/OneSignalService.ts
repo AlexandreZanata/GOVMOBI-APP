@@ -231,16 +231,14 @@ export function registerForegroundHandler(isChatOpen?: () => boolean): () => voi
     const isMessageNotification = data?.status === 'nova_mensagem' || !data?.status;
     if (isMessageNotification && isChatOpen?.()) {
       logger.info('OneSignalService', 'Foreground message push suppressed — chat is open');
-      event.preventDefault();
-      return;
+    } else {
+      logger.info(
+        'OneSignalService',
+        'Foreground push received (suppressed — WS handles this):',
+        notification.title,
+      );
     }
-
-    logger.info(
-      'OneSignalService',
-      'Foreground push received (suppressed — WS handles this):',
-      notification.title,
-    );
-    // Suppress all foreground banners — WebSocket already delivered this.
+    // Always suppress foreground banners — WebSocket handles foreground delivery.
     event.preventDefault();
   };
 

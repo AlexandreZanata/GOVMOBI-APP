@@ -59,6 +59,9 @@ class RealtimeFacadeStub implements IRealtimeFacade {
   public clearCorridaSubscriptions(): void {}
 
   /** @inheritdoc */
+  public confirmConnected(): void {}
+
+  /** @inheritdoc */
   public async visualizarMensagens(
     _payload: import('../../types').VisualizarMensagensPayload,
   ): Promise<Result<boolean, FacadeError>> {

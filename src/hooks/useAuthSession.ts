@@ -33,6 +33,7 @@ import {
 import {addToast} from '@store/slices/uiSlice';
 import {useTranslation} from 'react-i18next';
 import {logger} from '@utils/logger';
+import {getValidToken} from '@utils/tokenUtils';
 
 /** How often (ms) to check whether the token needs proactive refresh. */
 const CHECK_INTERVAL_MS = 60_000;
@@ -101,7 +102,6 @@ export const useAuthSession = (): void => {
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
   const token = useAppSelector(state => state.auth.token);
 
-  const isRefreshing = useRef(false);
   const hasHydratedRef = useRef(false);
 
   // ---------------------------------------------------------------------------
@@ -109,15 +109,48 @@ export const useAuthSession = (): void => {
   // ---------------------------------------------------------------------------
 
   /**
+   * Decodes the `exp` claim from a JWT to get the Unix expiry timestamp.
+   *
+   * @param jwtToken - Raw JWT string.
+   * @returns Unix timestamp (seconds) of expiry, or 0 if undecodable.
+   */
+  const getTokenExpiresAt = (jwtToken: string): number => {
+    const parts = jwtToken.split('.');
+    if (parts.length !== 3) return 0;
+    try {
+      const decode = (globalThis as {atob?: (v: string) => string}).atob;
+      if (typeof decode === 'function') {
+        const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(decode(normalized)) as {exp?: number};
+        return typeof payload.exp === 'number' ? payload.exp : 0;
+      }
+      // Node / test environment fallback
+      const payload = JSON.parse(
+        Buffer.from(parts[1], 'base64').toString('utf-8'),
+      ) as {exp?: number};
+      return typeof payload.exp === 'number' ? payload.exp : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  /**
    * Calls `authFacade.refreshToken()`, updates Redux, and returns the new
    * access token. Dispatches `logout()` and a toast on failure.
+   *
+   * Uses the shared `getValidToken()` mutex from `tokenUtils` so concurrent
+   * callers (e.g. the WebSocket 401 handler) serialize through the same
+   * promise and only one refresh call is ever in-flight at a time.
    *
    * @returns New access token string, or null on failure.
    */
   const doRefresh = async (): Promise<string | null> => {
-    if (isRefreshing.current) return null;
-    isRefreshing.current = true;
-    try {
+    const currentToken = token;
+    if (!currentToken) return null;
+
+    const tokenExpiresAt = getTokenExpiresAt(currentToken);
+
+    const refreshFn = async (): Promise<string | null> => {
       const result = await authFacade.refreshToken();
       if (result.error || !result.data) {
         logger.warn('useAuthSession', 'Token refresh failed — ending session');
@@ -131,9 +164,9 @@ export const useAuthSession = (): void => {
       }
       dispatch(tokenRefreshed(result.data.accessToken));
       return result.data.accessToken;
-    } finally {
-      isRefreshing.current = false;
-    }
+    };
+
+    return getValidToken(currentToken, tokenExpiresAt, refreshFn);
   };
 
   // ---------------------------------------------------------------------------

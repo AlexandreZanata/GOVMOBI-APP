@@ -7,6 +7,7 @@ import type {MotoristaStatusOperacional} from '@models/Motorista';
 export type RealtimeConnectionStatus =
   | 'idle'
   | 'connecting'
+  | 'reconnecting'
   | 'connected'
   | 'disconnected'
   | 'error';

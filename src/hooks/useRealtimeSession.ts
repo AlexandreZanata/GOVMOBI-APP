@@ -9,6 +9,7 @@
 import {useCallback, useEffect, useMemo, useRef} from 'react';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '@store/index';
+import {getValidToken} from '@utils/tokenUtils';
 import {
   addMensagem,
   setMensagens,
@@ -61,7 +62,7 @@ export interface UseRealtimeSessionState {
  */
 export const useRealtimeSession = (): UseRealtimeSessionState => {
   const dispatch = useAppDispatch();
-  const {realtimeFacade} = useFacades();
+  const {realtimeFacade, authFacade} = useFacades();
 
   const token = useAppSelector(state => state.auth.token);
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
@@ -83,6 +84,9 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
 
   const facadeRef = useRef(realtimeFacade);
   facadeRef.current = realtimeFacade;
+
+  const authFacadeRef = useRef(authFacade);
+  authFacadeRef.current = authFacade;
 
   const servidorIdRef = useRef(servidorId);
   servidorIdRef.current = servidorId;
@@ -184,8 +188,39 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
     let cancelled = false;
 
     const connect = async (): Promise<void> => {
-      console.log('[useRealtimeSession] connecting — token_prefix=', token.slice(0, 20));
-      const result = await realtimeFacade.connect(token);
+      // Decode token expiry from JWT payload (no signature verification needed).
+      const parts = token.split('.');
+      let tokenExpiresAt = 0;
+      if (parts.length === 3) {
+        try {
+          const decode = (globalThis as {atob?: (v: string) => string}).atob;
+          if (typeof decode === 'function') {
+            const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(decode(normalized)) as {exp?: number};
+            tokenExpiresAt = typeof payload.exp === 'number' ? payload.exp : 0;
+          } else {
+            // Node / test environment fallback
+            const payload = JSON.parse(
+              Buffer.from(parts[1], 'base64').toString('utf-8'),
+            ) as {exp?: number};
+            tokenExpiresAt = typeof payload.exp === 'number' ? payload.exp : 0;
+          }
+        } catch {
+          tokenExpiresAt = 0;
+        }
+      }
+
+      const refreshFn = async (): Promise<string | null> => {
+        const result = await authFacadeRef.current.refreshToken();
+        if (result.error || !result.data) return null;
+        return result.data.accessToken;
+      };
+
+      const freshToken = await getValidToken(token, tokenExpiresAt, refreshFn);
+      if (!freshToken || cancelled) return;
+
+      console.log('[useRealtimeSession] connecting — token_prefix=', freshToken.slice(0, 20));
+      const result = await realtimeFacade.connect(freshToken);
       if (cancelled) return;
       if (result.error) {
         console.error('[useRealtimeSession] connect failed →', JSON.stringify(result.error));

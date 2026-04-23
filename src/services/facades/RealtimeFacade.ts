@@ -225,6 +225,16 @@ export interface IRealtimeFacade {
   onConnectionStatusChange(handler: ConnectionStatusHandler): () => void;
 
   /**
+   * Confirms the session is fully authenticated and emits `'connected'` status.
+   * Called by `useRideReconnection` after the REST fallback confirms the session,
+   * or can be used by any caller that has verified the server auth ack.
+   *
+   * @returns Void.
+   * @throws Never.
+   */
+  confirmConnected(): void;
+
+  /**
    * Maps backend ride status names to the app domain status union.
    *
    * @param status - Backend realtime status name.
@@ -315,6 +325,13 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
       this.client.disconnect();
     }
     this.emitConnectionStatus('disconnected', null);
+  }
+
+  /** @inheritdoc */
+  public confirmConnected(): void {
+    rtLog('confirmConnected() — REST fallback confirmed session');
+    this.isConnected = true;
+    this.emitConnectionStatus('connected', null);
   }
 
   /** @inheritdoc */
@@ -432,9 +449,9 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
 
   private registerTransportListeners(): void {
     this.client.onConnected(() => {
-      rtLog('transport → connected');
+      rtLog('transport → connected (awaiting server auth ack)');
       this.isConnected = true;
-      this.emitConnectionStatus('connected', null);
+      this.emitConnectionStatus('reconnecting', null);
     });
 
     this.client.onDisconnected(() => {
@@ -482,6 +499,8 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     this.client.onReconexaoConcluida(payload => {
       rtLog('facade → reconexao-concluida →', JSON.stringify(payload));
       this.emitEvent({type: 'reconexao-concluida', payload});
+      this.isConnected = true;
+      this.emitConnectionStatus('connected', null);
     });
 
     this.client.onMensagensVisualizadas(payload => {

@@ -36,6 +36,7 @@ const mockRealtimeFacade = {
   }),
   subscribeToCorrida: mockSubscribeToCorrida,
   setDriverAvailable: mockSetDriverAvailable,
+  confirmConnected: jest.fn(),
 };
 
 const mockCorridaFacade = {
@@ -82,7 +83,7 @@ jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, handler) =>
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const simulateConnect = () => act(() => { capturedStatusHandler?.('connected'); });
+const simulateConnect = () => act(() => { capturedStatusHandler?.('reconnecting'); });
 const simulateReconexao = (payload: unknown) =>
   act(() => { capturedEventHandler?.({type: 'reconexao-concluida', payload}); });
 const advanceTimer = () => act(() => { jest.advanceTimersByTime(3100); });

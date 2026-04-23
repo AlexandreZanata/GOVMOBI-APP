@@ -25,6 +25,7 @@ import {
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
 import {TERMINAL_STATUSES} from '@models/Corrida';
+import {getValidToken} from '@utils/tokenUtils';
 import type {ReconexaoConcluida} from '../types/realtime';
 
 const TAG = '[useRideReconnection]';
@@ -38,10 +39,11 @@ const RECONNECTION_TIMEOUT_MS = 3_000;
  */
 export const useRideReconnection = (): void => {
   const dispatch = useAppDispatch();
-  const {realtimeFacade, corridaFacade} = useFacades();
+  const {realtimeFacade, corridaFacade, authFacade} = useFacades();
 
   const motoristaId = useAppSelector(state => state.auth.motoristaId);
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
+  const token = useAppSelector(state => state.auth.token);
   // Read activeCorrida so the REST fallback can skip when state is already hydrated.
   const activeCorrida = useAppSelector(state => state.corrida.activeCorrida);
 
@@ -63,6 +65,12 @@ export const useRideReconnection = (): void => {
 
   const realtimeFacadeRef = useRef(realtimeFacade);
   realtimeFacadeRef.current = realtimeFacade;
+
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+
+  const authFacadeRef = useRef(authFacade);
+  authFacadeRef.current = authFacade;
 
   // Tracks whether reconexao-concluida arrived within the timeout window.
   const reconexaoConcluida = useRef(false);
@@ -146,16 +154,18 @@ export const useRideReconnection = (): void => {
   useEffect(() => {
     // ── Connection status listener ──────────────────────────────────────────
     const unsubStatus = realtimeFacade.onConnectionStatusChange(status => {
-      if (status === 'connected') {
+      if (status === 'reconnecting') {
         reconexaoConcluida.current = false;
         clearTimer();
 
-        console.log(TAG, 'connected — waiting', RECONNECTION_TIMEOUT_MS, 'ms for reconexao-concluida');
+        console.log(TAG, 'reconnecting — waiting', RECONNECTION_TIMEOUT_MS, 'ms for reconexao-concluida');
 
         timerRef.current = setTimeout(() => {
           if (!reconexaoConcluida.current) {
             console.log(TAG, 'reconexao-concluida not received — falling back to REST');
-            void handleRestFallback();
+            void handleRestFallback().then(() => {
+              realtimeFacadeRef.current.confirmConnected();
+            });
           }
         }, RECONNECTION_TIMEOUT_MS);
       } else if (status === 'disconnected' || status === 'error') {
@@ -234,15 +244,54 @@ export const useRideReconnection = (): void => {
           nextState === 'active'
         ) {
           console.log(TAG, 'AppState foreground — forcing REST reconciliation');
+          // P4 fix: call getValidToken() to ensure the token is fresh before
+          // useRealtimeSession's effect re-runs and reconnects the WebSocket.
+          const currentToken = tokenRef.current;
+          if (currentToken) {
+            // Decode token expiry from JWT payload inline (same pattern as useRealtimeSession).
+            const parts = currentToken.split('.');
+            let tokenExpiresAt = 0;
+            if (parts.length === 3) {
+              try {
+                const decode = (globalThis as {atob?: (v: string) => string}).atob;
+                if (typeof decode === 'function') {
+                  const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+                  const payload = JSON.parse(decode(normalized)) as {exp?: number};
+                  tokenExpiresAt = typeof payload.exp === 'number' ? payload.exp : 0;
+                } else {
+                  const payload = JSON.parse(
+                    Buffer.from(parts[1], 'base64').toString('utf-8'),
+                  ) as {exp?: number};
+                  tokenExpiresAt = typeof payload.exp === 'number' ? payload.exp : 0;
+                }
+              } catch {
+                tokenExpiresAt = 0;
+              }
+            }
+            const refreshFn = async (): Promise<string | null> => {
+              const result = await authFacadeRef.current.refreshToken();
+              return result.data?.accessToken ?? null;
+            };
+            void getValidToken(currentToken, tokenExpiresAt, refreshFn);
+          }
+
           // Give the socket 3 s to reconnect and emit reconexao-concluida.
           // If it doesn't, the REST fallback will run.
           reconexaoConcluida.current = false;
           clearTimer();
           timerRef.current = setTimeout(() => {
             if (!reconexaoConcluida.current) {
-              void handleRestFallback();
+              void handleRestFallback().then(() => {
+                realtimeFacadeRef.current.confirmConnected();
+              });
             }
           }, RECONNECTION_TIMEOUT_MS);
+        }
+
+        // P5 fix: clear the timer when going to background to prevent duplicate
+        // REST fallback calls if the app cycles background → foreground quickly.
+        if (nextState === 'background' || nextState === 'inactive') {
+          clearTimer();
         }
       },
     );
