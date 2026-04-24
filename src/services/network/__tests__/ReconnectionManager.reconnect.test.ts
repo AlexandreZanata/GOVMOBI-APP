@@ -244,3 +244,109 @@ describe('ReconnectionManager', () => {
     expect(facade.connect.mock.calls.length).toBe(countBeforeAbort);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Bug condition exploration tests (Task 1.2 and 1.4)
+// These tests encode EXPECTED (correct) behavior and MUST FAIL on unfixed code.
+// Failure confirms the bugs exist. Do NOT fix the source code when these fail.
+// ---------------------------------------------------------------------------
+
+describe('ReconnectionManager — Bug 2 exploration: already-connected attempt resolves as success', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+  });
+
+  /**
+   * Bug condition: isBugCondition_AlreadyConnectedLoop(X) where X.facadeIsConnected = true
+   *
+   * This test asserts the EXPECTED (correct) behavior: when the facade is already
+   * connected, attempt() should succeed immediately without timing out.
+   * On unfixed code it WILL FAIL because waitForConnection times out after 10s
+   * (the facade emits no status event when connect() is called while already connected).
+   *
+   * Counterexample: "waitForConnection times out when facade is already connected"
+   *
+   * Validates: Requirements 2.1, 3.1 — Property 3 from design
+   */
+  it('attempt() succeeds immediately when facade is already connected (no timeout)', async () => {
+    const facade = createMockFacade();
+    const getToken = jest.fn().mockReturnValue(makeToken(300));
+    const refreshToken = jest.fn();
+
+    // Simulate facade already being connected: connect() emits 'connected' immediately
+    // On unfixed code, connect() when already connected emits NOTHING → timeout
+    // On fixed code, connect() when already connected emits 'connected' → resolves
+    facade.connect.mockImplementation(() => {
+      // The facade is "already connected" — it skips and emits nothing (buggy behavior)
+      // This means waitForConnection will never resolve and will time out
+      return Promise.resolve({data: 'connecting' as RealtimeConnectionStatus, error: null});
+    });
+
+    const reconnectedCb = jest.fn();
+    const manager = new ReconnectionManager(facade, {getToken, refreshToken}, {
+      baseDelayMs: 0,
+    });
+    manager.onReconnected(reconnectedCb);
+    manager.reconnectNow();
+
+    // Use a short timeout (500ms) to fail fast instead of waiting 10s
+    // Advance timers by 500ms — on unfixed code the attempt will still be pending
+    await jest.advanceTimersByTimeAsync(500);
+
+    // EXPECTED (correct) behavior: attempt should have succeeded
+    // ACTUAL (buggy) behavior: waitForConnection is still pending (will timeout at 10s)
+    // This assertion WILL FAIL on unfixed code — that IS the success condition
+    expect(reconnectedCb).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ReconnectionManager — Bug 5 exploration: token refresh failure calls onSessionExpired', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+  });
+
+  /**
+   * Bug condition: isBugCondition_SilentAbort(X) where X.refreshResult = null
+   *
+   * This test asserts the EXPECTED (correct) behavior: when refreshToken() returns null,
+   * onSessionExpired should be called to notify the user.
+   * On unfixed code it WILL FAIL because the manager silently calls abort() without
+   * calling onSessionExpired (the deps interface doesn't even have this callback).
+   *
+   * Counterexample: "Token refresh failure aborts silently without user feedback"
+   *
+   * Validates: Requirements 2.6 — Property 6 from design
+   */
+  it('calls onSessionExpired when refreshToken returns null (token near expiry)', async () => {
+    const facade = createMockFacade();
+    // Token near expiry so refresh is triggered
+    const getToken = jest.fn().mockReturnValue(makeToken(30));
+    // Refresh fails
+    const refreshToken = jest.fn().mockResolvedValue(null);
+    const onSessionExpired = jest.fn();
+
+    const manager = new ReconnectionManager(
+      facade,
+      // @ts-expect-error — onSessionExpired not yet in deps interface (Bug 5 not fixed)
+      {getToken, refreshToken, onSessionExpired},
+    );
+    manager.reconnectNow();
+
+    await jest.runAllTimersAsync();
+
+    // EXPECTED (correct) behavior: onSessionExpired should be called
+    // ACTUAL (buggy) behavior: abort() is called silently, onSessionExpired is never called
+    // This assertion WILL FAIL on unfixed code — that IS the success condition
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
+  });
+});

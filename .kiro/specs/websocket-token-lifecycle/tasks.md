@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Write bug condition exploration tests (BEFORE implementing fixes)
+- [x] 1. Write bug condition exploration tests (BEFORE implementing fixes)
   - **Property 1: Bug Condition** - WebSocket Reconnection Lifecycle Bugs
   - **CRITICAL**: These tests MUST FAIL on unfixed code - failure confirms the bugs exist
   - **DO NOT attempt to fix the tests or the code when they fail**
@@ -15,7 +15,7 @@
   - Mark task complete when tests are written, run, and failures are documented
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
-  - [ ] 1.1 Bug 1 exploration test - First connect emits `reconnecting` instead of `connected`
+  - [x] 1.1 Bug 1 exploration test - First connect emits `reconnecting` instead of `connected`
     - Create test file `src/services/facades/__tests__/RealtimeFacade.bugCondition.test.ts`
     - Test: Mount `RealtimeFacadeImpl` with mock transport, fire `onConnected` on fresh facade (wasEverConnected=false)
     - Assert: emitted status is `reconnecting` (will pass on unfixed code, confirming Bug 1)
@@ -23,7 +23,7 @@
     - _Bug_Condition: isBugCondition_InfiniteReconnect(X) where X.wasEverConnected = false_
     - _Expected_Behavior: emitted_status = 'connected' (from Property 1 in design)_
 
-  - [ ] 1.2 Bug 2 exploration test - Already-connected attempt times out
+  - [x] 1.2 Bug 2 exploration test - Already-connected attempt times out
     - Add test to `src/services/network/__tests__/ReconnectionManager.reconnect.test.ts`
     - Test: Call `attempt()` on manager whose facade has `isConnected=true`
     - Assert: attempt times out after 10s (will pass on unfixed code, confirming Bug 2)
@@ -31,7 +31,7 @@
     - _Bug_Condition: isBugCondition_AlreadyConnectedLoop(X) where X.facadeIsConnected = true_
     - _Expected_Behavior: attempt_succeeded = true AND no_retry_scheduled = true (from Property 3 in design)_
 
-  - [ ] 1.3 Bug 4 exploration test - INDISPONIVEL not restored
+  - [x] 1.3 Bug 4 exploration test - INDISPONIVEL not restored
     - Add test to `src/hooks/__tests__/useAuthSession.statusRestore.test.ts`
     - Test: Call `doGetMe` with `previousStatus='DISPONIVEL'` and `serverStatus='INDISPONIVEL'`
     - Assert: `updateMyStatus` is NOT called (will pass on unfixed code, confirming Bug 4)
@@ -39,7 +39,7 @@
     - _Bug_Condition: isBugCondition_StatusNotRestored(X) where X.serverStatus = 'INDISPONIVEL'_
     - _Expected_Behavior: updateMyStatus_called_with('DISPONIVEL') = true (from Property 4 in design)_
 
-  - [ ] 1.4 Bug 5 exploration test - Silent token refresh abort
+  - [x] 1.4 Bug 5 exploration test - Silent token refresh abort
     - Add test to `src/services/network/__tests__/ReconnectionManager.reconnect.test.ts`
     - Test: Call `attempt()` with `refreshToken` returning `null`
     - Assert: no toast dispatched and no logout called (will pass on unfixed code, confirming Bug 5)
@@ -47,7 +47,7 @@
     - _Bug_Condition: isBugCondition_SilentAbort(X) where X.refreshResult = null_
     - _Expected_Behavior: onSessionExpired_called = true (from Property 6 in design)_
 
-  - [ ] 1.5 Bug 6 exploration test - OneSignal linking too late
+  - [x] 1.5 Bug 6 exploration test - OneSignal linking too late
     - Add test to `src/services/notifications/__tests__/OneSignalService.poc.test.ts`
     - Test: Simulate background hydration where `servidorId` is available but `useNotifications` effect hasn't fired
     - Assert: `login()` not called yet (will pass on unfixed code, confirming Bug 6)

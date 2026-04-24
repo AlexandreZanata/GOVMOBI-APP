@@ -234,3 +234,47 @@ describe('useAuthSession — driver status restoration', () => {
     unmount();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Bug condition exploration test (Task 1.3)
+// This test encodes EXPECTED (correct) behavior and MUST FAIL on unfixed code.
+// Failure confirms Bug 4 exists. Do NOT fix the source code when this fails.
+// ---------------------------------------------------------------------------
+
+describe('useAuthSession — Bug 4 exploration: INDISPONIVEL triggers status restore', () => {
+  /**
+   * Bug condition: isBugCondition_StatusNotRestored(X) where X.serverStatus = 'INDISPONIVEL'
+   *
+   * This test asserts the EXPECTED (correct) behavior: when previousStatus='DISPONIVEL'
+   * and the server returns 'INDISPONIVEL', updateMyStatus should be called with 'DISPONIVEL'.
+   * On unfixed code it WILL FAIL because the condition only checks === 'OFFLINE'.
+   *
+   * Counterexample: "Status restore skips INDISPONIVEL, only checks OFFLINE"
+   *
+   * Validates: Requirements 2.5 — Property 4 from design
+   */
+  it('calls updateMyStatus(DISPONIVEL) when persisted=DISPONIVEL and server returns INDISPONIVEL', async () => {
+    mockGetMe.mockResolvedValue({
+      data: {...MOCK_ME_BASE, statusOperacional: 'INDISPONIVEL'},
+      error: null,
+    });
+
+    const store = buildStore('DISPONIVEL');
+
+    const {unmount} = renderHook(() => useAuthSession(), {
+      wrapper: wrapper(store),
+    });
+
+    // Allow async hydration to complete
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 50));
+    });
+
+    // EXPECTED (correct) behavior: updateMyStatus should be called with 'DISPONIVEL'
+    // ACTUAL (buggy) behavior: updateMyStatus is NOT called (condition only checks 'OFFLINE')
+    // This assertion WILL FAIL on unfixed code — that IS the success condition
+    expect(mockUpdateMyStatus).toHaveBeenCalledWith('DISPONIVEL');
+
+    unmount();
+  });
+});

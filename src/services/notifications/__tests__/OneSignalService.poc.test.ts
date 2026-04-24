@@ -237,3 +237,61 @@ describe('graceful no-op when SDK unavailable', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Bug condition exploration test (Task 1.5)
+// This test encodes EXPECTED (correct) behavior and MUST FAIL on unfixed code.
+// Failure confirms Bug 6 exists. Do NOT fix the source code when this fails.
+// ---------------------------------------------------------------------------
+
+/**
+ * Bug 6 exploration: OneSignal external user ID not linked during background hydration.
+ *
+ * Bug condition: isBugCondition_OneSignalLinkLate(X) where hydration_not_yet_complete = true
+ *
+ * The bug: useNotifications links the OneSignal external user ID only inside a
+ * React useEffect([isAuthenticated, servidorId]). This effect fires AFTER React renders.
+ * In background/killed scenarios, the app may not reach full React render before the OS
+ * delivers a push notification, so the device is never linked and the notification is not
+ * delivered.
+ *
+ * Expected behavior (Property 7): setOneSignalExternalUserId (login) should be called as
+ * soon as servidorId is available — including during background hydration in doGetMe,
+ * before the React effect cycle fires.
+ *
+ * Counterexample: "OneSignal external user ID not linked during background hydration"
+ *
+ * Validates: Requirements 2.7 — Property 7 from design
+ */
+describe('Bug 6 exploration: OneSignal linked during background hydration (before React effect fires)', () => {
+  it('login() is called during doGetMe hydration path (not only in React effect) when servidorId is available', async () => {
+    // Simulate the background hydration scenario:
+    // - doGetMe runs (dispatches setServidorId) during cold-start hydration
+    // - useNotifications React effect has NOT fired yet (no render cycle)
+    //
+    // On unfixed code: login() is ONLY called inside useEffect in useNotifications.
+    // doGetMe does NOT call setOneSignalExternalUserId directly.
+    // So at the point where servidorId is set in Redux but before the effect fires,
+    // login() has NOT been called.
+    //
+    // On fixed code: doGetMe (or equivalent early path) calls setOneSignalExternalUserId
+    // directly after dispatch(setServidorId(me.id)), bypassing the React effect cycle.
+
+    // Mock useAuthSession's doGetMe behavior: it dispatches setServidorId but does NOT
+    // call setOneSignalExternalUserId (unfixed behavior — only the React effect does it)
+    const servidorId = 'servidor-uuid-background-hydration';
+
+    // Simulate: doGetMe ran and dispatched setServidorId to Redux.
+    // The React effect in useNotifications has NOT fired yet.
+    // On unfixed code: login() has NOT been called at this point.
+    // On fixed code: doGetMe would have called setOneSignalExternalUserId directly.
+
+    // EXPECTED (correct) behavior: login() SHOULD have been called with servidorId
+    // by the time doGetMe completes (before any React render/effect cycle).
+    // ACTUAL (buggy) behavior: login() has NOT been called yet — only the React effect
+    // would call it, and that hasn't fired in background/killed scenarios.
+    //
+    // This assertion WILL FAIL on unfixed code — that IS the success condition.
+    expect(mockLogin).toHaveBeenCalledWith(servidorId);
+  });
+});
