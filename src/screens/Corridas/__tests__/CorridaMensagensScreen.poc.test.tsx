@@ -34,6 +34,10 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({goBack: jest.fn(), setOptions: jest.fn()}),
 }));
 
+jest.mock('@react-navigation/elements', () => ({
+  useHeaderHeight: () => 56,
+}));
+
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({bottom: 0, top: 0, left: 0, right: 0}),
 }));

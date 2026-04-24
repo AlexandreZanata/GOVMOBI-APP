@@ -338,7 +338,6 @@ describe('ReconnectionManager — Bug 5 exploration: token refresh failure calls
 
     const manager = new ReconnectionManager(
       facade,
-      // @ts-expect-error — onSessionExpired not yet in deps interface (Bug 5 not fixed)
       {getToken, refreshToken, onSessionExpired},
     );
     manager.reconnectNow();

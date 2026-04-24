@@ -223,43 +223,43 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - Confirm valid tokens skip refresh
 
-- [ ] 7. Implement Bug 6 fix - OneSignal linking earlier
+- [x] 7. Implement Bug 6 fix - OneSignal linking earlier
 
-  - [ ] 7.1 Ensure `setServidorId` is dispatched early in `doGetMe`
+  - [x] 7.1 Ensure `setServidorId` is dispatched early in `doGetMe`
     - File: `src/hooks/useAuthSession.ts`
     - Verify `dispatch(setServidorId(me.id))` is called before status restore block (already in place)
     - _Bug_Condition: isBugCondition_OneSignalLinkLate(X) where hydration_not_yet_complete = true_
     - _Expected_Behavior: OneSignal linked before push delivery window (Property 7 from design)_
     - _Requirements: 2.7_
 
-  - [ ] 7.2 Verify `useNotifications` effect fires on `servidorId` change
+  - [x] 7.2 Verify `useNotifications` effect fires on `servidorId` change
     - File: `src/hooks/useNotifications.ts`
     - Verify existing `useEffect([isAuthenticated, servidorId])` calls `setOneSignalExternalUserId` when `servidorId` changes
     - Effect should fire on next render after Redux updates
     - _Requirements: 2.7_
 
-  - [ ] 7.3 (Optional) Call `setOneSignalExternalUserId` directly in `doGetMe` if needed
+  - [x] 7.3 (Optional) Call `setOneSignalExternalUserId` directly in `doGetMe` if needed
     - Only implement if Option A (effect-based) is insufficient for background scenarios
     - Import `setOneSignalExternalUserId` into `useAuthSession` and call after `dispatch(setServidorId(me.id))`
     - This bypasses React effect cycle for immediate linking
     - _Requirements: 2.7_
 
-  - [ ] 7.4 Verify Bug 6 exploration test now passes
+  - [x] 7.4 Verify Bug 6 exploration test now passes
     - **Property 1: Expected Behavior** - OneSignal Linked During Hydration
     - **IMPORTANT**: Re-run the SAME test from task 1.5 - do NOT write a new test
     - Run test: `src/services/notifications/__tests__/OneSignalService.poc.test.ts`
     - **EXPECTED OUTCOME**: Test PASSES (confirms Bug 6 is fixed)
     - _Requirements: Expected Behavior Property 7 from design_
 
-  - [ ] 7.5 Verify preservation tests still pass
+  - [x] 7.5 Verify preservation tests still pass
     - **Property 2: Preservation** - Logout Removes External User ID
     - Run preservation tests for Bug 6
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - Confirm logout still removes OneSignal external user ID
 
-- [ ] 8. Bug 3 verification - Location stream resumes after reconnect (no code change needed)
+- [x] 8. Bug 3 verification - Location stream resumes after reconnect (no code change needed)
 
-  - [ ] 8.1 Verify location stream depends on `connectionStatus === 'connected'`
+  - [x] 8.1 Verify location stream depends on `connectionStatus === 'connected'`
     - File: `src/hooks/useDriverLocationStream.ts`
     - Confirm telemetry `useEffect` depends on `connectionStatus` from Redux
     - Interval only runs when `connectionStatus === 'connected'`
@@ -267,13 +267,13 @@
     - _Expected_Behavior: Telemetry resumes when 'connected' emitted (Property from design)_
     - _Requirements: 2.4_
 
-  - [ ] 8.2 Verify Bug 3 is fixed by Bug 1 fix
+  - [x] 8.2 Verify Bug 3 is fixed by Bug 1 fix
     - Once Bug 1 is fixed and `connected` is emitted on first connect, the telemetry interval will start automatically
     - Run integration test: app opens → socket connects → `connected` emitted → telemetry starts
     - **EXPECTED OUTCOME**: Location stream starts emitting `atualizar-posicao` after first connect
     - _Requirements: 2.4_
 
-- [ ] 9. Checkpoint - Ensure all tests pass
+- [x] 9. Checkpoint - Ensure all tests pass
   - Run all exploration tests (tasks 1.1-1.5) - all should PASS after fixes
   - Run all preservation tests (tasks 2.1-2.5) - all should PASS (no regressions)
   - Run full test suite: `npm test` or `yarn test`

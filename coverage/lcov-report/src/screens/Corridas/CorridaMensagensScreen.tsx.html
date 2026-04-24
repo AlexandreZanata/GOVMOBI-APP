@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.2% </span>
+                <span class="strong">92.1% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>71/77</span>
+                <span class='fraction'>70/76</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.39% </span>
+                <span class="strong">84.61% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>35/43</span>
+                <span class='fraction'>33/39</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.95% </span>
+                <span class="strong">92.85% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>66/71</span>
+                <span class='fraction'>65/70</span>
             </div>
         
             
@@ -484,8 +484,9 @@
 <a name='L419'></a><a href='#L419'>419</a>
 <a name='L420'></a><a href='#L420'>420</a>
 <a name='L421'></a><a href='#L421'>421</a>
-<a name='L422'></a><a href='#L422'>422</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L422'></a><a href='#L422'>422</a>
+<a name='L423'></a><a href='#L423'>423</a>
+<a name='L424'></a><a href='#L424'>424</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -602,7 +603,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
@@ -620,6 +620,9 @@
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
@@ -652,7 +655,7 @@
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -736,7 +739,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -759,6 +761,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -814,6 +817,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -925,8 +929,6 @@ import {
   ActivityIndicator,
   BackHandler,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -934,7 +936,8 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useHeaderHeight} from '@react-navigation/elements';
+import {KeyboardAvoidingView} from 'react-native-keyboard-controller';
 import {useTranslation} from 'react-i18next';
 import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
 import {MaterialIcons} from '@expo/vector-icons';
@@ -1025,7 +1028,6 @@ const tickStyles = StyleSheet.create({
 export const CorridaMensagensScreen = (): React.JSX.Element =&gt; {
   const {t} = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const route = useRoute&lt;PassageiroRouteProps | MotoristaRouteProps&gt;();
   const navigation = useNavigation();
   const {realtimeFacade, corridaFacade} = useFacades();
@@ -1039,6 +1041,9 @@ export const CorridaMensagensScreen = (): React.JSX.Element =&gt; {
   const dispatch = useAppDispatch();
 &nbsp;
   const {isLoadingMensagens, onLoadMensagens} = usePassageiroCorrida(corridaId);
+&nbsp;
+  const headerHeight = useHeaderHeight();
+&nbsp;
 &nbsp;
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -1155,11 +1160,10 @@ export const CorridaMensagensScreen = (): React.JSX.Element =&gt; {
     [currentUserId, styles],
   );
 &nbsp;
-  const bottomPad = insets.bottom &gt; 0 ? <span class="branch-0 cbranch-no" title="branch not covered" >insets.bottom </span>: 12;
-&nbsp;
   return (
     &lt;KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : <span class="branch-1 cbranch-no" title="branch not covered" >'height'}</span>
+      behavior="translate-with-padding"
+      keyboardVerticalOffset={headerHeight}
       style={styles.root}
       testID="mensagens-screen"&gt;
       {isLoadingMensagens ? (
@@ -1180,6 +1184,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element =&gt; {
           contentContainerStyle={styles.listContent}
           data={mensagens}
           keyExtractor={item =&gt; item.id}
+          keyboardShouldPersistTaps="handled"
           onContentSizeChange={<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >listRef.current?.scrollToEnd({animated: false})}</span>
           removeClippedSubviews
           renderItem={renderMessage}
@@ -1189,8 +1194,8 @@ export const CorridaMensagensScreen = (): React.JSX.Element =&gt; {
         /&gt;
       )}
 &nbsp;
-      {/* Input bar */}
-      &lt;View style={[styles.inputRow, {paddingBottom: bottomPad}]}&gt;
+      {/* Input bar — flush above keyboard via KeyboardAvoidingView translate-with-padding */}
+      &lt;View style={styles.inputRow}&gt;
         &lt;TextInput
           accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
           editable={!isSending}
@@ -1298,6 +1303,7 @@ const createMensagensStyles = (
       alignItems: 'flex-end',
       paddingHorizontal: spacing[4],
       paddingTop: spacing[3],
+      paddingBottom: spacing[3],
       backgroundColor: design.surface100,
       borderTopWidth: 1,
       borderTopColor: design.surface300,
@@ -1333,7 +1339,7 @@ const createMensagensStyles = (
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T11:23:25.395Z
+                at 2026-04-24T14:43:46.573Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

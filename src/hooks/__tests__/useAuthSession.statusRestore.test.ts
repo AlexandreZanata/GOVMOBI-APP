@@ -69,6 +69,14 @@ jest.mock('@services/facades', () => ({
   }),
 }));
 
+jest.mock('@services/notifications/OneSignalService', () => ({
+  setOneSignalExternalUserId: jest.fn(),
+}));
+
+const mockSetOneSignalExternalUserId = jest.mocked(
+  require('@services/notifications/OneSignalService').setOneSignalExternalUserId as jest.Mock,
+);
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -375,5 +383,40 @@ describe('useAuthSession — Preservation 2.3: manual INDISPONIVEL not overwritt
         unmount();
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bug 6 architectural test — doGetMe calls setOneSignalExternalUserId directly
+// ---------------------------------------------------------------------------
+
+describe('useAuthSession — Bug 6: setOneSignalExternalUserId called during doGetMe hydration', () => {
+  /**
+   * Architectural contract: doGetMe must call setOneSignalExternalUserId(me.id)
+   * directly, bypassing the React effect cycle. This ensures OneSignal is linked
+   * during background/killed hydration before useNotifications' useEffect fires.
+   *
+   * Validates: Requirements 2.7 — Property 7 from design
+   */
+  it('calls setOneSignalExternalUserId with servidorId during doGetMe (before React effect fires)', async () => {
+    mockGetMe.mockResolvedValue({
+      data: {...MOCK_ME_BASE, statusOperacional: 'OFFLINE'},
+      error: null,
+    });
+
+    const store = buildStore('DISPONIVEL');
+
+    const {unmount} = renderHook(() => useAuthSession(), {
+      wrapper: wrapper(store),
+    });
+
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 50));
+    });
+
+    // doGetMe must call setOneSignalExternalUserId directly with me.id
+    expect(mockSetOneSignalExternalUserId).toHaveBeenCalledWith(MOCK_ME_BASE.id);
+
+    unmount();
   });
 });

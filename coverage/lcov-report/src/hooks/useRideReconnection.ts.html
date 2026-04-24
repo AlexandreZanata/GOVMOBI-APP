@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">70.96% </span>
+                <span class="strong">70.88% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>110/155</span>
+                <span class='fraction'>112/158</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">71.14% </span>
+                <span class="strong">71.05% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>106/149</span>
+                <span class='fraction'>108/152</span>
             </div>
         
             
@@ -372,7 +372,12 @@
 <a name='L307'></a><a href='#L307'>307</a>
 <a name='L308'></a><a href='#L308'>308</a>
 <a name='L309'></a><a href='#L309'>309</a>
-<a name='L310'></a><a href='#L310'>310</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L310'></a><a href='#L310'>310</a>
+<a name='L311'></a><a href='#L311'>311</a>
+<a name='L312'></a><a href='#L312'>312</a>
+<a name='L313'></a><a href='#L313'>313</a>
+<a name='L314'></a><a href='#L314'>314</a>
+<a name='L315'></a><a href='#L315'>315</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -499,6 +504,9 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -510,6 +518,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -580,6 +589,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -707,7 +717,7 @@ import {
   setPendingCorridaId,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
-import {tokenRefreshed} from '@store/slices/authSlice';
+import {tokenRefreshed, setStatusOperacional} from '@store/slices/authSlice';
 import {TERMINAL_STATUSES} from '@models/Corrida';
 import {getValidToken} from '@utils/tokenUtils';
 import type {ReconexaoConcluida} from '../types/realtime';
@@ -807,6 +817,9 @@ export const useRideReconnection = (): void =&gt; {
       <span class="missing-if-branch" title="else path not taken" >E</span>if (motoristaIdRef.current) {
         console.log(TAG, 'REST fallback — no active ride, emitting ficar-disponivel');
         await realtimeFacadeRef.current.setDriverAvailable();
+        // Optimistically update Redux — the server's estado-operacional event
+        // may arrive with an empty payload ({}), so we can't rely on it.
+        dispatchRef.current(setStatusOperacional('DISPONIVEL'));
       }
       return;
     }
@@ -823,6 +836,7 @@ export const useRideReconnection = (): void =&gt; {
 <span class="cstat-no" title="statement not covered" >      if (motoristaIdRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        console.log(TAG, 'REST fallback — terminal ride, emitting ficar-disponivel');</span>
 <span class="cstat-no" title="statement not covered" >        await realtimeFacadeRef.current.setDriverAvailable();</span>
+<span class="cstat-no" title="statement not covered" >        dispatchRef.current(setStatusOperacional('DISPONIVEL'));</span>
       }
     }
   };
@@ -895,6 +909,7 @@ export const useRideReconnection = (): void =&gt; {
           <span class="missing-if-branch" title="else path not taken" >E</span>if (motoristaIdRef.current) {
             console.log(TAG, 'reconexao-concluida — no active ride, emitting ficar-disponivel');
             void realtimeFacadeRef.current.setDriverAvailable();
+            dispatchRef.current(setStatusOperacional('DISPONIVEL'));
           }
         } else <span class="missing-if-branch" title="else path not taken" >E</span>{
           // Local ride is still active — keep it and re-subscribe to the room.
@@ -997,7 +1012,7 @@ export const useRideReconnection = (): void =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T11:23:25.395Z
+                at 2026-04-24T14:43:46.573Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

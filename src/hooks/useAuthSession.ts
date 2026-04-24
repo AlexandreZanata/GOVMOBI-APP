@@ -41,6 +41,7 @@ import {addToast} from '@store/slices/uiSlice';
 import {useTranslation} from 'react-i18next';
 import {logger} from '@utils/logger';
 import {getValidToken} from '@utils/tokenUtils';
+import {setOneSignalExternalUserId} from '@services/notifications/OneSignalService';
 
 /** How often (ms) to check whether the token needs proactive refresh. */
 const CHECK_INTERVAL_MS = 60_000;
@@ -230,6 +231,10 @@ export const useAuthSession = (): void => {
     dispatch(setMotoristaId(me.motoristaId ?? null));
     dispatch(setMunicipioId(me.municipioId ?? null));
     dispatch(setServidorId(me.id));
+    // Link OneSignal external user ID immediately — bypasses the React effect
+    // cycle so push notifications are deliverable in background/killed scenarios
+    // before useNotifications' useEffect has a chance to fire.
+    setOneSignalExternalUserId(me.id);
 
     if (me.statusOperacional) {
       dispatch(setStatusOperacional(me.statusOperacional));
