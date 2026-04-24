@@ -237,16 +237,17 @@ export const useAuthSession = (): void => {
 
     // ── Driver status restoration ──────────────────────────────────────────
     // If the driver was DISPONIVEL before closing the app but the server now
-    // reports OFFLINE (auto-set on WS disconnect), restore DISPONIVEL via PATCH.
-    // This preserves the driver's intent without requiring a manual re-toggle.
+    // reports OFFLINE or INDISPONIVEL (auto-set on WS disconnect), restore
+    // DISPONIVEL via PATCH. This preserves the driver's intent without requiring
+    // a manual re-toggle.
     if (
       me.motoristaId &&
       previousStatus === 'DISPONIVEL' &&
-      me.statusOperacional === 'OFFLINE'
+      (me.statusOperacional === 'OFFLINE' || me.statusOperacional === 'INDISPONIVEL')
     ) {
       logger.info(
         'useAuthSession',
-        'Restoring DISPONIVEL status — server returned OFFLINE after reconnect',
+        'Restoring DISPONIVEL status — server returned OFFLINE or INDISPONIVEL after reconnect',
       );
       const restoreResult = await frotaFacade.updateMyStatus('DISPONIVEL');
       if (restoreResult.data) {

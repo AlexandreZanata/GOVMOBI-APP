@@ -166,9 +166,9 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - Confirm skip-guard still prevents redundant connect calls
 
-- [ ] 5. Implement Bug 4 fix - Driver status restoration for INDISPONIVEL
+- [x] 5. Implement Bug 4 fix - Driver status restoration for INDISPONIVEL
 
-  - [ ] 5.1 Extend status restore condition in `useAuthSession.doGetMe`
+  - [x] 5.1 Extend status restore condition in `useAuthSession.doGetMe`
     - File: `src/hooks/useAuthSession.ts`
     - Change condition from `me.statusOperacional === 'OFFLINE'` to `me.statusOperacional === 'OFFLINE' || me.statusOperacional === 'INDISPONIVEL'`
     - _Bug_Condition: isBugCondition_StatusNotRestored(X) where X.serverStatus IN ['OFFLINE', 'INDISPONIVEL']_
@@ -176,14 +176,14 @@
     - _Preservation: Manual INDISPONIVEL not overwritten (Property 5 from design)_
     - _Requirements: 2.5, 3.3_
 
-  - [ ] 5.2 Verify Bug 4 exploration test now passes
+  - [x] 5.2 Verify Bug 4 exploration test now passes
     - **Property 1: Expected Behavior** - Status Restoration Covers INDISPONIVEL
     - **IMPORTANT**: Re-run the SAME test from task 1.3 - do NOT write a new test
     - Run test: `src/hooks/__tests__/useAuthSession.statusRestore.test.ts`
     - **EXPECTED OUTCOME**: Test PASSES (confirms Bug 4 is fixed)
     - _Requirements: Expected Behavior Property 4 from design_
 
-  - [ ] 5.3 Verify preservation tests still pass
+  - [x] 5.3 Verify preservation tests still pass
     - **Property 2: Preservation** - Manual INDISPONIVEL Preserved
     - Run preservation tests for Bug 4
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
