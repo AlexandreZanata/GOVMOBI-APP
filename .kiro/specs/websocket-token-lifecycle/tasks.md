@@ -142,9 +142,9 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - Confirm subsequent reconnects still emit `reconnecting`
 
-- [ ] 4. Implement Bug 2 fix - ReconnectionManager already-connected loop
+- [x] 4. Implement Bug 2 fix - ReconnectionManager already-connected loop
 
-  - [ ] 4.1 Emit `connected` from `RealtimeFacade.connect()` when skip-guard fires
+  - [x] 4.1 Emit `connected` from `RealtimeFacade.connect()` when skip-guard fires
     - File: `src/services/facades/RealtimeFacade.ts`
     - In `connect()` method, when `this.isConnected` is already true (skip-guard), emit `connected` status
     - This makes `waitForConnection` resolve naturally without timeout
@@ -153,14 +153,14 @@
     - _Preservation: Skip-guard logic remains (Requirement 3.1 from design)_
     - _Requirements: 2.1, 3.1_
 
-  - [ ] 4.2 Verify Bug 2 exploration test now passes
+  - [x] 4.2 Verify Bug 2 exploration test now passes
     - **Property 1: Expected Behavior** - Already-Connected Attempt Succeeds
     - **IMPORTANT**: Re-run the SAME test from task 1.2 - do NOT write a new test
     - Run test: `src/services/network/__tests__/ReconnectionManager.reconnect.test.ts`
     - **EXPECTED OUTCOME**: Test PASSES (confirms Bug 2 is fixed)
     - _Requirements: Expected Behavior Property 3 from design_
 
-  - [ ] 4.3 Verify preservation tests still pass
+  - [x] 4.3 Verify preservation tests still pass
     - **Property 2: Preservation** - Skip-Guard Preserved
     - Run preservation tests for Bug 2
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)

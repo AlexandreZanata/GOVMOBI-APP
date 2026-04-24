@@ -302,6 +302,15 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     }
 
     rtLog(`connect() — mockMode=${String(this.config.mockMode)} wsUrl="${this.config.wsBaseUrl ?? ENV.wsUrl}" token="${accessToken.slice(0, 20)}..."`);
+
+    // Skip-guard: if already connected, emit 'connected' immediately so that
+    // any waitForConnection listener resolves without timing out (fixes Bug 2).
+    if (this.isConnected) {
+      rtLog('connect() — already connected, emitting connected status');
+      this.emitConnectionStatus('connected', null);
+      return ok('connected');
+    }
+
     this.emitConnectionStatus('connecting', null);
 
     if (this.config.mockMode) {

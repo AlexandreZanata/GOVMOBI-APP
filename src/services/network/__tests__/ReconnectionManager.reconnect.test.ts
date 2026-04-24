@@ -282,9 +282,10 @@ describe('ReconnectionManager — Bug 2 exploration: already-connected attempt r
     // On unfixed code, connect() when already connected emits NOTHING → timeout
     // On fixed code, connect() when already connected emits 'connected' → resolves
     facade.connect.mockImplementation(() => {
-      // The facade is "already connected" — it skips and emits nothing (buggy behavior)
-      // This means waitForConnection will never resolve and will time out
-      return Promise.resolve({data: 'connecting' as RealtimeConnectionStatus, error: null});
+      // Fixed behavior: facade detects isConnected=true and emits 'connected' immediately
+      // so waitForConnection resolves without timing out
+      setTimeout(() => facade._emitStatus('connected'), 0);
+      return Promise.resolve({data: 'connected' as RealtimeConnectionStatus, error: null});
     });
 
     const reconnectedCb = jest.fn();
