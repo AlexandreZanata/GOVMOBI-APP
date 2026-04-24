@@ -125,6 +125,7 @@ const authSlice = createSlice({
       state.papeis = [];
       state.motoristaId = null;
       state.municipioId = null;
+      state.statusOperacional = null;
       state.servidorId = null;
     },
 

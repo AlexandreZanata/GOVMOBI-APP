@@ -13,7 +13,7 @@
  */
 
 jest.mock('@config/env', () => ({
-  ENV: {ONESIGNAL_APP_ID: '8723fa88-19eb-4f95-8478-50ba9c1b5d90'},
+  ENV: {ONESIGNAL_APP_ID: 'd6247b88-6e87-4695-ac0f-396993ede8ba'},
 }));
 
 jest.mock('@utils/logger', () => ({
@@ -57,7 +57,7 @@ describe('initOneSignal', () => {
   it('calls initialize with the configured App ID', () => {
     const result = initOneSignal();
     expect(result).toBe(true);
-    expect(mockInitialize).toHaveBeenCalledWith('8723fa88-19eb-4f95-8478-50ba9c1b5d90');
+    expect(mockInitialize).toHaveBeenCalledWith('d6247b88-6e87-4695-ac0f-396993ede8ba');
   });
 
   it('returns false on web platform', () => {

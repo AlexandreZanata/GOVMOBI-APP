@@ -94,7 +94,7 @@ describe('Preservation — logout() clears servidorId', () => {
    *
    * **Validates: Requirements 3.3**
    */
-  it('logout clears token, user, and isAuthenticated', () => {
+  it('logout clears token, user, isAuthenticated, statusOperacional, and servidorId', () => {
     const priorState = buildAuthState({
       token: 'jwt-abc',
       isAuthenticated: true,
@@ -105,6 +105,7 @@ describe('Preservation — logout() clears servidorId', () => {
     expect(state.token).toBeNull();
     expect(state.isAuthenticated).toBe(false);
     expect(state.servidorId).toBeNull();
+    expect(state.statusOperacional).toBeNull();
   });
 });
 
