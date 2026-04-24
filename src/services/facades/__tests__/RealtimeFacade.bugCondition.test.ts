@@ -27,8 +27,6 @@ import * as fc from 'fast-check';
 // ---------------------------------------------------------------------------
 
 type ConnectionHandler = () => void;
-type ErrorHandler = (err: Error) => void;
-type AnyHandler = (...args: unknown[]) => void;
 
 const createMockClient = (): jest.Mocked<IDespachoWebSocketClient> & {
   _triggerConnected: () => void;
