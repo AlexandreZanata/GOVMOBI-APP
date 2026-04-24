@@ -101,9 +101,9 @@
     - Verify test passes on UNFIXED code
     - _Preservation: Requirement 3.3 from design_
 
-- [-] 3. Implement Bug 1 fix - RealtimeFacade `wasEverConnected` flag
+- [x] 3. Implement Bug 1 fix - RealtimeFacade `wasEverConnected` flag
 
-  - [ ] 3.1 Add `wasEverConnected` field to `RealtimeFacadeImpl`
+  - [x] 3.1 Add `wasEverConnected` field to `RealtimeFacadeImpl`
     - File: `src/services/facades/RealtimeFacade.ts`
     - Add `private wasEverConnected = false` field to class
     - _Bug_Condition: isBugCondition_InfiniteReconnect(X) where X.wasEverConnected = false_
@@ -111,7 +111,7 @@
     - _Preservation: Subsequent reconnects still emit 'reconnecting' (Property 2 from design)_
     - _Requirements: 2.1, 2.2, 3.5_
 
-  - [ ] 3.2 Update `registerTransportListeners` to emit `connected` on first connect
+  - [x] 3.2 Update `registerTransportListeners` to emit `connected` on first connect
     - File: `src/services/facades/RealtimeFacade.ts`
     - In `onConnected` handler: if `!this.wasEverConnected`, set `this.wasEverConnected = true` and emit `connected`
     - Otherwise emit `reconnecting` (preserves existing behavior for genuine reconnects)
@@ -120,13 +120,13 @@
     - _Preservation: emitted_status = 'reconnecting' when wasEverConnected = true (Property 2 from design)_
     - _Requirements: 2.1, 2.2, 2.3, 3.5_
 
-  - [ ] 3.3 Expose `resetWasEverConnected()` for test resets
+  - [x] 3.3 Expose `resetWasEverConnected()` for test resets
     - File: `src/services/facades/RealtimeFacade.ts`
     - Add public method `resetWasEverConnected(): void { this.wasEverConnected = false; }`
     - Mark as test-only in JSDoc comment
     - _Requirements: Testing infrastructure_
 
-  - [ ] 3.4 Verify Bug 1 exploration test now passes
+  - [x] 3.4 Verify Bug 1 exploration test now passes
     - **Property 1: Expected Behavior** - First Connect Emits Connected
     - **IMPORTANT**: Re-run the SAME test from task 1.1 - do NOT write a new test
     - The test from task 1.1 encodes the expected behavior
@@ -135,7 +135,7 @@
     - **EXPECTED OUTCOME**: Test PASSES (confirms Bug 1 is fixed)
     - _Requirements: Expected Behavior Properties 1, 2 from design_
 
-  - [ ] 3.5 Verify preservation tests still pass
+  - [x] 3.5 Verify preservation tests still pass
     - **Property 2: Preservation** - Subsequent Reconnects Unchanged
     - **IMPORTANT**: Re-run the SAME tests from task 2.1 - do NOT write new tests
     - Run preservation tests for Bug 1

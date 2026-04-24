@@ -269,6 +269,7 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
   private readonly eventHandlers = new Set<RealtimeEventHandler>();
   private readonly statusHandlers = new Set<ConnectionStatusHandler>();
   private isConnected = false;
+  private wasEverConnected = false;
 
   /**
    * @param config - Realtime facade dependencies and overrides.
@@ -433,6 +434,14 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     return mapRideStatus(status);
   }
 
+  /**
+   * Resets the `wasEverConnected` flag to `false`.
+   * @test-only — Do not call in production code.
+   */
+  public resetWasEverConnected(): void {
+    this.wasEverConnected = false;
+  }
+
   /** @inheritdoc */
   public normalizeCorridaMensagem(payload: {
     id: string;
@@ -451,7 +460,12 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
     this.client.onConnected(() => {
       rtLog('transport → connected (awaiting server auth ack)');
       this.isConnected = true;
-      this.emitConnectionStatus('reconnecting', null);
+      if (!this.wasEverConnected) {
+        this.wasEverConnected = true;
+        this.emitConnectionStatus('connected', null);
+      } else {
+        this.emitConnectionStatus('reconnecting', null);
+      }
     });
 
     this.client.onDisconnected(() => {
