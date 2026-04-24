@@ -135,7 +135,59 @@ adb -s emulator-5554 shell input keyevent 82
 
 ---
 
+## Multi-Device Development
+
+When you have more than one physical device connected via USB, `expo run:android` only installs to the **first device it detects**. The second device keeps the old APK — if that APK is missing a newly added native module, the app will hang at bundle load.
+
+### Build once, install on all devices
+
+```bash
+# 1. Build the debug APK
+cd android && ./gradlew assembleDebug
+
+# 2. List connected devices to get their serial numbers
+adb devices
+
+# 3. Install on each device by serial
+adb -s <SERIAL_1> install -r android/app/build/outputs/apk/debug/app-debug.apk
+adb -s <SERIAL_2> install -r android/app/build/outputs/apk/debug/app-debug.apk
+
+# 4. Launch the app on both
+adb -s <SERIAL_1> shell am start -n gov.govmobile.app/.MainActivity
+adb -s <SERIAL_2> shell am start -n gov.govmobile.app/.MainActivity
+```
+
+### One-liner — install on all connected devices at once
+
+```bash
+adb devices \
+  | grep -v "List of devices" \
+  | awk 'NF && $2=="device" {print $1}' \
+  | xargs -I{} adb -s {} install -r \
+      android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### When does this matter?
+
+Any time you add a package that ships native code (`.so` / `.aar` / Kotlin/Java modules), the APK must be rebuilt and reinstalled on **every** device. JS-only changes still hot-reload via Metro on all devices simultaneously.
+
+| Scenario | Action |
+|---|---|
+| Added native package (e.g. `react-native-keyboard-controller`) | Rebuild APK → install on all devices |
+| JS/TS change only | Metro auto-reload on all devices |
+| `.env` change | Metro restart `--clear` on all devices |
+
+---
+
 ## Troubleshooting
+
+### One device loads, another hangs at bundle screen after adding a native package
+
+`expo run:android` with multiple devices connected only installs to one. The other device has the old APK without the new native module — it connects to Metro, downloads the bundle, but crashes silently because the native module is missing.
+
+Fix: rebuild and install on all devices manually (see **Multi-Device Development** above).
+
+---
 
 ### `SoLoaderDSONotFoundError: couldn't find DSO to load: libexpo-modules-core.so`
 
