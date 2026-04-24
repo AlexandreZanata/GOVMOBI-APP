@@ -18,7 +18,6 @@ import {
   ActivityIndicator,
   BackHandler,
   FlatList,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -26,8 +25,8 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
+import {useHeaderHeight} from '@react-navigation/elements';
 import {KeyboardAvoidingView} from 'react-native-keyboard-controller';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
 import {MaterialIcons} from '@expo/vector-icons';
@@ -118,7 +117,6 @@ const tickStyles = StyleSheet.create({
 export const CorridaMensagensScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const route = useRoute<PassageiroRouteProps | MotoristaRouteProps>();
   const navigation = useNavigation();
   const {realtimeFacade, corridaFacade} = useFacades();
@@ -132,6 +130,9 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
   const dispatch = useAppDispatch();
 
   const {isLoadingMensagens, onLoadMensagens} = usePassageiroCorrida(corridaId);
+
+  const headerHeight = useHeaderHeight();
+
 
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -248,14 +249,10 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     [currentUserId, styles],
   );
 
-  // Safe-area bottom inset — only applied when keyboard is hidden.
-  // react-native-keyboard-controller's KeyboardAvoidingView handles the
-  // keyboard offset itself, so we must NOT add extra padding on top of it.
-  const bottomPad = insets.bottom > 0 ? insets.bottom : 0;
-
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="translate-with-padding"
+      keyboardVerticalOffset={headerHeight}
       style={styles.root}
       testID="mensagens-screen">
       {isLoadingMensagens ? (
@@ -276,6 +273,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
           contentContainerStyle={styles.listContent}
           data={mensagens}
           keyExtractor={item => item.id}
+          keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => listRef.current?.scrollToEnd({animated: false})}
           removeClippedSubviews
           renderItem={renderMessage}
@@ -285,8 +283,8 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
         />
       )}
 
-      {/* Input bar */}
-      <View style={[styles.inputRow, bottomPad > 0 && {paddingBottom: bottomPad}]}>
+      {/* Input bar — flush above keyboard via KeyboardAvoidingView translate-with-padding */}
+      <View style={styles.inputRow}>
         <TextInput
           accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
           editable={!isSending}
