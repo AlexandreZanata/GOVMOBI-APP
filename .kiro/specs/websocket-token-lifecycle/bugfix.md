@@ -2,107 +2,119 @@
 
 ## Introduction
 
-Three interrelated production bugs cause the GovMobile WebSocket session to fail silently or loop indefinitely. All three share a common root: the token lifecycle is not coordinated between the HTTP interceptor, the WebSocket reconnect path, and the AppState foreground recovery path. The fix must introduce a single authoritative `getValidToken()` gate that all three paths share, so a stale or mid-refresh JWT can never reach the WebSocket handshake.
-
-**Affected files (diagnosis):**
-
-| Pattern | File | Evidence |
-|---|---|---|
-| P1 — Stale JWT in WS URL | `src/hooks/useRealtimeSession.ts` line 155 | `realtimeFacade.connect(token)` passes the raw Redux token without checking expiry; same stale URL reused on every retry |
-| P2 — Missing refresh-before-connect gate | `src/hooks/useRealtimeSession.ts` line 148–165 | `connect()` is called immediately when `isAuthenticated && token` is truthy, with no `isTokenExpiringSoon` check before handing the token to the facade |
-| P3 — Concurrent refresh + connect race | `src/hooks/useAuthSession.ts` `doRefresh()` + `src/services/websocket/DespachoWebSocket.ts` `connect_error` 401 handler | Both paths call `authFacade.refreshToken()` independently with no shared mutex; two concurrent refreshes can issue two different access tokens |
-| P4 — AppState listener not cleaned up | `src/hooks/useRideReconnection.ts` line 175–195 | `AppState.addEventListener` is registered inside a `useEffect` with `[]` deps — safe in isolation, but `useRealtimeSession` has no AppState listener at all, so foreground recovery never triggers a reconnect with a fresh token |
-| P5 — Reconnect timer not cleared on background | `src/hooks/useRideReconnection.ts` line 175–195 | The 3 s `setTimeout` started on `connected` is not cancelled when the app goes to background; a second timer sequence starts on foreground, causing duplicate REST fallback calls |
-| P6 — Success condition too loose | `src/services/facades/RealtimeFacade.ts` line 237 | `isConnected = true` is set on the transport `connect` event (WS OPEN), before the server emits `reconexao-concluida` or any auth ack; Redux status becomes `connected` before the session is authenticated |
-| P7 — Token replaced mid-handshake | `src/services/websocket/DespachoWebSocket.ts` 401 handler line 248–265 | The 401 recovery calls `tokenRefresher()` and then creates a new socket with the fresh token, but `useAuthSession`'s interval refresh may have already replaced the Redux token concurrently, so the socket and Redux can hold different tokens |
-
----
+Multiple interconnected bugs in the WebSocket reconnection and driver status persistence system cause the app to get stuck in infinite loading/reconnecting states, stop emitting driver location after reconnect, fail to restore driver status on app reopen, and fail to deliver background push notifications. These bugs occur specifically after the app is left idle for a long time, after finishing a ride, or when the app is closed and reopened. The core issue is that the `RealtimeFacade` emits `reconnecting` status on every transport `onConnected` event — even when the socket was never actually disconnected — causing `useRideReconnection` and `ReconnectionManager` to enter recovery loops that never resolve. Compounding this, the driver status restoration in `useAuthSession` only checks for `OFFLINE` but the backend may return `INDISPONIVEL`, and the location stream (`atualizar-posicao`) is not restarted after a reconnect cycle completes.
 
 ## Bug Analysis
 
 ### Current Behavior (Defect)
 
-1.1 WHEN the user sends the app to background or kills it and then reopens it THEN the system dispatches `connect()` with the token that was in Redux at the time of the previous session, which may be expired, causing the WebSocket handshake to fail with 401 and the reconnect loop to spin indefinitely
+1.1 WHEN the app is closed and reopened (cold start) THEN the system gets stuck in an infinite `connecting` status and never transitions to `connected`, leaving the UI in a permanent loading state.
 
-1.2 WHEN `connect()` is called in `useRealtimeSession` THEN the system passes `token` from Redux directly to `realtimeFacade.connect()` without first checking whether the token is expired or an in-flight refresh is already in progress
+1.2 WHEN the WebSocket transport fires `onConnected` (including the initial connection) THEN the system emits `reconnecting` status instead of `connected`, causing `useRideReconnection` to start a 3-second timer and `ReconnectionManager` to treat every connection as a reconnect attempt.
 
-1.3 WHEN the app stays in the foreground for longer than the JWT TTL without user interaction THEN the system's proactive interval refresh in `useAuthSession` updates the Redux token, but the existing open WebSocket was opened with the old token and the facade's `isConnected` flag remains `true`, so no reconnect is triggered and the connection silently dies when the server invalidates the old token
+1.3 WHEN the app is left idle for a long time and the socket drops THEN the system enters a reconnection loop that logs `[WS/Despacho] connect() — already connected, skipping` on every attempt, meaning the facade's `isConnected` flag is `true` but the status handlers keep receiving `reconnecting`, so the modal shows "trying to reconnect" indefinitely.
 
-1.4 WHEN `useAuthSession`'s interval refresh and the WebSocket transport's 401 recovery handler both detect an expired token at the same time THEN the system calls `authFacade.refreshToken()` twice concurrently with no mutex, potentially issuing two different access tokens and leaving Redux and the WebSocket holding different credentials
+1.4 WHEN a WebSocket reconnection completes successfully THEN the system stops emitting `atualizar-posicao` events, because the location stream hook (`useDriverLocationStream` / `useMotoristaRealtime`) does not re-register its emit loop after the reconnect cycle resolves.
 
-1.5 WHEN the app returns from background THEN the system starts a 3 s `setTimeout` in `useRideReconnection` to wait for `reconexao-concluida`, but `useRealtimeSession` does not call `getValidToken()` before reconnecting, so the WebSocket handshake may use a stale token even if the REST fallback succeeds
+1.5 WHEN a driver with status `DISPONIVEL` closes and reopens the app THEN the system resets the driver status to `INDISPONIVEL` instead of restoring `DISPONIVEL`, because `useAuthSession.doGetMe` only restores status when `me.statusOperacional === 'OFFLINE'` but the backend may return `'INDISPONIVEL'` after a WebSocket disconnect.
 
-1.6 WHEN the WebSocket transport emits the `connect` event (TCP/WS OPEN) THEN the system immediately sets `isConnected = true` in `RealtimeFacade` and dispatches `connectionStatus: 'connected'` to Redux, before the server has sent any authentication acknowledgement, causing the reconnecting screen to clear prematurely
+1.6 WHEN the JWT token is near expiry during a reconnect attempt THEN the system silently fails the refresh inside `ReconnectionManager.attempt()` and calls `this.abort()`, terminating all reconnect attempts without notifying the user or retrying after a successful refresh.
 
-1.7 WHEN the 401 recovery path in `DespachoWebSocketClient` calls `tokenRefresher()` to get a fresh token THEN the system creates a new socket with that token, but `useAuthSession`'s concurrent interval refresh may have already stored a different token in Redux, leaving the socket and Redux out of sync
+1.7 WHEN the app is in the background or killed THEN the system does not deliver ride request push notifications to the driver, because the OneSignal external user ID (`servidorId`) is not linked until after `useAuthSession` hydration completes, which may not happen in background/killed scenarios.
 
 ### Expected Behavior (Correct)
 
-2.1 WHEN the user reopens the app after background or kill THEN the system SHALL call a single `getValidToken()` function that checks expiry with a 60 s buffer, awaits any in-flight refresh via a shared Promise lock (mutex), and only then passes the fresh token to `realtimeFacade.connect()`
+2.1 WHEN the app is closed and reopened (cold start) THEN the system SHALL complete the connection sequence and transition to `connected` status within a reasonable timeout, allowing the UI to exit the loading state.
 
-2.2 WHEN `connect()` is called in `useRealtimeSession` THEN the system SHALL always call `getValidToken()` first, which either returns the current valid token immediately or awaits the in-flight refresh before returning, ensuring the token passed to the facade is never expired
+2.2 WHEN the WebSocket transport fires `onConnected` for the first time (initial connection, not a reconnect) THEN the system SHALL emit `connected` status directly, bypassing the `reconnecting` recovery path in `useRideReconnection` and `ReconnectionManager`.
 
-2.3 WHEN the app stays in the foreground for longer than the JWT TTL THEN the system SHALL detect the token replacement via the Redux `token` selector change, disconnect the stale WebSocket, and reconnect with the fresh token obtained from `getValidToken()`
+2.3 WHEN the app is left idle and the socket drops and then reconnects THEN the system SHALL detect that the socket was previously connected, emit `reconnecting` status, complete the `reconexao-concluida` handshake or REST fallback, and then emit `connected` status — resolving the modal and stopping the retry loop.
 
-2.4 WHEN both `useAuthSession` and the WebSocket 401 handler detect an expired token simultaneously THEN the system SHALL serialize through a single shared `getValidToken()` mutex so that only one refresh call is made and both callers receive the same fresh token
+2.4 WHEN a WebSocket reconnection completes successfully (status transitions to `connected`) THEN the system SHALL resume emitting `atualizar-posicao` events at the same interval as before the disconnect, ensuring continuous location tracking.
 
-2.5 WHEN the app returns from background THEN the system SHALL call `getValidToken()` before initiating any WebSocket reconnect, ensuring the handshake always uses a non-expired token regardless of how long the app was backgrounded
+2.5 WHEN a driver with status `DISPONIVEL` closes and reopens the app AND the server returns either `OFFLINE` or `INDISPONIVEL` for `statusOperacional` THEN the system SHALL restore the driver status to `DISPONIVEL` via `PATCH /frota/motoristas/me/status` and dispatch `setStatusOperacional('DISPONIVEL')` to Redux.
 
-2.6 WHEN the WebSocket transport emits the `connect` event THEN the system SHALL keep `connectionStatus` as `'reconnecting'` until the server emits `reconexao-concluida` or the 3 s timeout elapses and the REST fallback confirms the session, only then dispatching `connectionStatus: 'connected'`
+2.6 WHEN the JWT token refresh fails during a reconnect attempt THEN the system SHALL dispatch a session-expired toast, call `logout()`, and NOT silently abort the reconnect manager without user feedback.
 
-2.7 WHEN the 401 recovery path obtains a fresh token via `getValidToken()` THEN the system SHALL use the same shared token that is stored in Redux, so the socket and Redux always hold identical credentials
+2.7 WHEN the driver is authenticated and `servidorId` is available THEN the system SHALL link the OneSignal external user ID as early as possible (immediately after `servidorId` is set in Redux, including during background hydration) so that push notifications are deliverable in all app states.
 
 ### Unchanged Behavior (Regression Prevention)
 
-3.1 WHEN the user is authenticated and the token is valid and not expiring within 60 s THEN the system SHALL CONTINUE TO connect the WebSocket immediately without triggering a token refresh
+3.1 WHEN the user is authenticated and the WebSocket is already connected THEN the system SHALL CONTINUE TO skip redundant `connect()` calls (the `already connected, skipping` guard must remain).
 
-3.2 WHEN the WebSocket is already connected and the token has not changed THEN the system SHALL CONTINUE TO leave the existing connection open and not reconnect
+3.2 WHEN the token is valid and not near expiry during a reconnect attempt THEN the system SHALL CONTINUE TO connect without triggering a token refresh.
 
-3.3 WHEN the user logs out THEN the system SHALL CONTINUE TO disconnect the WebSocket, reset `realtimeSlice` to `initialState`, and clear all timers and AppState listeners
+3.3 WHEN the driver manually toggles their status to `INDISPONIVEL` THEN the system SHALL CONTINUE TO persist `INDISPONIVEL` and SHALL NOT restore `DISPONIVEL` on the next app reopen.
 
-3.4 WHEN the server emits `reconexao-concluida` with an active ride payload THEN the system SHALL CONTINUE TO restore ride state, re-subscribe to the ride room, and dispatch `addRealtimeSubscription`
+3.4 WHEN a passenger requests a ride THEN the system SHALL CONTINUE TO emit `atualizar-posicao` events for the passenger's location throughout the ride lifecycle.
 
-3.5 WHEN the server emits `nova-corrida-disponivel` THEN the system SHALL CONTINUE TO dispatch `addAvailableCorrida` and `setPendingOffer` to Redux
+3.5 WHEN the `reconexao-concluida` event is received from the server within the 3-second timeout THEN the system SHALL CONTINUE TO use the server payload to restore ride state and re-subscribe to the ride room.
 
-3.6 WHEN the WebSocket is connected and the driver calls `setDriverAvailable()` THEN the system SHALL CONTINUE TO emit `ficar-disponivel` and return `true`
+3.6 WHEN the app transitions from background to foreground THEN the system SHALL CONTINUE TO trigger the REST reconciliation fallback if `reconexao-concluida` is not received within 3 seconds.
 
-3.7 WHEN the REST fallback in `useRideReconnection` finds no active ride THEN the system SHALL CONTINUE TO clear `activeCorrida` and `pendingCorridaId` from Redux and emit `ficar-disponivel` for driver users
+3.7 WHEN the user logs out THEN the system SHALL CONTINUE TO disconnect the WebSocket, reset realtime state, and remove the OneSignal external user ID.
 
-3.8 WHEN the app is in mock mode THEN the system SHALL CONTINUE TO resolve `connect()` synchronously as `'connected'` without calling `getValidToken()` or any real token logic
+3.8 WHEN the network is offline THEN the system SHALL CONTINUE TO pause the reconnect cycle and resume only when connectivity is restored.
 
 ---
 
 ## Bug Condition Pseudocode
 
+### Bug Condition Functions
+
 ```pascal
-FUNCTION isBugCondition(X)
-  INPUT: X of type WebSocketConnectAttempt {
-    token: string | null,
-    tokenExpiresAt: number,        // Unix seconds
-    isRefreshInFlight: boolean,
-    appStateTransition: 'foreground' | 'background' | 'none',
-    connectionStatus: RealtimeConnectionStatus
-  }
+FUNCTION isBugCondition_InfiniteReconnect(X)
+  INPUT: X = { event: TransportEvent, wasEverConnected: boolean }
   OUTPUT: boolean
-
-  nowSeconds ← floor(Date.now() / 1000)
-  tokenIsStale ← (X.tokenExpiresAt - nowSeconds) < 60
-  concurrentRefresh ← X.isRefreshInFlight AND tokenIsStale
-  foregroundWithStaleToken ← X.appStateTransition = 'foreground' AND tokenIsStale
-
-  RETURN tokenIsStale OR concurrentRefresh OR foregroundWithStaleToken
+  // Bug: onConnected always emits 'reconnecting', even on first connect
+  RETURN X.event = 'onConnected' AND NOT X.wasEverConnected
 END FUNCTION
 
-// Property: Fix Checking — getValidToken() gate
-FOR ALL X WHERE isBugCondition(X) DO
-  token ← getValidToken'(X)
-  ASSERT token ≠ null
-  ASSERT (floor(Date.now() / 1000) + 60) < decodeExp(token)
-  ASSERT noParallelRefreshCallsMade(X)
+FUNCTION isBugCondition_StatusNotRestored(X)
+  INPUT: X = { previousStatus: DriverStatus, serverStatus: DriverStatus }
+  OUTPUT: boolean
+  // Bug: restore only triggers for OFFLINE, misses INDISPONIVEL
+  RETURN X.previousStatus = 'DISPONIVEL'
+    AND (X.serverStatus = 'OFFLINE' OR X.serverStatus = 'INDISPONIVEL')
+    AND current_restore_logic_only_checks_OFFLINE
+END FUNCTION
+
+FUNCTION isBugCondition_LocationStopsAfterReconnect(X)
+  INPUT: X = { reconnectOccurred: boolean, locationStreamActive: boolean }
+  OUTPUT: boolean
+  RETURN X.reconnectOccurred = true AND X.locationStreamActive = false
+END FUNCTION
+```
+
+### Fix Checking Properties
+
+```pascal
+// Property: Fix Checking — Initial connect must not enter reconnecting loop
+FOR ALL X WHERE isBugCondition_InfiniteReconnect(X) DO
+  result ← RealtimeFacade.onConnected'(X)
+  ASSERT emitted_status = 'connected' AND NOT entered_reconnecting_loop
 END FOR
 
-// Property: Preservation Checking
-FOR ALL X WHERE NOT isBugCondition(X) DO
-  ASSERT connect'(X) = connect(X)   // behavior identical to pre-fix
+// Property: Fix Checking — Status restoration covers INDISPONIVEL
+FOR ALL X WHERE isBugCondition_StatusNotRestored(X) DO
+  result ← useAuthSession.doGetMe'(X)
+  ASSERT dispatched_status = 'DISPONIVEL' AND PATCH_called = true
+END FOR
+
+// Property: Fix Checking — Location stream resumes after reconnect
+FOR ALL X WHERE isBugCondition_LocationStopsAfterReconnect(X) DO
+  result ← after_reconnect_connected_status'(X)
+  ASSERT atualizar_posicao_emitting = true
+END FOR
+```
+
+### Preservation Checking
+
+```pascal
+// Property: Preservation — Non-buggy inputs unchanged
+FOR ALL X WHERE NOT isBugCondition_InfiniteReconnect(X)
+                AND NOT isBugCondition_StatusNotRestored(X)
+                AND NOT isBugCondition_LocationStopsAfterReconnect(X) DO
+  ASSERT F(X) = F'(X)
 END FOR
 ```

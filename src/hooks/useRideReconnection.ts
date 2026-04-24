@@ -24,7 +24,7 @@ import {
   setPendingCorridaId,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
-import {tokenRefreshed} from '@store/slices/authSlice';
+import {tokenRefreshed, setStatusOperacional} from '@store/slices/authSlice';
 import {TERMINAL_STATUSES} from '@models/Corrida';
 import {getValidToken} from '@utils/tokenUtils';
 import type {ReconexaoConcluida} from '../types/realtime';
@@ -124,6 +124,9 @@ export const useRideReconnection = (): void => {
       if (motoristaIdRef.current) {
         console.log(TAG, 'REST fallback — no active ride, emitting ficar-disponivel');
         await realtimeFacadeRef.current.setDriverAvailable();
+        // Optimistically update Redux — the server's estado-operacional event
+        // may arrive with an empty payload ({}), so we can't rely on it.
+        dispatchRef.current(setStatusOperacional('DISPONIVEL'));
       }
       return;
     }
@@ -140,6 +143,7 @@ export const useRideReconnection = (): void => {
       if (motoristaIdRef.current) {
         console.log(TAG, 'REST fallback — terminal ride, emitting ficar-disponivel');
         await realtimeFacadeRef.current.setDriverAvailable();
+        dispatchRef.current(setStatusOperacional('DISPONIVEL'));
       }
     }
   };
@@ -212,6 +216,7 @@ export const useRideReconnection = (): void => {
           if (motoristaIdRef.current) {
             console.log(TAG, 'reconexao-concluida — no active ride, emitting ficar-disponivel');
             void realtimeFacadeRef.current.setDriverAvailable();
+            dispatchRef.current(setStatusOperacional('DISPONIVEL'));
           }
         } else {
           // Local ride is still active — keep it and re-subscribe to the room.
