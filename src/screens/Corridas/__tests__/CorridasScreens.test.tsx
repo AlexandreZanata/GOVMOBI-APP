@@ -31,6 +31,7 @@ import corridaReducer from '../../../store/slices/corridaSlice';
 import type {CorridaState} from '@store/slices/corridaSlice';
 import authReducer from '../../../store/slices/authSlice';
 import uiReducer from '../../../store/slices/uiSlice';
+import locationReducer from '../../../store/slices/locationSlice';
 import {PassageiroCorridasListScreen} from '../PassageiroCorridasListScreen';
 import {AcompanharCorridaScreen} from '../AcompanharCorridaScreen';
 import {MotoristaCorridaScreen} from '../MotoristaCorridaScreen';
@@ -242,7 +243,7 @@ const DEFAULT_CORRIDA_STATE: CorridaState = {
 
 const buildStore = (papeis: string[] = [], corridaOverrides?: Partial<CorridaState>) =>
   configureStore({
-    reducer: {corrida: corridaReducer, auth: authReducer, ui: uiReducer},
+    reducer: {corrida: corridaReducer, auth: authReducer, ui: uiReducer, location: locationReducer},
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     preloadedState: {
       auth: {
