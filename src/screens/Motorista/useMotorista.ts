@@ -434,7 +434,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.recusarFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, motoristaId, withAction],
   );
 
   /**

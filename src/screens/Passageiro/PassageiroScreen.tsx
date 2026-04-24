@@ -312,7 +312,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
       }
     })();
     return () => { cancelled = true; };
-  }, [activeCorrida?.motoristaId, activeCorrida?.veiculoId, activeCorrida?.status, hasActiveRide, motoristaNomeCache, frotaFacade, servidoresFacade]);
+  }, [activeCorrida, activeCorrida?.motoristaId, activeCorrida?.veiculoId, activeCorrida?.status, hasActiveRide, motoristaNomeCache, frotaFacade, servidoresFacade]);
 
   // ── Route line for active ride ──────────────────────────────────────────────
   useEffect(() => {

@@ -216,7 +216,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.recusarFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, motoristaId, t, withAction],
   );
 
   const onIniciarDeslocamento = useCallback(
@@ -305,7 +305,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.cancelarFailed',
       );
     },
-    [activeCorrida, corridaFacade, dispatch, motoristaId, t, withAction],
+    [activeCorrida, corridaFacade, dispatch, t, withAction],
   );
 
   return {
