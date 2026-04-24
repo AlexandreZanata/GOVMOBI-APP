@@ -55,7 +55,7 @@
     - _Bug_Condition: isBugCondition_OneSignalLinkLate(X) where hydration_not_yet_complete = true_
     - _Expected_Behavior: setOneSignalExternalUserId called before push delivery window (from Property 7 in design)_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fixes)
+- [x] 2. Write preservation property tests (BEFORE implementing fixes)
   - **Property 2: Preservation** - Non-Buggy Behavior Unchanged
   - **IMPORTANT**: Follow observation-first methodology
   - Observe behavior on UNFIXED code for non-buggy inputs
@@ -66,42 +66,42 @@
   - Mark task complete when tests are written, run, and passing on unfixed code
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
 
-  - [ ] 2.1 Preservation test - Subsequent reconnects emit `reconnecting`
+  - [x] 2.1 Preservation test - Subsequent reconnects emit `reconnecting`
     - Add test to `src/services/facades/__tests__/RealtimeFacade.bugCondition.test.ts`
     - Observe: After `wasEverConnected=true`, `onConnected` emits `reconnecting`
     - Write property: for all `onConnected` events where `wasEverConnected=true`, status is `reconnecting`
     - Verify test passes on UNFIXED code
     - _Preservation: Property 2 from design - subsequent reconnects preserve existing behavior_
 
-  - [ ] 2.2 Preservation test - Valid token connects immediately without refresh
+  - [x] 2.2 Preservation test - Valid token connects immediately without refresh
     - Test file already exists: `src/hooks/__tests__/useRealtimeSession.preservation.test.ts`
     - Observe: Tokens with `exp > now+60` connect immediately
     - Property already written: for all valid tokens, `connect()` called with that token, no refresh
     - Verify test passes on UNFIXED code
     - _Preservation: Requirement 3.1 from design_
 
-  - [ ] 2.3 Preservation test - Manual INDISPONIVEL not overwritten
+  - [x] 2.3 Preservation test - Manual INDISPONIVEL not overwritten
     - Add test to `src/hooks/__tests__/useAuthSession.statusRestore.test.ts`
     - Observe: When `previousStatus='INDISPONIVEL'`, no restore happens
     - Write property: for all `previousStatus != 'DISPONIVEL'`, `updateMyStatus` not called
     - Verify test passes on UNFIXED code
     - _Preservation: Property 5 from design - manual offline intent preserved_
 
-  - [ ] 2.4 Preservation test - Already connected skips redundant connect
+  - [x] 2.4 Preservation test - Already connected skips redundant connect
     - Test file already exists: `src/hooks/__tests__/useRealtimeSession.preservation.test.ts`
     - Observe: Re-render with same token does not call `connect()` again
     - Property already written: re-render with same valid token never triggers extra `connect()`
     - Verify test passes on UNFIXED code
     - _Preservation: Requirement 3.2 from design_
 
-  - [ ] 2.5 Preservation test - Unauthenticated triggers disconnect
+  - [x] 2.5 Preservation test - Unauthenticated triggers disconnect
     - Test file already exists: `src/hooks/__tests__/useRealtimeSession.preservation.test.ts`
     - Observe: `isAuthenticated=false` or `token=null` triggers `disconnect()` + `resetRealtime`
     - Property already written: for all unauthenticated states, `disconnect()` called
     - Verify test passes on UNFIXED code
     - _Preservation: Requirement 3.3 from design_
 
-- [ ] 3. Implement Bug 1 fix - RealtimeFacade `wasEverConnected` flag
+- [-] 3. Implement Bug 1 fix - RealtimeFacade `wasEverConnected` flag
 
   - [ ] 3.1 Add `wasEverConnected` field to `RealtimeFacadeImpl`
     - File: `src/services/facades/RealtimeFacade.ts`

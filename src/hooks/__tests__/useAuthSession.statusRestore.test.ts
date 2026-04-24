@@ -278,3 +278,102 @@ describe('useAuthSession — Bug 4 exploration: INDISPONIVEL triggers status res
     unmount();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Preservation 2.3 — Manual INDISPONIVEL not overwritten
+// ---------------------------------------------------------------------------
+
+describe('useAuthSession — Preservation 2.3: manual INDISPONIVEL not overwritten', () => {
+  /**
+   * Preservation: Property 5 from design — manual offline intent preserved.
+   *
+   * When previousStatus !== 'DISPONIVEL', updateMyStatus must NOT be called.
+   * This test PASSES on unfixed code (confirming the baseline behavior to preserve).
+   *
+   * Validates: Requirements 3.3
+   */
+  it('does NOT call updateMyStatus when persisted=INDISPONIVEL and server returns INDISPONIVEL', async () => {
+    mockGetMe.mockResolvedValue({
+      data: {...MOCK_ME_BASE, statusOperacional: 'INDISPONIVEL'},
+      error: null,
+    });
+
+    const store = buildStore('INDISPONIVEL');
+
+    const {unmount} = renderHook(() => useAuthSession(), {
+      wrapper: wrapper(store),
+    });
+
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 50));
+    });
+
+    // Manual INDISPONIVEL must be preserved — no restore call
+    expect(mockUpdateMyStatus).not.toHaveBeenCalled();
+    expect(store.getState().auth.statusOperacional).toBe('INDISPONIVEL');
+
+    unmount();
+  });
+
+  it('does NOT call updateMyStatus when persisted=INDISPONIVEL and server returns OFFLINE', async () => {
+    mockGetMe.mockResolvedValue({
+      data: {...MOCK_ME_BASE, statusOperacional: 'OFFLINE'},
+      error: null,
+    });
+
+    const store = buildStore('INDISPONIVEL');
+
+    const {unmount} = renderHook(() => useAuthSession(), {
+      wrapper: wrapper(store),
+    });
+
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 50));
+    });
+
+    expect(mockUpdateMyStatus).not.toHaveBeenCalled();
+
+    unmount();
+  });
+
+  /**
+   * Property: For all previousStatus values that are NOT 'DISPONIVEL',
+   * updateMyStatus must never be called regardless of serverStatus.
+   *
+   * This passes on unfixed code because the restore condition only fires
+   * when previousStatus === 'DISPONIVEL'.
+   */
+  it('property: updateMyStatus never called when previousStatus is not DISPONIVEL', async () => {
+    const nonDisponivel: MotoristaStatusOperacional[] = ['INDISPONIVEL', 'OFFLINE', 'EM_CORRIDA'];
+    const allServerStatuses: MotoristaStatusOperacional[] = ['OFFLINE', 'INDISPONIVEL', 'DISPONIVEL', 'EM_CORRIDA'];
+
+    for (const prevStatus of nonDisponivel) {
+      for (const serverStatus of allServerStatuses) {
+        jest.clearAllMocks();
+        mockRefreshToken.mockResolvedValue({data: {accessToken: MOCK_TOKEN}, error: null});
+        mockUpdateMyStatus.mockResolvedValue({
+          data: {...MOCK_ME_BASE, statusOperacional: prevStatus},
+          error: null,
+        });
+        mockGetMe.mockResolvedValue({
+          data: {...MOCK_ME_BASE, statusOperacional: serverStatus},
+          error: null,
+        });
+
+        const store = buildStore(prevStatus);
+
+        const {unmount} = renderHook(() => useAuthSession(), {
+          wrapper: wrapper(store),
+        });
+
+        await act(async () => {
+          await new Promise(r => setTimeout(r, 50));
+        });
+
+        expect(mockUpdateMyStatus).not.toHaveBeenCalled();
+
+        unmount();
+      }
+    }
+  });
+});
