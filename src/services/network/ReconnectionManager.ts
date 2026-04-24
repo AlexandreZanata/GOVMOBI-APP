@@ -149,6 +149,8 @@ export class ReconnectionManager {
       getToken: () => string | null;
       /** Silently refreshes the JWT. Returns the new token or null on failure. */
       refreshToken: () => Promise<string | null>;
+      /** Called when token refresh fails — should dispatch a toast and call logout(). */
+      onSessionExpired?: () => void;
     },
     config: ReconnectionConfig = {},
   ) {
@@ -314,6 +316,7 @@ export class ReconnectionManager {
         token = fresh;
       } else {
         console.warn(TAG, 'Token refresh failed — aborting reconnect');
+        this.deps.onSessionExpired?.();
         this.abort();
         return;
       }

@@ -18,7 +18,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useFacades} from '@services/facades';
 import {useAppDispatch, useAppSelector} from '../store';
-import {setIsConnected} from '@store/slices/uiSlice';
+import {setIsConnected, addToast} from '@store/slices/uiSlice';
 import {NetworkMonitor, type NetworkConnectionState} from '@services/network/NetworkMonitor';
 import {ReconnectionManager} from '@services/network/ReconnectionManager';
 import {AuthFacadeImpl} from '@services/facades';
@@ -149,7 +149,18 @@ export const useNetworkManager = (): NetworkManagerState => {
 
     const manager = new ReconnectionManager(
       realtimeFacade,
-      {getToken, refreshToken},
+      {
+        getToken,
+        refreshToken,
+        onSessionExpired: () => {
+          dispatchRef.current(logout());
+          dispatchRef.current(addToast({
+            id: `session-expired-${Date.now()}`,
+            message: 'errors.sessionExpired',
+            type: 'warning',
+          }));
+        },
+      },
     );
 
     // Track retry count for the UI

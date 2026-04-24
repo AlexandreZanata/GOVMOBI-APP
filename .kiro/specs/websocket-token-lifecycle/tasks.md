@@ -189,35 +189,35 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
     - Confirm manual INDISPONIVEL is not overwritten
 
-- [ ] 6. Implement Bug 5 fix - Session-expired feedback on token refresh failure
+- [x] 6. Implement Bug 5 fix - Session-expired feedback on token refresh failure
 
-  - [ ] 6.1 Add `onSessionExpired` callback to `ReconnectionManager` deps interface
+  - [x] 6.1 Add `onSessionExpired` callback to `ReconnectionManager` deps interface
     - File: `src/services/network/ReconnectionManager.ts`
     - Add `onSessionExpired?: () => void` to the `deps` interface
     - _Bug_Condition: isBugCondition_SilentAbort(X) where X.refreshResult = null_
     - _Expected_Behavior: onSessionExpired called before abort (Property 6 from design)_
     - _Requirements: 2.6_
 
-  - [ ] 6.2 Call `onSessionExpired` before `abort()` when refresh fails
+  - [x] 6.2 Call `onSessionExpired` before `abort()` when refresh fails
     - File: `src/services/network/ReconnectionManager.ts`
     - In `attempt()`, when `refreshToken()` returns `null`, call `this.deps.onSessionExpired?.()` before `this.abort()`
     - _Bug_Condition: isBugCondition_SilentAbort(X)_
     - _Expected_Behavior: User notified via toast + logout (Property 6 from design)_
     - _Requirements: 2.6_
 
-  - [ ] 6.3 Inject `onSessionExpired` callback from caller
+  - [x] 6.3 Inject `onSessionExpired` callback from caller
     - File: Find where `ReconnectionManager` is instantiated (likely `src/hooks/useNetworkManager.ts` or similar)
     - Inject callback that dispatches session-expired toast and calls `logout()`
     - _Requirements: 2.6_
 
-  - [ ] 6.4 Verify Bug 5 exploration test now passes
+  - [x] 6.4 Verify Bug 5 exploration test now passes
     - **Property 1: Expected Behavior** - Token Refresh Failure Triggers Logout
     - **IMPORTANT**: Re-run the SAME test from task 1.4 - do NOT write a new test
     - Run test: `src/services/network/__tests__/ReconnectionManager.reconnect.test.ts`
     - **EXPECTED OUTCOME**: Test PASSES (confirms Bug 5 is fixed)
     - _Requirements: Expected Behavior Property 6 from design_
 
-  - [ ] 6.5 Verify preservation tests still pass
+  - [x] 6.5 Verify preservation tests still pass
     - **Property 2: Preservation** - Valid Token Skips Refresh
     - Run preservation tests for Bug 5
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
