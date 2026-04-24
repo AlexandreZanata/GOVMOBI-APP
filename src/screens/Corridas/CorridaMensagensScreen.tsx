@@ -18,7 +18,6 @@ import {
   ActivityIndicator,
   BackHandler,
   FlatList,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
@@ -27,6 +26,7 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
+import {KeyboardAvoidingView} from 'react-native-keyboard-controller';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
@@ -248,7 +248,10 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     [currentUserId, styles],
   );
 
-  const bottomPad = insets.bottom > 0 ? insets.bottom : 12;
+  // Safe-area bottom inset — only applied when keyboard is hidden.
+  // react-native-keyboard-controller's KeyboardAvoidingView handles the
+  // keyboard offset itself, so we must NOT add extra padding on top of it.
+  const bottomPad = insets.bottom > 0 ? insets.bottom : 0;
 
   return (
     <KeyboardAvoidingView
@@ -283,7 +286,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
       )}
 
       {/* Input bar */}
-      <View style={[styles.inputRow, {paddingBottom: bottomPad}]}>
+      <View style={[styles.inputRow, bottomPad > 0 && {paddingBottom: bottomPad}]}>
         <TextInput
           accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
           editable={!isSending}
@@ -391,6 +394,7 @@ const createMensagensStyles = (
       alignItems: 'flex-end',
       paddingHorizontal: spacing[4],
       paddingTop: spacing[3],
+      paddingBottom: spacing[3],
       backgroundColor: design.surface100,
       borderTopWidth: 1,
       borderTopColor: design.surface300,

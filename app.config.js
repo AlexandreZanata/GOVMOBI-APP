@@ -73,6 +73,7 @@ module.exports = {
           mode: process.env.APP_ENV === 'production' ? 'production' : 'development',
         },
       ],
+      'react-native-keyboard-controller',
     ],
     scheme: 'govmobile',
     extra: {

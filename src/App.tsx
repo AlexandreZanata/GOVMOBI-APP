@@ -36,6 +36,7 @@ import {useDriverLocationStream} from '@hooks/useDriverLocationStream';
 import {useRideReconnection} from '@hooks/useRideReconnection';
 import {FacadeProvider} from '@services/facades';
 import {NetworkProvider} from './context/NetworkContext';
+import {KeyboardProvider} from 'react-native-keyboard-controller';
 
 /**
  * Startup side-effect hooks that depend on app providers.
@@ -155,13 +156,15 @@ const App = (): React.JSX.Element => {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <I18nextProvider i18n={i18n}>
-          <Provider store={store}>
-            <PersistGate loading={loadingFallback} persistor={persistor}>
-              <AppShell />
-            </PersistGate>
-          </Provider>
-        </I18nextProvider>
+        <KeyboardProvider>
+          <I18nextProvider i18n={i18n}>
+            <Provider store={store}>
+              <PersistGate loading={loadingFallback} persistor={persistor}>
+                <AppShell />
+              </PersistGate>
+            </Provider>
+          </I18nextProvider>
+        </KeyboardProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
