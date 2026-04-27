@@ -76,9 +76,12 @@ try {
     LineLayer: MapboxModule['LineLayer'];
   };
 
-  if (ENV.MAPBOX_ACCESS_TOKEN) {
-    mod.default.setAccessToken(ENV.MAPBOX_ACCESS_TOKEN);
-  }
+  // setAccessToken must always be called before any MapView is created.
+  // If a build-time token is available use it; otherwise pass an empty string
+  // so the SDK is initialised and won't throw on first render.
+  // The real token is applied later via MapboxGL.setAccessToken(token) once
+  // GET /pesquisa/config returns it after login.
+  mod.default.setAccessToken(ENV.MAPBOX_ACCESS_TOKEN || '');
 
   MapboxGL = {
     setAccessToken: mod.default.setAccessToken.bind(mod.default),

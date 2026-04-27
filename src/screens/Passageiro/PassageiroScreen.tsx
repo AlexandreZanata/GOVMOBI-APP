@@ -27,6 +27,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {type NavigatorScreenParams} from '@react-navigation/native';
 import {usePassageiro} from './usePassageiro';
 import {usePassageiroRealtime} from '../../hooks/usePassageiroRealtime';
+import {useMapboxToken} from '../../hooks/useMapboxToken';
 import {SolicitarCorridaModal} from './components/SolicitarCorridaModal';
 import {MotoristaInfoModal} from './components/MotoristaInfoModal';
 import {PassageiroSearchBar} from './components/PassageiroSearchBar';
@@ -116,7 +117,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [isMapboxTokenApplied, setIsMapboxTokenApplied] = useState(false);
+  const isMapboxTokenApplied = useMapboxToken();
   const [isContainerReady, setIsContainerReady] = useState(false);
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [showCancelInput, setShowCancelInput] = useState(false);
@@ -377,15 +378,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
       },
     ]);
   }, [activeCorrida, cancelMotivo, corridaFacade, dispatch, t]);
-
-  // ── Mapbox token phase-2 ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!MapboxGL) { setIsMapboxTokenApplied(false); return; }
-    if (mapboxToken === null && ENV.MAPBOX_ACCESS_TOKEN) { setIsMapboxTokenApplied(true); return; }
-    if (!mapboxToken) { setIsMapboxTokenApplied(false); return; }
-    MapboxGL.setAccessToken(mapboxToken);
-    setIsMapboxTokenApplied(true);
-  }, [mapboxToken]);
 
   // ── Sheet slide-up ──────────────────────────────────────────────────────────
   const onSheetLayout = useCallback(() => {

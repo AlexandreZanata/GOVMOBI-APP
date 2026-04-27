@@ -32,6 +32,7 @@ import {NovaCorridaModal} from './components/NovaCorridaModal';
 import {createMotoristaStyles, MotoristaColors as C} from './MotoristaScreen.styles';
 import {useTheme} from '../../theme';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
+import {useMapboxToken} from '../../hooks/useMapboxToken';
 import {MotoristaIdleSheet} from './components/MotoristaIdleSheet';
 import {MotoristaTerminalSheet} from './components/MotoristaTerminalSheet';
 import {MotoristaActiveSheet} from './components/MotoristaActiveSheet';
@@ -65,6 +66,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
   const navigation = useNavigation<MotoristaNavProp>();
 
   const {pesquisaFacade} = useFacades();
+  const isMapboxTokenApplied = useMapboxToken();
   const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
 
   const {
@@ -251,7 +253,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
   }, [activeRouteCoords]);
 
   const mapContent =
-    MapboxGL ? (
+    MapboxGL && isMapboxTokenApplied ? (
       <MapboxGL.MapView
         accessibilityLabel={t('motorista.map.label')}
         logoEnabled={false}
