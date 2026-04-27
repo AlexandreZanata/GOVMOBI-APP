@@ -111,12 +111,6 @@ export const SolicitarCorridaScreen = (): React.JSX.Element => {
       updatedAt: new Date().toISOString(),
     }));
 
-    dispatch(addToast({
-      id: `solicitar-ok-${Date.now()}`,
-      message: t('passageiro.requestSuccess'),
-      type: 'success',
-    }));
-
     navigation.replace('AcompanharCorrida', {corridaId: result.data.corridaId});
   }, [corridaFacade, dispatch, motivoServico, navigation, observacoes, selectedDestino, t, userId]);
 

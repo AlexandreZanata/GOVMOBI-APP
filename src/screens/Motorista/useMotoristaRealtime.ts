@@ -82,9 +82,13 @@ export const useMotoristaRealtime = (
   // ---------------------------------------------------------------------------
   // Subscribe to active ride room when a ride becomes active.
   // Re-subscribes whenever the ride ID changes (covers second ride scenario).
+  // Accepts both 'connected' and 'reconnecting' — when the facade emits
+  // 'reconnecting' the transport handshake has already succeeded.
   // ---------------------------------------------------------------------------
+  const isSocketUp = connectionStatus === 'connected' || connectionStatus === 'reconnecting';
+
   useEffect(() => {
-    if (!activeCorrida || !isMotorista || connectionStatus !== 'connected') return;
+    if (!activeCorrida || !isMotorista || !isSocketUp) return;
     if (TERMINAL_STATUSES.has(activeCorrida.status)) return;
 
     // Only re-subscribe if this is a different ride than the last one.
@@ -93,7 +97,7 @@ export const useMotoristaRealtime = (
     lastSubscribedCorridaIdRef.current = activeCorrida.id;
     console.log('[useMotoristaRealtime] subscribing to ride room →', activeCorrida.id);
     void realtimeFacade.subscribeToCorrida({corridaId: activeCorrida.id});
-  }, [activeCorrida, isMotorista, connectionStatus, realtimeFacade]);
+  }, [activeCorrida, isMotorista, isSocketUp, connectionStatus, realtimeFacade]);
 
   // ---------------------------------------------------------------------------
   // Handle realtime events: estado-operacional + status-corrida-alterado.
@@ -159,7 +163,7 @@ export const useMotoristaRealtime = (
       realtimeFacadeRef.current.clearCorridaSubscriptions();
 
       // Re-enter the dispatch queue immediately — critical for receiving the second ride.
-      if (isMotoristaRef.current && connectionStatusRef.current === 'connected') {
+      if (isMotoristaRef.current && (connectionStatusRef.current === 'connected' || connectionStatusRef.current === 'reconnecting')) {
         console.log('[useMotoristaRealtime] emitting ficar-disponivel after terminal status');
         void realtimeFacadeRef.current.setDriverAvailable();
         dispatchRef.current(setStatusOperacional('DISPONIVEL'));

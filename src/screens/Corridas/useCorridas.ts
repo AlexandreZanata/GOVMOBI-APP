@@ -193,7 +193,6 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         },
         data => {
           if (data) dispatch(setActiveCorrida(data));
-          dispatch(addToast({id: `aceitar-${Date.now()}`, message: t('corridas.success.aceita'), type: 'success'}));
         },
         'corridas.errors.aceitarFailed',
       );
@@ -211,7 +210,6 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         },
         data => {
           if (data) dispatch(setActiveCorrida(data));
-          dispatch(addToast({id: `recusar-${Date.now()}`, message: t('corridas.success.recusada'), type: 'info'}));
         },
         'corridas.errors.recusarFailed',
       );
@@ -229,7 +227,6 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         },
         data => {
           if (data) dispatch(setActiveCorrida(data));
-          dispatch(addToast({id: `desl-${Date.now()}`, message: t('corridas.success.emDeslocamento'), type: 'success'}));
         },
         'corridas.errors.deslocamentoFailed',
       );
@@ -247,7 +244,6 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         },
         data => {
           if (data) dispatch(setActiveCorrida(data));
-          dispatch(addToast({id: `emb-${Date.now()}`, message: t('corridas.success.embarcado'), type: 'success'}));
         },
         'corridas.errors.embarqueFailed',
       );
@@ -266,7 +262,6 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         data => {
           if (data) dispatch(setActiveCorrida(data));
           dispatch(setPendingCorridaId(null));
-          dispatch(addToast({id: `fin-${Date.now()}`, message: t('corridas.success.finalizada'), type: 'success'}));
         },
         'corridas.errors.finalizarFailed',
       );
@@ -300,7 +295,6 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         data => {
           if (data) dispatch(setActiveCorrida(data));
           dispatch(setPendingCorridaId(null));
-          dispatch(addToast({id: `cancel-${Date.now()}`, message: t('corridas.success.cancelada'), type: 'info'}));
         },
         'corridas.errors.cancelarFailed',
       );

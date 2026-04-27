@@ -213,14 +213,6 @@ export const SolicitarCorridaModal = ({
       }),
     );
 
-    dispatch(
-      addToast({
-        id: `solicitar-ok-${Date.now()}`,
-        message: t('passageiro.requestSuccess'),
-        type: 'success',
-      }),
-    );
-
     resetForm();
     onSuccess(corridaId);
   }, [

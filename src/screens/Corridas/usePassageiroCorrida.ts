@@ -256,13 +256,6 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
         dispatch(setActiveCorrida(result.data));
       }
       dispatch(setPendingCorridaId(null));
-      dispatch(
-        addToast({
-          id: `cancel-ok-${Date.now()}`,
-          message: t('corridas.success.cancelada'),
-          type: 'info',
-        }),
-      );
     },
     [activeCorrida, corridaFacade, dispatch, t],
   );

@@ -37,6 +37,7 @@ import {PassageiroActiveRidePanel} from './components/PassageiroActiveRidePanel'
 import {PassageiroColors as C} from './PassageiroScreen.styles';
 import {ENV} from '../../config/env';
 import {useAppDispatch, useAppSelector} from '../../store';
+import {setLocationSuccess} from '@store/slices/locationSlice';
 import {useFacades} from '@services/facades';
 import {
   setActiveCorrida,
@@ -369,7 +370,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
               } else {
                 if (result.data) dispatch(setActiveCorrida(result.data));
                 dispatch(setPendingCorridaId(null));
-                dispatch(addToast({id: `cancel-ok-${Date.now()}`, message: t('corridas.success.cancelada'), type: 'info'}));
                 setCancelMotivo('');
                 setShowCancelInput(false);
               }
@@ -464,7 +464,29 @@ export const PassageiroScreen = (): React.JSX.Element => {
             <MapboxGL.LineLayer id="route-preview-line" style={routeLineStyle} />
           </MapboxGL.ShapeSource>
         )}
-        {userLocation && (
+        {MapboxGL.UserLocation ? (
+          // UserLocation uses the Mapbox native GPS — renders immediately on
+          // map load without waiting for expo-location to resolve a fix.
+          // No children = uses the default Mapbox blue dot (CircleLayer-based).
+          // Passing React Native Views as children is silently ignored on Android
+          // because UserLocation renders inside a Mapbox Annotation context.
+          // onUpdate feeds coordinates into Redux so the rest of the app
+          // (search proximity, ride request modal) still has the location.
+          <MapboxGL.UserLocation
+            animated
+            visible
+            minDisplacement={5}
+            onUpdate={loc => {
+              const coords = {
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+              };
+              dispatch(setLocationSuccess({coords, timestamp: Date.now()}));
+            }}
+          />
+        ) : userLocation ? (
+          // Fallback for environments where UserLocation is unavailable
+          // (e.g. Expo Go, unit tests) — use PointAnnotation with Redux coords.
           <MapboxGL.PointAnnotation
             coordinate={[userLocation.longitude, userLocation.latitude]}
             id="user-location"
@@ -475,7 +497,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
               </View>
             </View>
           </MapboxGL.PointAnnotation>
-        )}
+        ) : null}
         {!hasActiveRide && selectedDestinoCoords && (
           <MapboxGL.PointAnnotation
             coordinate={[selectedDestinoCoords.longitude, selectedDestinoCoords.latitude]}

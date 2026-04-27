@@ -80,9 +80,14 @@ export const usePassageiroRealtime = (): void => {
 
   // ---------------------------------------------------------------------------
   // Subscribe to ride room when corridaId becomes available or socket reconnects.
+  // Accepts both 'connected' and 'reconnecting' — when the facade emits
+  // 'reconnecting' the transport handshake has already succeeded and emits
+  // reach the server, so the subscription is valid.
   // ---------------------------------------------------------------------------
+  const isSocketUp = connectionStatus === 'connected' || connectionStatus === 'reconnecting';
+
   useEffect(() => {
-    if (!corridaId || connectionStatus !== 'connected') return;
+    if (!corridaId || !isSocketUp) return;
 
     // Already subscribed in this session — skip re-emit unless it's a new ride.
     if (
@@ -100,7 +105,7 @@ export const usePassageiroRealtime = (): void => {
         dispatch(addRealtimeSubscription(corridaId));
       }
     });
-  }, [corridaId, connectionStatus, dispatch, realtimeFacade, subscribedIds]);
+  }, [corridaId, isSocketUp, connectionStatus, dispatch, realtimeFacade, subscribedIds]);
 
   // ---------------------------------------------------------------------------
   // Re-subscribe on AppState foreground transition.
@@ -119,7 +124,7 @@ export const usePassageiroRealtime = (): void => {
           nextState === 'active'
         ) {
           const id = corridaIdRef.current;
-          if (id && connectionStatusRef.current === 'connected') {
+          if (id && (connectionStatusRef.current === 'connected' || connectionStatusRef.current === 'reconnecting')) {
             console.log(TAG, 'AppState foreground — re-subscribing to ride room →', id);
             // Force re-subscription by resetting the last subscribed ref.
             lastSubscribedRef.current = null;

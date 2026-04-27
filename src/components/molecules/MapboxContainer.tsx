@@ -32,6 +32,19 @@ export type MapboxModule = {
       flyTo: (coordinates: [number, number], duration?: number) => void;
     }>
   >;
+  /**
+   * Native user location component — renders the device's GPS position
+   * directly via the Mapbox SDK without requiring a manual GPS fix from
+   * expo-location. Preferred over PointAnnotation for the passenger's own
+   * location marker because it works immediately on map load.
+   */
+  UserLocation: React.ComponentType<{
+    visible?: boolean;
+    animated?: boolean;
+    minDisplacement?: number;
+    onUpdate?: (location: {coords: {latitude: number; longitude: number}}) => void;
+    children?: React.ReactNode;
+  }>;
   PointAnnotation: React.ComponentType<{
     id: string;
     coordinate: [number, number];
@@ -71,6 +84,7 @@ try {
     default: {setAccessToken: (t: string) => void};
     MapView: MapboxModule['MapView'];
     Camera: MapboxModule['Camera'];
+    UserLocation: MapboxModule['UserLocation'];
     PointAnnotation: MapboxModule['PointAnnotation'];
     ShapeSource: MapboxModule['ShapeSource'];
     LineLayer: MapboxModule['LineLayer'];
@@ -87,6 +101,7 @@ try {
     setAccessToken: mod.default.setAccessToken.bind(mod.default),
     MapView: mod.MapView,
     Camera: mod.Camera,
+    UserLocation: mod.UserLocation,
     PointAnnotation: mod.PointAnnotation,
     ShapeSource: mod.ShapeSource,
     LineLayer: mod.LineLayer,
