@@ -13,6 +13,12 @@
 npm install
 ```
 
+2. Configure Android SDK (run once after cloning):
+```bash
+bash setup-android.sh
+```
+> Requires `ANDROID_HOME` to be set on your machine pointing to your Android SDK path.
+
 2. Install iOS dependencies (macOS only):
 ```bash
 cd ios && pod install && cd ..

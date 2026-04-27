@@ -33,15 +33,19 @@ interface AppConfig {
 
 const extra = Constants.expoConfig?.extra ?? {};
 
+// Fallback URLs used when the bundle was built without a .env file.
+// Override these by setting API_URL in your .env before running `expo run:android`.
+const DEV_API_URL = 'http://172.19.2.116:3000';
+
 export const ENV: AppConfig = {
-  apiUrl: extra.apiUrl ?? '',
-  wsUrl: extra.wsUrl ?? '',
+  apiUrl: extra.apiUrl || DEV_API_URL,
+  wsUrl: extra.wsUrl || DEV_API_URL,
   appEnv: extra.appEnv ?? 'development',
   mockMode: extra.mockMode === 'true' || extra.mockMode === true,
   MOCK_MODE: extra.mockMode === 'true' || extra.mockMode === true,
   MAPBOX_ACCESS_TOKEN: extra.mapboxAccessToken ?? '',
   MAPBOX_SECRET_TOKEN: extra.mapboxSecretToken ?? '',
-  ONESIGNAL_APP_ID: extra.oneSignalAppId ?? '',
+  ONESIGNAL_APP_ID: extra.oneSignalAppId || 'd6247b88-6e87-4695-ac0f-396993ede8ba',
 };
 
 export const isDev = ENV.appEnv === 'development';
