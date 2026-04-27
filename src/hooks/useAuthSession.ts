@@ -17,11 +17,10 @@
  *    expire within `REFRESH_THRESHOLD_SECONDS` it is refreshed silently.
  *
  * 4. **Driver status restoration** — if the driver had `DISPONIVEL` persisted
- *    in Redux (or has no persisted status, i.e. first install / post-logout)
- *    but the server returns `OFFLINE` or `INDISPONIVEL` (backend auto-sets
- *    these on WebSocket disconnect), we restore `DISPONIVEL` via PATCH so the
- *    driver is immediately indexed in the dispatch pool and can receive rides.
- *    `OFFLINE`/`INDISPONIVEL` is only kept when the driver explicitly set it.
+ *    in Redux but the server returns `OFFLINE` (backend auto-sets OFFLINE on
+ *    WebSocket disconnect), we restore `DISPONIVEL` via PATCH so the driver
+ *    doesn't have to manually re-toggle every time they reopen the app.
+ *    `OFFLINE` is only kept when the driver explicitly set it themselves.
  */
 import {useEffect, useRef} from 'react';
 import {useFacades} from '@services/facades';
@@ -194,16 +193,11 @@ export const useAuthSession = (): void => {
    * Calls `getMe()` and dispatches user + role fields into Redux.
    *
    * Driver status restoration:
-   * The backend auto-sets drivers to `OFFLINE`/`INDISPONIVEL` when their
-   * WebSocket disconnects. We restore `DISPONIVEL` when:
-   *  - `previousStatus === 'DISPONIVEL'`: driver was available before closing
-   *    the app (reconnect scenario).
-   *  - `previousStatus === null`: first install or post-logout cold start —
-   *    the driver never explicitly went offline, so we must not leave them
-   *    stuck in OFFLINE just because the server auto-set it.
-   *
-   * We do NOT restore when `previousStatus` is `'OFFLINE'` or `'INDISPONIVEL'`
-   * — that means the driver manually went offline and their intent is preserved.
+   * The backend auto-sets drivers to `OFFLINE` when their WebSocket disconnects.
+   * If the driver had `DISPONIVEL` persisted in Redux (their last manual intent),
+   * we restore it via `PATCH /frota/motoristas/me/status` so they don't have to
+   * manually re-toggle every time they reopen the app.
+   * `OFFLINE` is only kept when the driver explicitly set it themselves.
    *
    * @returns True on success, false on failure (session ended).
    */
@@ -247,27 +241,18 @@ export const useAuthSession = (): void => {
     }
 
     // ── Driver status restoration ──────────────────────────────────────────
-    // The backend auto-sets drivers to OFFLINE/INDISPONIVEL when their WebSocket
-    // disconnects. We restore DISPONIVEL when:
-    //   a) previousStatus === 'DISPONIVEL' — driver was available before closing
-    //      the app and the server reset them (reconnect scenario).
-    //   b) previousStatus === null — first install or post-logout cold start.
-    //      null means the driver never explicitly set themselves OFFLINE, so we
-    //      should not leave them stuck in OFFLINE just because the server
-    //      auto-set it on the initial WebSocket handshake.
-    //
-    // We do NOT restore when previousStatus is 'OFFLINE' or 'INDISPONIVEL' —
-    // that means the driver manually went offline and their intent must be
-    // preserved.
-    const shouldRestoreDisponivel =
+    // If the driver was DISPONIVEL before closing the app but the server now
+    // reports OFFLINE or INDISPONIVEL (auto-set on WS disconnect), restore
+    // DISPONIVEL via PATCH. This preserves the driver's intent without requiring
+    // a manual re-toggle.
+    if (
       me.motoristaId &&
-      (previousStatus === 'DISPONIVEL' || previousStatus === null) &&
-      (me.statusOperacional === 'OFFLINE' || me.statusOperacional === 'INDISPONIVEL');
-
-    if (shouldRestoreDisponivel) {
+      previousStatus === 'DISPONIVEL' &&
+      (me.statusOperacional === 'OFFLINE' || me.statusOperacional === 'INDISPONIVEL')
+    ) {
       logger.info(
         'useAuthSession',
-        `Restoring DISPONIVEL — previousStatus="${String(previousStatus)}" serverStatus="${me.statusOperacional ?? 'null'}"`,
+        'Restoring DISPONIVEL status — server returned OFFLINE or INDISPONIVEL after reconnect',
       );
       const restoreResult = await frotaFacade.updateMyStatus('DISPONIVEL');
       if (restoreResult.data) {
@@ -279,10 +264,6 @@ export const useAuthSession = (): void => {
           'Failed to restore DISPONIVEL status',
           restoreResult.error,
         );
-        // Even if the PATCH fails, optimistically set DISPONIVEL in Redux so
-        // the location stream can emit ficar-disponivel and the driver can
-        // receive rides. The server will reconcile on the next getMe() call.
-        dispatch(setStatusOperacional('DISPONIVEL'));
       }
     }
 

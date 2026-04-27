@@ -18,6 +18,16 @@
  *    Drivers in OFFLINE or EM_CORRIDA must not be indexed in the dispatch pool.
  *  - When the driver transitions OFFLINE → DISPONIVEL while already connected,
  *    `ficar-disponivel` is re-emitted immediately so the server indexes them.
+ *
+ * BUG FIX (location-indexing-on-reconnect):
+ *  - Previously, `ficar-disponivel` was only emitted when connectionStatus ===
+ *    'connected'. After any reconnect the facade emits 'reconnecting' (not
+ *    'connected'), so the driver was never re-indexed in the dispatch pool and
+ *    stopped receiving new rides after the first disconnect.
+ *  - Fix: treat 'reconnecting' the same as 'connected' for both the
+ *    ficar-disponivel emission and the telemetry interval. The facade's
+ *    isConnected flag is already true when 'reconnecting' is emitted (the
+ *    transport handshake succeeded), so emits reach the server correctly.
  */
 import {useEffect, useRef} from 'react';
 import {AppState, type AppStateStatus} from 'react-native';
@@ -141,7 +151,12 @@ export const useDriverLocationStream = (): void => {
   // Emit ficar-disponivel when connected AND driver has no active ride.
   //
   // Triggers on:
-  //   - Initial connect / reconnect (connectionStatus changes to 'connected')
+  //   - Initial connect (connectionStatus changes to 'connected')
+  //   - Reconnect (connectionStatus changes to 'reconnecting' — the transport
+  //     handshake succeeded; the facade's isConnected flag is already true so
+  //     the emit will reach the server. This is the critical fix: previously
+  //     only 'connected' was checked, so after any reconnect the driver was
+  //     never re-indexed in the dispatch pool and stopped receiving new rides.)
   //   - Driver switches from OFFLINE → DISPONIVEL while already connected
   //
   // Conditions:
@@ -150,18 +165,22 @@ export const useDriverLocationStream = (): void => {
   //     during the cold-start window before estado-operacional arrives)
   //   - No active non-terminal ride (EM_CORRIDA drivers must not re-enter the pool)
   // ---------------------------------------------------------------------------
+  const isSocketUp = connectionStatus === 'connected' || connectionStatus === 'reconnecting';
+
   useEffect(() => {
-    if (!isMotorista || connectionStatus !== 'connected') return;
+    if (!isMotorista || !isSocketUp) return;
     // Block only when the server has explicitly set the driver OFFLINE or EM_CORRIDA.
     if (statusOperacional === 'OFFLINE' || statusOperacional === 'EM_CORRIDA') return;
 
     console.log(
-      '[useDriverLocationStream] connected + eligible — emitting ficar-disponivel (status=',
+      '[useDriverLocationStream] socket up + eligible — emitting ficar-disponivel (status=',
       statusOperacional,
+      ', connectionStatus=',
+      connectionStatus,
       ')',
     );
     void realtimeFacade.setDriverAvailable();
-  }, [isMotorista, connectionStatus, statusOperacional, realtimeFacade]);
+  }, [isMotorista, isSocketUp, statusOperacional, realtimeFacade, connectionStatus]);
 
   // ---------------------------------------------------------------------------
   // Re-emit ficar-disponivel on AppState foreground transition.
@@ -181,7 +200,7 @@ export const useDriverLocationStream = (): void => {
           (prev === 'background' || prev === 'inactive') &&
           nextState === 'active' &&
           isMotoristaRef.current &&
-          connectionStatusRef.current === 'connected' &&
+          (connectionStatusRef.current === 'connected' || connectionStatusRef.current === 'reconnecting') &&
           statusOperacionalRef.current !== 'OFFLINE' &&
           statusOperacionalRef.current !== 'EM_CORRIDA'
         ) {
@@ -199,19 +218,24 @@ export const useDriverLocationStream = (): void => {
   }, [realtimeFacade]);
 
   // ---------------------------------------------------------------------------
-  // Telemetry interval — runs while connected as MOTORISTA with an active
-  // or unknown operational status.
+  // Telemetry interval — runs while connected (or reconnecting) as MOTORISTA
+  // with an active or unknown operational status.
   //
   // - DISPONIVEL / null: emits position without corridaId so the server can
   //   update the driver's location in the dispatch index.
   // - EM_CORRIDA: emits position with corridaId so the passenger can track
   //   the driver on the map.
   // - OFFLINE: interval is stopped — no position updates sent.
+  //
+  // NOTE: 'reconnecting' is treated the same as 'connected' here because the
+  // facade's isConnected flag is already true when 'reconnecting' is emitted
+  // (the transport handshake succeeded). Stopping telemetry during reconnect
+  // would cause a gap in the driver's position stream.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const shouldRun =
       isMotorista &&
-      connectionStatus === 'connected' &&
+      isSocketUp &&
       statusOperacional !== 'OFFLINE';
 
     if (!shouldRun) {
@@ -221,8 +245,8 @@ export const useDriverLocationStream = (): void => {
         console.log(
           '[useDriverLocationStream] telemetry stopped — status=',
           statusOperacional,
-          'connected=',
-          connectionStatus,
+          'socketUp=',
+          isSocketUp,
         );
       }
       return;
@@ -265,5 +289,5 @@ export const useDriverLocationStream = (): void => {
         telemetryRef.current = null;
       }
     };
-  }, [isMotorista, connectionStatus, statusOperacional, realtimeFacade]);
+  }, [isMotorista, isSocketUp, statusOperacional, realtimeFacade]);
 };
