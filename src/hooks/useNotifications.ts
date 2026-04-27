@@ -27,6 +27,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {useFacades} from '@services/facades';
 import {setPermissionStatus} from '@store/slices/notificationsSlice';
 import {setActiveCorrida, setPendingCorridaId} from '@store/slices/corridaSlice';
+import {setPendingOffer} from '@store/slices/realtimeSlice';
 import {useAppDispatch, useAppSelector} from '../store';
 import {logger} from '@utils/logger';
 import {
@@ -39,6 +40,7 @@ import {
   type NotificationOpenedEvent,
 } from '@services/notifications/OneSignalService';
 import {navigationRef} from '@navigation/navigationRef';
+import type {NovaCorridaDisponivelPayload} from '../types';
 
 export interface UseNotificationsResult {
   /** Whether the OS has granted push notification permission. */
@@ -50,40 +52,44 @@ export interface UseNotificationsResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Navigates to the appropriate ride screen based on the notification status.
- * Routes drivers to MotoristaCorridaAction and passengers to AcompanharCorrida.
+ * Navigates to the appropriate screen when a push notification is tapped.
+ *
+ * Passenger: goes to PassageiroHome (map) — the active ride banner handles
+ * the ride UI. Sending them to AcompanharCorrida is wrong because that screen
+ * lives in the Corridas (history) tab and is not part of the normal active-ride flow.
+ *
+ * Driver: goes to MotoristaHome so the NovaCorridaModal can render if the
+ * offer is still pending, or the active ride panel shows if already accepted.
  *
  * @param corridaId - UUID of the ride from the notification payload.
  * @param status - Ride status string from the notification payload.
+ * @param isMotorista - Whether the current user is a driver.
  */
-function navigateToRide(corridaId: string, status: string | undefined): void {
+function navigateToRide(
+  corridaId: string,
+  status: string | undefined,
+  isMotorista: boolean,
+): void {
   if (!navigationRef.isReady()) return;
 
-  // Determine the current root route to decide which navigator to use.
-  const rootState = navigationRef.getRootState();
-  const isMotoristaNav = rootState?.routes?.some(r => r.name === 'Motorista');
-
-  if (isMotoristaNav) {
-    // Driver: navigate to the ride action screen inside MotoristaNavigator
+  if (isMotorista) {
+    // Driver: go to home tab — NovaCorridaModal renders on top if offer is pending,
+    // or the active ride panel shows if the ride was already accepted.
     navigationRef.navigate('Motorista', {
-      screen: 'MotoristaCorridas',
-      params: {
-        screen: 'MotoristaCorridaAction',
-        params: {corridaId},
-      },
+      screen: 'MotoristaHome',
     } as never);
   } else {
-    // Passenger: navigate to the ride tracking screen inside PassageiroNavigator
+    // Passenger: go to home tab (map) — the ActiveRideBanner on PassageiroScreen
+    // already shows the active ride. AcompanharCorrida is for ride history only.
     navigationRef.navigate('Passageiro', {
-      screen: 'PassageiroCorridas',
-      params: {
-        screen: 'AcompanharCorrida',
-        params: {corridaId},
-      },
+      screen: 'PassageiroHome',
     } as never);
   }
 
-  logger.info('useNotifications', `Navigated to ride ${corridaId} (status: ${status ?? 'unknown'})`);
+  logger.info(
+    'useNotifications',
+    `Navigated to ${isMotorista ? 'MotoristaHome' : 'PassageiroHome'} for ride ${corridaId} (status: ${status ?? 'unknown'})`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -104,7 +110,12 @@ export const useNotifications = (): UseNotificationsResult => {
 
   const servidorId = useAppSelector(s => s.auth.servidorId);
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
+  const motoristaId = useAppSelector(s => s.auth.motoristaId);
   const isChatScreenOpen = useAppSelector(s => s.corrida.isChatScreenOpen);
+
+  // Stable ref so handlers always read the latest value without re-registering.
+  const isMotoristaRef = useRef(!!motoristaId);
+  isMotoristaRef.current = !!motoristaId;
 
   const [permissionGranted, setPermissionGranted] = useState(false);
   const sdkInitialized = useRef(false);
@@ -153,37 +164,51 @@ export const useNotifications = (): UseNotificationsResult => {
    *
    * Flow:
    * 1. Extract `corridaId` and `status` from the push payload.
-   * 2. Fetch the full corrida from the API and hydrate Redux so screens
-   *    render correctly without an extra loading cycle.
-   * 3. Navigate to the appropriate ride screen once the navigator is ready.
+   * 2. If driver + nova_corrida push: hydrate Redux with the offer so
+   *    NovaCorridaModal renders immediately on MotoristaHome.
+   * 3. Otherwise: fetch the full corrida and hydrate Redux.
+   * 4. Navigate to the correct home screen once the navigator is ready.
    */
   const handleNotificationOpened = useCallback((event: NotificationOpenedEvent) => {
     logger.info('useNotifications', `Notification opened: ${event.title}`, event.data);
 
     const {corridaId, status} = event.data;
     if (!corridaId) {
-      logger.warn('useNotifications', 'Notification opened without corridaId — skipping navigation');
+      logger.warn('useNotifications', 'Notification opened without corridaId — skipping');
       return;
     }
 
-    // Hydrate Redux with the corrida so the target screen has data immediately.
-    void corridaFacade.getCorrida(corridaId).then(result => {
-      if (result.data) {
-        dispatch(setActiveCorrida(result.data));
-        dispatch(setPendingCorridaId(corridaId));
-        logger.info('useNotifications', `Corrida ${corridaId} hydrated from push tap`);
-      } else {
-        logger.warn('useNotifications', `Failed to fetch corrida ${corridaId} after push tap`, result.error);
-      }
-    });
+    const isMotorista = isMotoristaRef.current;
+    const isNovaCorridaPush = status === 'nova_corrida' || status === 'aguardando_aceite';
+
+    if (isMotorista && isNovaCorridaPush) {
+      // Driver received a new ride offer push while app was background/killed.
+      // Hydrate Redux with a minimal offer payload so NovaCorridaModal renders.
+      const offerPayload: NovaCorridaDisponivelPayload = {
+        corridaId,
+        mensagem: event.data.passageiroNome,
+      };
+      dispatch(setPendingOffer(offerPayload));
+      logger.info('useNotifications', `Driver offer hydrated from push tap: ${corridaId}`);
+    } else {
+      // Passenger or non-offer push: fetch full corrida and hydrate Redux.
+      void corridaFacade.getCorrida(corridaId).then(result => {
+        if (result.data) {
+          dispatch(setActiveCorrida(result.data));
+          dispatch(setPendingCorridaId(corridaId));
+          logger.info('useNotifications', `Corrida ${corridaId} hydrated from push tap`);
+        } else {
+          logger.warn('useNotifications', `Failed to fetch corrida ${corridaId}`, result.error);
+        }
+      });
+    }
 
     const doNavigate = (): void => {
       if (navigationRef.isReady()) {
-        navigateToRide(corridaId, status);
+        navigateToRide(corridaId, status, isMotorista);
       } else {
-        // Retry once the navigator mounts (cold-start scenario).
         setTimeout(() => {
-          if (navigationRef.isReady()) navigateToRide(corridaId, status);
+          if (navigationRef.isReady()) navigateToRide(corridaId, status, isMotoristaRef.current);
         }, 1_000);
       }
     };

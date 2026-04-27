@@ -277,6 +277,16 @@ export function registerForegroundHandler(isChatOpen?: () => boolean): () => voi
 
     if (isRidePush) {
       const isMsgPush = data?.status === 'nova_mensagem' || !data?.status;
+      // Never suppress nova_corrida pushes for drivers — they need to see
+      // the banner even when the app is in foreground (WS may have missed it).
+      const isNovaCorridaPush = data?.status === 'nova_corrida' || data?.status === 'aguardando_aceite';
+
+      if (isNovaCorridaPush) {
+        // Let the OS banner show for nova_corrida — driver must see it.
+        logger.info('OneSignalService', 'Foreground nova_corrida push displayed for driver');
+        return; // No preventDefault = banner shown.
+      }
+
       if (isMsgPush && isChatOpen?.()) {
         logger.info('OneSignalService', 'Foreground message push suppressed — chat is open');
       } else {
