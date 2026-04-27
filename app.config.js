@@ -33,6 +33,17 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'gov.govmobile.app',
+      infoPlist: {
+        // Required for OneSignal background push delivery on iOS.
+        UIBackgroundModes: ['remote-notification'],
+      },
+      entitlements: {
+        // Must match the build type: 'development' for dev builds, 'production' for store.
+        'aps-environment': process.env.APP_ENV === 'production' ? 'production' : 'development',
+        'com.apple.security.application-groups': [
+          'group.gov.govmobile.app.onesignal',
+        ],
+      },
     },
     android: {
       adaptiveIcon: {
@@ -71,6 +82,11 @@ module.exports = {
         'onesignal-expo-plugin',
         {
           mode: process.env.APP_ENV === 'production' ? 'production' : 'development',
+          // Android notification icon (white, transparent, 96×96px).
+          // Shown in the status bar and notification drawer.
+          smallIcons: ['./assets/ic_stat_notification.png'],
+          // Accent color for the Android notification icon.
+          smallIconAccentColor: '#1A56DB',
         },
       ],
     ],

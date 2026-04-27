@@ -19,6 +19,11 @@ bash setup-android.sh
 ```
 > Requires `ANDROID_HOME` to be set on your machine pointing to your Android SDK path.
 
+3. Android notification icon:
+   Replace `assets/ic_stat_notification.png` with a **white, transparent, 96×96px** PNG
+   that matches your brand. This icon appears in the Android status bar and notification drawer.
+   See [OneSignal icon docs](https://documentation.onesignal.com/docs/android-notification-icons).
+
 2. Install iOS dependencies (macOS only):
 ```bash
 cd ios && pod install && cd ..

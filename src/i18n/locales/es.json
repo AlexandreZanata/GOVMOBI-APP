@@ -230,6 +230,14 @@
         "title": "Viaje Aceptado",
         "body": "Tu conductor está en camino."
       },
+      "corridaRecusada": {
+        "title": "Viaje Rechazado",
+        "body": "Ningún conductor aceptó tu viaje. Inténtalo de nuevo."
+      },
+      "novaCorridaDisponivel": {
+        "title": "Nuevo Viaje Disponible",
+        "body": "Hay una nueva solicitud de viaje esperándote."
+      },
       "motoristaChegando": {
         "title": "Conductor Llegando",
         "body": "Tu conductor está cerca del punto de recogida."

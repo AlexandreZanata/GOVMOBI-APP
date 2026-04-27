@@ -230,6 +230,14 @@
         "title": "Corrida Aceita",
         "body": "Seu motorista está a caminho."
       },
+      "corridaRecusada": {
+        "title": "Corrida Recusada",
+        "body": "Nenhum motorista aceitou sua corrida. Tente novamente."
+      },
+      "novaCorridaDisponivel": {
+        "title": "Nova Corrida Disponível",
+        "body": "Uma nova solicitação de corrida está aguardando."
+      },
       "motoristaChegando": {
         "title": "Motorista Chegando",
         "body": "Seu motorista está próximo ao ponto de embarque."

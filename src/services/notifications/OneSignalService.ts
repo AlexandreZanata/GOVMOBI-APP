@@ -36,8 +36,19 @@
  */
 
 import {Platform} from 'react-native';
-import {ENV} from '../../config/env';
+import {ENV, isDev} from '../../config/env';
 import {logger} from '@utils/logger';
+
+/** OneSignal v5 LogLevel values (mirrors the SDK enum). */
+const LogLevel = {
+  None: 0,
+  Fatal: 1,
+  Error: 2,
+  Warn: 3,
+  Info: 4,
+  Debug: 5,
+  Verbose: 6,
+} as const;
 
 // ---------------------------------------------------------------------------
 // v5 type shim — only the surface we actually use
@@ -49,9 +60,13 @@ interface OSNotificationV5 {
   additionalData?: GovMobNotificationData;
 }
 
+/**
+ * v5 ForegroundWillDisplayEvent — matches react-native-onesignal@5.x.
+ * - `preventDefault()` → suppress the banner
+ * - without calling preventDefault() → banner is displayed automatically
+ */
 interface ForegroundWillDisplayEvent {
   getNotification(): OSNotificationV5;
-  /** Call with the notification to display it, or null/undefined to suppress. */
   preventDefault(): void;
 }
 
@@ -59,10 +74,15 @@ interface NotificationClickEvent {
   notification: OSNotificationV5;
 }
 
+interface OneSignalDebug {
+  setLogLevel(level: number): void;
+}
+
 interface OneSignalV5 {
   initialize(appId: string): void;
   login(externalId: string): void;
   logout(): void;
+  Debug: OneSignalDebug;
   Notifications: {
     requestPermission(fallbackToSettings?: boolean): Promise<boolean>;
     addEventListener(event: 'foregroundWillDisplay', handler: (e: ForegroundWillDisplayEvent) => void): void;
@@ -83,8 +103,16 @@ interface OneSignalV5 {
 export interface GovMobNotificationData {
   /** UUID of the ride this notification relates to. */
   corridaId?: string;
-  /** Current ride status at the time the notification was sent. */
+  /**
+   * Current ride status at the time the notification was sent.
+   * Known values: 'nova_corrida' | 'aceita' | 'recusada' | 'cancelada' |
+   *               'em_rota' | 'concluida' | 'nova_mensagem'
+   */
   status?: string;
+  /** Human-readable driver name (included in passenger notifications). */
+  motoristaNome?: string;
+  /** Human-readable passenger name (included in driver notifications). */
+  passageiroNome?: string;
 }
 
 /**
@@ -154,6 +182,7 @@ function getOneSignal(): OneSignalV5 | null {
  * Initializes the OneSignal v5 SDK with the GovMob App ID.
  * Safe to call multiple times — OneSignal is idempotent on re-init.
  *
+ * Enables verbose logging in development builds to aid debugging.
  * Must be called once at app startup (inside `useNotifications`).
  *
  * @returns `true` if initialization succeeded, `false` if SDK unavailable.
@@ -165,6 +194,11 @@ export function initOneSignal(): boolean {
   if (!OneSignal) {
     logger.warn('OneSignalService', 'SDK not available — skipping init');
     return false;
+  }
+
+  // Enable verbose logging in dev so push delivery issues are visible in Metro.
+  if (isDev) {
+    OneSignal.Debug.setLogLevel(LogLevel.Verbose);
   }
 
   OneSignal.initialize(ENV.ONESIGNAL_APP_ID);
@@ -220,9 +254,13 @@ export function removeOneSignalExternalUserId(): void {
 
 /**
  * Registers a handler for notifications received while the app is in the
- * foreground. Suppresses the OS banner for ride-message notifications when
- * the user already has the chat open (unread count is 0).
- * All other notification types are suppressed too — WebSocket handles delivery.
+ * foreground.
+ *
+ * Strategy (react-native-onesignal@5.x API):
+ * - Ride-status pushes are **suppressed** via `preventDefault()` because the
+ *   WebSocket already delivers them as in-app toasts/state updates.
+ * - Message pushes are suppressed when the chat screen is open.
+ * - All other pushes are displayed (no preventDefault call = banner shown).
  *
  * @param isChatOpen - Optional callback returning true when the chat screen is active.
  * @returns Cleanup function that removes the listener.
@@ -235,19 +273,23 @@ export function registerForegroundHandler(isChatOpen?: () => boolean): () => voi
     const notification = event.getNotification();
     const data = notification.additionalData;
 
-    // Suppress ride-message pushes when the user already has the chat open
-    const isMessageNotification = data?.status === 'nova_mensagem' || !data?.status;
-    if (isMessageNotification && isChatOpen?.()) {
-      logger.info('OneSignalService', 'Foreground message push suppressed — chat is open');
-    } else {
-      logger.info(
-        'OneSignalService',
-        'Foreground push received (suppressed — WS handles this):',
-        notification.title,
-      );
+    const isRidePush = Boolean(data?.corridaId);
+
+    if (isRidePush) {
+      const isMsgPush = data?.status === 'nova_mensagem' || !data?.status;
+      if (isMsgPush && isChatOpen?.()) {
+        logger.info('OneSignalService', 'Foreground message push suppressed — chat is open');
+      } else {
+        logger.info('OneSignalService', 'Foreground ride push suppressed — WS handles this:', notification.title);
+      }
+      // Suppress banner — WebSocket handles foreground delivery.
+      event.preventDefault();
+      return;
     }
-    // Always suppress foreground banners — WebSocket handles foreground delivery.
-    event.preventDefault();
+
+    // Non-ride pushes (system, announcements) — let the banner display naturally.
+    logger.info('OneSignalService', 'Foreground non-ride push displayed:', notification.title);
+    // No preventDefault() = banner is shown automatically by the SDK.
   };
 
   OneSignal.Notifications.addEventListener('foregroundWillDisplay', handler);

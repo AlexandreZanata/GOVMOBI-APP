@@ -34,7 +34,7 @@ import {useTheme} from '../../theme';
 import {createLoginStyles} from './LoginScreen.styles';
 import {Text, Input, Icon} from '@components/atoms';
 import {useAppDispatch} from '../../store';
-import {setUser, setToken, setPapeis, setMotoristaId, setMunicipioId} from '@store/slices/authSlice';
+import {setUser, setToken, setPapeis, setMotoristaId, setMunicipioId, setServidorId} from '@store/slices/authSlice';
 import {addToast} from '@store/slices/uiSlice';
 import {useFacades} from '@services/facades';
 import {maskCpf, sanitizeCpf, isValidCpf} from '@utils/cpf';
@@ -152,6 +152,9 @@ export const LoginScreen = (): React.JSX.Element => {
       dispatch(setPapeis(meResult.data.papeis ?? []));
       dispatch(setMotoristaId(meResult.data.motoristaId ?? null));
       dispatch(setMunicipioId(meResult.data.municipioId ?? null));
+      // servidorId is me.id — required by useNotifications to link
+      // this device to the user in OneSignal via OneSignal.login().
+      dispatch(setServidorId(meResult.data.id ?? null));
     }
   }, [cpf, senha, authFacade, dispatch, t, animatePress]);
 

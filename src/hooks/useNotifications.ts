@@ -9,6 +9,12 @@
  *    the backend's OutboxWorker sends a push via OneSignal targeting the
  *    `servidorId` as the external user ID.
  *
+ * Background/killed-app flow:
+ *  1. OS delivers push → user taps → app opens cold.
+ *  2. `click` handler fires with `corridaId` + `status` in `additionalData`.
+ *  3. Hook fetches the full corrida from the API and hydrates Redux.
+ *  4. Navigation is deferred until `navigationRef.isReady()`.
+ *
  * Lifecycle:
  *  1. On mount — initialize OneSignal SDK and request OS permission.
  *  2. When `servidorId` becomes available (after login/hydration) — set the
@@ -20,6 +26,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useFacades} from '@services/facades';
 import {setPermissionStatus} from '@store/slices/notificationsSlice';
+import {setActiveCorrida, setPendingCorridaId} from '@store/slices/corridaSlice';
 import {useAppDispatch, useAppSelector} from '../store';
 import {logger} from '@utils/logger';
 import {
@@ -93,7 +100,7 @@ function navigateToRide(corridaId: string, status: string | undefined): void {
  */
 export const useNotifications = (): UseNotificationsResult => {
   const dispatch = useAppDispatch();
-  const {notificationFacade} = useFacades();
+  const {notificationFacade, corridaFacade} = useFacades();
 
   const servidorId = useAppSelector(s => s.auth.servidorId);
   const isAuthenticated = useAppSelector(s => s.auth.isAuthenticated);
@@ -141,6 +148,15 @@ export const useNotifications = (): UseNotificationsResult => {
   // Notification-opened handler (deep-link navigation)
   // Registered once — uses a stable ref so navigation changes don't re-register.
   // ---------------------------------------------------------------------------
+  /**
+   * Handles a notification tap from background or killed state.
+   *
+   * Flow:
+   * 1. Extract `corridaId` and `status` from the push payload.
+   * 2. Fetch the full corrida from the API and hydrate Redux so screens
+   *    render correctly without an extra loading cycle.
+   * 3. Navigate to the appropriate ride screen once the navigator is ready.
+   */
   const handleNotificationOpened = useCallback((event: NotificationOpenedEvent) => {
     logger.info('useNotifications', `Notification opened: ${event.title}`, event.data);
 
@@ -150,20 +166,30 @@ export const useNotifications = (): UseNotificationsResult => {
       return;
     }
 
-    // Wait until the navigator is ready (handles killed-app cold-start scenario).
-    if (!navigationRef.isReady()) {
-      logger.warn('useNotifications', 'Navigator not ready — queuing navigation');
-      // Retry after a short delay to allow the navigator to mount.
-      setTimeout(() => {
-        if (navigationRef.isReady()) {
-          navigateToRide(corridaId, status);
-        }
-      }, 1_000);
-      return;
-    }
+    // Hydrate Redux with the corrida so the target screen has data immediately.
+    void corridaFacade.getCorrida(corridaId).then(result => {
+      if (result.data) {
+        dispatch(setActiveCorrida(result.data));
+        dispatch(setPendingCorridaId(corridaId));
+        logger.info('useNotifications', `Corrida ${corridaId} hydrated from push tap`);
+      } else {
+        logger.warn('useNotifications', `Failed to fetch corrida ${corridaId} after push tap`, result.error);
+      }
+    });
 
-    navigateToRide(corridaId, status);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const doNavigate = (): void => {
+      if (navigationRef.isReady()) {
+        navigateToRide(corridaId, status);
+      } else {
+        // Retry once the navigator mounts (cold-start scenario).
+        setTimeout(() => {
+          if (navigationRef.isReady()) navigateToRide(corridaId, status);
+        }, 1_000);
+      }
+    };
+
+    doNavigate();
+  }, [corridaFacade, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const cleanup = registerNotificationOpenedHandler(handleNotificationOpened);

@@ -230,6 +230,14 @@
         "title": "Ride Accepted",
         "body": "Your driver is on the way."
       },
+      "corridaRecusada": {
+        "title": "Ride Declined",
+        "body": "No driver accepted your ride. Please try again."
+      },
+      "novaCorridaDisponivel": {
+        "title": "New Ride Available",
+        "body": "A new ride request is waiting for you."
+      },
       "motoristaChegando": {
         "title": "Driver Arriving",
         "body": "Your driver is near the pickup point."
