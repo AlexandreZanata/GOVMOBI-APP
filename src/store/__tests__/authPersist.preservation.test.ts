@@ -265,7 +265,7 @@ describe('Preservation — registerForegroundHandler calls event.preventDefault(
       // OneSignal unavailable in this environment — skip gracefully
       return;
     }
-    const {event, preventDefault} = buildMockEvent({status: 'nova_corrida'});
+    const {event, preventDefault} = buildMockEvent({corridaId: 'corrida-001', status: 'aceita'});
     handler(event);
     expect(preventDefault).toHaveBeenCalledTimes(1);
   });
@@ -280,7 +280,7 @@ describe('Preservation — registerForegroundHandler calls event.preventDefault(
     if (!handler) {
       return;
     }
-    const {event, preventDefault} = buildMockEvent({status: 'nova_mensagem'});
+    const {event, preventDefault} = buildMockEvent({corridaId: 'corrida-001', status: 'nova_mensagem'});
     handler(event);
     expect(preventDefault).toHaveBeenCalledTimes(1);
   });
@@ -295,7 +295,7 @@ describe('Preservation — registerForegroundHandler calls event.preventDefault(
     if (!handler) {
       return;
     }
-    const {event, preventDefault} = buildMockEvent({status: 'nova_corrida'});
+    const {event, preventDefault} = buildMockEvent({corridaId: 'corrida-001', status: 'aceita'});
     handler(event);
     expect(preventDefault).toHaveBeenCalledTimes(1);
   });
@@ -310,7 +310,7 @@ describe('Preservation — registerForegroundHandler calls event.preventDefault(
     if (!handler) {
       return;
     }
-    const {event, preventDefault} = buildMockEvent({status: 'nova_mensagem'});
+    const {event, preventDefault} = buildMockEvent({corridaId: 'corrida-001', status: 'nova_mensagem'});
     handler(event);
     expect(preventDefault).toHaveBeenCalledTimes(1);
   });
