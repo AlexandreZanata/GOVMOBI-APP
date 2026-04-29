@@ -225,7 +225,7 @@ export interface ICorridaFacade {
   aceitarCorrida(corridaId: string, input: AceitarCorridaInput): Promise<Result<Corrida, FacadeError>>;
 
   /** POST /corridas/:id/recusar */
-  recusarCorrida(corridaId: string, input: RecusarCorridaInput): Promise<Result<Corrida, FacadeError>>;
+  recusarCorrida(corridaId: string, input?: RecusarCorridaInput): Promise<Result<Corrida, FacadeError>>;
 
   /** POST /corridas/:id/iniciar-deslocamento */
   iniciarDeslocamento(corridaId: string): Promise<Result<Corrida, FacadeError>>;
@@ -391,10 +391,13 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   /** @inheritdoc */
   public async recusarCorrida(
     corridaId: string,
-    input: RecusarCorridaInput,
+    input: RecusarCorridaInput = {},
   ): Promise<Result<Corrida, FacadeError>> {
-    console.log(`[CorridaFacade] POST /corridas/${corridaId}/recusar →`, JSON.stringify(input));
-    const result = await this.postCorrida(`/corridas/${corridaId}/recusar`, input, corridaId);
+    // Body: { motivo? } only — motoristaId is derived from the JWT server-side.
+    const body: RecusarCorridaInput = {};
+    if (input.motivo) body.motivo = input.motivo;
+    console.log(`[CorridaFacade] POST /corridas/${corridaId}/recusar →`, JSON.stringify(body));
+    const result = await this.postCorrida(`/corridas/${corridaId}/recusar`, body, corridaId);
     if (result.error) {
       console.error(`[CorridaFacade] recusar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
     } else {

@@ -48,10 +48,9 @@ export interface AceitarCorridaInput {
 
 /**
  * POST /corridas/:id/recusar body.
- * Backend requires motoristaId as a UUID in the request body.
+ * motoristaId is derived from the JWT on the server — do NOT send it.
  */
 export interface RecusarCorridaInput {
-  motoristaId: string;
   motivo?: string;
 }
 

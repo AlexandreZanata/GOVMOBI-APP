@@ -80,7 +80,9 @@ export const useCorridaContexto = (): void => {
 
       const {corridaAtiva} = result.data;
       const localActiva = activaRef.current;
-      const isConnected = connectionStatusRef.current === 'connected';
+      const isConnected =
+        connectionStatusRef.current === 'connected' ||
+        connectionStatusRef.current === 'reconnecting';
 
       if (corridaAtiva) {
         const isNewRide = !localActiva || localActiva.id !== corridaAtiva.id;

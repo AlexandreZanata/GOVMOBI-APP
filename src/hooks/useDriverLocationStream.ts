@@ -38,6 +38,7 @@ import {
   setLocationSuccess,
   setPermissionStatus,
 } from '@store/slices/locationSlice';
+import {setStatusOperacional} from '@store/slices/authSlice';
 import type {Coordenada} from '@models/Corrida';
 
 /** Telemetry emit interval in milliseconds. */
@@ -187,7 +188,11 @@ export const useDriverLocationStream = (): void => {
     }
 
     // Record the timestamp of the first connection in this session.
-    if (connectionStatus === 'connected' && sessionStartRef.current === null) {
+    // Accept both 'connected' and 'reconnecting' — the facade sets isConnected=true
+    // for both, so emits reach the server. Restricting to 'connected' only caused
+    // sessionStartRef to never be set when the first observable status was
+    // 'reconnecting', leaving the OFFLINE grace window permanently inactive.
+    if (sessionStartRef.current === null) {
       sessionStartRef.current = Date.now();
     }
 
@@ -207,6 +212,11 @@ export const useDriverLocationStream = (): void => {
         console.log(
           '[useDriverLocationStream] OFFLINE within grace window — emitting ficar-disponivel (previous session status)',
         );
+        // Optimistically set DISPONIVEL in Redux so the telemetry interval
+        // starts immediately and the server's estado-operacional echo (which
+        // may arrive as OFFLINE before the server processes ficar-disponivel)
+        // does not re-block the driver.
+        dispatch(setStatusOperacional('DISPONIVEL'));
         void realtimeFacade.setDriverAvailable();
       }
       // Otherwise: explicit OFFLINE — do not emit (existing behaviour preserved).
@@ -222,7 +232,7 @@ export const useDriverLocationStream = (): void => {
       ')',
     );
     void realtimeFacade.setDriverAvailable();
-  }, [isMotorista, isSocketUp, statusOperacional, realtimeFacade, connectionStatus]);
+  }, [isMotorista, isSocketUp, statusOperacional, realtimeFacade, connectionStatus, dispatch]);
 
   // ---------------------------------------------------------------------------
   // Re-emit ficar-disponivel on AppState foreground transition.

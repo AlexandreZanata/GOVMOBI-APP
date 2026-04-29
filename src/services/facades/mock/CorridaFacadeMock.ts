@@ -141,7 +141,7 @@ export class CorridaFacadeMock implements ICorridaFacade {
   /** @inheritdoc */
   public async recusarCorrida(
     corridaId: string,
-    _input: RecusarCorridaInput,
+    _input: RecusarCorridaInput = {},
   ): Promise<Result<Corrida, FacadeError>> {
     await delay(200);
     const corrida = store.get(corridaId);

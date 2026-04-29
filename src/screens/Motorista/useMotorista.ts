@@ -420,7 +420,7 @@ export const useMotorista = (): MotoristaState => {
     async (corridaId: string, motivo?: string): Promise<void> => {
       await withAction(
         async () => {
-          const r = await corridaFacade.recusarCorrida(corridaId, {motoristaId, motivo});
+          const r = await corridaFacade.recusarCorrida(corridaId, motivo ? {motivo} : undefined);
           if (r.error) throw new Error(r.error.message);
           return r.data;
         },
@@ -434,7 +434,7 @@ export const useMotorista = (): MotoristaState => {
         'corridas.errors.recusarFailed',
       );
     },
-    [corridaFacade, dispatch, motoristaId, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   /**

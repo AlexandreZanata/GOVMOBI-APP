@@ -204,7 +204,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
     async (id: string, motivo?: string): Promise<void> => {
       await withAction(
         async () => {
-          const r = await corridaFacade.recusarCorrida(id, {motoristaId: motoristaId ?? '', motivo});
+          const r = await corridaFacade.recusarCorrida(id, motivo ? {motivo} : undefined);
           if (r.error) throw new Error(r.error.message);
           return r.data;
         },
@@ -214,7 +214,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.recusarFailed',
       );
     },
-    [corridaFacade, dispatch, motoristaId, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   const onIniciarDeslocamento = useCallback(
