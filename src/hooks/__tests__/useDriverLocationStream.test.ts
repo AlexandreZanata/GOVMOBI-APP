@@ -10,7 +10,7 @@
  * Validates: Requirements 1.1–1.6, 2.1–2.6, 3.1–3.8
  */
 import {renderHook, act} from '@testing-library/react-native';
-import {AppState} from 'react-native';
+import {AppState, type AppStateStatus} from 'react-native';
 import {useDriverLocationStream} from '../useDriverLocationStream';
 
 // ── Fake timers ──────────────────────────────────────────────────────────────
@@ -112,11 +112,11 @@ beforeEach(() => {
   // This avoids mocking all of react-native (which breaks TurboModuleRegistry).
   addEventListenerSpy = jest
     .spyOn(AppState, 'addEventListener')
-    .mockImplementation((event: string, handler: (nextState: string) => void) => {
+    .mockImplementation((event: string, handler: (state: AppStateStatus) => void) => {
       if (event === 'change') {
-        appStateListener = handler;
+        appStateListener = handler as (nextState: string) => void;
       }
-      return {remove: jest.fn()};
+      return {remove: jest.fn()} as unknown as ReturnType<typeof AppState.addEventListener>;
     });
 
   // Reset selector state to safe defaults.
