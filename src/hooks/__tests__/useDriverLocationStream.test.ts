@@ -164,7 +164,7 @@ describe('useDriverLocationStream — Fix 1: GPS seed timing', () => {
     selectorState.isMotorista = true;
     selectorState.connectionStatus = 'connected';
 
-    const {rerender} = renderHook(() => useDriverLocationStream());
+    const {rerender: _rerender} = renderHook(() => useDriverLocationStream());
 
     // Allow the hook effects to run (permissions + GPS watch start).
     await act(async () => {
