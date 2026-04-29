@@ -130,17 +130,31 @@ describe('useDriverLocationStream — ficar-disponivel emission', () => {
     expect(mockSetDriverAvailable).toHaveBeenCalled();
   });
 
-  it('does NOT emit ficar-disponivel when statusOperacional is OFFLINE', async () => {
-    selectorState.statusOperacional = 'OFFLINE';
-
+  it('does NOT emit ficar-disponivel when statusOperacional is OFFLINE after the grace window', async () => {
+    // Connect first (records sessionStartRef), then advance past the 10s grace window,
+    // then set OFFLINE — this represents an explicit user-initiated OFFLINE, not a
+    // previous-session artefact.
     const {rerender} = renderHook(() => useDriverLocationStream());
 
     await act(async () => {
       setConnectionStatus('connected');
     });
-
     rerender({});
+    await act(async () => {
+      await Promise.resolve();
+    });
 
+    // Clear calls from the initial DISPONIVEL (null) emission.
+    mockSetDriverAvailable.mockClear();
+
+    // Advance past the 10s grace window.
+    await act(async () => {
+      jest.advanceTimersByTime(11_000);
+    });
+
+    // Now set OFFLINE — should be treated as explicit OFFLINE.
+    selectorState.statusOperacional = 'OFFLINE';
+    rerender({});
     await act(async () => {
       await Promise.resolve();
     });

@@ -35,7 +35,6 @@ import {PassageiroSearchOverlay} from './components/PassageiroSearchOverlay';
 import {PassageiroIdleSheet} from './components/PassageiroIdleSheet';
 import {PassageiroActiveRidePanel} from './components/PassageiroActiveRidePanel';
 import {PassageiroColors as C} from './PassageiroScreen.styles';
-import {ENV} from '../../config/env';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setLocationSuccess} from '@store/slices/locationSlice';
 import {useFacades} from '@services/facades';
@@ -157,7 +156,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
     routeDistanceMeters,
     routeDurationSeconds,
     canPreviewRoute,
-    mapboxToken,
     onOpenSearch,
     onCloseSearch,
     onSearchChange,

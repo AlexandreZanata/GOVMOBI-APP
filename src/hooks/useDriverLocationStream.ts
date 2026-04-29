@@ -43,6 +43,9 @@ import type {Coordenada} from '@models/Corrida';
 /** Telemetry emit interval in milliseconds. */
 const TELEMETRY_INTERVAL_MS = 1_000;
 
+/** Grace window after initial connection during which an OFFLINE status is treated as a previous-session artefact. */
+const SESSION_OFFLINE_GRACE_MS = 10_000;
+
 const TERMINAL_STATUSES = new Set(['concluida', 'cancelada', 'expirada', 'avaliada']);
 
 /**
@@ -70,6 +73,7 @@ export const useDriverLocationStream = (): void => {
 
   // Refs so interval closure always reads the latest values without restarting.
   const locationRef = useRef<Coordenada | null>(null);
+  const locationReadyRef = useRef(false);
   const activeCorridaRef = useRef(activeCorrida);
   const statusOperacionalRef = useRef(statusOperacional);
   const connectionStatusRef = useRef(connectionStatus);
@@ -77,6 +81,9 @@ export const useDriverLocationStream = (): void => {
   const telemetryRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const watchSubRef = useRef<{remove: () => void} | null>(null);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  /** Timestamp of the first 'connected' event in the current WebSocket session.
+   *  Used to distinguish "OFFLINE from previous session" from "explicit user OFFLINE". */
+  const sessionStartRef = useRef<number | null>(null);
 
   // Keep refs in sync.
   useEffect(() => { activeCorridaRef.current = activeCorrida; }, [activeCorrida]);
@@ -96,6 +103,10 @@ export const useDriverLocationStream = (): void => {
     let cancelled = false;
 
     const startWatch = async (): Promise<void> => {
+      // Reset the ready flag so a watch restart (e.g. after app reopen) correctly
+      // re-gates the telemetry interval until the new seed completes.
+      locationReadyRef.current = false;
+
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const Location = require('expo-location') as typeof import('expo-location');
@@ -117,6 +128,7 @@ export const useDriverLocationStream = (): void => {
             longitude: initial.coords.longitude,
           };
           locationRef.current = coords;
+          locationReadyRef.current = true; // GPS seed complete — telemetry interval may now emit
           dispatch(setLocationSuccess({coords, timestamp: Date.now()}));
         }
 
@@ -168,10 +180,40 @@ export const useDriverLocationStream = (): void => {
   const isSocketUp = connectionStatus === 'connected' || connectionStatus === 'reconnecting';
 
   useEffect(() => {
-    if (!isMotorista || !isSocketUp) return;
-    // Block only when the server has explicitly set the driver OFFLINE or EM_CORRIDA.
-    if (statusOperacional === 'OFFLINE' || statusOperacional === 'EM_CORRIDA') return;
+    if (!isMotorista || !isSocketUp) {
+      // Reset session start when socket goes down so the next login starts a fresh grace window.
+      sessionStartRef.current = null;
+      return;
+    }
 
+    // Record the timestamp of the first connection in this session.
+    if (connectionStatus === 'connected' && sessionStartRef.current === null) {
+      sessionStartRef.current = Date.now();
+    }
+
+    if (statusOperacional === 'EM_CORRIDA') return;
+
+    if (statusOperacional === 'OFFLINE') {
+      // Distinguish "OFFLINE from previous session" (within grace window) from
+      // "explicit user OFFLINE" (after grace window or with an active ride).
+      const isWithinGrace =
+        sessionStartRef.current !== null &&
+        Date.now() - sessionStartRef.current < SESSION_OFFLINE_GRACE_MS;
+
+      const corrida = activeCorridaRef.current; // use ref to avoid adding as dep
+      const hasActiveRide = corrida && !TERMINAL_STATUSES.has(corrida.status);
+
+      if (isWithinGrace && !hasActiveRide) {
+        console.log(
+          '[useDriverLocationStream] OFFLINE within grace window — emitting ficar-disponivel (previous session status)',
+        );
+        void realtimeFacade.setDriverAvailable();
+      }
+      // Otherwise: explicit OFFLINE — do not emit (existing behaviour preserved).
+      return;
+    }
+
+    // statusOperacional === null | 'DISPONIVEL' — emit normally.
     console.log(
       '[useDriverLocationStream] socket up + eligible — emitting ficar-disponivel (status=',
       statusOperacional,
@@ -188,8 +230,33 @@ export const useDriverLocationStream = (): void => {
   // reconnected, the server may have removed the driver from the dispatch pool.
   // Only re-indexes the driver when they are not explicitly OFFLINE/EM_CORRIDA
   // and have no active ride.
+  //
+  // tryEmitFicarDisponivel reads all state from refs so it always sees the
+  // latest values at the moment of the AppState event, regardless of React
+  // render timing (fixes the foreground race condition).
   // ---------------------------------------------------------------------------
   useEffect(() => {
+    const tryEmitFicarDisponivel = (): void => {
+      const isUp =
+        connectionStatusRef.current === 'connected' ||
+        connectionStatusRef.current === 'reconnecting';
+
+      if (!isUp) return; // socket still not reconnected — useRideReconnection covers this
+
+      const corrida = activeCorridaRef.current;
+      const hasActiveRide = corrida && !TERMINAL_STATUSES.has(corrida.status);
+      if (hasActiveRide) return;
+
+      if (
+        isMotoristaRef.current &&
+        statusOperacionalRef.current !== 'OFFLINE' &&
+        statusOperacionalRef.current !== 'EM_CORRIDA'
+      ) {
+        console.log('[useDriverLocationStream] AppState foreground — re-emitting ficar-disponivel');
+        void realtimeFacade.setDriverAvailable();
+      }
+    };
+
     const subscription = AppState.addEventListener(
       'change',
       (nextState: AppStateStatus) => {
@@ -198,18 +265,9 @@ export const useDriverLocationStream = (): void => {
 
         if (
           (prev === 'background' || prev === 'inactive') &&
-          nextState === 'active' &&
-          isMotoristaRef.current &&
-          (connectionStatusRef.current === 'connected' || connectionStatusRef.current === 'reconnecting') &&
-          statusOperacionalRef.current !== 'OFFLINE' &&
-          statusOperacionalRef.current !== 'EM_CORRIDA'
+          nextState === 'active'
         ) {
-          const corrida = activeCorridaRef.current;
-          const hasActiveRide = corrida && !TERMINAL_STATUSES.has(corrida.status);
-          if (!hasActiveRide) {
-            console.log('[useDriverLocationStream] AppState foreground — re-emitting ficar-disponivel');
-            void realtimeFacade.setDriverAvailable();
-          }
+          tryEmitFicarDisponivel();
         }
       },
     );
@@ -266,7 +324,13 @@ export const useDriverLocationStream = (): void => {
       const loc = locationRef.current;
       const corrida = activeCorridaRef.current;
 
-      // Skip when GPS unavailable
+      // Wait for GPS seed to complete before emitting
+      if (!locationReadyRef.current) {
+        console.log('[useDriverLocationStream] waiting for GPS seed — skipping telemetry emit');
+        return;
+      }
+
+      // Skip when GPS unavailable (should not happen after seed, but guard anyway)
       if (!loc) {
         console.log('[useDriverLocationStream] GPS unavailable — skipping telemetry emit');
         return;

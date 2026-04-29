@@ -214,7 +214,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.recusarFailed',
       );
     },
-    [corridaFacade, dispatch, motoristaId, t, withAction],
+    [corridaFacade, dispatch, motoristaId, withAction],
   );
 
   const onIniciarDeslocamento = useCallback(
@@ -231,7 +231,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.deslocamentoFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   const onConfirmarEmbarque = useCallback(
@@ -248,7 +248,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.embarqueFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   const onFinalizar = useCallback(
@@ -266,7 +266,7 @@ export const useCorridas = (corridaId?: string): CorridasState => {
         'corridas.errors.finalizarFailed',
       );
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch, withAction],
   );
 
   const onCancelar = useCallback(

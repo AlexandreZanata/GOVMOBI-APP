@@ -251,11 +251,20 @@ export class AuthFacadeImpl implements IAuthFacade {
     }
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/auth/login`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(credentials),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15_000);
+
+      let response: Response;
+      try {
+        response = await fetch(`${this.apiBaseUrl}/auth/login`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(credentials),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) {
         const errBody = (await response.json().catch(() => ({}))) as Partial<AuthApiError>;
@@ -282,9 +291,13 @@ export class AuthFacadeImpl implements IAuthFacade {
 
       this.currentUser = session.user;
       return ok(session);
-    } catch {
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
       return fail(
-        toFacadeError('Network error while logging in', 'NETWORK_ERROR'),
+        toFacadeError(
+          isTimeout ? 'Request timed out — check server connectivity' : 'Network error while logging in',
+          isTimeout ? 'TIMEOUT' : 'NETWORK_ERROR',
+        ),
       );
     }
   }
@@ -317,13 +330,13 @@ export class AuthFacadeImpl implements IAuthFacade {
   public async refreshToken(): Promise<
     Result<Omit<AuthSession, 'user'>, FacadeError>
   > {
-    await delay(220);
     const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
     if (!refreshToken) {
       return fail(toFacadeError('Missing refresh token', 'UNAUTHORIZED'));
     }
 
     if (this.mockMode) {
+      await delay(220);
       if (shouldFail('auth.refresh')) {
         return fail(toFacadeError('Mock refresh failed', 'NETWORK_ERROR'));
       }
