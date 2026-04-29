@@ -125,7 +125,7 @@ describe('registerForegroundHandler', () => {
     );
   });
 
-  it('calls preventDefault() to suppress the OS banner', () => {
+  it('calls preventDefault() to suppress the OS banner for ride-related pushes', () => {
     registerForegroundHandler();
     const handler = (mockAddEventListener.mock.calls[0][1] as unknown) as (event: {
       getNotification: () => object;
@@ -133,12 +133,34 @@ describe('registerForegroundHandler', () => {
     }) => void;
 
     const preventDefaultMock = jest.fn();
+    // Ride push with corridaId — should be suppressed (WebSocket handles delivery)
     handler({
-      getNotification: () => ({title: 'Corrida Aceita', body: 'Motorista a caminho', additionalData: {}}),
+      getNotification: () => ({
+        title: 'Corrida Aceita',
+        body: 'Motorista a caminho',
+        additionalData: {corridaId: 'corrida-001', status: 'aceita'},
+      }),
       preventDefault: preventDefaultMock,
     });
 
     expect(preventDefaultMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT call preventDefault() for non-ride pushes (no corridaId)', () => {
+    registerForegroundHandler();
+    const handler = (mockAddEventListener.mock.calls[0][1] as unknown) as (event: {
+      getNotification: () => object;
+      preventDefault: jest.Mock;
+    }) => void;
+
+    const preventDefaultMock = jest.fn();
+    // Non-ride push — banner should display naturally
+    handler({
+      getNotification: () => ({title: 'Aviso do sistema', body: 'Mensagem geral', additionalData: {}}),
+      preventDefault: preventDefaultMock,
+    });
+
+    expect(preventDefaultMock).not.toHaveBeenCalled();
   });
 
   it('returns a cleanup function that removes the listener', () => {

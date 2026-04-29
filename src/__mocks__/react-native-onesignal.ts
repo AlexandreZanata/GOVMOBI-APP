@@ -19,6 +19,11 @@ export const OneSignal = {
     addEventListener: mockAddEventListener,
     removeEventListener: mockRemoveEventListener,
   },
+  User: {
+    addTag: jest.fn(),
+    removeTag: jest.fn(),
+    addTags: jest.fn(),
+  },
 };
 
 export default OneSignal;

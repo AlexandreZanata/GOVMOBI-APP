@@ -397,13 +397,49 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     const body: RecusarCorridaInput = {};
     if (input.motivo) body.motivo = input.motivo;
     console.log(`[CorridaFacade] POST /corridas/${corridaId}/recusar →`, JSON.stringify(body));
-    const result = await this.postCorrida(`/corridas/${corridaId}/recusar`, body, corridaId);
-    if (result.error) {
-      console.error(`[CorridaFacade] recusar FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
-    } else {
-      console.log(`[CorridaFacade] recusar OK → status=${result.data?.status}`);
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/corridas/${corridaId}/recusar`, {
+        method: 'POST',
+        headers: this.authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (response.status === 409) {
+        const errBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const errCode = (errBody['code'] as string | undefined) ?? 'CONFLICT';
+        const errMsg = (errBody['message'] as string | undefined) ?? 'Conflict';
+        console.error(`[CorridaFacade] recusar CONFLICT → ${errMsg}`);
+        return fail(toError(errMsg, errCode, 409));
+      }
+      if (!response.ok) {
+        const errBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const errCode = (errBody['code'] as string | undefined) ?? 'NETWORK_ERROR';
+        const errMsg = (errBody['message'] as string | undefined) ?? 'Request failed';
+        console.error(`[CorridaFacade] recusar FAILED → code=${errCode} status=${response.status} msg=${errMsg}`);
+        return fail(toError(errMsg, errCode, response.status));
+      }
+      // The recusar endpoint may return a partial body or empty 200/204.
+      // Do NOT fall back to GET /corridas/:id — the driver no longer has
+      // permission to read the ride after refusing it (403).
+      // Return a minimal synthetic Corrida so callers can clear local state.
+      const raw = await response.json().catch(() => ({})) as Record<string, unknown>;
+      console.log(`[CorridaFacade] recusar OK → HTTP ${response.status}`);
+      if (raw['id'] && raw['status']) {
+        return ok(normalizeCorrida(raw as unknown as RawCorrida));
+      }
+      // Synthetic minimal corrida — enough for the hook to clear activeCorrida
+      const synthetic: RawCorrida = {
+        id: corridaId,
+        passageiroId: '',
+        motoristaId: null,
+        status: 'recusada',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      return ok(normalizeCorrida(synthetic));
+    } catch (err) {
+      console.error(`[CorridaFacade] recusar EXCEPTION →`, err);
+      return fail(toError('Network error', 'NETWORK_ERROR'));
     }
-    return result;
   }
 
   /** @inheritdoc */

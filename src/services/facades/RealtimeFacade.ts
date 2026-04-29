@@ -270,6 +270,8 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
   private readonly statusHandlers = new Set<ConnectionStatusHandler>();
   private isConnected = false;
   private wasEverConnected = false;
+  /** The access token used for the current socket connection. Used to detect token rotations. */
+  private lastConnectedToken = '';
 
   /**
    * @param config - Realtime facade dependencies and overrides.
@@ -303,14 +305,24 @@ export class RealtimeFacadeImpl implements IRealtimeFacade {
 
     rtLog(`connect() — mockMode=${String(this.config.mockMode)} wsUrl="${this.config.wsBaseUrl ?? ENV.wsUrl}" token="${accessToken.slice(0, 20)}..."`);
 
-    // Skip-guard: if already connected, emit 'connected' immediately so that
-    // any waitForConnection listener resolves without timing out (fixes Bug 2).
-    if (this.isConnected) {
-      rtLog('connect() — already connected, emitting connected status');
+    // Skip-guard: if already connected with the SAME token, emit 'connected'
+    // immediately so any waitForConnection listener resolves without timing out.
+    // If the token changed (proactive refresh), fall through to reconnect the
+    // socket with the fresh credentials.
+    if (this.isConnected && accessToken === this.lastConnectedToken) {
+      rtLog('connect() — already connected with same token, emitting connected status');
       this.emitConnectionStatus('connected', null);
       return ok('connected');
     }
 
+    // Token rotated or first connect — (re)connect the transport.
+    if (this.isConnected) {
+      rtLog('connect() — token rotated, reconnecting with fresh token');
+      this.client.disconnect();
+      this.isConnected = false;
+    }
+
+    this.lastConnectedToken = accessToken;
     this.emitConnectionStatus('connecting', null);
 
     if (this.config.mockMode) {

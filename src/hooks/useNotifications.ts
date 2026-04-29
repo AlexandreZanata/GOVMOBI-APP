@@ -37,6 +37,8 @@ import {
   removeOneSignalExternalUserId,
   requestPushPermission,
   setOneSignalExternalUserId,
+  setOneSignalUserTags,
+  clearOneSignalUserTags,
   type NotificationOpenedEvent,
 } from '@services/notifications/OneSignalService';
 import {navigationRef} from '@navigation/navigationRef';
@@ -222,21 +224,42 @@ export const useNotifications = (): UseNotificationsResult => {
   }, [handleNotificationOpened]);
 
   // ---------------------------------------------------------------------------
-  // Sync external user ID with auth state
+  // Sync external user ID and role tags with auth state.
+  //
+  // Per OneSignal v5 docs:
+  //   - OneSignal.login(externalId) → links this device to the user's account
+  //   - OneSignal.User.addTags({ role, motorista_id }) → allows the backend to
+  //     segment pushes by role so driver notifications never reach passenger
+  //     devices and vice-versa.
+  //
+  // Tags are set immediately after login() so the backend can target correctly
+  // from the first session. They persist until clearOneSignalUserTags() on logout.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (isAuthenticated && servidorId && servidorId !== lastLinkedServidorId.current) {
       lastLinkedServidorId.current = servidorId;
+
+      // Step 1: link this device to the user's External ID (servidorId = me.id).
+      // The backend uses this ID to target push notifications via OneSignal API.
       setOneSignalExternalUserId(servidorId);
       logger.info('useNotifications', `OneSignal external user ID linked: ${servidorId}`);
+
+      // Step 2: set role tag so the backend can segment by role.
+      // Drivers have a non-null motoristaId; passengers do not.
+      // The backend should filter by tag `role=motorista` when sending driver pushes
+      // and `role=passageiro` for passenger pushes — preventing cross-role delivery.
+      const role = motoristaId ? 'motorista' : 'passageiro';
+      setOneSignalUserTags(role, motoristaId ?? null);
+      logger.info('useNotifications', `OneSignal role tag set: role=${role}`, motoristaId ? `motorista_id=${motoristaId}` : '');
     }
 
     if (!isAuthenticated && lastLinkedServidorId.current !== null) {
       lastLinkedServidorId.current = null;
       removeOneSignalExternalUserId();
-      logger.info('useNotifications', 'OneSignal external user ID removed on logout');
+      clearOneSignalUserTags();
+      logger.info('useNotifications', 'OneSignal external user ID and tags removed on logout');
     }
-  }, [isAuthenticated, servidorId]);
+  }, [isAuthenticated, servidorId, motoristaId]);
 
   return {permissionGranted};
 };

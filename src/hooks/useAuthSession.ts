@@ -41,7 +41,7 @@ import {addToast} from '@store/slices/uiSlice';
 import {useTranslation} from 'react-i18next';
 import {logger} from '@utils/logger';
 import {getValidToken} from '@utils/tokenUtils';
-import {setOneSignalExternalUserId} from '@services/notifications/OneSignalService';
+import {setOneSignalExternalUserId, setOneSignalUserTags} from '@services/notifications/OneSignalService';
 
 /** How often (ms) to check whether the token needs proactive refresh. */
 const CHECK_INTERVAL_MS = 60_000;
@@ -231,10 +231,16 @@ export const useAuthSession = (): void => {
     dispatch(setMotoristaId(me.motoristaId ?? null));
     dispatch(setMunicipioId(me.municipioId ?? null));
     dispatch(setServidorId(me.id));
-    // Link OneSignal external user ID immediately — bypasses the React effect
-    // cycle so push notifications are deliverable in background/killed scenarios
-    // before useNotifications' useEffect has a chance to fire.
+    // Link OneSignal external user ID and role tags immediately — bypasses the
+    // React effect cycle so push notifications are deliverable in background/killed
+    // scenarios before useNotifications' useEffect has a chance to fire.
+    // Tags allow the backend to segment by role (motorista vs passageiro) so
+    // driver pushes never reach passenger devices and vice-versa.
     setOneSignalExternalUserId(me.id);
+    setOneSignalUserTags(
+      me.motoristaId ? 'motorista' : 'passageiro',
+      me.motoristaId ?? null,
+    );
 
     if (me.statusOperacional) {
       dispatch(setStatusOperacional(me.statusOperacional));

@@ -71,6 +71,7 @@ jest.mock('@services/facades', () => ({
 
 jest.mock('@services/notifications/OneSignalService', () => ({
   setOneSignalExternalUserId: jest.fn(),
+  setOneSignalUserTags: jest.fn(),
 }));
 
 const mockSetOneSignalExternalUserId = jest.mocked(

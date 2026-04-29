@@ -90,6 +90,11 @@ interface OneSignalV5 {
     removeEventListener(event: 'foregroundWillDisplay', handler: (e: ForegroundWillDisplayEvent) => void): void;
     removeEventListener(event: 'click', handler: (e: NotificationClickEvent) => void): void;
   };
+  User: {
+    addTag(key: string, value: string): void;
+    removeTag(key: string): void;
+    addTags(tags: Record<string, string>): void;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -250,6 +255,48 @@ export function removeOneSignalExternalUserId(): void {
 
   OneSignal.logout();
   logger.info('OneSignalService', 'External user ID removed (logout)');
+}
+
+/**
+ * Sets OneSignal User tags to identify the user's role and driver ID.
+ *
+ * Tags allow the backend to segment push notifications by role so that
+ * driver-targeted pushes are never delivered to passenger devices and
+ * vice-versa. The backend should filter by `role` tag when sending.
+ *
+ * Per OneSignal docs (v5): `OneSignal.User.addTags()` is the correct API.
+ * Tags persist across sessions until explicitly removed.
+ *
+ * @param role - 'motorista' | 'passageiro' — the user's active role.
+ * @param motoristaId - UUID of the driver record, or null for passengers.
+ */
+export function setOneSignalUserTags(
+  role: 'motorista' | 'passageiro',
+  motoristaId: string | null,
+): void {
+  const OneSignal = getOneSignal();
+  if (!OneSignal) return;
+
+  const tags: Record<string, string> = {role};
+  if (motoristaId) {
+    tags['motorista_id'] = motoristaId;
+  }
+
+  OneSignal.User.addTags(tags);
+  logger.info('OneSignalService', `User tags set: role=${role}`, motoristaId ? `motorista_id=${motoristaId}` : '');
+}
+
+/**
+ * Clears role and driver tags on logout so a subsequent login with a
+ * different role starts with a clean tag state.
+ */
+export function clearOneSignalUserTags(): void {
+  const OneSignal = getOneSignal();
+  if (!OneSignal) return;
+
+  OneSignal.User.removeTag('role');
+  OneSignal.User.removeTag('motorista_id');
+  logger.info('OneSignalService', 'User tags cleared on logout');
 }
 
 /**
