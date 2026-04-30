@@ -231,13 +231,6 @@ export const MotoristaCorridasListScreen = (): React.JSX.Element => {
       {/* Header */}
       <View style={s.header}>
         <Text style={s.headerTitle}>{t('motorista.corridas.title')}</Text>
-        <Pressable
-          accessibilityLabel={t('avaliacoes.minhaNota.title')}
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('MinhaNota')}
-          testID="btn-minha-nota">
-          <MaterialIcons name="star" size={24} color={theme.design.textOnDark} />
-        </Pressable>
       </View>
 
       {/* Content */}
@@ -286,7 +279,6 @@ const createScreenStyles = (theme: Theme) => {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       paddingHorizontal: spacing[5],
       paddingVertical: spacing[4],
       backgroundColor: design.navy800,

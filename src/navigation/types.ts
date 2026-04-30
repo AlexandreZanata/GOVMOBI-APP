@@ -132,7 +132,6 @@ export type MotoristaCorridasStackParamList = {
   MotoristaCorridaAction: {corridaId: string};
   CorridaMensagens: {corridaId: string};
   VeiculoAssociation: undefined;
-  MinhaNota: undefined;
 };
 
 // ---------------------------------------------------------------------------

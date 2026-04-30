@@ -22,7 +22,6 @@ import {CorridaDetalheScreen} from '@screens/Corridas/CorridaDetalheScreen';
 import {MotoristaCorridaScreen} from '@screens/Corridas/MotoristaCorridaScreen';
 import {CorridaMensagensScreen} from '@screens/Corridas/CorridaMensagensScreen';
 import {VeiculoAssociationScreen} from '@screens/Motorista/VeiculoAssociationScreen';
-import {MinhaNotaScreen} from '@screens/Motorista/MinhaNotaScreen';
 import {useAppSelector} from '../store';
 import {TERMINAL_STATUSES} from '@models/Corrida';
 import type {MotoristaCorridasStackParamList} from './types';
@@ -92,11 +91,6 @@ const MotoristaCorridasStack = (): React.JSX.Element => {
         component={VeiculoAssociationScreen}
         name="VeiculoAssociation"
         options={{title: t('motorista.veiculo.title'), headerShown: true}}
-      />
-      <Stack.Screen
-        component={MinhaNotaScreen}
-        name="MinhaNota"
-        options={{title: t('avaliacoes.minhaNota.title'), headerShown: true}}
       />
     </Stack.Navigator>
   );
