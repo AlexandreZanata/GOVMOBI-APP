@@ -192,12 +192,15 @@ export const createMotoristaStyles = (theme: Theme) => {
       color: C.textOnDark,
     },
 
-    // ── User marker (driver) — identical to the passenger's own location dot ──
+    // ── Driver location marker — pixel-perfect copy of the passenger's self-dot ──
+    // Outer: translucent blue halo (same pulseBg as PassageiroScreen)
+    // Middle: white card ring (same surfaceCard)
+    // Inner: solid interactive blue dot
     userMarkerPulse: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: 'rgba(39,110,241,0.15)',
+      backgroundColor: 'rgba(39,110,241,0.15)', // pulseBg
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -205,7 +208,7 @@ export const createMotoristaStyles = (theme: Theme) => {
       width: 26,
       height: 26,
       borderRadius: 13,
-      backgroundColor: C.cardBg,
+      backgroundColor: '#FFFFFF',              // surfaceCard
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -213,7 +216,7 @@ export const createMotoristaStyles = (theme: Theme) => {
       width: 14,
       height: 14,
       borderRadius: 7,
-      backgroundColor: C.interactive,
+      backgroundColor: C.interactive,          // #2F80FF
     },
 
     // ── Bottom sheet (idle — no active ride) ──────────────────────────────────

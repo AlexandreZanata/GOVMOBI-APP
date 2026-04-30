@@ -270,44 +270,60 @@ export const MotoristaScreen = (): React.JSX.Element => {
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}
         />
-        {/* Route line between origin and destination */}
+        {/* ── Layer order inside MapView (bottom → top):
+             1. Route LineLayer  — always below all annotations
+             2. Origin pin       — passenger pickup (person-pin icon)
+             3. Destination pin  — drop-off (location-on icon)
+             4. Driver location  — topmost so it's never hidden
+        ── */}
+
+        {/* 1. Route line — declared first so it renders BELOW all PointAnnotations */}
         {hasActiveRide && activeRouteFeature && MapboxGL.ShapeSource && MapboxGL.LineLayer && (
           <MapboxGL.ShapeSource id="active-route-source" shape={activeRouteFeature}>
             <MapboxGL.LineLayer id="active-route-line" style={activeRouteLineStyle} />
           </MapboxGL.ShapeSource>
         )}
-        {userLocation && (
-          <MapboxGL.PointAnnotation
-            coordinate={[userLocation.longitude, userLocation.latitude]}
-            id="driver-location"
-            title={t('motorista.map.driverLocation')}>
-            {/* Same pulse-ring style the passenger sees for their own location */}
-            <View style={styles.userMarkerPulse} testID="driver-marker">
-              <View style={styles.userMarkerRing}>
-                <View style={styles.userMarkerDot} />
-              </View>
-            </View>
-          </MapboxGL.PointAnnotation>
-        )}
-        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.destinoLng) && Number.isFinite(activeCorrida.destinoLat) && (
-          <MapboxGL.PointAnnotation
-            coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
-            id="ride-destination"
-            title={t('corridas.detail.destino')}>
-            {/* Location-pin icon for the destination */}
-            <View style={styles.destinationPinWrapper}>
-              <MaterialIcons name="location-on" size={32} color={C.danger} />
-            </View>
-          </MapboxGL.PointAnnotation>
-        )}
+
+        {/* 2. Origin — passenger pickup point (person-pin, green) */}
         {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.origemLng) && Number.isFinite(activeCorrida.origemLat) && (
           <MapboxGL.PointAnnotation
             coordinate={[activeCorrida.origemLng, activeCorrida.origemLat]}
             id="ride-origin"
             title={t('corridas.detail.origem')}>
-            {/* Person icon for the passenger pickup point */}
             <View style={styles.originPinWrapper}>
-              <MaterialIcons name="person-pin" size={32} color={C.success} />
+              <MaterialIcons name="person-pin" size={34} color={C.success} />
+            </View>
+          </MapboxGL.PointAnnotation>
+        )}
+
+        {/* 3. Destination — drop-off point (location-on, red) */}
+        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.destinoLng) && Number.isFinite(activeCorrida.destinoLat) && (
+          <MapboxGL.PointAnnotation
+            coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
+            id="ride-destination"
+            title={t('corridas.detail.destino')}>
+            <View style={styles.destinationPinWrapper}>
+              <MaterialIcons name="location-on" size={34} color={C.danger} />
+            </View>
+          </MapboxGL.PointAnnotation>
+        )}
+
+        {/* 4. Driver location — declared last = topmost layer, never hidden by the route line */}
+        {userLocation && (
+          <MapboxGL.PointAnnotation
+            coordinate={[userLocation.longitude, userLocation.latitude]}
+            id="driver-location"
+            title={t('motorista.map.driverLocation')}>
+            {/*
+              Exact same three-layer pulse the passenger sees for their own dot:
+                outer ring  — translucent blue halo  (pulseBg)
+                middle ring — white card background
+                inner dot   — solid interactive blue
+            */}
+            <View style={styles.userMarkerPulse} testID="driver-marker">
+              <View style={styles.userMarkerRing}>
+                <View style={styles.userMarkerDot} />
+              </View>
             </View>
           </MapboxGL.PointAnnotation>
         )}
