@@ -97,6 +97,10 @@ jest.mock('@store/slices/corridaSlice', () => ({
     type: 'corrida/setMotoristaNomeCache',
     payload,
   }),
+  setMotoristaFotoUrlCache: (payload: unknown) => ({
+    type: 'corrida/setMotoristaFotoUrlCache',
+    payload,
+  }),
 }));
 
 jest.mock('@store/slices/realtimeSlice', () => ({

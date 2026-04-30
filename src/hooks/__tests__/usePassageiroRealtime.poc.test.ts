@@ -31,7 +31,7 @@ const mockRealtimeFacade = {
 const mockDispatch = jest.fn();
 
 jest.mock('@services/facades', () => ({
-  useFacades: () => ({realtimeFacade: mockRealtimeFacade}),
+  useFacades: () => ({realtimeFacade: mockRealtimeFacade, corridaFacade: {getCorrida: jest.fn()}}),
 }));
 
 jest.mock('../../store', () => ({
@@ -46,6 +46,7 @@ jest.mock('../../store', () => ({
 jest.mock('@store/slices/corridaSlice', () => ({
   updateCorridaStatus: (status: string) => ({type: 'corrida/updateCorridaStatus', payload: status}),
   setDriverPosition: (p: unknown) => ({type: 'corrida/setDriverPosition', payload: p}),
+  setMotoristaFotoUrlCache: (p: unknown) => ({type: 'corrida/setMotoristaFotoUrlCache', payload: p}),
 }));
 
 jest.mock('@store/slices/realtimeSlice', () => ({

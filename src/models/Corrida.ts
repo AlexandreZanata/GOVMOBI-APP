@@ -125,6 +125,8 @@ export interface Corrida {
     statusOperacional?: string;
     notaMedia?: number;
     totalAvaliacoes?: number;
+    /** Profile image URL when the API embeds it on the motorista relation. */
+    fotoPerfilUrl?: string | null;
   };
   /** Vehicle summary embedded in the list response. */
   veiculo?: {

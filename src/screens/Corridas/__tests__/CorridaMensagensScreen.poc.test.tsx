@@ -126,6 +126,7 @@ const buildStore = (mensagens: CorridaMensagem[] = [], loading = false) => {
         isChatScreenOpen: false,
         posicaoFila: null,
         motoristaNomeCache: null,
+        motoristaFotoUrlCache: null,
       },
       auth: {
         isAuthenticated: true,

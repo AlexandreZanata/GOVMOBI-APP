@@ -16,6 +16,11 @@ export interface Servidor {
   id: string;
   /** Full name */
   nome: string;
+  /**
+   * Public profile photo URL from GET /servidores/:id (when the backend exposes it).
+   * May be a loopback URL; resolve with `resolvePublicMediaUrl` before loading in the UI.
+   */
+  fotoPerfilUrl?: string | null;
   /** CPF digits only, e.g. "04673024133" */
   cpf: string;
   email: string;

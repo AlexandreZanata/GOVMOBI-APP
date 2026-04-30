@@ -110,6 +110,10 @@ export interface StatusCorridaAlteradoPayload {
    * Frontend must display a fallback (e.g. "Motorista a caminho") when null.
    */
   nomeMotorista?: string | null;
+  /**
+   * Driver profile photo URL — enriched on `CorridaAceita` when the backend supports it.
+   */
+  fotoPerfilUrl?: string | null;
   /** Vehicle UUID — present when a driver is assigned. */
   veiculoId?: string | null;
   /** ETA in seconds — present on CorridaAceita. */

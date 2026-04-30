@@ -56,7 +56,7 @@ export const PassageiroCorridasNavigator = (): React.JSX.Element => {
       <Stack.Screen
         component={CorridaDetalheScreen}
         name="CorridaDetalhe"
-        options={{title: t('corridas.detail.title'), headerShown: true}}
+        options={{title: t('corridas.detail.title'), headerShown: false}}
       />
       <Stack.Screen
         component={CorridaMensagensScreen}

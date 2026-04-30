@@ -421,6 +421,11 @@ export const createPassageiroStyles = () =>
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
+      overflow: 'hidden',
+    },
+    driverStripAvatarImage: {
+      width: '100%',
+      height: '100%',
     },
     driverStripInfo: {
       flex: 1,

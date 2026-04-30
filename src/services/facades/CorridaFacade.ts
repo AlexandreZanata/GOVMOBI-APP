@@ -81,6 +81,7 @@ interface RawCorridaListItem {
     statusOperacional?: string;
     notaMedia?: number;
     totalAvaliacoes?: number;
+    fotoPerfilUrl?: string | null;
   };
   veiculo?: {
     id: string;
@@ -167,6 +168,7 @@ interface RawCorrida {
     statusOperacional?: string;
     notaMedia?: number;
     totalAvaliacoes?: number;
+    fotoPerfilUrl?: string | null;
   };
   veiculo?: {
     id: string;

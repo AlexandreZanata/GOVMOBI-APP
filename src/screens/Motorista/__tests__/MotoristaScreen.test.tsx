@@ -213,6 +213,7 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         naoVisualizadasCount: corridaState?.naoVisualizadasCount ?? 0,
         isChatScreenOpen: corridaState?.isChatScreenOpen ?? false,
         motoristaNomeCache: corridaState?.motoristaNomeCache ?? null,
+        motoristaFotoUrlCache: corridaState?.motoristaFotoUrlCache ?? null,
       },
       location: {
         permissionStatus: 'granted' as const,

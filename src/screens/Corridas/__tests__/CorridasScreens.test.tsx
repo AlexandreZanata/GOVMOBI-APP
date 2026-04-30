@@ -239,6 +239,7 @@ const DEFAULT_CORRIDA_STATE: CorridaState = {
   naoVisualizadasCount: 0,
   isChatScreenOpen: false,
   motoristaNomeCache: null,
+  motoristaFotoUrlCache: null,
 };
 
 const buildStore = (papeis: string[] = [], corridaOverrides?: Partial<CorridaState>) =>

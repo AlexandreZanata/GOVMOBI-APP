@@ -111,6 +111,7 @@
   "errors": {
     "networkError": "Erro de rede",
     "sessionExpired": "Sessao expirada",
+    "sessionRevoked": "Sua sessão foi encerrada pelo servidor. Faça login novamente.",
     "hydrationTimeout": "Não foi possível contatar o servidor a tempo. Entre novamente quando a conexão estiver estável.",
     "unknownError": "Erro desconhecido"
   },

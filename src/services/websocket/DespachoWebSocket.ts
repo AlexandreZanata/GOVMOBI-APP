@@ -349,17 +349,26 @@ export class DespachoWebSocketClient implements IDespachoWebSocketClient {
       if (is401 && this.tokenRefresher && !this.isHandling401) {
         wsWarn('401 detected — attempting token refresh');
         this.isHandling401 = true;
+        // Disable Socket.io's built-in reconnection so it doesn't keep
+        // hammering the server with a revoked token while we refresh.
         if (this.socket) this.socket.io.opts.reconnection = false;
         this.socket?.disconnect();
 
         void this.tokenRefresher().then(freshToken => {
           if (!freshToken) {
-            wsErr('Token refresh failed — surfacing error to handlers');
+            // Refresh failed — backend is down or token is permanently revoked.
+            // Clean up the socket completely and surface the error so callers
+            // (e.g. useRealtimeSession) can dispatch logout().
+            wsErr('Token refresh failed — cleaning up socket and surfacing error');
             this.isHandling401 = false;
+            this.socket?.removeAllListeners();
+            this.socket?.disconnect();
+            this.socket = null;
             this.errorHandlers.forEach(h => h(error));
             return;
           }
           wsLog('Token refreshed — recreating socket');
+          this.isHandling401 = false;
           this.socket?.removeAllListeners();
           this.socket = this.socketFactory(`${this.baseUrl}/despacho`, freshToken);
           this.registerSocketListeners();

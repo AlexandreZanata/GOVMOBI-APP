@@ -45,7 +45,7 @@ export const CorridasNavigator = (): React.JSX.Element => {
       <Stack.Screen
         component={CorridaDetalheScreen}
         name="CorridaDetalhe"
-        options={{title: t('corridas.detail.title')}}
+        options={{title: t('corridas.detail.title'), headerShown: false}}
       />
       <Stack.Screen
         component={AcompanharCorridaScreen}

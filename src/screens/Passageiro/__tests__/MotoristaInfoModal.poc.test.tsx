@@ -64,6 +64,10 @@ jest.mock('@services/facades', () => ({
   }),
 }));
 
+jest.mock('../../../config/env', () => ({
+  ENV: {apiUrl: 'http://192.168.1.5:3000'},
+}));
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const defaultProps = {
   visible: true,
@@ -103,19 +107,27 @@ describe('MotoristaInfoModal POC', () => {
     expect(mockGetServidorById).toHaveBeenCalledWith({id: 'srv-1'});
   });
 
-  it('3. shows driver name from WS cache immediately — skips REST name fetch', async () => {
+  it('3. shows driver name from WS cache — still fetches servidor for photo when URL not passed', async () => {
+    mockGetServidorById.mockResolvedValue({
+      data: {nome: 'João Silva', fotoPerfilUrl: 'http://localhost:3000/media/x.jpg'},
+      error: null,
+    });
+
     render(<MotoristaInfoModal {...defaultProps} nomeMotorista="Maria Souza" />);
 
-    // Name should be visible immediately without waiting for REST
     expect(screen.getByText('Maria Souza')).toBeTruthy();
 
-    // Vehicle fetch still happens (not in WS payload)
+    await waitFor(() => {
+      expect(mockGetServidorById).toHaveBeenCalledWith({id: 'srv-1'});
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('motorista-avatar-image')).toBeTruthy();
+    });
+
     await waitFor(() => {
       expect(mockGetVeiculoById).toHaveBeenCalledWith('vei-1');
     });
-
-    // But servidor fetch should be skipped
-    expect(mockGetServidorById).not.toHaveBeenCalled();
   });
 
   it('4. shows fallback text when both prop and REST return null', async () => {
@@ -136,5 +148,23 @@ describe('MotoristaInfoModal POC', () => {
     await waitFor(() => {
       expect(screen.getByText('Erro desconhecido')).toBeTruthy();
     });
+  });
+
+  it('6. skips servidor fetch when name and photo are pre-resolved', async () => {
+    render(
+      <MotoristaInfoModal
+        {...defaultProps}
+        motoristaFotoUrl="https://example.com/driver.jpg"
+        nomeMotorista="Maria Souza"
+      />,
+    );
+
+    expect(screen.getByTestId('motorista-avatar-image')).toBeTruthy();
+
+    await waitFor(() => {
+      expect(mockGetVeiculoById).toHaveBeenCalledWith('vei-1');
+    });
+
+    expect(mockGetServidorById).not.toHaveBeenCalled();
   });
 });

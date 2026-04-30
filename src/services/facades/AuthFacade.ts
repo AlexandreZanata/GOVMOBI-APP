@@ -437,8 +437,14 @@ export class AuthFacadeImpl implements IAuthFacade {
         AUTH_HTTP_TIMEOUT_MS,
       );
 
+      if (response.status === 401 || response.status === 403) {
+        // Token was revoked or is invalid — fail fast so the caller can
+        // immediately dispatch logout() without waiting for the watchdog.
+        return fail(toFacadeError('Token revoked or invalid', 'UNAUTHORIZED'));
+      }
+
       if (!response.ok) {
-        return fail(toFacadeError('Unable to fetch user profile', 'UNAUTHORIZED'));
+        return fail(toFacadeError('Unable to fetch user profile', 'SERVER_ERROR'));
       }
 
       const me = (await response.json()) as MeResponse;

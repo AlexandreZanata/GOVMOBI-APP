@@ -23,7 +23,7 @@ import {ENV} from './config/env';
 import {i18n} from './i18n';
 import {RootNavigator} from './navigation';
 import {navigationRef} from './navigation/navigationRef';
-import {GlobalToast, NetworkBanner} from '@components/organisms';
+import {GlobalToast, NetworkBanner, AppErrorBoundary} from '@components/organisms';
 import {
   useAppLocationBootstrap,
   useAuthSession,
@@ -131,9 +131,11 @@ const AppShell = (): React.JSX.Element => {
             translucent={false}
           />
           <View style={styles.container}>
-            <NavigationContainer ref={navigationRef}>
-              <RootNavigator />
-            </NavigationContainer>
+            <AppErrorBoundary>
+              <NavigationContainer ref={navigationRef}>
+                <RootNavigator />
+              </NavigationContainer>
+            </AppErrorBoundary>
             <NetworkBanner />
             <GlobalToast />
           </View>

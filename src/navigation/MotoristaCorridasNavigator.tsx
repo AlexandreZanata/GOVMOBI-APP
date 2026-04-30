@@ -75,7 +75,7 @@ const MotoristaCorridasStack = (): React.JSX.Element => {
       <Stack.Screen
         component={CorridaDetalheScreen}
         name="MotoristaCorridaDetalhe"
-        options={{title: t('corridas.detail.title'), headerShown: true}}
+        options={{title: t('corridas.detail.title'), headerShown: false}}
       />
       <Stack.Screen
         component={MotoristaCorridaScreen}

@@ -5,13 +5,15 @@
 import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   Text,
   TextInput,
   TouchableOpacity,
   View,
   type LayoutChangeEvent,
-} from 'react-native';import {MaterialIcons} from '@expo/vector-icons';
+} from 'react-native';
+import {MaterialIcons} from '@expo/vector-icons';
 import {useTranslation} from 'react-i18next';
 import {
   createPassageiroStyles,
@@ -33,6 +35,8 @@ export interface PassageiroActiveRidePanelProps {
   destinoAddress: string | null;
   /** Driver name resolved from servidores facade (null while loading). */
   motoristaNome: string | null;
+  /** Resolved driver profile image URL (optional). */
+  motoristaFotoUrl?: string | null;
   /** Vehicle label e.g. "Toyota Corolla · ABC1D23" (null while loading). */
   veiculoLabel: string | null;
   /** Cancel motivo text. */
@@ -64,6 +68,7 @@ export const PassageiroActiveRidePanel = ({
   origemAddress,
   destinoAddress,
   motoristaNome,
+  motoristaFotoUrl = null,
   veiculoLabel,
   cancelMotivo,
   showCancelInput,
@@ -78,7 +83,8 @@ export const PassageiroActiveRidePanel = ({
   const isTerminal = TERMINAL_STATUSES.has(corrida.status);
   const canCancel = !isTerminal;
   const showDriverStrip =
-    DRIVER_ASSIGNED.has(corrida.status) && !!(motoristaNome ?? veiculoLabel);
+    DRIVER_ASSIGNED.has(corrida.status) &&
+    !!(motoristaNome ?? veiculoLabel ?? motoristaFotoUrl);
   const unreadMensagens = useAppSelector(s => s.corrida.unreadMensagens);
 
   const [sheetHeight, setSheetHeight] = useState(0);
@@ -101,7 +107,18 @@ export const PassageiroActiveRidePanel = ({
         {showDriverStrip && (
           <View style={styles.driverStrip} testID="driver-strip">
             <View style={styles.driverStripAvatar}>
-              <MaterialIcons name="person" size={18} color={C.interactive} />
+              {motoristaFotoUrl ? (
+                <Image
+                  accessibilityIgnoresInvertColors
+                  accessibilityLabel={motoristaNome ?? t('motorista.info.fallbackNome')}
+                  resizeMode="cover"
+                  source={{uri: motoristaFotoUrl}}
+                  style={styles.driverStripAvatarImage}
+                  testID="driver-strip-avatar-image"
+                />
+              ) : (
+                <MaterialIcons name="person" size={18} color={C.interactive} />
+              )}
             </View>
             <View style={styles.driverStripInfo}>
               {motoristaNome ? (

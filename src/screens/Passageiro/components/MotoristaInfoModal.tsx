@@ -4,6 +4,7 @@
  *
  * Displays:
  *  - Status headline (i18n): "MOTORISTA ACEITOU", "MOTORISTA A CAMINHO", "MOTORISTA CHEGOU!"
+ *  - Driver photo (prop, WS/GET-hydrated cache, or GET /servidores/:servidorId `fotoPerfilUrl`)
  *  - Driver name (from GET /servidores/:servidorId)
  *  - Vehicle model, plate, year (from GET /frota/veiculos/:veiculoId)
  *
@@ -15,6 +16,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -27,6 +29,8 @@ import {useTheme, type Theme} from '../../../theme';
 import {useFacades} from '@services/facades';
 import type {Veiculo} from '@models/index';
 import type {CorridaStatus} from '@models/Corrida';
+import {ENV} from '../../../config/env';
+import {resolvePublicMediaUrl} from '../../../utils/resolvePublicMediaUrl';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -50,6 +54,11 @@ export interface MotoristaInfoModalProps {
    * Pass null to fall back to the REST fetch.
    */
   nomeMotorista?: string | null;
+  /**
+   * Resolved driver profile image URL (parent should apply `resolvePublicMediaUrl`).
+   * When omitted, the modal loads the photo from GET /servidores/:id when possible.
+   */
+  motoristaFotoUrl?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +98,7 @@ export const MotoristaInfoModal = ({
   corridaStatus,
   onDismiss,
   nomeMotorista: nomeProp = null,
+  motoristaFotoUrl: fotoProp = null,
 }: MotoristaInfoModalProps): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
@@ -96,9 +106,12 @@ export const MotoristaInfoModal = ({
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   const [motoristaNome, setMotoristaNome] = useState<string | null>(nomeProp);
+  const [fotoFetchedUrl, setFotoFetchedUrl] = useState<string | null>(null);
   const [veiculo, setVeiculo] = useState<Veiculo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const displayFotoUrl = fotoProp ?? fotoFetchedUrl;
 
   // Sync the prop into local state whenever it changes (e.g. WS cache populated
   // after the modal was already open).
@@ -108,20 +121,30 @@ export const MotoristaInfoModal = ({
 
   useEffect(() => {
     if (!visible || !motoristaId) {
-      // Only clear name if we don't have a cached value from the prop.
       if (!nomeProp) setMotoristaNome(null);
+      setFotoFetchedUrl(null);
       setVeiculo(null);
       setError(null);
       return;
     }
 
     let cancelled = false;
-    // Only show loading spinner if we still need to fetch the name.
-    setIsLoading(!nomeProp);
+    setIsLoading(true);
     setError(null);
 
     const load = async (): Promise<void> => {
-      // Step 1: get the Motorista record to obtain servidorId
+      if (nomeProp && fotoProp) {
+        if (veiculoId) {
+          const veiResult = await frotaFacade.getVeiculoById(veiculoId);
+          if (cancelled) return;
+          setVeiculo(veiResult.data ?? null);
+        } else {
+          setVeiculo(null);
+        }
+        setIsLoading(false);
+        return;
+      }
+
       console.log('[MotoristaInfoModal] load() → getMotoristaById', motoristaId);
       const motResult = await frotaFacade.getMotoristaById(motoristaId);
       console.log('[MotoristaInfoModal] getMotoristaById result →', JSON.stringify({
@@ -138,14 +161,13 @@ export const MotoristaInfoModal = ({
       }
 
       const {servidorId} = motResult.data;
-      console.log('[MotoristaInfoModal] servidorId →', servidorId, '| veiculoId →', veiculoId, '| nomeProp →', nomeProp);
+      const needServidor = !nomeProp || !fotoProp;
+      console.log('[MotoristaInfoModal] servidorId →', servidorId, '| veiculoId →', veiculoId, '| nomeProp →', nomeProp, '| needServidor →', needServidor);
 
-      // Step 2: fetch Servidor (for nome) and Veiculo in parallel.
-      // Skip the servidor fetch if we already have the name from the WS cache.
       const [srvResult, veiResult] = await Promise.all([
-        nomeProp
-          ? Promise.resolve({data: null, error: null})
-          : servidoresFacade.getServidorById({id: servidorId}),
+        needServidor
+          ? servidoresFacade.getServidorById({id: servidorId})
+          : Promise.resolve({data: null, error: null}),
         veiculoId
           ? frotaFacade.getVeiculoById(veiculoId)
           : Promise.resolve({data: null, error: null}),
@@ -163,13 +185,17 @@ export const MotoristaInfoModal = ({
       if (cancelled) return;
 
       if (!nomeProp) setMotoristaNome(srvResult.data?.nome ?? null);
+      if (!fotoProp) {
+        const resolved = resolvePublicMediaUrl(srvResult.data?.fotoPerfilUrl, ENV.apiUrl);
+        setFotoFetchedUrl(resolved ?? null);
+      }
       setVeiculo(veiResult.data ?? null);
       setIsLoading(false);
     };
 
     void load();
     return () => { cancelled = true; };
-  }, [visible, motoristaId, veiculoId, nomeProp, frotaFacade, servidoresFacade, t]);
+  }, [visible, motoristaId, veiculoId, nomeProp, fotoProp, frotaFacade, servidoresFacade, t]);
 
   const handleDismiss = useCallback(() => { onDismiss(); }, [onDismiss]);
 
@@ -210,7 +236,18 @@ export const MotoristaInfoModal = ({
               {/* Driver name */}
               <View style={styles.driverRow}>
                 <View style={styles.avatar}>
-                  <MaterialIcons name="person" size={28} color={theme.colors.primary} />
+                  {displayFotoUrl ? (
+                    <Image
+                      accessibilityIgnoresInvertColors
+                      accessibilityLabel={motoristaNome ?? t('motorista.info.fallbackNome')}
+                      resizeMode="cover"
+                      source={{uri: displayFotoUrl}}
+                      style={styles.avatarImage}
+                      testID="motorista-avatar-image"
+                    />
+                  ) : (
+                    <MaterialIcons name="person" size={28} color={theme.colors.primary} />
+                  )}
                 </View>
                 <View style={styles.driverInfo}>
                   <Text style={styles.driverLabel}>{t('motorista.info.nomeLabel')}</Text>
@@ -314,6 +351,11 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.design.surface200,
       alignItems: 'center',
       justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
     },
     driverInfo: {
       flex: 1,

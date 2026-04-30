@@ -23,10 +23,13 @@ import {
   setMensagens,
   updateCorridaStatus,
   setMotoristaNomeCache,
+  setMotoristaFotoUrlCache,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
 import type {Corrida} from '@models/Corrida';
 import {normalizeStatus} from '@models/Corrida';
+import {ENV} from '../config/env';
+import {resolvePublicMediaUrl} from '../utils/resolvePublicMediaUrl';
 
 const TAG = '[usePassageiroRealtime]';
 
@@ -163,6 +166,14 @@ export const usePassageiroRealtime = (): void => {
             dispatchRef.current(setMotoristaNomeCache(event.payload.nomeMotorista));
           }
 
+          if (event.payload.status === 'CorridaAceita' && event.payload.fotoPerfilUrl) {
+            const resolved = resolvePublicMediaUrl(event.payload.fotoPerfilUrl, ENV.apiUrl);
+            if (resolved) {
+              console.log(TAG, 'caching motorista foto from WS');
+              dispatchRef.current(setMotoristaFotoUrlCache(resolved));
+            }
+          }
+
           // The WS payload does not carry motoristaId / veiculoId.
           // When the driver is assigned we must fetch the full corrida so
           // MotoristaInfoModal can display driver and vehicle details.
@@ -170,7 +181,13 @@ export const usePassageiroRealtime = (): void => {
             const id = event.payload.corridaId;
             void corridaFacadeRef.current.getCorrida(id).then(result => {
               if (result.data) {
-                dispatchRef.current(setActiveCorrida(result.data as Corrida));
+                const full = result.data as Corrida;
+                dispatchRef.current(setActiveCorrida(full));
+                const rawFoto = full.motorista?.fotoPerfilUrl;
+                const resolved = resolvePublicMediaUrl(rawFoto, ENV.apiUrl);
+                if (resolved) {
+                  dispatchRef.current(setMotoristaFotoUrlCache(resolved));
+                }
               }
             });
           }

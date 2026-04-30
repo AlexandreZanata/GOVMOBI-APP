@@ -181,7 +181,7 @@ export const useAuthSession = (): void => {
         dispatch(logout());
         dispatch(addToast({
           id: `session-expired-${Date.now()}`,
-          message: t('errors.sessionExpired'),
+          message: t('errors.sessionRevoked'),
           type: 'warning',
         }));
         return null;
@@ -221,8 +221,26 @@ export const useAuthSession = (): void => {
     if (isStale?.()) return false;
     if (!meResult.data) {
       if (isStale?.()) return false;
-      logger.warn('useAuthSession', 'getMe failed — ending session');
+      const errorCode = meResult.error?.code;
+      // UNAUTHORIZED means the token was explicitly revoked by the backend
+      // (401/403). Fail fast — no need to wait for the watchdog timeout.
+      // NETWORK_ERROR / TIMEOUT means the server is unreachable; the watchdog
+      // will handle the timeout path so we just return false here.
+      logger.warn(
+        'useAuthSession',
+        `getMe failed — code=${errorCode ?? 'unknown'} — ending session`,
+      );
       dispatch(logout());
+      dispatch(
+        addToast({
+          id: `session-ended-${Date.now()}`,
+          message:
+            errorCode === 'UNAUTHORIZED'
+              ? t('errors.sessionRevoked')
+              : t('errors.sessionExpired'),
+          type: 'warning',
+        }),
+      );
       return false;
     }
     const me = meResult.data;

@@ -77,6 +77,12 @@ export interface CorridaState {
    * Cleared when the active ride is cleared.
    */
   motoristaNomeCache: string | null;
+  /**
+   * Resolved driver profile image URL (after `resolvePublicMediaUrl`) from WS `CorridaAceita`,
+   * GET /corridas/:id embedded motorista, or REST servidor lookup.
+   * Cleared when the active ride is cleared.
+   */
+  motoristaFotoUrlCache: string | null;
 }
 
 const initialState: CorridaState = {
@@ -100,6 +106,7 @@ const initialState: CorridaState = {
   naoVisualizadasCount: 0,
   isChatScreenOpen: false,
   motoristaNomeCache: null,
+  motoristaFotoUrlCache: null,
 };
 
 /**
@@ -121,6 +128,7 @@ const corridaSlice = createSlice({
         state.naoVisualizadasCount = 0;
         state.isChatScreenOpen = false;
         state.motoristaNomeCache = null;
+        state.motoristaFotoUrlCache = null;
       }
     },
 
@@ -318,6 +326,13 @@ const corridaSlice = createSlice({
     },
 
     /**
+     * Caches the resolved driver profile photo URL for the active ride.
+     */
+    setMotoristaFotoUrlCache(state, action: PayloadAction<string | null>) {
+      state.motoristaFotoUrlCache = action.payload;
+    },
+
+    /**
      * Stores the latest queue position snapshot from GET /corridas/:id/posicao-fila.
      * Pass null to clear (e.g. when the ride is accepted or cancelled).
      */
@@ -373,6 +388,7 @@ export const {
   setRatingSubmitted,
   setDriverPosition,
   setMotoristaNomeCache,
+  setMotoristaFotoUrlCache,
   setPosicaoFila,
 } = corridaSlice.actions;
 

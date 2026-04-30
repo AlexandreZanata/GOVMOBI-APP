@@ -43,6 +43,48 @@ module.exports = {
     '^@config/(.*)$': '<rootDir>/src/config/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-vector-icons|@expo/vector-icons|react-native-safe-area-context|react-native-screens|react-native-gesture-handler|@reduxjs/toolkit|immer|react-redux|@react-navigation|expo-status-bar|expo-secure-store|expo-location|expo-modules-core|expo-constants|expo-font|expo-asset|expo-file-system|@rnmapbox)/)',
+    // Handle both flat node_modules (npm/yarn) and pnpm's nested structure
+    // (.pnpm/<pkg>@version/node_modules/<pkg>).
+    // The pattern must allow Babel to transform all React Native / Expo packages
+    // regardless of where pnpm places them in the virtual store.
+    'node_modules/(?!(.pnpm/)?(' +
+      'react-native|' +
+      '@react-native|' +
+      '@react-native-community|' +
+      'react-native-vector-icons|' +
+      '@expo/vector-icons|' +
+      'react-native-safe-area-context|' +
+      'react-native-screens|' +
+      'react-native-gesture-handler|' +
+      'react-native-reanimated|' +
+      'react-native-worklets|' +
+      'react-native-keyboard-controller|' +
+      'react-native-svg|' +
+      'react-native-onesignal|' +
+      '@reduxjs/toolkit|' +
+      'immer|' +
+      'react-redux|' +
+      '@react-navigation|' +
+      'expo-status-bar|' +
+      'expo-secure-store|' +
+      'expo-location|' +
+      'expo-modules-core|' +
+      'expo-constants|' +
+      'expo-font|' +
+      'expo-asset|' +
+      'expo-file-system|' +
+      'expo-device|' +
+      'expo-haptics|' +
+      'expo-keep-awake|' +
+      'expo-network|' +
+      'expo-av|' +
+      'expo-image-picker|' +
+      'expo-linear-gradient|' +
+      'expo-splash-screen|' +
+      '@rnmapbox|' +
+      'socket.io-client|' +
+      'engine.io-client|' +
+      '@socket.io' +
+    '))',
   ],
 };

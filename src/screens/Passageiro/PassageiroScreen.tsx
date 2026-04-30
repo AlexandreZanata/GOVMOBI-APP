@@ -50,6 +50,8 @@ import {
 import {addToast} from '@store/slices/uiSlice';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
 import {TERMINAL_STATUSES as CORRIDA_TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
+import {ENV} from '../../config/env';
+import {resolvePublicMediaUrl} from '../../utils/resolvePublicMediaUrl';
 type PassageiroTabParamList = {
   PassageiroHome: undefined;
   PassageiroCorridas: NavigatorScreenParams<PassageiroCorridasStackParamList>;
@@ -138,6 +140,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const [origemAddress, setOrigemAddress] = useState<string | null>(null);
   const [destinoAddress, setDestinoAddress] = useState<string | null>(null);
   const [motoristaNome, setMotoristaNome] = useState<string | null>(null);
+  const [motoristaFotoRest, setMotoristaFotoRest] = useState<string | null>(null);
   const [veiculoLabel, setVeiculoLabel] = useState<string | null>(null);
   const [activeRouteCoords, setActiveRouteCoords] = useState<[number, number][]>([]);
   const activeRouteRequestRef = useRef(0);
@@ -211,6 +214,16 @@ export const PassageiroScreen = (): React.JSX.Element => {
   // Driver name from WS cache — avoids REST round-trips on every render and
   // survives tab navigation / foreground transitions.
   const motoristaNomeCache = useAppSelector(s => s.corrida.motoristaNomeCache);
+  const motoristaFotoUrlCache = useAppSelector(s => s.corrida.motoristaFotoUrlCache);
+
+  const motoristaFotoDisplayUrl = useMemo(() => {
+    const fromCorrida = resolvePublicMediaUrl(activeCorrida?.motorista?.fotoPerfilUrl, ENV.apiUrl);
+    return motoristaFotoUrlCache ?? fromCorrida ?? motoristaFotoRest ?? null;
+  }, [
+    motoristaFotoUrlCache,
+    activeCorrida?.motorista?.fotoPerfilUrl,
+    motoristaFotoRest,
+  ]);
 
   // ── MotoristaInfoModal state ────────────────────────────────────────────────
   const [showMotoristaModal, setShowMotoristaModal] = useState<boolean>(false);
@@ -302,6 +315,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
 
     if (!activeCorrida || !hasActiveRide || !motoristaId || !driverAssigned.has(activeCorrida.status)) {
       setMotoristaNome(null);
+      setMotoristaFotoRest(null);
       setVeiculoLabel(null);
       return;
     }
@@ -319,11 +333,14 @@ export const PassageiroScreen = (): React.JSX.Element => {
       console.log('[PassageiroScreen] getMotoristaById →', JSON.stringify({data: motResult.data, error: motResult.error}));
       if (cancelled || motResult.error || !motResult.data) return;
 
+      const embedFoto = resolvePublicMediaUrl(activeCorrida.motorista?.fotoPerfilUrl, ENV.apiUrl);
+      const haveCachedFoto = !!(motoristaFotoUrlCache ?? embedFoto);
+      const fetchServidor = !motoristaNomeCache || !haveCachedFoto;
+
       const [srvResult, veiResult] = await Promise.all([
-        // Only fetch name via REST if the WS cache is empty.
-        motoristaNomeCache
-          ? Promise.resolve({data: null, error: null})
-          : servidoresFacade.getServidorById({id: motResult.data.servidorId}),
+        fetchServidor
+          ? servidoresFacade.getServidorById({id: motResult.data.servidorId})
+          : Promise.resolve({data: null, error: null}),
         veiculoId ? frotaFacade.getVeiculoById(veiculoId) : Promise.resolve({data: null, error: null}),
       ]);
       console.log('[PassageiroScreen] getServidorById →', JSON.stringify({data: srvResult.data, error: srvResult.error}));
@@ -334,12 +351,16 @@ export const PassageiroScreen = (): React.JSX.Element => {
       if (!motoristaNomeCache && srvResult.data?.nome) {
         setMotoristaNome(srvResult.data.nome);
       }
+      if (fetchServidor) {
+        const resolvedSrvFoto = resolvePublicMediaUrl(srvResult.data?.fotoPerfilUrl, ENV.apiUrl);
+        setMotoristaFotoRest(resolvedSrvFoto ?? null);
+      }
       if (veiResult.data) {
         setVeiculoLabel(`${veiResult.data.modelo} · ${veiResult.data.placa}`);
       }
     })();
     return () => { cancelled = true; };
-  }, [activeCorrida, activeCorrida?.motoristaId, activeCorrida?.veiculoId, activeCorrida?.status, hasActiveRide, motoristaNomeCache, frotaFacade, servidoresFacade]);
+  }, [activeCorrida, activeCorrida?.motoristaId, activeCorrida?.veiculoId, activeCorrida?.status, activeCorrida?.motorista?.fotoPerfilUrl, hasActiveRide, motoristaNomeCache, motoristaFotoUrlCache, frotaFacade, servidoresFacade]);
 
   // ── Route line for active ride ──────────────────────────────────────────────
   useEffect(() => {
@@ -650,6 +671,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
           corrida={activeCorrida}
           destinoAddress={destinoAddress}
           isActionLoading={isActionLoading}
+          motoristaFotoUrl={motoristaFotoDisplayUrl}
           motoristaNome={motoristaNome}
           onCancel={handleCancel}
           onCancelMotivoChange={setCancelMotivo}
@@ -674,6 +696,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
 
       <MotoristaInfoModal
         corridaStatus={activeCorrida?.status ?? null}
+        motoristaFotoUrl={motoristaFotoDisplayUrl}
         motoristaId={activeCorrida?.motoristaId ?? null}
         nomeMotorista={motoristaNomeCache}
         onDismiss={() => setShowMotoristaModal(false)}

@@ -11,12 +11,12 @@ import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'reac
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
@@ -111,6 +111,7 @@ const StarRow = ({rating, color}: {rating: number; color: string}): React.JSX.El
 export const CorridaDetalheScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NativeStackNavigationProp<PassageiroCorridasStackParamList>>();
   const {corridaId} = route.params as {corridaId: string};
@@ -174,8 +175,11 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
   const ts = corrida?.timestamps;
 
   return (
-    <SafeAreaView style={s.safeArea} testID="detalhe-screen">
-      {/* ── Inline header — navy, title centred, back → home ── */}
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={s.safeArea}
+      testID="detalhe-screen">
+      {/* ── Inline header — navy, title centred, back → list ── */}
       <View style={s.header}>
         <Pressable
           accessibilityLabel={t('common.back')}
@@ -204,7 +208,10 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={sharedStyles.scrollContent}
+          contentContainerStyle={[
+            sharedStyles.scrollContent,
+            {paddingBottom: theme.spacing[10] + insets.bottom},
+          ]}
           showsVerticalScrollIndicator={false}
           style={s.scrollView}>
 
@@ -319,8 +326,9 @@ const createLocalStyles = (theme: ReturnType<typeof useTheme>) => {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.design.navy800,
+      minHeight: theme.spacing[12],
       paddingHorizontal: theme.spacing[5],
-      paddingVertical: theme.spacing[4],
+      paddingBottom: theme.spacing[3],
     },
     headerBack: {
       width: 32,
