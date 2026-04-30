@@ -106,7 +106,8 @@
     "forgotPassword": "Olvide mi contrasena",
     "loginFailed": "CPF o contrasena invalidos.",
     "subtitle": "Sistema de Movilidad Operacional",
-    "version": "v{{version}}"
+    "version": "v{{version}}",
+    "hydrationTakingLong": "Verificando su sesión con el servidor… Si tarda demasiado, la conexión puede ser inestable o el servicio no está disponible."
   },
   "errors": {
     "networkError": "Error de red",

@@ -106,7 +106,8 @@
     "forgotPassword": "Forgot password",
     "loginFailed": "Invalid CPF or password.",
     "subtitle": "Government Operational Mobility System",
-    "version": "v{{version}}"
+    "version": "v{{version}}",
+    "hydrationTakingLong": "Checking your session with the server… If this takes too long, the connection may be unstable or the service unavailable."
   },
   "errors": {
     "networkError": "Network error",

@@ -106,7 +106,8 @@
     "forgotPassword": "Esqueci minha senha",
     "loginFailed": "CPF ou senha inválidos.",
     "subtitle": "Sistema de Mobilidade Operacional",
-    "version": "v{{version}}"
+    "version": "v{{version}}",
+    "hydrationTakingLong": "Verificando sua sessão com o servidor… Se demorar, a conexão pode estar instável ou o serviço indisponível."
   },
   "errors": {
     "networkError": "Erro de rede",

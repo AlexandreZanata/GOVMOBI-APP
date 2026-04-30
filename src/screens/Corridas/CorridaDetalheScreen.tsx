@@ -326,9 +326,8 @@ const createLocalStyles = (theme: ReturnType<typeof useTheme>) => {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.design.navy800,
-      minHeight: theme.spacing[12],
       paddingHorizontal: theme.spacing[5],
-      paddingBottom: theme.spacing[3],
+      paddingVertical: theme.spacing[4],
     },
     headerBack: {
       width: 32,

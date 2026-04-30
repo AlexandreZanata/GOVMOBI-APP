@@ -16,16 +16,20 @@
  *   view is shown instead of any role-specific navigator. This prevents drivers
  *   from briefly seeing the passenger interface before motoristaId resolves.
  */
-import React from 'react';
-import {ActivityIndicator, StyleSheet, View} from 'react-native';
+import React, {useEffect, useMemo, useState} from 'react';
+import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {type RootStackParamList} from './types';
 import {AuthNavigator} from './AuthNavigator';
 import {MainTabNavigator} from './MainTabNavigator';
 import {PassageiroNavigator} from './PassageiroNavigator';
 import {MotoristaNavigator} from './MotoristaNavigator';
-import {useAppSelector} from '../store';
-import {designColors} from '../theme';
+import {useAppDispatch, useAppSelector} from '../store';
+import {logout} from '../store/slices/authSlice';
+import {addToast} from '../store/slices/uiSlice';
+import {HYDRATION_WATCHDOG_MS} from '../services/http/fetchWithAbortTimeout';
+import {designColors, spacing, typography} from '../theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -50,17 +54,47 @@ const resolveRoleRoute = (
   return 'Passageiro';
 };
 
+/** After this delay, show an i18n hint so the user knows the app is not frozen. */
+const HYDRATION_HINT_DELAY_MS = 8_000;
+
+/** UI belt-and-suspenders if `useAuthSession` watchdog ever fails to fire (motorista devices). */
+const HYDRATION_UI_FAILSAFE_MS = HYDRATION_WATCHDOG_MS + 15_000;
+
 /**
  * Full-screen loading splash shown while getMe() resolves on cold start.
  * Matches the app's dark navy background so there's no flash.
  *
  * @returns Loading splash JSX element.
  */
-const HydrationSplash = (): React.JSX.Element => (
-  <View style={styles.splash} testID="hydration-splash">
-    <ActivityIndicator color={designColors.blue500} size="large" />
-  </View>
-);
+const HydrationSplash = (): React.JSX.Element => {
+  const {t} = useTranslation();
+  const [showSlowHint, setShowSlowHint] = useState(false);
+
+  useEffect(() => {
+    const id = setTimeout(() => setShowSlowHint(true), HYDRATION_HINT_DELAY_MS);
+    return () => clearTimeout(id);
+  }, []);
+
+  const hintStyle = useMemo(
+    () => ({
+      ...typography.scale.bodySm,
+      color: designColors.textOnDarkMuted,
+      textAlign: 'center' as const,
+      marginTop: spacing[4],
+      paddingHorizontal: spacing[5],
+    }),
+    [],
+  );
+
+  return (
+    <View style={styles.splash} testID="hydration-splash">
+      <ActivityIndicator color={designColors.blue500} size="large" />
+      {showSlowHint ? (
+        <Text style={hintStyle}>{t('auth.hydrationTakingLong')}</Text>
+      ) : null}
+    </View>
+  );
+};
 
 /**
  * Root navigator that switches between Auth and role-specific flows
@@ -71,10 +105,27 @@ const HydrationSplash = (): React.JSX.Element => (
  * @returns JSX element for the root navigator.
  */
 export const RootNavigator = (): React.JSX.Element => {
+  const dispatch = useAppDispatch();
+  const {t} = useTranslation();
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
   const isHydrating = useAppSelector(state => state.auth.isHydrating);
   const papeis = useAppSelector(state => state.auth.papeis);
   const motoristaId = useAppSelector(state => state.auth.motoristaId);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isHydrating) return;
+    const id = setTimeout(() => {
+      dispatch(logout());
+      dispatch(
+        addToast({
+          id: `hydration-ui-failsafe-${Date.now()}`,
+          message: t('errors.hydrationTimeout'),
+          type: 'warning',
+        }),
+      );
+    }, HYDRATION_UI_FAILSAFE_MS);
+    return () => clearTimeout(id);
+  }, [dispatch, isAuthenticated, isHydrating, t]);
 
   // Block rendering until getMe() resolves — prevents driver → passenger flash
   if (isAuthenticated && isHydrating) {

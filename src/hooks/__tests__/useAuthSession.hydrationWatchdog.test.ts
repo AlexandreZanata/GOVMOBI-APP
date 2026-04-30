@@ -123,4 +123,19 @@ describe('useAuthSession — hydration watchdog', () => {
       true,
     );
   });
+
+  it('clears isHydrating on unmount so Strict Mode / remount cannot leave a stuck splash', () => {
+    const store = buildAuthenticatedStore();
+
+    const {unmount} = renderHook(() => useAuthSession(), {
+      wrapper: ({children}) =>
+        React.createElement(Provider, {store, children}),
+    });
+
+    expect(store.getState().auth.isHydrating).toBe(true);
+
+    unmount();
+
+    expect(store.getState().auth.isHydrating).toBe(false);
+  });
 });

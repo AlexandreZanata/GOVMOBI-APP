@@ -20,6 +20,10 @@ import type {
 } from '../../types/pesquisa';
 import {type FacadeConfig, type FacadeError, type Result} from './types';
 import {ENV} from '../../config/env';
+import {
+  AUTH_HTTP_TIMEOUT_MS,
+  fetchWithAbortTimeout,
+} from '@services/http/fetchWithAbortTimeout';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -398,9 +402,11 @@ export class PesquisaFacadeImpl implements IPesquisaFacade {
         url: `${this.apiBaseUrl}/pesquisa/config`,
         hasAuth: 'Authorization' in headers,
       });
-      const res = await fetch(`${this.apiBaseUrl}/pesquisa/config`, {
-        headers,
-      });
+      const res = await fetchWithAbortTimeout(
+        `${this.apiBaseUrl}/pesquisa/config`,
+        {headers},
+        AUTH_HTTP_TIMEOUT_MS,
+      );
 
       console.info('[PesquisaFacade] /pesquisa/config status:', res.status);
 

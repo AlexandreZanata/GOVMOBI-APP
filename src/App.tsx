@@ -4,7 +4,7 @@
 // Must be the first import — patches TurboModuleRegistry.getEnforcing so
 // optional native modules (OneSignal) fail silently instead of logging ERROR.
 import './polyfills/turboModuleGuard';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Provider} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
@@ -62,18 +62,14 @@ AppStartupEffects.displayName = 'AppStartupEffects';
  */
 const AppShell = (): React.JSX.Element => {
   const themeMode = useAppSelector(state => state.ui.themeMode);
-  const token = useAppSelector(state => state.auth.token);
   const dispatch = useAppDispatch();
 
-  // Keep a ref to the latest token so the getter stays stable across token
-  // rotations. A new function reference would cause FacadeProvider to recreate
-  // all facades (including RealtimeFacadeImpl), destroying active WebSocket
-  // subscriptions and preventing drivers from receiving nova-corrida-disponivel.
-  const tokenRef = useRef(token);
-  tokenRef.current = token;
-
-  // Stable getter — never changes reference, always returns the latest token.
-  const getToken = useCallback(() => tokenRef.current, []);
+  // Stable getter — same function identity forever (facades are not recreated),
+  // but always reads the current access token from the Redux store. That keeps
+  // Authorization headers correct in the same tick as `dispatch(tokenRefreshed)`
+  // during cold-start hydration (refresh → getMe → PATCH status) — critical for
+  // motoristas where a stale ref would send an old JWT to /frota after refresh.
+  const getToken = useCallback((): string | null => store.getState().auth.token, []);
 
   /**
    * Token refresher for the realtime transport's 401 recovery cycle.
@@ -82,7 +78,7 @@ const AppShell = (): React.JSX.Element => {
    * promise — preventing duplicate refresh calls (P3, P7).
    */
   const refreshToken = useCallback(async (): Promise<string | null> => {
-    const currentToken = tokenRef.current;
+    const currentToken = store.getState().auth.token;
     if (!currentToken) return null;
 
     // Decode expiry from the current token.

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Hook that keeps the authentication session healthy.
  *
- * Three complementary mechanisms:
+ * Mechanisms:
  *
  * 1. **Cold-start hydration** — on mount, if authenticated, always calls
  *    `getMe()` to rehydrate `motoristaId`/`municipioId`/`papeis` from the
@@ -26,6 +26,11 @@
  *    so cold-start hydration always clears `isHydrating` even if a request hangs.
  *    On timeout: `logout()`, i18n toast (`errors.hydrationTimeout`), and in-flight
  *    `doGetMe` work is ignored via an `isStale` guard.
+ *
+ * 6. **Effect lifecycle** — On unmount (e.g. React Strict Mode dev double-mount),
+ *    the watchdog timer is cleared, `isHydrating` is forced false, and a generation
+ *    counter invalidates stale async work so the UI cannot remain on the splash
+ *    if the effect re-runs or the component tree is torn down mid-hydration.
  */
 import {useEffect, useRef} from 'react';
 import {useFacades} from '@services/facades';
@@ -122,6 +127,10 @@ export const useAuthSession = (): void => {
   const statusOperacional = useAppSelector(state => state.auth.statusOperacional);
 
   const hasHydratedRef = useRef(false);
+  /** Incremented on effect cleanup — invalidates in-flight hydration + watchdog. */
+  const hydrationGenerationRef = useRef(0);
+  /** Watchdog handle cleared on unmount so a stale timer cannot logout after remount. */
+  const hydrationWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stable ref so async callbacks always read the latest persisted status
   // without needing to be re-created when statusOperacional changes.
@@ -208,15 +217,21 @@ export const useAuthSession = (): void => {
    * `OFFLINE` is only kept when the driver explicitly set it themselves.
    *
    * @param isStale - When true, skips Redux updates (hydration watchdog invalidated this run).
+   * @param accessTokenForMe - JWT for `GET /auth/me` — pass the token returned from
+   *   `refreshToken()` when hydration refreshed, since the hook's `token` selector
+   *   may not have re-rendered yet (motorista chain: refresh → getMe → PATCH).
    * @returns True on success, false on failure (session ended).
    */
-  const doGetMe = async (isStale?: () => boolean): Promise<boolean> => {
+  const doGetMe = async (
+    isStale?: () => boolean,
+    accessTokenForMe?: string | null,
+  ): Promise<boolean> => {
     if (isStale?.()) return false;
     // Snapshot the persisted status BEFORE getMe() can overwrite it.
     // This is the driver's last known intent from the previous session.
     const previousStatus = statusOperacionalRef.current;
 
-    const currentToken = token;
+    const currentToken = accessTokenForMe ?? token;
     const meResult = await authFacade.getMe(currentToken ?? undefined);
     if (isStale?.()) return false;
     if (!meResult.data) {
@@ -328,14 +343,21 @@ export const useAuthSession = (): void => {
     if (hasHydratedRef.current) return;
     hasHydratedRef.current = true;
 
+    const sessionGenAtStart = hydrationGenerationRef.current;
+
     const hydrate = async (): Promise<void> => {
       dispatch(setIsHydrating(true));
       let hydrationActive = true;
-      const isStale = (): boolean => !hydrationActive;
+      const isStale = (): boolean =>
+        !hydrationActive || sessionGenAtStart !== hydrationGenerationRef.current;
 
-      let timeoutId: ReturnType<typeof setTimeout> | undefined;
       const watchdogPromise = new Promise<'timeout'>((resolve) => {
-        timeoutId = setTimeout(() => {
+        hydrationWatchdogRef.current = setTimeout(() => {
+          hydrationWatchdogRef.current = null;
+          if (sessionGenAtStart !== hydrationGenerationRef.current) {
+            resolve('timeout');
+            return;
+          }
           hydrationActive = false;
           logger.warn(
             'useAuthSession',
@@ -354,29 +376,52 @@ export const useAuthSession = (): void => {
       });
 
       const runWork = async (): Promise<void> => {
+        let accessTokenForMe: string | null = token;
         // Refresh token first if it's expired or expiring soon
         if (isTokenExpiringSoon(token, REFRESH_THRESHOLD_SECONDS)) {
           const newToken = await doRefresh();
           if (!newToken) return; // logout already dispatched
           if (isStale()) return;
+          accessTokenForMe = newToken;
         }
         // Always call getMe on cold start — ensures motoristaId is current
         // even if user object was already persisted from a previous session.
-        await doGetMe(isStale);
+        await doGetMe(isStale, accessTokenForMe);
       };
 
       try {
-        await Promise.race([runWork().then(() => 'ok' as const), watchdogPromise]);
+        await Promise.race([
+          runWork()
+            .then((): 'ok' => 'ok')
+            .catch((err: unknown) => {
+              logger.error('useAuthSession', 'Hydration run failed', err);
+              return 'err' as const;
+            }),
+          watchdogPromise,
+        ]);
       } finally {
-        if (timeoutId !== undefined) {
-          clearTimeout(timeoutId);
+        if (hydrationWatchdogRef.current !== null) {
+          clearTimeout(hydrationWatchdogRef.current);
+          hydrationWatchdogRef.current = null;
         }
         hydrationActive = false;
-        dispatch(setIsHydrating(false));
+        if (sessionGenAtStart === hydrationGenerationRef.current) {
+          dispatch(setIsHydrating(false));
+        }
       }
     };
 
     void hydrate();
+
+    return () => {
+      if (hydrationWatchdogRef.current !== null) {
+        clearTimeout(hydrationWatchdogRef.current);
+        hydrationWatchdogRef.current = null;
+      }
+      hydrationGenerationRef.current += 1;
+      hasHydratedRef.current = false;
+      dispatch(setIsHydrating(false));
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
