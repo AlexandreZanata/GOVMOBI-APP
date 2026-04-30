@@ -131,6 +131,8 @@ export const ProfileScreen = (): React.JSX.Element => {
             {avatarUrl ? (
               <Image
                 accessibilityElementsHidden
+                key={avatarUrl}
+                resizeMode="cover"
                 source={{uri: avatarUrl}}
                 style={styles.avatarImage}
                 testID="profile-avatar-image"

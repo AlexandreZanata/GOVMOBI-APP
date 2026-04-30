@@ -9,6 +9,7 @@ import {type Servidor} from '../../models';
 import {type GetServidorByIdInput} from '../../types/servidores';
 import {type FacadeConfig, type FacadeError, type Result} from './types';
 import {ENV} from '../../config/env';
+import {resolvePublicMediaUrl} from '@utils/resolvePublicMediaUrl';
 
 /** Response from PATCH /servidores/me/foto-perfil */
 export interface FotoPerfilResponse {
@@ -281,7 +282,9 @@ export class ServidoresFacadeImpl implements IServidoresFacade {
       }
 
       const data = (await res.json()) as FotoPerfilResponse;
-      return ok(data);
+      const fotoPerfilUrl =
+        resolvePublicMediaUrl(data.fotoPerfilUrl, this.apiBaseUrl) ?? data.fotoPerfilUrl;
+      return ok({fotoPerfilUrl});
     } catch (err) {
       console.error('[ServidoresFacade] patchFoto EXCEPTION →', err);
       return fail({code: 'NETWORK_ERROR', message: 'Erro de rede ao enviar foto.', retryable: true});

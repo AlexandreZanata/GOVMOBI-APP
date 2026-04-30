@@ -92,7 +92,7 @@ export const useProfile = (): ProfileState => {
 
     // Open picker — allow JPEG, PNG, WebP; no editing to keep it simple
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.85,
@@ -122,7 +122,7 @@ export const useProfile = (): ProfileState => {
       return;
     }
 
-    // Persist the new URL in Redux so the avatar re-renders immediately
+    // Persist the new URL in Redux (facade rewrites loopback hosts for devices)
     dispatch(setAvatarUrl(uploadResult.data.fotoPerfilUrl));
     setPhotoFeedback({type: 'success', messageKey: 'profile.photo.uploadSuccess'});
     setTimeout(() => setPhotoFeedback(null), 4000);

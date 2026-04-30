@@ -13,6 +13,7 @@ import {
   AUTH_HTTP_TIMEOUT_MS,
   fetchWithAbortTimeout,
 } from '@services/http/fetchWithAbortTimeout';
+import {resolvePublicMediaUrl} from '@utils/resolvePublicMediaUrl';
 
 const ACCESS_TOKEN_KEY = 'govmobile_access_token';
 const REFRESH_TOKEN_KEY = 'govmobile_refresh_token';
@@ -58,6 +59,8 @@ export interface MeResponse {
   municipioId?: string;
   /** Present only for MOTORISTA users. Current operational status. */
   statusOperacional?: import('../../models/Motorista').MotoristaStatusOperacional;
+  /** Public URL for profile photo (may reference localhost — rewrite on device). */
+  fotoPerfilUrl?: string | null;
 }
 
 export interface AuthSession {
@@ -184,7 +187,7 @@ function userFromJwt(payload: JwtPayload): User {
  * @param me - Raw API response from /auth/me.
  * @returns User model with role derived from `papeis`.
  */
-function userFromMe(me: MeResponse): User {
+function userFromMe(me: MeResponse, apiBaseUrl: string): User {
   const roleMap: Record<string, UserRole> = {
     ADMIN: UserRole.ADMIN,
     USUARIO: UserRole.OFFICER,
@@ -192,6 +195,8 @@ function userFromMe(me: MeResponse): User {
   };
   const role =
     me.papeis.map(p => roleMap[p]).find(Boolean) ?? UserRole.OFFICER;
+
+  const avatarUrl = resolvePublicMediaUrl(me.fotoPerfilUrl, apiBaseUrl);
 
   return {
     id: me.id,
@@ -203,6 +208,7 @@ function userFromMe(me: MeResponse): User {
     departmentName: '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    ...(avatarUrl !== undefined ? {avatarUrl} : {}),
   };
 }
 
@@ -279,7 +285,7 @@ export class AuthFacadeImpl implements IAuthFacade {
       // Fetch the full user profile from /auth/me using the new token.
       const meResult = await this.getMe();
       const user = meResult.data
-        ? userFromMe(meResult.data)
+        ? userFromMe(meResult.data, this.apiBaseUrl)
         : userFromJwt(decodeJwtPayload(tokens.accessToken));
 
       const session: AuthSession = {
@@ -436,7 +442,7 @@ export class AuthFacadeImpl implements IAuthFacade {
       }
 
       const me = (await response.json()) as MeResponse;
-      this.currentUser = userFromMe(me);
+      this.currentUser = userFromMe(me, this.apiBaseUrl);
       return ok(me);
     } catch (err) {
       const isTimeout = err instanceof Error && err.name === 'AbortError';

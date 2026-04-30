@@ -48,6 +48,8 @@ import {logger} from '@utils/logger';
 import {getValidToken} from '@utils/tokenUtils';
 import {setOneSignalExternalUserId, setOneSignalUserTags} from '@services/notifications/OneSignalService';
 import {HYDRATION_WATCHDOG_MS} from '@services/http/fetchWithAbortTimeout';
+import {resolvePublicMediaUrl} from '@utils/resolvePublicMediaUrl';
+import {ENV} from '../config/env';
 
 /** How often (ms) to check whether the token needs proactive refresh. */
 const CHECK_INTERVAL_MS = 60_000;
@@ -228,6 +230,7 @@ export const useAuthSession = (): void => {
       ADMIN: UserRole.ADMIN,
       USUARIO: UserRole.OFFICER,
     };
+    const avatarUrl = resolvePublicMediaUrl(me.fotoPerfilUrl, ENV.apiUrl);
     dispatch(setUser({
       id: me.id,
       fullName: me.nome,
@@ -236,6 +239,7 @@ export const useAuthSession = (): void => {
       status: UserStatus.ACTIVE,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      ...(avatarUrl !== undefined ? {avatarUrl} : {}),
     }));
     dispatch(setPapeis(me.papeis));
     dispatch(setMotoristaId(me.motoristaId ?? null));
