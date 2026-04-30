@@ -1,10 +1,5 @@
 /**
- * @fileoverview JavaScript entry module for application startup.
+ * @fileoverview Shim — real entry is index.js (package.json "main").
+ * Keeps older tooling that resolves `App.js` from breaking the bundle.
  */
-import { registerRootComponent } from 'expo';
-import App from './src/App';
-
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+import './index.js';
