@@ -1,18 +1,32 @@
 /**
  * @fileoverview CorridaDetalheScreen — full ride details view (read-only).
  *
+ * Header is rendered inline (navy, title centred, back arrow always navigates
+ * to the role's home tab — same pattern as CorridaMensagensScreen).
+ *
  * Label sits above value (column layout). Driver rating uses the same
  * star widget as the profile screen. No icons on data rows.
  */
-import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
-import {useRoute, type RouteProp} from '@react-navigation/native';
+import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
+import type {CompositeNavigationProp} from '@react-navigation/native';
+import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTheme} from '../../theme';
 import {createCorridasStyles} from './CorridasScreens.styles';
 import {useFacades} from '@services/facades';
+import {useAppSelector} from '../../store';
 import type {Corrida} from '@models/Corrida';
 import type {
   PassageiroCorridasStackParamList,
@@ -22,6 +36,29 @@ import type {
 type RouteProps =
   | RouteProp<PassageiroCorridasStackParamList, 'CorridaDetalhe'>
   | RouteProp<MotoristaCorridasStackParamList, 'MotoristaCorridaDetalhe'>;
+
+// Tab param lists — used to navigate back to the correct home tab.
+type PassageiroTabParamList = {
+  PassageiroHome: undefined;
+  PassageiroCorridas: undefined;
+  PassageiroNotificacoes: undefined;
+  PassageiroProfile: undefined;
+};
+type MotoristaTabParamList = {
+  MotoristaHome: undefined;
+  MotoristaCorridas: undefined;
+  MotoristaNotificacoes: undefined;
+  MotoristaProfile: undefined;
+};
+
+type PassageiroNavProp = CompositeNavigationProp<
+  NativeStackNavigationProp<PassageiroCorridasStackParamList>,
+  BottomTabNavigationProp<PassageiroTabParamList>
+>;
+type MotoristaNavProp = CompositeNavigationProp<
+  NativeStackNavigationProp<MotoristaCorridasStackParamList>,
+  BottomTabNavigationProp<MotoristaTabParamList>
+>;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -93,15 +130,18 @@ const StarRow = ({rating, color}: {rating: number; color: string}): React.JSX.El
  * Full corrida details screen — shared between passenger and driver.
  * Always shows human-readable addresses; never raw coordinates.
  *
+ * The back button always navigates to the role's home tab (map screen).
+ *
  * @returns JSX element for the CorridaDetalheScreen.
  */
 export const CorridaDetalheScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
+  const navigation = useNavigation<PassageiroNavProp | MotoristaNavProp>();
   const {corridaId} = route.params as {corridaId: string};
   const {corridaFacade} = useFacades();
+  const motoristaId = useAppSelector(s => s.auth.motoristaId);
 
   const sharedStyles = useMemo(() => createCorridasStyles(theme), [theme]);
   const s = useMemo(() => createLocalStyles(theme), [theme]);
@@ -110,6 +150,28 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedRef = useRef(false);
+
+  // Hide the navigator header — we render our own inline header.
+  useLayoutEffect(() => {
+    navigation.setOptions({headerShown: false});
+  }, [navigation]);
+
+  /**
+   * Always navigates to the role's home tab (map screen).
+   * Motorista → MotoristaHome, Passageiro → PassageiroHome.
+   */
+  const navigateToHome = (): void => {
+    const tabNav = navigation.getParent();
+    if (tabNav) {
+      if (motoristaId) {
+        (tabNav as BottomTabNavigationProp<MotoristaTabParamList>).navigate('MotoristaHome');
+      } else {
+        (tabNav as BottomTabNavigationProp<PassageiroTabParamList>).navigate('PassageiroHome');
+      }
+    } else {
+      navigation.goBack();
+    }
+  };
 
   useEffect(() => {
     if (loadedRef.current) return;
@@ -139,119 +201,134 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (isLoading) {
-    return (
-      <View style={[sharedStyles.container, sharedStyles.emptyContainer]} testID="detalhe-loading">
-        <ActivityIndicator color={theme.colors.primary} size="large" />
-      </View>
-    );
-  }
-
-  if (error || !corrida) {
-    return (
-      <View style={[sharedStyles.container, sharedStyles.emptyContainer]} testID="detalhe-error">
-        <MaterialIcons name="error-outline" size={48} color={theme.colors.error} />
-        <Text style={sharedStyles.emptyTitle}>{error ?? t('errors.unknownError')}</Text>
-      </View>
-    );
-  }
-
   const fieldProps = {
     labelStyle: s.label,
     valueStyle: s.value,
     fieldStyle: s.field,
   };
 
-  const ts = corrida.timestamps;
+  const ts = corrida?.timestamps;
 
   return (
-    <View style={[sharedStyles.container, {paddingBottom: insets.bottom}]} testID="detalhe-screen">
-      <ScrollView contentContainerStyle={sharedStyles.scrollContent} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={s.safeArea} testID="detalhe-screen">
+      {/* ── Inline header — navy, title centred, back → home ── */}
+      <View style={s.header}>
+        <Pressable
+          accessibilityLabel={t('common.back')}
+          accessibilityRole="button"
+          hitSlop={12}
+          onPress={navigateToHome}
+          style={s.headerBack}
+          testID="detalhe-back-home">
+          <MaterialIcons color={theme.design.textOnDark} name="arrow-back" size={22} />
+        </Pressable>
+        <Text style={s.headerTitle} numberOfLines={1}>
+          {t('corridas.detail.title')}
+        </Text>
+        <View style={s.headerSpacer} />
+      </View>
 
-        {/* Route card */}
-        <View style={sharedStyles.card} testID="route-card">
-          <Text style={sharedStyles.cardTitle}>{t('corridas.detail.route')}</Text>
-          <InfoField
-            {...fieldProps}
-            label={t('corridas.detail.origem')}
-            value={corrida.origemEndereco ?? t('corridas.detail.addressUnavailable')}
-          />
-          <InfoField
-            {...fieldProps}
-            label={t('corridas.detail.destino')}
-            value={corrida.destinoEndereco ?? t('corridas.detail.addressUnavailable')}
-          />
-          {corrida.distanciaMetros != null && corrida.distanciaMetros > 0 ? (
-            <InfoField {...fieldProps} label={t('corridas.detail.distancia')} value={formatDistance(corrida.distanciaMetros)} />
-          ) : null}
-          {corrida.duracaoSegundos != null && corrida.duracaoSegundos > 0 ? (
-            <InfoField {...fieldProps} label={t('corridas.detail.duracao')} value={formatDuration(corrida.duracaoSegundos)} />
-          ) : null}
-          {corrida.motivoServico ? (
-            <InfoField {...fieldProps} label={t('corridas.detail.motivo')} value={corrida.motivoServico} />
-          ) : null}
-          {corrida.observacoes ? (
-            <InfoField {...fieldProps} label={t('corridas.detail.observacoes')} value={corrida.observacoes} />
-          ) : null}
+      {/* ── Content ── */}
+      {isLoading ? (
+        <View style={[sharedStyles.container, sharedStyles.emptyContainer]} testID="detalhe-loading">
+          <ActivityIndicator color={theme.colors.primary} size="large" />
         </View>
+      ) : error || !corrida ? (
+        <View style={[sharedStyles.container, sharedStyles.emptyContainer]} testID="detalhe-error">
+          <MaterialIcons name="error-outline" size={48} color={theme.colors.error} />
+          <Text style={sharedStyles.emptyTitle}>{error ?? t('errors.unknownError')}</Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={sharedStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          style={s.scrollView}>
 
-        {/* Vehicle card */}
-        {corrida.veiculo ? (
-          <View style={sharedStyles.card} testID="veiculo-card">
-            <Text style={sharedStyles.cardTitle}>{t('corridas.detail.veiculo')}</Text>
-            {corrida.veiculo.modelo ? (
-              <InfoField
-                {...fieldProps}
-                label={t('corridas.detail.modelo')}
-                value={`${corrida.veiculo.modelo}${corrida.veiculo.ano ? ` (${corrida.veiculo.ano})` : ''}`}
-              />
+          {/* Route card */}
+          <View style={sharedStyles.card} testID="route-card">
+            <Text style={sharedStyles.cardTitle}>{t('corridas.detail.route')}</Text>
+            <InfoField
+              {...fieldProps}
+              label={t('corridas.detail.origem')}
+              value={corrida.origemEndereco ?? t('corridas.detail.addressUnavailable')}
+            />
+            <InfoField
+              {...fieldProps}
+              label={t('corridas.detail.destino')}
+              value={corrida.destinoEndereco ?? t('corridas.detail.addressUnavailable')}
+            />
+            {corrida.distanciaMetros != null && corrida.distanciaMetros > 0 ? (
+              <InfoField {...fieldProps} label={t('corridas.detail.distancia')} value={formatDistance(corrida.distanciaMetros)} />
             ) : null}
-            {corrida.veiculo.placa ? (
-              <InfoField {...fieldProps} label={t('corridas.detail.placa')} value={corrida.veiculo.placa} />
+            {corrida.duracaoSegundos != null && corrida.duracaoSegundos > 0 ? (
+              <InfoField {...fieldProps} label={t('corridas.detail.duracao')} value={formatDuration(corrida.duracaoSegundos)} />
+            ) : null}
+            {corrida.motivoServico ? (
+              <InfoField {...fieldProps} label={t('corridas.detail.motivo')} value={corrida.motivoServico} />
+            ) : null}
+            {corrida.observacoes ? (
+              <InfoField {...fieldProps} label={t('corridas.detail.observacoes')} value={corrida.observacoes} />
             ) : null}
           </View>
-        ) : null}
 
-        {/* Driver card — star rating widget */}
-        {corrida.motorista && corrida.motorista.notaMedia != null ? (
-          <View style={sharedStyles.card} testID="motorista-card">
-            <Text style={sharedStyles.cardTitle}>{t('corridas.detail.motoristaNome')}</Text>
-            <Text style={s.label}>{t('avaliacoes.minhaNota.mediaLabel')}</Text>
-            <View style={s.starsRow} testID="motorista-rating">
-              <StarRow rating={corrida.motorista.notaMedia} color={theme.design.amber500} />
-              <Text style={s.ratingScore}>{corrida.motorista.notaMedia.toFixed(1)}</Text>
-              <Text style={s.ratingCount}>
-                {t('avaliacoes.minhaNota.totalCount', {count: corrida.motorista.totalAvaliacoes ?? 0})}
-              </Text>
+          {/* Vehicle card */}
+          {corrida.veiculo ? (
+            <View style={sharedStyles.card} testID="veiculo-card">
+              <Text style={sharedStyles.cardTitle}>{t('corridas.detail.veiculo')}</Text>
+              {corrida.veiculo.modelo ? (
+                <InfoField
+                  {...fieldProps}
+                  label={t('corridas.detail.modelo')}
+                  value={`${corrida.veiculo.modelo}${corrida.veiculo.ano ? ` (${corrida.veiculo.ano})` : ''}`}
+                />
+              ) : null}
+              {corrida.veiculo.placa ? (
+                <InfoField {...fieldProps} label={t('corridas.detail.placa')} value={corrida.veiculo.placa} />
+              ) : null}
             </View>
+          ) : null}
+
+          {/* Driver card — star rating widget */}
+          {corrida.motorista && corrida.motorista.notaMedia != null ? (
+            <View style={sharedStyles.card} testID="motorista-card">
+              <Text style={sharedStyles.cardTitle}>{t('corridas.detail.motoristaNome')}</Text>
+              <Text style={s.label}>{t('avaliacoes.minhaNota.mediaLabel')}</Text>
+              <View style={s.starsRow} testID="motorista-rating">
+                <StarRow rating={corrida.motorista.notaMedia} color={theme.design.amber500} />
+                <Text style={s.ratingScore}>{corrida.motorista.notaMedia.toFixed(1)}</Text>
+                <Text style={s.ratingCount}>
+                  {t('avaliacoes.minhaNota.totalCount', {count: corrida.motorista.totalAvaliacoes ?? 0})}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {/* Timeline card */}
+          {ts ? (
+            <View style={sharedStyles.card} testID="timestamps-card">
+              <Text style={sharedStyles.cardTitle}>{t('corridas.detail.timestamps')}</Text>
+              {fmtTs(ts.solicitadaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.solicitadaEm')} value={fmtTs(ts.solicitadaEm)!} /> : null}
+              {fmtTs(ts.aceitaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.aceitaEm')} value={fmtTs(ts.aceitaEm)!} /> : null}
+              {fmtTs(ts.iniciadaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.iniciadaEm')} value={fmtTs(ts.iniciadaEm)!} /> : null}
+              {fmtTs(ts.embarqueEm) ? <InfoField {...fieldProps} label={t('corridas.detail.embarqueEm')} value={fmtTs(ts.embarqueEm)!} /> : null}
+              {fmtTs(ts.finalizadaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.finalizadaEm')} value={fmtTs(ts.finalizadaEm)!} /> : null}
+              {fmtTs(ts.canceladaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.canceladaEm')} value={fmtTs(ts.canceladaEm)!} /> : null}
+            </View>
+          ) : null}
+
+          {/* Metadata */}
+          <View style={sharedStyles.card} testID="meta-card">
+            <Text style={sharedStyles.cardTitle}>{t('corridas.detail.metadata')}</Text>
+            <InfoField
+              {...fieldProps}
+              label={t('corridas.detail.createdAt')}
+              value={new Date(corrida.createdAt).toLocaleString('pt-BR')}
+            />
           </View>
-        ) : null}
 
-        {/* Timeline card */}
-        {ts ? (
-          <View style={sharedStyles.card} testID="timestamps-card">
-            <Text style={sharedStyles.cardTitle}>{t('corridas.detail.timestamps')}</Text>
-            {fmtTs(ts.solicitadaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.solicitadaEm')} value={fmtTs(ts.solicitadaEm)!} /> : null}
-            {fmtTs(ts.aceitaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.aceitaEm')} value={fmtTs(ts.aceitaEm)!} /> : null}
-            {fmtTs(ts.iniciadaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.iniciadaEm')} value={fmtTs(ts.iniciadaEm)!} /> : null}
-            {fmtTs(ts.embarqueEm) ? <InfoField {...fieldProps} label={t('corridas.detail.embarqueEm')} value={fmtTs(ts.embarqueEm)!} /> : null}
-            {fmtTs(ts.finalizadaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.finalizadaEm')} value={fmtTs(ts.finalizadaEm)!} /> : null}
-            {fmtTs(ts.canceladaEm) ? <InfoField {...fieldProps} label={t('corridas.detail.canceladaEm')} value={fmtTs(ts.canceladaEm)!} /> : null}
-          </View>
-        ) : null}
-
-        {/* Metadata */}
-        <View style={sharedStyles.card} testID="meta-card">
-          <Text style={sharedStyles.cardTitle}>{t('corridas.detail.metadata')}</Text>
-          <InfoField
-            {...fieldProps}
-            label={t('corridas.detail.createdAt')}
-            value={new Date(corrida.createdAt).toLocaleString('pt-BR')}
-          />
-        </View>
-
-      </ScrollView>
-    </View>
+        </ScrollView>
+      )}
+    </SafeAreaView>
   );
 };
 
@@ -264,6 +341,40 @@ CorridaDetalheScreen.displayName = 'CorridaDetalheScreen';
 const createLocalStyles = (theme: ReturnType<typeof useTheme>) => {
   /* eslint-disable react-native/no-unused-styles */
   return StyleSheet.create({
+    // ── Root ─────────────────────────────────────────────────────────────────
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.design.navy800,
+    },
+    scrollView: {
+      backgroundColor: theme.design.surface200,
+    },
+
+    // ── Inline header — navy, title centred ───────────────────────────────────
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.design.navy800,
+      paddingHorizontal: theme.spacing[5],
+      paddingVertical: theme.spacing[4],
+    },
+    headerBack: {
+      width: 32,
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      flex: 1,
+      ...theme.typography.scale.headingLg,
+      color: theme.design.textOnDark,
+      textAlign: 'center',
+    },
+    /** Mirror of headerBack — keeps the title visually centred. */
+    headerSpacer: {
+      width: 32,
+    },
+
+    // ── Field rows ────────────────────────────────────────────────────────────
     /** Column container: label on top, value below, with bottom spacing. */
     field: {
       flexDirection: 'column',
@@ -278,6 +389,8 @@ const createLocalStyles = (theme: ReturnType<typeof useTheme>) => {
       ...theme.typography.scale.bodyMd,
       color: theme.colors.text,
     },
+
+    // ── Star rating ───────────────────────────────────────────────────────────
     /** Star row — same layout as ProfileScreen ratingStarsRow. */
     starsRow: {
       flexDirection: 'row',
