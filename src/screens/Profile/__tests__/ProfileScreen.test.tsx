@@ -1,12 +1,11 @@
 /**
- * @fileoverview POC tests for the redesigned ProfileScreen.
+ * @fileoverview Tests for the redesigned ProfileScreen.
  *
  * Covers:
  * 1. Render — hero header, avatar, name, email, role badge, all cards
- * 2. Edit flow — toggle edit, change name, save dispatches setUser
- * 3. Cancel edit — resets name to original
- * 4. Sign-out — dispatches logout
- * 5. Settings navigation — navigates to Settings screen
+ * 2. Name field is read-only (edit/pencil removed — not supported by backend)
+ * 3. Sign-out — dispatches logout
+ * 4. Settings navigation — navigates to Settings screen
  */
 import React from 'react';
 import {
@@ -246,33 +245,24 @@ describe('ProfileScreen', () => {
     });
   });
 
-  // ── 2. Edit flow ───────────────────────────────────────────────────────────
+  // ── 2. Edit flow (removed — name editing not supported by backend) ────────
+  // The edit button and name input were removed. The name is now read-only.
 
-  describe('edit flow', () => {
-    it('shows text input when edit button is pressed', async () => {
+  describe('name field is read-only', () => {
+    it('does not render the edit toggle button', async () => {
       await renderScreen();
-      fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-      expect(screen.getByTestId('profile-name-input')).toBeTruthy();
+      expect(screen.queryByTestId('profile-edit-toggle')).toBeNull();
     });
 
-    it('saves updated name and dispatches setUser', async () => {
-      const {store} = await renderScreen();
-      fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-      fireEvent.changeText(screen.getByTestId('profile-name-input'), 'Ana Costa');
-      fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-      await waitFor(() => {
-        expect(store.getState().auth.user?.fullName).toBe('Ana Costa');
-      });
+    it('does not render a name text input', async () => {
+      await renderScreen();
+      expect(screen.queryByTestId('profile-name-input')).toBeNull();
     });
 
-    it('hides text input after saving', async () => {
+    it('renders the name as a static value', async () => {
       await renderScreen();
-      fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-      fireEvent.changeText(screen.getByTestId('profile-name-input'), 'Ana Costa');
-      fireEvent.press(screen.getByTestId('profile-edit-toggle'));
-      await waitFor(() => {
-        expect(screen.queryByTestId('profile-name-input')).toBeNull();
-      });
+      expect(screen.getByTestId('profile-name-value')).toBeTruthy();
+      expect(screen.getByTestId('profile-name-value').props.children).toBe('Ana Silva');
     });
   });
 

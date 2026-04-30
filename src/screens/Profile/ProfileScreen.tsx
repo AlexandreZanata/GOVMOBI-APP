@@ -86,10 +86,6 @@ export const ProfileScreen = (): React.JSX.Element => {
 
   const {
     displayName,
-    setDisplayName,
-    isEditing,
-    toggleEdit,
-    saveProfile,
     signOut,
     senhaAntiga,
     setSenhaAntiga,
@@ -150,31 +146,8 @@ export const ProfileScreen = (): React.JSX.Element => {
             </View>
             <View style={styles.rowContent}>
               <Text style={styles.rowLabel}>{t('profile.fields.name')}</Text>
-              {isEditing ? (
-                <TextInput
-                  accessibilityLabel={t('profile.fields.name')}
-                  autoFocus
-                  onChangeText={setDisplayName}
-                  style={styles.input}
-                  testID="profile-name-input"
-                  value={displayName}
-                />
-              ) : (
-                <Text style={styles.rowValue} testID="profile-name-value">{displayName}</Text>
-              )}
+              <Text style={styles.rowValue} testID="profile-name-value">{displayName}</Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={isEditing ? t('profile.save') : t('profile.edit')}
-              onPress={isEditing ? () => void saveProfile() : toggleEdit}
-              style={styles.editButton}
-              testID="profile-edit-toggle">
-              <MaterialIcons
-                color={isEditing ? design.blue500 : design.textTertiary}
-                name={isEditing ? 'check' : 'edit'}
-                size={20}
-              />
-            </Pressable>
           </View>
           <View style={[styles.row, styles.rowLast]}>
             <View style={styles.rowIcon}>

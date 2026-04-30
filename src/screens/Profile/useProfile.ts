@@ -1,14 +1,14 @@
 /**
  * @fileoverview Hook for the ProfileScreen.
  *
- * Manages profile edit state, save/logout actions, and the change-password flow.
+ * Manages profile state, logout action, and the change-password flow.
  * Feedback is surfaced via inline state (no global toasts).
+ * Name editing is not supported by the backend — display name is read-only.
  */
 import {useCallback, useState} from 'react';
 import {useAppDispatch, useAppSelector} from '../../store';
-import {logout, setUser} from '@store/slices/authSlice';
+import {logout} from '@store/slices/authSlice';
 import {useFacades} from '@services/facades';
-import {useTranslation} from 'react-i18next';
 
 /** Inline feedback for the change-password form. */
 export type PasswordFeedback =
@@ -17,13 +17,8 @@ export type PasswordFeedback =
   | null;
 
 export interface ProfileState {
-  /** Current display name (may be in edit mode). */
+  /** Current display name (read-only, sourced from auth state). */
   displayName: string;
-  setDisplayName: (name: string) => void;
-  isEditing: boolean;
-  isSaving: boolean;
-  toggleEdit: () => void;
-  saveProfile: () => Promise<void>;
   signOut: () => void;
   /** Change-password form state. */
   senhaAntiga: string;
@@ -39,20 +34,18 @@ export interface ProfileState {
 }
 
 /**
- * Manages profile edit state, save/logout actions, and the change-password flow.
+ * Manages profile state, logout action, and the change-password flow.
+ * Name editing is not supported by the backend — the display name is read-only.
  * All feedback is returned as inline state — no global toast banners are dispatched.
  *
  * @returns {@link ProfileState}
  */
 export const useProfile = (): ProfileState => {
-  const {t} = useTranslation();
   const dispatch = useAppDispatch();
   const {authFacade} = useFacades();
   const user = useAppSelector(state => state.auth.user);
 
-  const [displayName, setDisplayName] = useState(user?.fullName ?? '');
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const displayName = user?.fullName ?? '';
 
   // Change-password form
   const [senhaAntiga, setSenhaAntiga] = useState('');
@@ -61,28 +54,6 @@ export const useProfile = (): ProfileState => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordFeedback, setPasswordFeedback] = useState<PasswordFeedback>(null);
 
-  const toggleEdit = useCallback(() => {
-    if (isEditing) {
-      setDisplayName(user?.fullName ?? '');
-    }
-    setIsEditing(prev => !prev);
-  }, [isEditing, user?.fullName]);
-
-  const saveProfile = useCallback(async (): Promise<void> => {
-    if (!user) return;
-    setIsSaving(true);
-
-    const extendedFacade = authFacade as typeof authFacade & {
-      updateProfile?: (input: {fullName: string}) => Promise<{error: unknown} | null>;
-    };
-    const result = await extendedFacade.updateProfile?.({fullName: displayName});
-    setIsSaving(false);
-
-    if (result?.error) return;
-
-    dispatch(setUser({...user, fullName: displayName}));
-    setIsEditing(false);
-  }, [authFacade, dispatch, displayName, user]);
 
   /**
    * Calls POST /auth/change-password via the auth facade.
@@ -123,20 +94,12 @@ export const useProfile = (): ProfileState => {
     setTimeout(() => setPasswordFeedback(null), 4000);
   }, [authFacade, confirmarSenha, novaSenha, senhaAntiga]);
 
-  // Keep t in scope for the interface but avoid unused-var lint
-  void t;
-
   const signOut = useCallback(() => {
     dispatch(logout());
   }, [dispatch]);
 
   return {
     displayName,
-    setDisplayName,
-    isEditing,
-    isSaving,
-    toggleEdit,
-    saveProfile,
     signOut,
     senhaAntiga,
     setSenhaAntiga,

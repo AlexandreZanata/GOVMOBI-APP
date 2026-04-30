@@ -189,13 +189,6 @@ export const createProfileStyles = (theme: Theme) => {
       paddingVertical: spacing[2],
     },
 
-    editButton: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 44,
-      minWidth: 44,
-    },
-
     // ── Password submit row ───────────────────────────────────────────────────
     pwdSubmitRow: {
       justifyContent: 'center',
