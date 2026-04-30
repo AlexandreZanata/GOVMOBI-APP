@@ -89,7 +89,7 @@ export const PassageiroIdleSheet = ({
       onLayout={onLayout}
       style={[
         styles.bottomSheet,
-        {paddingBottom, transform: [{translateY: sheetTranslate}]},
+        {transform: [{translateY: sheetTranslate}]},
       ]}
       testID="bottom-sheet">
       <View style={styles.dragHandle} />
@@ -175,7 +175,7 @@ export const PassageiroIdleSheet = ({
         }
         accessibilityRole="button"
         onPress={handleCta}
-        style={styles.ctaButton}
+        style={[styles.ctaButton, styles.ctaButtonLast]}
         testID="cta-solicitar">
         <Text style={styles.ctaButtonText}>
           {t('passageiro.bottomSheet.cta')}

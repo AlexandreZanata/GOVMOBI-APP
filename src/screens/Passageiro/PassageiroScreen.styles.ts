@@ -386,6 +386,10 @@ export const createPassageiroStyles = () =>
       shadowRadius: 16,
       elevation: 6,
     },
+    /** Applied only to the last CTA in the idle sheet — tight bottom margin. */
+    ctaButtonLast: {
+      marginBottom: 11,
+    },
     ctaButtonPressed: {
       backgroundColor: C.interactivePress,
       transform: [{scale: 0.98}],

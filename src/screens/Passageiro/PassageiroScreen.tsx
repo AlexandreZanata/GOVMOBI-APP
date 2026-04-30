@@ -31,6 +31,7 @@ import {useMapboxToken} from '../../hooks/useMapboxToken';
 import {SolicitarCorridaModal} from './components/SolicitarCorridaModal';
 import {MotoristaInfoModal} from './components/MotoristaInfoModal';
 import {PassageiroSearchBar} from './components/PassageiroSearchBar';
+import type {PassageiroSearchBarHandle} from './components/PassageiroSearchBar';
 import {PassageiroSearchOverlay} from './components/PassageiroSearchOverlay';
 import {PassageiroIdleSheet} from './components/PassageiroIdleSheet';
 import {PassageiroActiveRidePanel} from './components/PassageiroActiveRidePanel';
@@ -126,6 +127,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const dispatch = useAppDispatch();
   const {corridaFacade, pesquisaFacade, frotaFacade, servidoresFacade} = useFacades();
   const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
+  const searchBarRef = useRef<PassageiroSearchBarHandle>(null);
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -187,6 +189,18 @@ export const PassageiroScreen = (): React.JSX.Element => {
       );
     }
   }, [onCenterOnUserBase, userLocation]);
+
+  /**
+   * Opens the search overlay AND focuses the keyboard on the search input.
+   * Called when the passenger taps the CTA without a destination selected.
+   * A small delay lets the overlay animation start before the keyboard appears.
+   */
+  const onOpenSearchAndFocus = useCallback(() => {
+    onOpenSearch();
+    setTimeout(() => {
+      searchBarRef.current?.focus();
+    }, 120);
+  }, [onOpenSearch]);
 
   // ── Active ride from Redux ──────────────────────────────────────────────────
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
@@ -551,7 +565,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const overlayTop = searchBandHeight + 8;
   const hasDestination = !!selectedDestinoLabel;
   const ctaDisabled = isLocating || !hasDestination;
-  const sheetPaddingBottom = Math.max(0, (insets.bottom > 0 ? insets.bottom : 14) - 8);
+  const sheetPaddingBottom = Math.max(0, (insets.bottom > 0 ? insets.bottom : 4) - 8);
 
   return (
     <View
@@ -565,6 +579,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
 
       {/* Layer 2: Top search bar */}
       <PassageiroSearchBar
+        ref={searchBarRef}
         hasDestination={hasDestination}
         isInputFocused={isInputFocused}
         onBlur={() => setIsInputFocused(false)}
@@ -619,7 +634,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
           isRouting={isRouting}
           onLayout={onSheetLayout}
           onOpenRequestModal={onOpenRequestModal}
-          onOpenSearch={onOpenSearch}
+          onOpenSearch={onOpenSearchAndFocus}
           paddingBottom={sheetPaddingBottom}
           routeFeedback={routeFeedback}
           routeSummary={routeSummary}
