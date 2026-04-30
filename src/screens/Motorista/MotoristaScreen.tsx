@@ -270,6 +270,10 @@ export const MotoristaScreen = (): React.JSX.Element => {
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}
         />
+        {/* Disable the default Mapbox blue dot — we render our own pulse marker below */}
+        {MapboxGL.UserLocation && (
+          <MapboxGL.UserLocation visible={false} />
+        )}
         {/* ── Layer order inside MapView (bottom → top):
              1. Route LineLayer  — always below all annotations
              2. Origin pin       — passenger pickup (person-pin icon)
