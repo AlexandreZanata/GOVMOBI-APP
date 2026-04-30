@@ -2,6 +2,9 @@
 /**
  * @fileoverview CorridaMensagensScreen — full-screen chat for an active ride.
  *
+ * Header is rendered inline (navy, title centred, back arrow always navigates
+ * to the role's home tab — never to "Minhas Corridas").
+ *
  * Read-receipt semantics (WhatsApp-style):
  *  - Single grey tick  → message sent (own message, not yet fetched by other party)
  *  - Double grey tick  → message read (lida = true, fetched via GET /mensagens)
@@ -19,16 +22,19 @@ import {
   BackHandler,
   FlatList,
   Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
   type ListRenderItem,
 } from 'react-native';
-import {useHeaderHeight} from '@react-navigation/elements';
 import {KeyboardAvoidingView} from 'react-native-keyboard-controller';
 import {useTranslation} from 'react-i18next';
 import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
+import type {CompositeNavigationProp} from '@react-navigation/native';
+import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useTheme} from '../../theme';
 import {usePassageiroCorrida} from './usePassageiroCorrida';
@@ -42,6 +48,29 @@ import type {MotoristaCorridasStackParamList} from '@navigation/types';
 
 type PassageiroRouteProps = RouteProp<PassageiroCorridasStackParamList, 'CorridaMensagens'>;
 type MotoristaRouteProps = RouteProp<MotoristaCorridasStackParamList, 'CorridaMensagens'>;
+
+// Tab param lists — used to navigate back to the correct home tab.
+type PassageiroTabParamList = {
+  PassageiroHome: undefined;
+  PassageiroCorridas: undefined;
+  PassageiroNotificacoes: undefined;
+  PassageiroProfile: undefined;
+};
+type MotoristaTabParamList = {
+  MotoristaHome: undefined;
+  MotoristaCorridas: undefined;
+  MotoristaNotificacoes: undefined;
+  MotoristaProfile: undefined;
+};
+
+type PassageiroNavProp = CompositeNavigationProp<
+  NativeStackNavigationProp<PassageiroCorridasStackParamList>,
+  BottomTabNavigationProp<PassageiroTabParamList>
+>;
+type MotoristaNavProp = CompositeNavigationProp<
+  NativeStackNavigationProp<MotoristaCorridasStackParamList>,
+  BottomTabNavigationProp<MotoristaTabParamList>
+>;
 
 const MAX_MESSAGE_LENGTH = 1000;
 
@@ -112,13 +141,16 @@ const tickStyles = StyleSheet.create({
  * Full-screen chat view for a corrida's message history.
  * Supports real-time message sending/receiving and read receipts.
  *
+ * The back button always navigates to the role's home tab (map screen),
+ * never to "Minhas Corridas".
+ *
  * @returns JSX element for the CorridaMensagensScreen.
  */
 export const CorridaMensagensScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const route = useRoute<PassageiroRouteProps | MotoristaRouteProps>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<PassageiroNavProp | MotoristaNavProp>();
   const {realtimeFacade, corridaFacade} = useFacades();
   const {corridaId} = route.params;
 
@@ -127,21 +159,34 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
 
   const currentUserId = useAppSelector(s => s.auth.servidorId ?? s.auth.user?.id ?? '');
   const mensagens = useAppSelector(s => s.corrida.mensagens);
+  const motoristaId = useAppSelector(s => s.auth.motoristaId);
   const dispatch = useAppDispatch();
 
   const {isLoadingMensagens, onLoadMensagens} = usePassageiroCorrida(corridaId);
-
-  const headerHeight = useHeaderHeight();
-
 
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const listRef = useRef<FlatList<CorridaMensagem>>(null);
   const visualizadoRef = useRef(false);
 
-  const navigateBack = useCallback((): void => {
-    navigation.goBack();
-  }, [navigation]);
+  /**
+   * Always navigates to the role's home tab (map screen).
+   * Motorista → MotoristaHome, Passageiro → PassageiroHome.
+   * Uses getParent() to reach the bottom-tab navigator from inside the stack.
+   */
+  const navigateToHome = useCallback((): void => {
+    const tabNav = navigation.getParent();
+    if (tabNav) {
+      if (motoristaId) {
+        (tabNav as BottomTabNavigationProp<MotoristaTabParamList>).navigate('MotoristaHome');
+      } else {
+        (tabNav as BottomTabNavigationProp<PassageiroTabParamList>).navigate('PassageiroHome');
+      }
+    } else {
+      // Fallback — should not happen in normal navigation tree
+      navigation.goBack();
+    }
+  }, [motoristaId, navigation]);
 
   // useLayoutEffect fires synchronously before paint — sets the flag before
   // any WS event can arrive and increment the badge on this render cycle.
@@ -151,6 +196,11 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
       dispatch(setChatScreenOpen(false));
     };
   }, [dispatch]);
+
+  // Hide the navigator header — we render our own inline header below.
+  useLayoutEffect(() => {
+    navigation.setOptions({headerShown: false});
+  }, [navigation]);
 
   // On mount: load history and mark all received messages as viewed (blue ticks)
   useEffect(() => {
@@ -172,34 +222,14 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
     }
   }, [mensagens.length]);
 
-  // Header back button
-  useEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <Pressable
-          accessibilityLabel={t('common.back')}
-          accessibilityRole="button"
-          onPress={navigateBack}
-          testID="mensagens-back-home">
-          <MaterialIcons
-            color={theme.design.textOnDark}
-            name="arrow-back"
-            size={22}
-          />
-        </Pressable>
-      ),
-      gestureEnabled: false,
-    });
-  }, [navigateBack, navigation, t, theme.design.textOnDark]);
-
-  // Hardware back button
+  // Hardware back button — same behaviour as the inline back arrow
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      navigateBack();
+      navigateToHome();
       return true;
     });
     return () => subscription.remove();
-  }, [navigateBack]);
+  }, [navigateToHome]);
 
   const handleSend = useCallback(async (): Promise<void> => {
     const text = messageText.trim();
@@ -231,7 +261,6 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
               <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>
                 {time}
               </Text>
-              {/* Double-tick only shown on own messages */}
               {isOwn && (
                 <View style={styles.tickWrapper}>
                   <MessageTick
@@ -250,71 +279,95 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior="translate-with-padding"
-      keyboardVerticalOffset={headerHeight}
-      style={styles.root}
-      testID="mensagens-screen">
-      {isLoadingMensagens ? (
-        <View style={shared.emptyContainer}>
-          <ActivityIndicator
-            color={theme.colors.primary}
-            size="large"
-            testID="mensagens-loading"
-          />
-        </View>
-      ) : mensagens.length === 0 ? (
-        <View style={shared.emptyContainer} testID="mensagens-empty">
-          <Text style={styles.emptyText}>{t('corridas.mensagens.empty')}</Text>
-        </View>
-      ) : (
-        <FlatList
-          ref={listRef}
-          contentContainerStyle={styles.listContent}
-          data={mensagens}
-          keyExtractor={item => item.id}
-          keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() => listRef.current?.scrollToEnd({animated: false})}
-          removeClippedSubviews
-          renderItem={renderMessage}
-          showsVerticalScrollIndicator={false}
-          testID="mensagens-list"
-          windowSize={5}
-        />
-      )}
-
-      {/* Input bar — flush above keyboard via KeyboardAvoidingView translate-with-padding */}
-      <View style={styles.inputRow}>
-        <TextInput
-          accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
-          editable={!isSending}
-          maxLength={MAX_MESSAGE_LENGTH}
-          multiline
-          onChangeText={setMessageText}
-          placeholder={t('corridas.mensagens.inputPlaceholder')}
-          placeholderTextColor={theme.design.textTertiary}
-          style={styles.input}
-          testID="message-input"
-          value={messageText}
-        />
+    <SafeAreaView style={styles.safeArea} testID="mensagens-screen">
+      {/* ── Inline header — navy, title centred, back arrow → home ── */}
+      <View style={styles.header}>
         <Pressable
-          accessibilityLabel={t('chat.send')}
+          accessibilityLabel={t('common.back')}
           accessibilityRole="button"
-          disabled={!messageText.trim() || isSending}
-          onPress={() => void handleSend()}
-          style={[
-            styles.sendBtn,
-            (!messageText.trim() || isSending) && styles.sendBtnDisabled,
-          ]}
-          testID="send-btn">
-          {isSending ? (
-            <ActivityIndicator color={theme.design.textOnDark} size="small" />
-          ) : (
-            <MaterialIcons color={theme.design.textOnDark} name="send" size={20} />
-          )}
+          hitSlop={12}
+          onPress={navigateToHome}
+          style={styles.headerBack}
+          testID="mensagens-back-home">
+          <MaterialIcons
+            color={theme.design.textOnDark}
+            name="arrow-back"
+            size={22}
+          />
         </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {t('corridas.mensagens.title')}
+        </Text>
+        {/* Spacer keeps the title visually centred */}
+        <View style={styles.headerSpacer} />
       </View>
-    </KeyboardAvoidingView>
+
+      {/* ── Content ── */}
+      <KeyboardAvoidingView
+        behavior="translate-with-padding"
+        keyboardVerticalOffset={0}
+        style={styles.root}>
+        {isLoadingMensagens ? (
+          <View style={shared.emptyContainer}>
+            <ActivityIndicator
+              color={theme.colors.primary}
+              size="large"
+              testID="mensagens-loading"
+            />
+          </View>
+        ) : mensagens.length === 0 ? (
+          <View style={shared.emptyContainer} testID="mensagens-empty">
+            <Text style={styles.emptyText}>{t('corridas.mensagens.empty')}</Text>
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            contentContainerStyle={styles.listContent}
+            data={mensagens}
+            keyExtractor={item => item.id}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => listRef.current?.scrollToEnd({animated: false})}
+            removeClippedSubviews
+            renderItem={renderMessage}
+            showsVerticalScrollIndicator={false}
+            testID="mensagens-list"
+            windowSize={5}
+          />
+        )}
+
+        {/* Input bar */}
+        <View style={styles.inputRow}>
+          <TextInput
+            accessibilityLabel={t('corridas.mensagens.inputPlaceholder')}
+            editable={!isSending}
+            maxLength={MAX_MESSAGE_LENGTH}
+            multiline
+            onChangeText={setMessageText}
+            placeholder={t('corridas.mensagens.inputPlaceholder')}
+            placeholderTextColor={theme.design.textTertiary}
+            style={styles.input}
+            testID="message-input"
+            value={messageText}
+          />
+          <Pressable
+            accessibilityLabel={t('chat.send')}
+            accessibilityRole="button"
+            disabled={!messageText.trim() || isSending}
+            onPress={() => void handleSend()}
+            style={[
+              styles.sendBtn,
+              (!messageText.trim() || isSending) && styles.sendBtnDisabled,
+            ]}
+            testID="send-btn">
+            {isSending ? (
+              <ActivityIndicator color={theme.design.textOnDark} size="small" />
+            ) : (
+              <MaterialIcons color={theme.design.textOnDark} name="send" size={20} />
+            )}
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -329,10 +382,41 @@ const createMensagensStyles = (
 ) => {
   const {design, spacing, borderRadius, typography: typo} = theme;
   return StyleSheet.create({
+    // ── Root ─────────────────────────────────────────────────────────────────
+    safeArea: {
+      flex: 1,
+      backgroundColor: design.navy800,
+    },
     root: {
       flex: 1,
       backgroundColor: design.surface200,
     },
+
+    // ── Inline header — navy, title centred ───────────────────────────────────
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: design.navy800,
+      paddingHorizontal: spacing[5],
+      paddingVertical: spacing[4],
+    },
+    headerBack: {
+      width: 32,
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      flex: 1,
+      ...typo.scale.headingLg,
+      color: design.textOnDark,
+      textAlign: 'center',
+    },
+    /** Mirror of headerBack — keeps the title visually centred. */
+    headerSpacer: {
+      width: 32,
+    },
+
+    // ── Message list ──────────────────────────────────────────────────────────
     listContent: {
       paddingHorizontal: spacing[4],
       paddingVertical: spacing[4],
@@ -387,6 +471,8 @@ const createMensagensStyles = (
       color: design.textTertiary,
       textAlign: 'center',
     },
+
+    // ── Input bar ─────────────────────────────────────────────────────────────
     inputRow: {
       flexDirection: 'row',
       alignItems: 'flex-end',
