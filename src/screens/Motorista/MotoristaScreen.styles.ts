@@ -165,7 +165,7 @@ export const createMotoristaStyles = (theme: Theme) => {
     statusDualBtnRow: {
       flexDirection: 'row',
       gap: spacing[3],
-      marginBottom: spacing[4],
+      marginBottom: 11,   // same gap as passenger CTA button (ctaButtonLast)
     },
     statusDualBtn: {
       flex: 1,
@@ -187,7 +187,16 @@ export const createMotoristaStyles = (theme: Theme) => {
     },
     statusDualBtnText: {
       ...typo.scale.labelMd,
+      fontSize: 15.5,
       color: C.textOnDark,
+    },
+
+    // ── Idle sheet header row (title + collapse chevron) ──────────────────────
+    idleHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing[1],
     },
 
     // ── Driver location marker — pixel-perfect copy of the passenger's self-dot ──
@@ -247,7 +256,6 @@ export const createMotoristaStyles = (theme: Theme) => {
     idleTitle: {
       ...typo.scale.headingMd,
       color: C.textDark,
-      marginBottom: spacing[1],
     },
     idleSubtitle: {
       ...typo.scale.bodyMd,
