@@ -138,10 +138,8 @@ export const createMotoristaStyles = (theme: Theme) => {
       borderRadius: borderRadius.radius.full,
     },
     statusHeaderText: {
-      ...typo.scale.labelLg,
-      fontSize: 16,
+      ...typo.scale.headingLg,
       color: C.textOnDark,
-      letterSpacing: 0.5,
     },
     statusPillDotOnly: {
       alignItems: 'center',

@@ -10,13 +10,14 @@ import {
   Pressable,
   RefreshControl,
   StatusBar,
+  Text,
   View,
   type ListRenderItem,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../../theme';
-import {Skeleton, Text} from '@components/atoms';
+import {Skeleton} from '@components/atoms';
 import {NotificationItem} from '@components/molecules';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {markAllAsRead, markAsRead} from '@store/slices/notificationsSlice';

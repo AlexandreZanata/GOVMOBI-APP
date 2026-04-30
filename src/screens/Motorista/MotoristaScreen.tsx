@@ -272,7 +272,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
         />
         {/* Disable the default Mapbox blue dot — we render our own pulse marker below */}
         {MapboxGL.UserLocation && (
-          <MapboxGL.UserLocation visible={false} />
+          <MapboxGL.UserLocation visible={false} renderMode="native" />
         )}
         {/* ── Layer order inside MapView (bottom → top):
              1. Route LineLayer  — always below all annotations
