@@ -269,6 +269,14 @@
       "updated": "Perfil actualizado.",
       "updateFailed": "No se pudo actualizar el perfil."
     },
+    "photo": {
+      "changeLabel": "Cambiar foto de perfil",
+      "uploadSuccess": "Foto actualizada con éxito.",
+      "uploadFailed": "No se pudo subir la foto.",
+      "permissionDenied": "Permiso de acceso a la galería denegado.",
+      "tooLarge": "Archivo demasiado grande (máx. 5MB).",
+      "invalidFile": "Formato inválido. Use JPEG, PNG o WebP."
+    },
     "changePassword": {
       "sectionTitle": "Cambiar Contrasena",
       "senhaAntiga": "Contrasena actual",

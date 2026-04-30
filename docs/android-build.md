@@ -62,7 +62,7 @@ cd android && ./gradlew assembleRelease
 
 ```bash
 # Install the APK
-adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/app-debug.apk
+adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/aaaaaaaaa.apk
 
 # Forward Metro port so the emulator can reach your machine
 adb -s emulator-5554 reverse tcp:8081 tcp:8081
@@ -98,7 +98,7 @@ You need a full rebuild:
 cd android && ./gradlew assembleDebug
 
 # Reinstall
-adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/app-debug.apk
+adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/aaaaaaaaa.apk
 ```
 
 ### Quick reference
@@ -149,8 +149,8 @@ cd android && ./gradlew assembleDebug
 adb devices
 
 # 3. Install on each device by serial
-adb -s <SERIAL_1> install -r android/app/build/outputs/apk/debug/app-debug.apk
-adb -s <SERIAL_2> install -r android/app/build/outputs/apk/debug/app-debug.apk
+adb -s <SERIAL_1> install -r android/app/build/outputs/apk/debug/aaaaaaaaa.apk
+adb -s <SERIAL_2> install -r android/app/build/outputs/apk/debug/aaaaaaaaa.apk
 
 # 4. Launch the app on both
 adb -s <SERIAL_1> shell am start -n gov.govmobile.app/.MainActivity
@@ -164,7 +164,7 @@ adb devices \
   | grep -v "List of devices" \
   | awk 'NF && $2=="device" {print $1}' \
   | xargs -I{} adb -s {} install -r \
-      android/app/build/outputs/apk/debug/app-debug.apk
+      android/app/build/outputs/apk/debug/aaaaaaaaa.apk
 ```
 
 ### When does this matter?
@@ -218,7 +218,7 @@ The installed app has a different signature than the new APK.
 
 ```bash
 adb -s emulator-5554 uninstall gov.govmobile.app
-adb -s emulator-5554 install android/app/build/outputs/apk/debug/app-debug.apk
+adb -s emulator-5554 install android/app/build/outputs/apk/debug/aaaaaaaaa.apk
 ```
 
 ---

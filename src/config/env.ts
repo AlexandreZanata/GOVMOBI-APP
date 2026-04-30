@@ -35,18 +35,26 @@ const extra = Constants.expoConfig?.extra ?? {};
 
 // Fallback URLs used when the bundle was built without a .env file.
 // Override these by setting API_URL in your .env before running `expo run:android`.
+// In development, log the resolved URL so you can confirm it's correct.
 const DEV_API_URL = 'http://172.19.2.116:3000';
 
 export const ENV: AppConfig = {
-  apiUrl: extra.apiUrl || DEV_API_URL,
-  wsUrl: extra.wsUrl || DEV_API_URL,
-  appEnv: extra.appEnv ?? 'development',
+  apiUrl: (extra.apiUrl as string | undefined) || DEV_API_URL,
+  wsUrl: (extra.wsUrl as string | undefined) || DEV_API_URL,
+  appEnv: (extra.appEnv as AppConfig['appEnv']) ?? 'development',
   mockMode: extra.mockMode === 'true' || extra.mockMode === true,
   MOCK_MODE: extra.mockMode === 'true' || extra.mockMode === true,
-  MAPBOX_ACCESS_TOKEN: extra.mapboxAccessToken ?? '',
-  MAPBOX_SECRET_TOKEN: extra.mapboxSecretToken ?? '',
-  ONESIGNAL_APP_ID: extra.oneSignalAppId || 'd6247b88-6e87-4695-ac0f-396993ede8ba',
+  MAPBOX_ACCESS_TOKEN: (extra.mapboxAccessToken as string | undefined) ?? '',
+  MAPBOX_SECRET_TOKEN: (extra.mapboxSecretToken as string | undefined) ?? '',
+  ONESIGNAL_APP_ID: (extra.oneSignalAppId as string | undefined) || 'd6247b88-6e87-4695-ac0f-396993ede8ba',
 };
+
+// Log resolved API URL in development so you can confirm it's correct on device
+if (__DEV__) {
+  console.info('[ENV] apiUrl =', ENV.apiUrl);
+  console.info('[ENV] wsUrl  =', ENV.wsUrl);
+  console.info('[ENV] extra  =', JSON.stringify(extra));
+}
 
 export const isDev = ENV.appEnv === 'development';
 export const isProduction = ENV.appEnv === 'production';

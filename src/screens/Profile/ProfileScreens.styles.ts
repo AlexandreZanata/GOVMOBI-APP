@@ -97,6 +97,41 @@ export const createProfileStyles = (theme: Theme) => {
       color: design.blue500,
     },
 
+    /** Real photo — same size as the fallback. */
+    avatarImage: {
+      borderRadius: borderRadius.radius.full,
+      height: 80,
+      width: 80,
+    },
+
+    /** Semi-transparent overlay shown while uploading. */
+    avatarUploadOverlay: {
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      borderRadius: borderRadius.radius.full,
+      bottom: 0,
+      justifyContent: 'center',
+      left: 0,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+    },
+
+    /** Small camera badge at the bottom-right of the avatar ring. */
+    avatarCameraBadge: {
+      alignItems: 'center',
+      backgroundColor: design.blue500,
+      borderColor: design.navy800,
+      borderRadius: borderRadius.radius.full,
+      borderWidth: 2,
+      bottom: 0,
+      height: 26,
+      justifyContent: 'center',
+      position: 'absolute',
+      right: 0,
+      width: 26,
+    },
+
     heroName: {
       ...typo.scale.displayMd,
       color: design.textOnDark,

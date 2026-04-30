@@ -169,10 +169,21 @@ const authSlice = createSlice({
     setServidorId(state, action: PayloadAction<string | null>) {
       state.servidorId = action.payload;
     },
+
+    /**
+     * Updates the avatar URL on the current user after a successful photo upload.
+     * PATCH /servidores/me/foto-perfil returns { fotoPerfilUrl } — stored here
+     * so the ProfileScreen re-renders immediately without a full getMe() round-trip.
+     */
+    setAvatarUrl(state, action: PayloadAction<string>) {
+      if (state.user) {
+        state.user = {...state.user, avatarUrl: action.payload};
+      }
+    },
   },
 });
 
-export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setIsHydrating, setStatusOperacional, setServidorId, setToken, tokenRefreshed, logout, setLoading, setError} =
+export const {setUser, setPapeis, setMotoristaId, setMunicipioId, setIsHydrating, setStatusOperacional, setServidorId, setToken, tokenRefreshed, logout, setLoading, setError, setAvatarUrl} =
   authSlice.actions;
 
 export default authSlice.reducer;

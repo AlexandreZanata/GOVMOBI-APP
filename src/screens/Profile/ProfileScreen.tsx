@@ -10,6 +10,7 @@
 import React, {useMemo, useState} from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   Text,
@@ -86,6 +87,10 @@ export const ProfileScreen = (): React.JSX.Element => {
 
   const {
     displayName,
+    avatarUrl,
+    isUploadingPhoto,
+    photoFeedback,
+    pickAndUploadPhoto,
     signOut,
     senhaAntiga,
     setSenhaAntiga,
@@ -116,13 +121,53 @@ export const ProfileScreen = (): React.JSX.Element => {
 
         {/* ── Dark hero header ── */}
         <View style={styles.hero} testID="profile-hero">
-          <View style={styles.avatarRing}>
-            <View style={styles.avatarFallback} testID="profile-avatar">
-              <Text style={styles.avatarInitials} accessibilityElementsHidden>
-                {initials}
-              </Text>
-            </View>
-          </View>
+          {/* Avatar — tappable to change photo */}
+          <Pressable
+            accessibilityLabel={t('profile.photo.changeLabel')}
+            accessibilityRole="button"
+            onPress={() => void pickAndUploadPhoto()}
+            style={styles.avatarRing}
+            testID="profile-avatar-btn">
+            {avatarUrl ? (
+              <Image
+                accessibilityElementsHidden
+                source={{uri: avatarUrl}}
+                style={styles.avatarImage}
+                testID="profile-avatar-image"
+              />
+            ) : (
+              <View style={styles.avatarFallback} testID="profile-avatar">
+                <Text style={styles.avatarInitials} accessibilityElementsHidden>
+                  {initials}
+                </Text>
+              </View>
+            )}
+            {/* Upload progress overlay */}
+            {isUploadingPhoto && (
+              <View style={styles.avatarUploadOverlay} testID="avatar-upload-overlay">
+                <ActivityIndicator color={design.textOnDark} size="small" />
+              </View>
+            )}
+            {/* Camera badge */}
+            {!isUploadingPhoto && (
+              <View style={styles.avatarCameraBadge} testID="avatar-camera-badge">
+                <MaterialIcons color={design.textOnDark} name="photo-camera" size={14} />
+              </View>
+            )}
+          </Pressable>
+
+          {/* Photo upload inline feedback */}
+          {photoFeedback ? (
+            <Text
+              style={[
+                styles.heroEmail,
+                {color: photoFeedback.type === 'success' ? design.success : design.danger},
+              ]}
+              testID="photo-feedback">
+              {t(photoFeedback.messageKey)}
+            </Text>
+          ) : null}
+
           <Text style={styles.heroName} testID="profile-name">{displayName}</Text>
           {user?.email ? (
             <Text style={styles.heroEmail} testID="profile-email">{user.email}</Text>

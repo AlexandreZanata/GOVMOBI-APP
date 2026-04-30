@@ -4,7 +4,7 @@
 // Must be the first import — patches TurboModuleRegistry.getEnforcing so
 // optional native modules (OneSignal) fail silently instead of logging ERROR.
 import './polyfills/turboModuleGuard';
-import React, {useCallback, useMemo, useRef} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Provider} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
@@ -146,6 +146,33 @@ const AppShell = (): React.JSX.Element => {
 AppShell.displayName = 'AppShell';
 
 /**
+ * Wraps PersistGate with a 3-second safety timeout.
+ * If redux-persist does not finish rehydrating within 3s (e.g. corrupted
+ * AsyncStorage from a previous Expo Go session), the app renders anyway.
+ * This prevents the infinite blue-screen on physical device debug builds.
+ */
+const SafePersistGate = ({children}: {children: React.ReactNode}): React.JSX.Element => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // Force-unblock after 3 seconds regardless of persist state
+    const timeout = setTimeout(() => setReady(true), 3000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return (
+    <PersistGate
+      loading={<View style={styles.container} />}
+      onBeforeLift={() => { setReady(true); }}
+      persistor={persistor}>
+      {ready ? children : <View style={styles.container} />}
+    </PersistGate>
+  );
+};
+
+SafePersistGate.displayName = 'SafePersistGate';
+
+/**
  * Creates main application provider composition.
  *
  * @returns App root component.
@@ -159,9 +186,9 @@ const App = (): React.JSX.Element => {
         <KeyboardProvider>
           <I18nextProvider i18n={i18n}>
             <Provider store={store}>
-              <PersistGate loading={loadingFallback} persistor={persistor}>
+              <SafePersistGate>
                 <AppShell />
-              </PersistGate>
+              </SafePersistGate>
             </Provider>
           </I18nextProvider>
         </KeyboardProvider>

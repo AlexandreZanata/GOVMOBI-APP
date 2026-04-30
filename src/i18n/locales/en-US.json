@@ -269,6 +269,14 @@
       "updated": "Profile updated.",
       "updateFailed": "Could not update profile."
     },
+    "photo": {
+      "changeLabel": "Change profile photo",
+      "uploadSuccess": "Photo updated successfully.",
+      "uploadFailed": "Could not upload photo.",
+      "permissionDenied": "Gallery access permission denied.",
+      "tooLarge": "File too large (max 5MB).",
+      "invalidFile": "Invalid format. Use JPEG, PNG or WebP."
+    },
     "changePassword": {
       "sectionTitle": "Change Password",
       "senhaAntiga": "Current password",
