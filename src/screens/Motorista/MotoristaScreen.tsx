@@ -281,6 +281,7 @@ export const MotoristaScreen = (): React.JSX.Element => {
             coordinate={[userLocation.longitude, userLocation.latitude]}
             id="driver-location"
             title={t('motorista.map.driverLocation')}>
+            {/* Same pulse-ring style the passenger sees for their own location */}
             <View style={styles.userMarkerPulse} testID="driver-marker">
               <View style={styles.userMarkerRing}>
                 <View style={styles.userMarkerDot} />
@@ -293,7 +294,10 @@ export const MotoristaScreen = (): React.JSX.Element => {
             coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
             id="ride-destination"
             title={t('corridas.detail.destino')}>
-            <View style={styles.destinationPin} />
+            {/* Location-pin icon for the destination */}
+            <View style={styles.destinationPinWrapper}>
+              <MaterialIcons name="location-on" size={32} color={C.danger} />
+            </View>
           </MapboxGL.PointAnnotation>
         )}
         {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.origemLng) && Number.isFinite(activeCorrida.origemLat) && (
@@ -301,7 +305,10 @@ export const MotoristaScreen = (): React.JSX.Element => {
             coordinate={[activeCorrida.origemLng, activeCorrida.origemLat]}
             id="ride-origin"
             title={t('corridas.detail.origem')}>
-            <View style={styles.originPin} />
+            {/* Person icon for the passenger pickup point */}
+            <View style={styles.originPinWrapper}>
+              <MaterialIcons name="person-pin" size={32} color={C.success} />
+            </View>
           </MapboxGL.PointAnnotation>
         )}
       </MapboxGL.MapView>

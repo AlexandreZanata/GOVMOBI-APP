@@ -192,27 +192,27 @@ export const createMotoristaStyles = (theme: Theme) => {
       color: C.textOnDark,
     },
 
-    // ── User marker ───────────────────────────────────────────────────────────
+    // ── User marker (driver) — identical to the passenger's own location dot ──
     userMarkerPulse: {
       width: 40,
       height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(39,110,241,0.15)',
       alignItems: 'center',
       justifyContent: 'center',
     },
     userMarkerRing: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      borderWidth: 2,
-      borderColor: C.interactive,
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: C.cardBg,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: C.interactiveRing,
     },
     userMarkerDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
       backgroundColor: C.interactive,
     },
 
@@ -521,15 +521,30 @@ export const createMotoristaStyles = (theme: Theme) => {
       color: C.textOnDark,
     },
 
-    // ── Destination pin ───────────────────────────────────────────────────────
+    // ── Destination pin — location-on icon, anchored at tip ─────────────────
+    destinationPinWrapper: {
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      // Extra padding prevents the icon from being clipped by the annotation bounds
+      paddingBottom: 2,
+      marginBottom: -4,
+    },
+
+    // ── Origin pin — person-pin icon, anchored at tip ─────────────────────
+    originPinWrapper: {
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      paddingBottom: 2,
+      marginBottom: -4,
+    },
+
+    // ── Legacy solid pins (kept for reference, no longer rendered) ────────────
     destinationPin: {
       width: 20,
       height: 20,
       borderRadius: 10,
       backgroundColor: C.danger,
     },
-
-    // ── Origin pin ────────────────────────────────────────────────────────────
     originPin: {
       width: 20,
       height: 20,
