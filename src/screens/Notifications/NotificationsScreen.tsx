@@ -1,12 +1,15 @@
 /**
  * @fileoverview Notification inbox screen.
  * Tab root — SafeAreaView covers top only; BottomTabBar handles the bottom inset.
+ * Header follows the same pattern as PassageiroCorridasListScreen (navy800 bg,
+ * headingLg centred title, surface200 content area).
  */
 import React, {useCallback, useMemo} from 'react';
 import {
   FlatList,
   Pressable,
   RefreshControl,
+  StatusBar,
   View,
   type ListRenderItem,
 } from 'react-native';
@@ -18,7 +21,7 @@ import {NotificationItem} from '@components/molecules';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {markAllAsRead, markAsRead} from '@store/slices/notificationsSlice';
 import {type Notification} from '../../models';
-import {createNotificationsStyles, createHistoricoStyles} from './NotificationsScreen.styles';
+import {createNotificationsStyles} from './NotificationsScreen.styles';
 
 /** Formats a notification timestamp as a relative label. */
 const formatTimeLabel = (createdAt: string): string => {
@@ -38,7 +41,6 @@ export const NotificationsScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const styles = useMemo(() => createNotificationsStyles(theme), [theme]);
-  const hs = useMemo(() => createHistoricoStyles(theme), [theme]);
   const dispatch = useAppDispatch();
 
   const notifications = useAppSelector(state => state.notifications.notifications);
@@ -87,10 +89,12 @@ export const NotificationsScreen = (): React.JSX.Element => {
   );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.background}>
-      {/* Inline title row — same pattern as My Rides */}
-      <View style={styles.titleRow}>
-        <Text style={hs.headerTitle}>
+    <SafeAreaView edges={['top']} style={styles.safeArea} testID="notifications-screen">
+      <StatusBar barStyle="light-content" backgroundColor={theme.design.navy800} />
+
+      {/* Header — same pattern as PassageiroCorridasListScreen */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>
           {t('navigation.titles.notifications')}
         </Text>
       </View>
@@ -118,7 +122,7 @@ export const NotificationsScreen = (): React.JSX.Element => {
             }
             ListEmptyComponent={
               <View style={styles.emptyState} testID="notifications-empty">
-                <Text style={hs.emptySubtitle}>
+                <Text style={styles.emptySubtitle}>
                   {t('notifications.empty.message')}
                 </Text>
               </View>

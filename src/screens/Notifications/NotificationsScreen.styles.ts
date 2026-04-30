@@ -1,47 +1,66 @@
 import {StyleSheet} from 'react-native';
 import {type Theme} from '../../theme';
-import {createHistoricoStyles} from '@screens/Corridas/HistoricoCorridas.styles';
-
-export {createHistoricoStyles};
 
 // eslint-disable-next-line react-native/no-unused-styles
-export const createNotificationsStyles = (theme: Theme) =>
-  StyleSheet.create({
-    flex: {flex: 1},
-    /** Dark blue safe area — matches the brand. */
-    background: {backgroundColor: theme.colors.primary, flex: 1},
+export const createNotificationsStyles = (theme: Theme) => {
+  const {design, spacing, typography: typo} = theme;
+
+  return StyleSheet.create({
+    // ── Root — navy top matches the header ────────────────────────────────────
+    safeArea: {
+      flex: 1,
+      backgroundColor: design.navy800,
+    },
+
+    // ── Header — identical to PassageiroCorridasListScreen ────────────────────
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing[5],
+      paddingVertical: spacing[4],
+      backgroundColor: design.navy800,
+    },
+    headerTitle: {
+      ...typo.scale.headingLg,
+      color: design.textOnDark,
+      textAlign: 'center',
+    },
+
+    // ── Content area — light surface below the header ─────────────────────────
+    contentArea: {
+      flex: 1,
+      backgroundColor: design.surface200,
+    },
     listContent: {
-      gap: theme.spacing.xs,
-      paddingVertical: theme.spacing.sm,
+      paddingHorizontal: spacing[4],
+      paddingTop: spacing[4],
+      paddingBottom: spacing[10],
     },
     emptyState: {
-      alignItems: 'center',
       flex: 1,
-      gap: theme.spacing.md,
+      alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: theme.spacing['3xl'],
+      paddingHorizontal: spacing[8],
+      paddingVertical: spacing[12],
     },
+    emptySubtitle: {
+      ...typo.scale.bodyMd,
+      color: design.textTertiary,
+      marginTop: spacing[2],
+      textAlign: 'center',
+    },
+
+    // ── Skeleton ──────────────────────────────────────────────────────────────
     skeletonItem: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: design.surface100,
       flexDirection: 'row',
-      gap: theme.spacing.md,
-      padding: theme.spacing.md,
+      gap: spacing[4],
+      padding: spacing[4],
     },
-    skeletonContent: {flex: 1, gap: theme.spacing.sm},
-    markAllButton: {
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.xs,
-    },
-    titleRow: {
-      alignItems: 'center',
-      backgroundColor: theme.colors.primary,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      paddingHorizontal: theme.spacing[5],
-      paddingVertical: theme.spacing[4],
-    },
-    contentArea: {
-      backgroundColor: theme.design.surface100,
+    skeletonContent: {
       flex: 1,
+      gap: spacing[2],
     },
   });
+};
