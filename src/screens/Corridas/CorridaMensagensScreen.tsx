@@ -22,13 +22,13 @@ import {
   BackHandler,
   FlatList,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
   type ListRenderItem,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {KeyboardAvoidingView} from 'react-native-keyboard-controller';
 import {useTranslation} from 'react-i18next';
 import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
@@ -279,7 +279,7 @@ export const CorridaMensagensScreen = (): React.JSX.Element => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} testID="mensagens-screen">
+    <SafeAreaView edges={['top']} style={styles.safeArea} testID="mensagens-screen">
       {/* ── Inline header — navy, title centred, back arrow → home ── */}
       <View style={styles.header}>
         <Pressable

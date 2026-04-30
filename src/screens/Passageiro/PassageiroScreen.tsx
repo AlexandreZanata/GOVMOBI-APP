@@ -35,6 +35,7 @@ import {PassageiroSearchOverlay} from './components/PassageiroSearchOverlay';
 import {PassageiroIdleSheet} from './components/PassageiroIdleSheet';
 import {PassageiroActiveRidePanel} from './components/PassageiroActiveRidePanel';
 import {PassageiroColors as C} from './PassageiroScreen.styles';
+import {createPassageiroStyles} from './PassageiroScreen.styles';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setLocationSuccess} from '@store/slices/locationSlice';
 import {useFacades} from '@services/facades';
@@ -86,20 +87,31 @@ const activeRouteLineStyle = {
 const TERMINAL_STATUSES = CORRIDA_TERMINAL_STATUSES;
 const STATUS_POLL_MS = 5000;
 
-// ── Destination pin ───────────────────────────────────────────────────────────
-import {createPassageiroStyles} from './PassageiroScreen.styles';
+// ── Destination pin — same location-on icon the driver uses ──────────────────
+const DestinationPin = (): React.JSX.Element => (
+  <View style={{alignItems: 'center', justifyContent: 'flex-end', marginBottom: -4}}>
+    <MaterialIcons name="location-on" size={34} color="#D85A30" />
+  </View>
+);
 
-const DestinationPin = (): React.JSX.Element => {
-  const s = useMemo(() => createPassageiroStyles(), []);
-  return (
-    <View style={s.destPinWrapper}>
-      <View style={s.destPinOuter}>
-        <View style={s.destPinInner} />
-      </View>
-      <View style={s.destPinTail} />
-    </View>
-  );
-};
+// ── Driver car marker ─────────────────────────────────────────────────────────
+const DriverCarPin = (): React.JSX.Element => (
+  <View style={{
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#2F80FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  }}>
+    <MaterialIcons name="directions-car" size={20} color="#FFFFFF" />
+  </View>
+);
 
 /**
  * Passenger home screen — map + ride request + active ride tracking.
@@ -180,6 +192,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
   const isActionLoading = useAppSelector(s => s.corrida.isActionLoading);
   const pendingCorridaId = useAppSelector(s => s.corrida.pendingCorridaId);
+  const driverPosition = useAppSelector(s => s.corrida.driverPosition);
   const hasActiveRide = activeCorrida !== null && !TERMINAL_STATUSES.has(activeCorrida.status);
   // Driver name from WS cache — avoids REST round-trips on every render and
   // survives tab navigation / foreground transitions.
@@ -452,6 +465,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}
         />
+        {/* ── Layer order: route line (bottom) → destination → driver car → user (top) ── */}
+
+        {/* 1. Route lines — always below all PointAnnotations */}
         {hasActiveRide && activeRouteFeature && MapboxGL.ShapeSource && MapboxGL.LineLayer && (
           <MapboxGL.ShapeSource id="active-route-source" shape={activeRouteFeature}>
             <MapboxGL.LineLayer id="active-route-line" style={activeRouteLineStyle} />
@@ -462,14 +478,37 @@ export const PassageiroScreen = (): React.JSX.Element => {
             <MapboxGL.LineLayer id="route-preview-line" style={routeLineStyle} />
           </MapboxGL.ShapeSource>
         )}
+
+        {/* 2. Destination pin — location-on icon (same as motorista) */}
+        {!hasActiveRide && selectedDestinoCoords && (
+          <MapboxGL.PointAnnotation
+            coordinate={[selectedDestinoCoords.longitude, selectedDestinoCoords.latitude]}
+            id="destination"
+            title={selectedDestinoLabel ?? ''}>
+            <DestinationPin />
+          </MapboxGL.PointAnnotation>
+        )}
+        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.destinoLng) && Number.isFinite(activeCorrida.destinoLat) && (
+          <MapboxGL.PointAnnotation
+            coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
+            id="active-destination"
+            title={destinoAddress ?? ''}>
+            <DestinationPin />
+          </MapboxGL.PointAnnotation>
+        )}
+
+        {/* 3. Driver car marker — shown when ride is active and WS position is known */}
+        {hasActiveRide && driverPosition && Number.isFinite(driverPosition.lng) && Number.isFinite(driverPosition.lat) && (
+          <MapboxGL.PointAnnotation
+            coordinate={[driverPosition.lng, driverPosition.lat]}
+            id="driver-car"
+            title={t('passageiro.map.driverLocation')}>
+            <DriverCarPin />
+          </MapboxGL.PointAnnotation>
+        )}
+
+        {/* 4. User location — topmost, never hidden by route line */}
         {MapboxGL.UserLocation ? (
-          // UserLocation uses the Mapbox native GPS — renders immediately on
-          // map load without waiting for expo-location to resolve a fix.
-          // No children = uses the default Mapbox blue dot (CircleLayer-based).
-          // Passing React Native Views as children is silently ignored on Android
-          // because UserLocation renders inside a Mapbox Annotation context.
-          // onUpdate feeds coordinates into Redux so the rest of the app
-          // (search proximity, ride request modal) still has the location.
           <MapboxGL.UserLocation
             animated
             visible
@@ -483,8 +522,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
             }}
           />
         ) : userLocation ? (
-          // Fallback for environments where UserLocation is unavailable
-          // (e.g. Expo Go, unit tests) — use PointAnnotation with Redux coords.
           <MapboxGL.PointAnnotation
             coordinate={[userLocation.longitude, userLocation.latitude]}
             id="user-location"
@@ -496,22 +533,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
             </View>
           </MapboxGL.PointAnnotation>
         ) : null}
-        {!hasActiveRide && selectedDestinoCoords && (
-          <MapboxGL.PointAnnotation
-            coordinate={[selectedDestinoCoords.longitude, selectedDestinoCoords.latitude]}
-            id="destination"
-            title={selectedDestinoLabel ?? ''}>
-            <DestinationPin />
-          </MapboxGL.PointAnnotation>
-        )}
-        {hasActiveRide && activeCorrida && (
-          <MapboxGL.PointAnnotation
-            coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
-            id="active-destination"
-            title={destinoAddress ?? ''}>
-            <DestinationPin />
-          </MapboxGL.PointAnnotation>
-        )}
       </MapboxGL.MapView>
     ) : (
       <View style={styles.mapFallback} testID="map-fallback">
