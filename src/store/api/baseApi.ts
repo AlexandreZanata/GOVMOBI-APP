@@ -22,6 +22,7 @@ import {
   type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
 import {ENV} from '../../config/env';
+import {fetchWithAbortTimeout} from '@services/http/fetchWithAbortTimeout';
 import {logout, tokenRefreshed} from '../slices/authSlice';
 import {addToast} from '../slices/uiSlice';
 
@@ -146,13 +147,16 @@ const baseQueryWithReauth: BaseQueryFn<
     }
 
     // Call POST /auth/refresh with the refresh token in the Authorization header.
-    const refreshResponse = await fetch(`${ENV.apiUrl}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${refreshToken}`,
+    const refreshResponse = await fetchWithAbortTimeout(
+      `${ENV.apiUrl}/auth/refresh`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${refreshToken}`,
+        },
       },
-    });
+    );
 
     if (!refreshResponse.ok) {
       // Refresh failed — end the session.

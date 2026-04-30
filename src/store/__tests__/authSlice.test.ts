@@ -100,6 +100,24 @@ describe('authSlice', () => {
       expect(state.motoristaId).toBeNull();
       expect(state.municipioId).toBeNull();
     });
+
+    it('clears isHydrating so logout never leaves a stuck hydration flag', () => {
+      const hydratingState: AuthState = {
+        user: mockUser,
+        token: 'jwt-token-abc',
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+        papeis: [],
+        motoristaId: null,
+        municipioId: null,
+        isHydrating: true,
+        statusOperacional: null,
+        servidorId: null,
+      };
+      const state = authReducer(hydratingState, logout());
+      expect(state.isHydrating).toBe(false);
+    });
   });
 
   describe('setLoading', () => {

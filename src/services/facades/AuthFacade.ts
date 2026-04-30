@@ -9,6 +9,10 @@ import {
   type Result,
 } from './types';
 import {delay, shouldFail} from '@services/mock/data';
+import {
+  AUTH_HTTP_TIMEOUT_MS,
+  fetchWithAbortTimeout,
+} from '@services/http/fetchWithAbortTimeout';
 
 const ACCESS_TOKEN_KEY = 'govmobile_access_token';
 const REFRESH_TOKEN_KEY = 'govmobile_refresh_token';
@@ -251,20 +255,15 @@ export class AuthFacadeImpl implements IAuthFacade {
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15_000);
-
-      let response: Response;
-      try {
-        response = await fetch(`${this.apiBaseUrl}/auth/login`, {
+      const response = await fetchWithAbortTimeout(
+        `${this.apiBaseUrl}/auth/login`,
+        {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(credentials),
-          signal: controller.signal,
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
+        },
+        AUTH_HTTP_TIMEOUT_MS,
+      );
 
       if (!response.ok) {
         const errBody = (await response.json().catch(() => ({}))) as Partial<AuthApiError>;
@@ -350,13 +349,17 @@ export class AuthFacadeImpl implements IAuthFacade {
     }
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${refreshToken}`,
+      const response = await fetchWithAbortTimeout(
+        `${this.apiBaseUrl}/auth/refresh`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${refreshToken}`,
+          },
         },
-      });
+        AUTH_HTTP_TIMEOUT_MS,
+      );
 
       if (!response.ok) {
         return fail(toFacadeError('Unable to refresh token', 'UNAUTHORIZED'));
@@ -370,9 +373,15 @@ export class AuthFacadeImpl implements IAuthFacade {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       });
-    } catch {
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
       return fail(
-        toFacadeError('Network error while refreshing token', 'NETWORK_ERROR'),
+        toFacadeError(
+          isTimeout
+            ? 'Request timed out — check server connectivity'
+            : 'Network error while refreshing token',
+          isTimeout ? 'TIMEOUT' : 'NETWORK_ERROR',
+        ),
       );
     }
   }
@@ -410,13 +419,17 @@ export class AuthFacadeImpl implements IAuthFacade {
         return fail(toFacadeError('No access token available', 'UNAUTHORIZED'));
       }
 
-      const response = await fetch(`${this.apiBaseUrl}/auth/me`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
+      const response = await fetchWithAbortTimeout(
+        `${this.apiBaseUrl}/auth/me`,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+        AUTH_HTTP_TIMEOUT_MS,
+      );
 
       if (!response.ok) {
         return fail(toFacadeError('Unable to fetch user profile', 'UNAUTHORIZED'));
@@ -425,8 +438,16 @@ export class AuthFacadeImpl implements IAuthFacade {
       const me = (await response.json()) as MeResponse;
       this.currentUser = userFromMe(me);
       return ok(me);
-    } catch {
-      return fail(toFacadeError('Network error fetching user profile', 'NETWORK_ERROR'));
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
+      return fail(
+        toFacadeError(
+          isTimeout
+            ? 'Request timed out — check server connectivity'
+            : 'Network error fetching user profile',
+          isTimeout ? 'TIMEOUT' : 'NETWORK_ERROR',
+        ),
+      );
     }
   }
 

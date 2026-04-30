@@ -21,6 +21,11 @@
  *    WebSocket disconnect), we restore `DISPONIVEL` via PATCH so the driver
  *    doesn't have to manually re-toggle every time they reopen the app.
  *    `OFFLINE` is only kept when the driver explicitly set it themselves.
+ *
+ * 5. **Hydration watchdog** — `Promise.race` against {@link HYDRATION_WATCHDOG_MS}
+ *    so cold-start hydration always clears `isHydrating` even if a request hangs.
+ *    On timeout: `logout()`, i18n toast (`errors.hydrationTimeout`), and in-flight
+ *    `doGetMe` work is ignored via an `isStale` guard.
  */
 import {useEffect, useRef} from 'react';
 import {useFacades} from '@services/facades';
@@ -42,6 +47,7 @@ import {useTranslation} from 'react-i18next';
 import {logger} from '@utils/logger';
 import {getValidToken} from '@utils/tokenUtils';
 import {setOneSignalExternalUserId, setOneSignalUserTags} from '@services/notifications/OneSignalService';
+import {HYDRATION_WATCHDOG_MS} from '@services/http/fetchWithAbortTimeout';
 
 /** How often (ms) to check whether the token needs proactive refresh. */
 const CHECK_INTERVAL_MS = 60_000;
@@ -199,16 +205,20 @@ export const useAuthSession = (): void => {
    * manually re-toggle every time they reopen the app.
    * `OFFLINE` is only kept when the driver explicitly set it themselves.
    *
+   * @param isStale - When true, skips Redux updates (hydration watchdog invalidated this run).
    * @returns True on success, false on failure (session ended).
    */
-  const doGetMe = async (): Promise<boolean> => {
+  const doGetMe = async (isStale?: () => boolean): Promise<boolean> => {
+    if (isStale?.()) return false;
     // Snapshot the persisted status BEFORE getMe() can overwrite it.
     // This is the driver's last known intent from the previous session.
     const previousStatus = statusOperacionalRef.current;
 
     const currentToken = token;
     const meResult = await authFacade.getMe(currentToken ?? undefined);
+    if (isStale?.()) return false;
     if (!meResult.data) {
+      if (isStale?.()) return false;
       logger.warn('useAuthSession', 'getMe failed — ending session');
       dispatch(logout());
       return false;
@@ -261,6 +271,7 @@ export const useAuthSession = (): void => {
         'Restoring DISPONIVEL status — server returned OFFLINE or INDISPONIVEL after reconnect',
       );
       const restoreResult = await frotaFacade.updateMyStatus('DISPONIVEL');
+      if (isStale?.()) return true;
       if (restoreResult.data) {
         dispatch(setStatusOperacional('DISPONIVEL'));
         logger.info('useAuthSession', 'Driver status restored to DISPONIVEL');
@@ -297,16 +308,48 @@ export const useAuthSession = (): void => {
 
     const hydrate = async (): Promise<void> => {
       dispatch(setIsHydrating(true));
-      try {
+      let hydrationActive = true;
+      const isStale = (): boolean => !hydrationActive;
+
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const watchdogPromise = new Promise<'timeout'>((resolve) => {
+        timeoutId = setTimeout(() => {
+          hydrationActive = false;
+          logger.warn(
+            'useAuthSession',
+            'Hydration watchdog — server did not respond in time; ending session',
+          );
+          dispatch(logout());
+          dispatch(
+            addToast({
+              id: `hydration-timeout-${Date.now()}`,
+              message: t('errors.hydrationTimeout'),
+              type: 'warning',
+            }),
+          );
+          resolve('timeout');
+        }, HYDRATION_WATCHDOG_MS);
+      });
+
+      const runWork = async (): Promise<void> => {
         // Refresh token first if it's expired or expiring soon
         if (isTokenExpiringSoon(token, REFRESH_THRESHOLD_SECONDS)) {
           const newToken = await doRefresh();
           if (!newToken) return; // logout already dispatched
+          if (isStale()) return;
         }
         // Always call getMe on cold start — ensures motoristaId is current
         // even if user object was already persisted from a previous session.
-        await doGetMe();
+        await doGetMe(isStale);
+      };
+
+      try {
+        await Promise.race([runWork().then(() => 'ok' as const), watchdogPromise]);
       } finally {
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+        }
+        hydrationActive = false;
         dispatch(setIsHydrating(false));
       }
     };

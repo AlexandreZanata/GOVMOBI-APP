@@ -7,6 +7,7 @@
 import {type Motorista, type Veiculo} from '../../models';
 import {type FacadeConfig, type FacadeError, type Result} from './types';
 import {ENV} from '../../config/env';
+import {fetchWithAbortTimeout} from '@services/http/fetchWithAbortTimeout';
 
 /** Mock fixture data — veículos. */
 const MOCK_VEICULOS: Veiculo[] = [
@@ -137,11 +138,14 @@ export class FrotaFacadeImpl implements IFrotaFacade {
     const token = this.getToken();
     console.log('[FrotaFacade] PATCH /frota/motoristas/me/status →', JSON.stringify(body), '| token present:', !!token, '| token prefix:', token ? token.substring(0, 30) : 'null');
     try {
-      const res = await fetch(`${this.apiBaseUrl}/frota/motoristas/me/status`, {
-        method: 'PATCH',
-        headers: this.authHeaders(),
-        body: JSON.stringify(body),
-      });
+      const res = await fetchWithAbortTimeout(
+        `${this.apiBaseUrl}/frota/motoristas/me/status`,
+        {
+          method: 'PATCH',
+          headers: this.authHeaders(),
+          body: JSON.stringify(body),
+        },
+      );
       console.log('[FrotaFacade] PATCH /frota/motoristas/me/status ← HTTP', res.status);
       if (!res.ok) {
         const errText = await res.text().catch(() => '');

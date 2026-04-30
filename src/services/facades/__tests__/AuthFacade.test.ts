@@ -2,6 +2,7 @@
  * @fileoverview Test suite for the AuthFacade module.
  */
 import {AuthFacadeImpl, type LoginCredentials} from '../AuthFacade';
+import {AUTH_HTTP_TIMEOUT_MS} from '@services/http/fetchWithAbortTimeout';
 
 const mockSecureStore = new Map<string, string>();
 
@@ -71,5 +72,52 @@ describe('AuthFacade mock mode', () => {
     expect(refreshResult.data?.refreshToken).toBe(
       'mock-refresh-token-refreshed',
     );
+  });
+});
+
+describe('AuthFacade API mode — HTTP timeouts', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    mockSecureStore.clear();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    global.fetch = originalFetch;
+  });
+
+  it('getMe returns TIMEOUT when fetch never completes', async () => {
+    global.fetch = jest.fn(() => new Promise<Response>(() => {})) as typeof fetch;
+
+    const facade = new AuthFacadeImpl({
+      mockMode: false,
+      apiBaseUrl: 'http://localhost:9999',
+    });
+
+    const pending = facade.getMe('access-token-test');
+    await jest.advanceTimersByTimeAsync(AUTH_HTTP_TIMEOUT_MS);
+    const result = await pending;
+
+    expect(result.data).toBeNull();
+    expect(result.error?.code).toBe('TIMEOUT');
+  });
+
+  it('refreshToken returns TIMEOUT when fetch never completes', async () => {
+    mockSecureStore.set('govmobile_refresh_token', 'refresh-token-test');
+    global.fetch = jest.fn(() => new Promise<Response>(() => {})) as typeof fetch;
+
+    const facade = new AuthFacadeImpl({
+      mockMode: false,
+      apiBaseUrl: 'http://localhost:9999',
+    });
+
+    const pending = facade.refreshToken();
+    await jest.advanceTimersByTimeAsync(AUTH_HTTP_TIMEOUT_MS);
+    const result = await pending;
+
+    expect(result.data).toBeNull();
+    expect(result.error?.code).toBe('TIMEOUT');
   });
 });

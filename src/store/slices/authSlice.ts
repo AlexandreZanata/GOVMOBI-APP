@@ -127,6 +127,7 @@ const authSlice = createSlice({
       state.municipioId = null;
       state.statusOperacional = null;
       state.servidorId = null;
+      state.isHydrating = false;
     },
 
     /**

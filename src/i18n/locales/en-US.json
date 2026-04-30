@@ -111,6 +111,7 @@
   "errors": {
     "networkError": "Network error",
     "sessionExpired": "Session expired",
+    "hydrationTimeout": "Could not reach the server in time. Please sign in again when the connection is stable.",
     "unknownError": "Unknown error"
   },
   "navigation": {
