@@ -530,7 +530,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
   const overlayTop = searchBandHeight + 8;
   const hasDestination = !!selectedDestinoLabel;
   const ctaDisabled = isLocating || !hasDestination;
-  const sheetPaddingBottom = insets.bottom > 0 ? insets.bottom : 14;
+  const sheetPaddingBottom = Math.max(0, (insets.bottom > 0 ? insets.bottom : 14) - 8);
 
   return (
     <View
@@ -598,6 +598,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
           isRouting={isRouting}
           onLayout={onSheetLayout}
           onOpenRequestModal={onOpenRequestModal}
+          onOpenSearch={onOpenSearch}
           paddingBottom={sheetPaddingBottom}
           routeFeedback={routeFeedback}
           routeSummary={routeSummary}

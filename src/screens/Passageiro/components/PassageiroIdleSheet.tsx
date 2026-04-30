@@ -1,8 +1,15 @@
 /**
  * @fileoverview PassageiroIdleSheet — bottom sheet shown when no active ride exists.
  * Contains destination selector, route preview, and the CTA button.
+ *
+ * Behaviour:
+ * - The chevron (expand-more / expand-less) toggles a collapsed state that
+ *   hides the destination row and route preview, showing only the title + CTA.
+ * - The CTA is always enabled. When no destination is selected it calls
+ *   `onOpenSearch` to focus the address search bar instead of opening the
+ *   request modal.
  */
-import React from 'react';
+import React, {useState} from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -34,9 +41,14 @@ export interface PassageiroIdleSheetProps {
   routeSummary: string | null;
   /** Localized route feedback/error message. */
   routeFeedback: string | null;
-  /** Whether the CTA button is disabled. */
+  /**
+   * @deprecated No longer used — CTA is always enabled.
+   * Kept for API compatibility; will be removed in a future cleanup.
+   */
   ctaDisabled: boolean;
   onOpenRequestModal: () => void;
+  /** Opens the address search bar (called when CTA is pressed without a destination). */
+  onOpenSearch: () => void;
 }
 
 /**
@@ -54,12 +66,23 @@ export const PassageiroIdleSheet = ({
   canPreviewRoute,
   routeSummary,
   routeFeedback,
-  ctaDisabled,
   onOpenRequestModal,
+  onOpenSearch,
 }: PassageiroIdleSheetProps): React.JSX.Element => {
   const {t} = useTranslation();
   const styles = createPassageiroStyles();
   const hasDestination = !!selectedDestinoLabel;
+
+  /** When true the sheet is collapsed — only title + CTA are visible. */
+  const [collapsed, setCollapsed] = useState(false);
+
+  const handleCta = () => {
+    if (!hasDestination) {
+      onOpenSearch();
+    } else {
+      onOpenRequestModal();
+    }
+  };
 
   return (
     <Animated.View
@@ -75,70 +98,88 @@ export const PassageiroIdleSheet = ({
           <Text style={styles.bottomSheetTitle}>
             {t('passageiro.bottomSheet.title')}
           </Text>
-          <Text style={styles.bottomSheetSubtitle}>
-            {t('passageiro.searchBar.placeholder')}
-          </Text>
-        </View>
-        <MaterialIcons name="expand-more" size={20} color={C.textMuted} />
-      </View>
-
-      {/* Destination row */}
-      <View style={styles.destinoRow}>
-        <View style={styles.destinoIconWrapper}>
-          <MaterialIcons name="location-on" size={20} color={C.interactive} />
-        </View>
-        <View style={styles.destinoTextBlock}>
-          <Text style={styles.destinoLabel}>
-            {t('passageiro.bottomSheet.destinoLabel')}
-          </Text>
-          <Text
-            style={hasDestination ? styles.destinoValue : styles.destinoPlaceholder}
-            testID="destino-value">
-            {selectedDestinoLabel ?? t('passageiro.bottomSheet.destinoPlaceholder')}
-          </Text>
-        </View>
-      </View>
-
-      {/* Route preview status */}
-      {canPreviewRoute && (
-        <View style={styles.routeStatusWrap} testID="route-status">
-          {isRouting ? (
-            <View style={styles.routeLoadingRow}>
-              <ActivityIndicator color={C.interactive} size="small" testID="route-loading" />
-              <Text style={styles.routeStatusText}>{t('pesquisa.route.loading')}</Text>
-            </View>
-          ) : routeSummary ? (
-            <Text style={styles.routeSummaryText} testID="route-summary">
-              {routeSummary}
-            </Text>
-          ) : routeFeedback ? (
-            <Text style={styles.routeErrorText} testID="route-error">
-              {routeFeedback}
-            </Text>
-          ) : (
-            <Text style={styles.routeStatusText} testID="route-empty">
-              {t('pesquisa.route.empty')}
+          {!collapsed && (
+            <Text style={styles.bottomSheetSubtitle}>
+              {t('passageiro.searchBar.placeholder')}
             </Text>
           )}
         </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={collapsed
+            ? t('passageiro.bottomSheet.expand')
+            : t('passageiro.bottomSheet.collapse')}
+          hitSlop={12}
+          onPress={() => setCollapsed(prev => !prev)}
+          testID="sheet-collapse-toggle">
+          <MaterialIcons
+            name={collapsed ? 'expand-less' : 'expand-more'}
+            size={20}
+            color={C.textMuted}
+          />
+        </Pressable>
+      </View>
+
+      {/* Collapsible content */}
+      {!collapsed && (
+        <>
+          {/* Destination row */}
+          <View style={styles.destinoRow}>
+            <View style={styles.destinoIconWrapper}>
+              <MaterialIcons name="location-on" size={20} color={C.interactive} />
+            </View>
+            <View style={styles.destinoTextBlock}>
+              <Text style={styles.destinoLabel}>
+                {t('passageiro.bottomSheet.destinoLabel')}
+              </Text>
+              <Text
+                style={hasDestination ? styles.destinoValue : styles.destinoPlaceholder}
+                testID="destino-value">
+                {selectedDestinoLabel ?? t('passageiro.bottomSheet.destinoPlaceholder')}
+              </Text>
+            </View>
+          </View>
+
+          {/* Route preview status */}
+          {canPreviewRoute && (
+            <View style={styles.routeStatusWrap} testID="route-status">
+              {isRouting ? (
+                <View style={styles.routeLoadingRow}>
+                  <ActivityIndicator color={C.interactive} size="small" testID="route-loading" />
+                  <Text style={styles.routeStatusText}>{t('pesquisa.route.loading')}</Text>
+                </View>
+              ) : routeSummary ? (
+                <Text style={styles.routeSummaryText} testID="route-summary">
+                  {routeSummary}
+                </Text>
+              ) : routeFeedback ? (
+                <Text style={styles.routeErrorText} testID="route-error">
+                  {routeFeedback}
+                </Text>
+              ) : (
+                <Text style={styles.routeStatusText} testID="route-empty">
+                  {t('pesquisa.route.empty')}
+                </Text>
+              )}
+            </View>
+          )}
+        </>
       )}
 
-      {/* CTA */}
+      {/* CTA — always enabled */}
       <Pressable
         accessibilityLabel={
           hasDestination
             ? `${t('passageiro.bottomSheet.cta')} ${selectedDestinoLabel ?? ''}`
-            : t('passageiro.bottomSheet.cta')
+            : t('passageiro.bottomSheet.ctaSelectAddress')
         }
         accessibilityRole="button"
-        disabled={ctaDisabled}
-        onPress={onOpenRequestModal}
-        style={[
-          styles.ctaButton,
-          ctaDisabled && styles.ctaButtonDisabled,
-        ]}
+        onPress={handleCta}
+        style={styles.ctaButton}
         testID="cta-solicitar">
-        <Text style={styles.ctaButtonText}>{t('passageiro.bottomSheet.cta')}</Text>
+        <Text style={styles.ctaButtonText}>
+          {t('passageiro.bottomSheet.cta')}
+        </Text>
       </Pressable>
     </Animated.View>
   );

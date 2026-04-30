@@ -313,7 +313,10 @@
       "title": "Nuevo Viaje",
       "destinoLabel": "DESTINO",
       "destinoPlaceholder": "Seleccione un destino",
-      "cta": "Solicitar Viaje"
+      "cta": "Solicitar Viaje",
+      "ctaSelectAddress": "Seleccionar dirección",
+      "expand": "Expandir panel",
+      "collapse": "Minimizar panel"
     },
     "tabs": {
       "home": "Inicio",

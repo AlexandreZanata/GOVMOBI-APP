@@ -259,7 +259,7 @@ export const createPassageiroStyles = () =>
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingHorizontal: 20,
-      paddingBottom: 4,
+      paddingBottom: 0,
       zIndex: 20,
       shadowColor: C.shadow,
       shadowOffset: {width: 0, height: -4},
@@ -375,7 +375,7 @@ export const createPassageiroStyles = () =>
     // CTA button
     ctaButton: {
       width: '100%',
-      height: 54,
+      height: 60,
       backgroundColor: C.interactive,
       borderRadius: 14,
       alignItems: 'center',
@@ -394,7 +394,7 @@ export const createPassageiroStyles = () =>
       opacity: 0.4,
     },
     ctaButtonText: {
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: '700',
       color: C.surfaceCard,
       letterSpacing: 0.3,

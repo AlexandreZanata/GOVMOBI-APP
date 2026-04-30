@@ -317,7 +317,10 @@
       "title": "New Ride",
       "destinoLabel": "DESTINATION",
       "destinoPlaceholder": "Select a destination",
-      "cta": "Request Ride"
+      "cta": "Request Ride",
+      "ctaSelectAddress": "Select address",
+      "expand": "Expand panel",
+      "collapse": "Collapse panel"
     },
     "tabs": {
       "home": "Home",

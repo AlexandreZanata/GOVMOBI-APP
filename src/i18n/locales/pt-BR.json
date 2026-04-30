@@ -317,7 +317,10 @@
       "title": "Nova Corrida",
       "destinoLabel": "DESTINO",
       "destinoPlaceholder": "Selecione um destino",
-      "cta": "Solicitar Corrida"
+      "cta": "Solicitar Corrida",
+      "ctaSelectAddress": "Selecionar endereço",
+      "expand": "Expandir painel",
+      "collapse": "Minimizar painel"
     },
     "tabs": {
       "home": "Início",
