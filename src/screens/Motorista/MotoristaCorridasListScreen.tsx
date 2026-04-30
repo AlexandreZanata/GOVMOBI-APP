@@ -279,6 +279,7 @@ const createScreenStyles = (theme: Theme) => {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
       paddingHorizontal: spacing[5],
       paddingVertical: spacing[4],
       backgroundColor: design.navy800,
@@ -286,6 +287,7 @@ const createScreenStyles = (theme: Theme) => {
     headerTitle: {
       ...typo.scale.headingLg,
       color: design.textOnDark,
+      textAlign: 'center',
     },
     content: {
       flex: 1,

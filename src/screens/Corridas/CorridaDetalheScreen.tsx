@@ -20,13 +20,10 @@ import {
 import {useTranslation} from 'react-i18next';
 import {MaterialIcons} from '@expo/vector-icons';
 import {useRoute, useNavigation, type RouteProp} from '@react-navigation/native';
-import type {CompositeNavigationProp} from '@react-navigation/native';
-import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTheme} from '../../theme';
 import {createCorridasStyles} from './CorridasScreens.styles';
 import {useFacades} from '@services/facades';
-import {useAppSelector} from '../../store';
 import type {Corrida} from '@models/Corrida';
 import type {
   PassageiroCorridasStackParamList,
@@ -36,29 +33,6 @@ import type {
 type RouteProps =
   | RouteProp<PassageiroCorridasStackParamList, 'CorridaDetalhe'>
   | RouteProp<MotoristaCorridasStackParamList, 'MotoristaCorridaDetalhe'>;
-
-// Tab param lists — used to navigate back to the correct home tab.
-type PassageiroTabParamList = {
-  PassageiroHome: undefined;
-  PassageiroCorridas: undefined;
-  PassageiroNotificacoes: undefined;
-  PassageiroProfile: undefined;
-};
-type MotoristaTabParamList = {
-  MotoristaHome: undefined;
-  MotoristaCorridas: undefined;
-  MotoristaNotificacoes: undefined;
-  MotoristaProfile: undefined;
-};
-
-type PassageiroNavProp = CompositeNavigationProp<
-  NativeStackNavigationProp<PassageiroCorridasStackParamList>,
-  BottomTabNavigationProp<PassageiroTabParamList>
->;
-type MotoristaNavProp = CompositeNavigationProp<
-  NativeStackNavigationProp<MotoristaCorridasStackParamList>,
-  BottomTabNavigationProp<MotoristaTabParamList>
->;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -138,10 +112,9 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
   const {t} = useTranslation();
   const theme = useTheme();
   const route = useRoute<RouteProps>();
-  const navigation = useNavigation<PassageiroNavProp | MotoristaNavProp>();
+  const navigation = useNavigation<NativeStackNavigationProp<PassageiroCorridasStackParamList>>();
   const {corridaId} = route.params as {corridaId: string};
   const {corridaFacade} = useFacades();
-  const motoristaId = useAppSelector(s => s.auth.motoristaId);
 
   const sharedStyles = useMemo(() => createCorridasStyles(theme), [theme]);
   const s = useMemo(() => createLocalStyles(theme), [theme]);
@@ -157,20 +130,11 @@ export const CorridaDetalheScreen = (): React.JSX.Element => {
   }, [navigation]);
 
   /**
-   * Always navigates to the role's home tab (map screen).
-   * Motorista → MotoristaHome, Passageiro → PassageiroHome.
+   * Goes back to the ride history list (Minhas Corridas).
+   * Uses goBack() so it always returns to the previous screen in the stack.
    */
   const navigateToHome = (): void => {
-    const tabNav = navigation.getParent();
-    if (tabNav) {
-      if (motoristaId) {
-        (tabNav as BottomTabNavigationProp<MotoristaTabParamList>).navigate('MotoristaHome');
-      } else {
-        (tabNav as BottomTabNavigationProp<PassageiroTabParamList>).navigate('PassageiroHome');
-      }
-    } else {
-      navigation.goBack();
-    }
+    navigation.goBack();
   };
 
   useEffect(() => {
