@@ -25,7 +25,6 @@ import {useTheme, type Theme} from '../../theme';
 import {useFacades} from '@services/facades';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
 import type {Corrida} from '@models/Corrida';
-import {useAppSelector} from '../../store';
 
 type NavProp = NativeStackNavigationProp<PassageiroCorridasStackParamList>;
 
@@ -126,7 +125,6 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
   const theme = useTheme();
   const navigation = useNavigation<NavProp>();
   const {corridaFacade} = useFacades();
-  const papeis = useAppSelector(st => st.auth.papeis);
 
   const s = useMemo(() => createScreenStyles(theme), [theme]);
 
@@ -237,15 +235,6 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element => {
       {/* Header */}
       <View style={s.header}>
         <Text style={s.headerTitle}>{t('corridas.history.title')}</Text>
-        {papeis.includes('ADMIN') && (
-          <Pressable
-            accessibilityLabel={t('avaliacoes.admin.title')}
-            accessibilityRole="button"
-            onPress={() => navigation.navigate('AdminAvaliacoes')}
-            testID="btn-admin-avaliacoes">
-            <MaterialIcons name="star" size={24} color={theme.design.textOnDark} />
-          </Pressable>
-        )}
       </View>
 
       {/* Content */}
@@ -294,7 +283,6 @@ const createScreenStyles = (theme: Theme) => {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       paddingHorizontal: spacing[5],
       paddingVertical: spacing[4],
       backgroundColor: design.navy800,
