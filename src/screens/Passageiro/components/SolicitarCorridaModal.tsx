@@ -167,16 +167,28 @@ export const SolicitarCorridaModal = ({
         if (activeResult.data) {
           dispatch(setActiveCorrida(activeResult.data));
           dispatch(setPendingCorridaId(activeResult.data.id));
+          dispatch(
+            addToast({
+              id: `solicitar-conflict-${Date.now()}`,
+              message: t('passageiro.errors.alreadyHasActiveRide'),
+              type: 'warning',
+            }),
+          );
+          resetForm();
+          onClose();
+          return;
         }
+        // Backend returned CONFLICT but no active ride exists.
+        // Do not show the "already active ride" message in this scenario.
+        dispatch(setActiveCorrida(null));
+        dispatch(setPendingCorridaId(null));
         dispatch(
           addToast({
-            id: `solicitar-conflict-${Date.now()}`,
-            message: t('passageiro.errors.alreadyHasActiveRide'),
-            type: 'warning',
+            id: `solicitar-conflict-without-active-${Date.now()}`,
+            message: t('passageiro.errors.requestFailed'),
+            type: 'error',
           }),
         );
-        resetForm();
-        onClose();
         return;
       }
 

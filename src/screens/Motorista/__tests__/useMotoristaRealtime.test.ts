@@ -98,27 +98,24 @@ describe('useMotoristaRealtime', () => {
     expect(mockDispatch).toHaveBeenCalledWith(setPendingOffer(null));
   });
 
-  it('emits assinar-corrida when active ride becomes available', async () => {
+  it('emits assinar-corrida when active ride becomes available', () => {
     mockActiveCorrida = {id: 'ride-789', status: 'ACEITA'};
     renderHook(() => useMotoristaRealtime(null));
-    await act(async () => {});
     expect(mockSubscribeToCorrida).toHaveBeenCalledWith({
       corridaId: 'ride-789',
     });
   });
 
-  it('does NOT emit assinar-corrida for terminal rides', async () => {
+  it('does NOT emit assinar-corrida for terminal rides', () => {
     mockActiveCorrida = {id: 'ride-done', status: 'concluida'};
     renderHook(() => useMotoristaRealtime(null));
-    await act(async () => {});
     expect(mockSubscribeToCorrida).not.toHaveBeenCalled();
   });
 
-  it('does NOT emit assinar-corrida for non-driver roles', async () => {
+  it('does NOT emit assinar-corrida for non-driver roles', () => {
     mockPapeis = ['USUARIO'];
     mockActiveCorrida = {id: 'ride-100', status: 'ACEITA'};
     renderHook(() => useMotoristaRealtime(null));
-    await act(async () => {});
     expect(mockSubscribeToCorrida).not.toHaveBeenCalled();
   });
 });
