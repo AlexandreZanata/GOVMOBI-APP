@@ -5,7 +5,6 @@
  * Requirements: 23.6, 11.7
  */
 import {renderHook} from '@testing-library/react-native';
-import {act} from 'react';
 import {useMotoristaRealtime} from '../useMotoristaRealtime';
 
 const mockDispatch = jest.fn();
@@ -44,17 +43,20 @@ jest.mock('@store/slices/authSlice', () => ({
 
 describe('useMotoristaRealtime POC — setPendingOffer(null) on active ride', () => {
   beforeEach(() => {
+    jest.useRealTimers();
     jest.clearAllMocks();
     mockActiveCorrida = null;
     mockConnectionStatus = 'connected';
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('dispatches setPendingOffer(null) when activeCorrida transitions to non-terminal status', () => {
     mockActiveCorrida = {id: 'ride-1', status: 'ACEITA'};
 
     renderHook(() => useMotoristaRealtime(null));
-
-    act(() => {});
 
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -68,8 +70,6 @@ describe('useMotoristaRealtime POC — setPendingOffer(null) on active ride', ()
     mockActiveCorrida = null;
 
     renderHook(() => useMotoristaRealtime(null));
-
-    act(() => {});
 
     expect(mockDispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({type: 'realtime/setPendingOffer'}),
