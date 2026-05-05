@@ -12,6 +12,7 @@ const mockDispatch = jest.fn();
 
 const mockConnect = jest.fn();
 const mockDisconnect = jest.fn();
+const mockRefreshToken = jest.fn();
 
 const createExpiringToken = (): string => {
   const header = Buffer.from(JSON.stringify({alg: 'HS256', typ: 'JWT'})).toString('base64');
@@ -38,10 +39,7 @@ jest.mock('@services/facades', () => ({
       normalizeCorridaMensagem: jest.fn((p: unknown) => p),
     },
     authFacade: {
-      refreshToken: jest.fn().mockResolvedValue({
-        data: null,
-        error: {code: 'NETWORK_ERROR', message: 'Network down'},
-      }),
+      refreshToken: mockRefreshToken,
     },
   }),
 }));
@@ -76,6 +74,10 @@ describe('useRealtimeSession - refresh failure fallback', () => {
     mockToken = createExpiringToken();
     mockIsAuthenticated = true;
     mockConnectionStatus = 'idle';
+    mockRefreshToken.mockResolvedValue({
+      data: null,
+      error: {code: 'NETWORK_ERROR', message: 'Network down'},
+    });
     mockConnect.mockResolvedValue({data: 'connected', error: null});
   });
 
@@ -93,5 +95,24 @@ describe('useRealtimeSession - refresh failure fallback', () => {
         payload: expect.objectContaining({message: 'errors.sessionExpired'}),
       }),
     );
+  });
+
+  it('dispatches tokenRefreshed before connect when refresh succeeds', async () => {
+    const refreshedToken = createExpiringToken();
+    mockRefreshToken.mockResolvedValue({
+      data: {accessToken: refreshedToken, refreshToken: 'refresh-2'},
+      error: null,
+    });
+
+    renderHook(() => useRealtimeSession());
+    await act(async () => {});
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'auth/tokenRefreshed',
+        payload: refreshedToken,
+      }),
+    );
+    expect(mockConnect).toHaveBeenCalledWith(refreshedToken);
   });
 });

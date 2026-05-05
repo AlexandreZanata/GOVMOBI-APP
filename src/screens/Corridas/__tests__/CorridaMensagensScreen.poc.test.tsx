@@ -39,7 +39,25 @@ jest.mock('@react-navigation/elements', () => ({
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: ({children}: {children: React.ReactNode}) => {
+    const React = require('react');
+    const {View} = require('react-native');
+    return React.createElement(View, null, children);
+  },
   useSafeAreaInsets: () => ({bottom: 0, top: 0, left: 0, right: 0}),
+}));
+
+jest.mock('react-native-keyboard-controller', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  return {
+    KeyboardAvoidingView: ({children}: {children: React.ReactNode}) =>
+      React.createElement(View, null, children),
+  };
+});
+
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({t: (k: string) => k}),
 }));
 
 const mockVisualizarMensagensRest = jest.fn().mockResolvedValue({data: undefined, error: null});

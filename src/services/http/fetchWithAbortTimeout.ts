@@ -11,7 +11,9 @@ export const AUTH_HTTP_TIMEOUT_MS = 15_000;
  * each bounded by {@link AUTH_HTTP_TIMEOUT_MS}. Extra margin covers slow devices and
  * an additional bounded call without hanging the UI indefinitely.
  */
-export const HYDRATION_WATCHDOG_MS = AUTH_HTTP_TIMEOUT_MS * 4 + 10_000;
+// Keep hydration bounded to avoid long dark-splash stalls on debug/dev devices
+// when backend connectivity is flaky (e.g. API restarts mid-bootstrap).
+export const HYDRATION_WATCHDOG_MS = AUTH_HTTP_TIMEOUT_MS + 10_000;
 
 /**
  * Performs `fetch` with an AbortSignal that fires after `timeoutMs`.

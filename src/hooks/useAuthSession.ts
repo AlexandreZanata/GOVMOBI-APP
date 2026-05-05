@@ -131,22 +131,31 @@ export const useAuthSession = (): void => {
   const hydrationGenerationRef = useRef(0);
   /** Watchdog handle cleared on unmount so a stale timer cannot logout after remount. */
   const hydrationWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Prevents duplicate logout/toast emissions from concurrent failure paths. */
+  const sessionEndedRef = useRef(false);
 
   // Stable ref so async callbacks always read the latest persisted status
   // without needing to be re-created when statusOperacional changes.
   const statusOperacionalRef = useRef(statusOperacional);
   statusOperacionalRef.current = statusOperacional;
 
-  const endSession = (code?: string): void => {
+  const endSession = (code?: string, options?: {skipDefaultToast?: boolean}): void => {
+    if (sessionEndedRef.current) {
+      return;
+    }
+    sessionEndedRef.current = true;
     const isRevoked = code === 'UNAUTHORIZED';
+    logger.warn('useAuthSession', `Ending session (code=${code ?? 'unknown'})`);
     dispatch(logout());
-    dispatch(
-      addToast({
-        id: `session-ended-${Date.now()}`,
-        message: isRevoked ? t('errors.sessionRevoked') : t('errors.sessionExpired'),
-        type: 'warning',
-      }),
-    );
+    if (!options?.skipDefaultToast) {
+      dispatch(
+        addToast({
+          id: `session-ended-${Date.now()}`,
+          message: isRevoked ? t('errors.sessionRevoked') : t('errors.sessionExpired'),
+          type: 'warning',
+        }),
+      );
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -328,6 +337,7 @@ export const useAuthSession = (): void => {
   useEffect(() => {
     if (!isAuthenticated) {
       hasHydratedRef.current = false;
+      sessionEndedRef.current = false;
       return;
     }
 
@@ -343,6 +353,7 @@ export const useAuthSession = (): void => {
     const sessionGenAtStart = hydrationGenerationRef.current;
 
     const hydrate = async (): Promise<void> => {
+      logger.info('useAuthSession', `Hydration cycle started (gen=${sessionGenAtStart})`);
       dispatch(setIsHydrating(true));
       let hydrationActive = true;
       const isStale = (): boolean =>
@@ -360,14 +371,12 @@ export const useAuthSession = (): void => {
             'useAuthSession',
             'Hydration watchdog — server did not respond in time; ending session',
           );
-          dispatch(logout());
-          dispatch(
-            addToast({
-              id: `hydration-timeout-${Date.now()}`,
-              message: t('errors.hydrationTimeout'),
-              type: 'warning',
-            }),
-          );
+          endSession('TIMEOUT', {skipDefaultToast: true});
+          dispatch(addToast({
+            id: `hydration-timeout-${Date.now()}`,
+            message: t('errors.hydrationTimeout'),
+            type: 'warning',
+          }));
           resolve('timeout');
         }, HYDRATION_WATCHDOG_MS);
       });
@@ -402,9 +411,8 @@ export const useAuthSession = (): void => {
           hydrationWatchdogRef.current = null;
         }
         hydrationActive = false;
-        if (sessionGenAtStart === hydrationGenerationRef.current) {
-          dispatch(setIsHydrating(false));
-        }
+        dispatch(setIsHydrating(false));
+        logger.info('useAuthSession', `Hydration cycle finished (gen=${sessionGenAtStart})`);
       }
     };
 
@@ -418,6 +426,7 @@ export const useAuthSession = (): void => {
       hydrationGenerationRef.current += 1;
       hasHydratedRef.current = false;
       dispatch(setIsHydrating(false));
+      logger.info('useAuthSession', 'Hydration cleanup executed');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);

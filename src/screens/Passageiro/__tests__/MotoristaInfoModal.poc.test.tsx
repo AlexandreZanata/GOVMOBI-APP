@@ -115,7 +115,9 @@ describe('MotoristaInfoModal POC', () => {
 
     render(<MotoristaInfoModal {...defaultProps} nomeMotorista="Maria Souza" />);
 
-    expect(screen.getByText('Maria Souza')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText('Maria Souza')).toBeTruthy();
+    });
 
     await waitFor(() => {
       expect(mockGetServidorById).toHaveBeenCalledWith({id: 'srv-1'});
@@ -159,7 +161,9 @@ describe('MotoristaInfoModal POC', () => {
       />,
     );
 
-    expect(screen.getByTestId('motorista-avatar-image')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByTestId('motorista-avatar-image')).toBeTruthy();
+    });
 
     await waitFor(() => {
       expect(mockGetVeiculoById).toHaveBeenCalledWith('vei-1');

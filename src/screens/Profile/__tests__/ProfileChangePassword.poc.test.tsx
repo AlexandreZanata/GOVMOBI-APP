@@ -120,6 +120,16 @@ const renderWrapped = async (props: Omit<React.ComponentProps<typeof Wrapper>, '
   return utils;
 };
 
+const fillPasswordInputs = (
+  oldPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+): void => {
+  fireEvent.changeText(screen.getByTestId('input-senha-antiga'), oldPassword);
+  fireEvent.changeText(screen.getByTestId('input-nova-senha'), newPassword);
+  fireEvent.changeText(screen.getByTestId('input-confirmar-senha'), confirmPassword);
+};
+
 describe('ProfileScreen — change password', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -156,9 +166,7 @@ describe('ProfileScreen — change password', () => {
     fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
     await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
 
-    fireEvent.changeText(screen.getByTestId('input-senha-antiga'), 'OldPass@1');
-    fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
-    fireEvent.changeText(screen.getByTestId('input-confirmar-senha'), 'NewPass@2026');
+    fillPasswordInputs('OldPass@1', 'NewPass@2026', 'NewPass@2026');
 
     await act(async () => { fireEvent.press(screen.getByTestId('btn-change-password')); });
 
@@ -178,9 +186,7 @@ describe('ProfileScreen — change password', () => {
     fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
     await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
 
-    fireEvent.changeText(screen.getByTestId('input-senha-antiga'), 'OldPass@1');
-    fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
-    fireEvent.changeText(screen.getByTestId('input-confirmar-senha'), 'NewPass@2026');
+    fillPasswordInputs('OldPass@1', 'NewPass@2026', 'NewPass@2026');
 
     await act(async () => { fireEvent.press(screen.getByTestId('btn-change-password')); });
 
@@ -203,9 +209,7 @@ describe('ProfileScreen — change password', () => {
     fireEvent.press(screen.getByTestId('profile-change-password-toggle'));
     await waitFor(() => expect(screen.getByTestId('input-senha-antiga')).toBeTruthy());
 
-    fireEvent.changeText(screen.getByTestId('input-senha-antiga'), 'OldPass@1');
-    fireEvent.changeText(screen.getByTestId('input-nova-senha'), 'NewPass@2026');
-    fireEvent.changeText(screen.getByTestId('input-confirmar-senha'), 'DifferentPass@2026');
+    fillPasswordInputs('OldPass@1', 'NewPass@2026', 'DifferentPass@2026');
 
     await act(async () => { fireEvent.press(screen.getByTestId('btn-change-password')); });
 

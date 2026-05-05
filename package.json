@@ -11,6 +11,7 @@
     "emulator:install": "cd android && ./gradlew assembleDebug && cd .. && adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/aaaaaaaaa.apk && adb -s emulator-5554 reverse tcp:8081 tcp:8081 && adb -s emulator-5554 shell am start -n gov.govmobile.app/.MainActivity",
     "web": "expo start --web",
     "dev:android": "expo run:android",
+    "dev:android:standalone": "cd android && ./gradlew assembleDebugStandalone",
     "dev:ios": "expo run:ios",
     "build:dev:android": "eas build --profile development --platform android",
     "build:dev:ios": "eas build --profile development --platform ios",

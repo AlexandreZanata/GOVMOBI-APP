@@ -30,6 +30,7 @@ import {logout} from '../store/slices/authSlice';
 import {addToast} from '../store/slices/uiSlice';
 import {HYDRATION_WATCHDOG_MS} from '../services/http/fetchWithAbortTimeout';
 import {designColors, spacing, typography} from '../theme';
+import {logger} from '@utils/logger';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -58,7 +59,9 @@ const resolveRoleRoute = (
 const HYDRATION_HINT_DELAY_MS = 8_000;
 
 /** UI belt-and-suspenders if `useAuthSession` watchdog ever fails to fire (motorista devices). */
-const HYDRATION_UI_FAILSAFE_MS = HYDRATION_WATCHDOG_MS + 15_000;
+// UI-level belt-and-suspenders: never keep users on splash for too long,
+// even if an unexpected state transition prevents hook-level watchdog logout.
+const HYDRATION_UI_FAILSAFE_MS = Math.min(HYDRATION_WATCHDOG_MS + 5_000, 30_000);
 
 /**
  * Full-screen loading splash shown while getMe() resolves on cold start.
@@ -115,7 +118,9 @@ export const RootNavigator = (): React.JSX.Element => {
 
   useEffect(() => {
     if (!isAuthenticated || !isHydrating) return;
+    logger.info('RootNavigator', 'Hydration splash active');
     const id = setTimeout(() => {
+      logger.warn('RootNavigator', 'Hydration UI failsafe fired — forcing logout');
       dispatch(logout());
       dispatch(
         addToast({
@@ -130,6 +135,7 @@ export const RootNavigator = (): React.JSX.Element => {
 
   useEffect(() => {
     if (!isAuthenticated || token) return;
+    logger.warn('RootNavigator', 'Authenticated state without token — forcing logout');
     dispatch(logout());
     dispatch(
       addToast({

@@ -24,6 +24,7 @@ const mockGetActiveCorrida = jest.fn();
 const mockGetCorrida = jest.fn();
 const mockSubscribeToCorrida = jest.fn().mockResolvedValue({data: true, error: null});
 const mockSetDriverAvailable = jest.fn().mockResolvedValue({data: true, error: null});
+const mockRefreshToken = jest.fn().mockResolvedValue({data: {accessToken: 'new-token'}, error: null});
 
 const mockRealtimeFacade = {
   onConnectionStatusChange: jest.fn((handler: (status: string) => void) => {
@@ -48,6 +49,7 @@ jest.mock('@services/facades', () => ({
   useFacades: () => ({
     realtimeFacade: mockRealtimeFacade,
     corridaFacade: mockCorridaFacade,
+    authFacade: {refreshToken: mockRefreshToken},
   }),
 }));
 
@@ -57,7 +59,7 @@ jest.mock('@store/index', () => ({
   useAppDispatch: () => mockDispatch,
   useAppSelector: (selector: (s: unknown) => unknown) =>
     selector({
-      auth: {motoristaId: 'driver-1', isAuthenticated: true},
+      auth: {motoristaId: 'driver-1', isAuthenticated: true, token: null},
       corrida: {activeCorrida: null},
     }),
 }));
@@ -73,6 +75,9 @@ jest.mock('@store/slices/realtimeSlice', () => ({
 
 jest.mock('@models/Corrida', () => ({
   TERMINAL_STATUSES: new Set(['concluida', 'cancelada', 'expirada', 'avaliada']),
+}));
+jest.mock('@utils/logger', () => ({
+  logger: {warn: jest.fn(), error: jest.fn(), info: jest.fn()},
 }));
 
 // ── AppState mock ─────────────────────────────────────────────────────────────

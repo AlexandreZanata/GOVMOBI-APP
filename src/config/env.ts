@@ -58,5 +58,18 @@ if (__DEV__) {
   console.info('[ENV] extra  =', JSON.stringify(extra));
 }
 
+const isCleartextUrl = (url: string): boolean => /^http:\/\//i.test(url);
+const runtimeDevFlag = (globalThis as {__DEV__?: boolean}).__DEV__;
+if (isCleartextUrl(ENV.apiUrl) || isCleartextUrl(ENV.wsUrl)) {
+  console.warn(
+    '[ENV] cleartext URL detected',
+    JSON.stringify({
+      apiUrl: ENV.apiUrl,
+      wsUrl: ENV.wsUrl,
+      dev: typeof runtimeDevFlag === 'boolean' ? runtimeDevFlag : 'unknown',
+    }),
+  );
+}
+
 export const isDev = ENV.appEnv === 'development';
 export const isProduction = ENV.appEnv === 'production';

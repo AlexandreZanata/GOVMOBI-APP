@@ -27,7 +27,7 @@ import {
   setRealtimeError,
   setPendingOffer,
 } from '@store/slices/realtimeSlice';
-import {logout} from '@store/slices/authSlice';
+import {logout, tokenRefreshed} from '@store/slices/authSlice';
 import {addToast} from '@store/slices/uiSlice';
 import type {
   AssinarCorridaPayload,
@@ -193,6 +193,7 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
 
   // Track the last token used to open the socket so we can detect rotations.
   const lastConnectedTokenRef = useRef<string | null>(null);
+  const reconnectAttemptRef = useRef(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -222,6 +223,9 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
     let cancelled = false;
 
     const connect = async (): Promise<void> => {
+      reconnectAttemptRef.current += 1;
+      const reconnectAttempt = reconnectAttemptRef.current;
+      logger.info('useRealtimeSession', `connect cycle started (#${reconnectAttempt})`);
       // Decode token expiry from JWT payload (no signature verification needed).
       const parts = currentToken.split('.');
       let tokenExpiresAt = 0;
@@ -247,6 +251,11 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
       const refreshFn = async (): Promise<string | null> => {
         const result = await authFacadeRef.current.refreshToken();
         if (result.error || !result.data) {
+          logger.warn(
+            'useRealtimeSession',
+            `refresh failed during connect cycle (#${reconnectAttempt})`,
+            result.error,
+          );
           const isRevoked = result.error?.code === 'UNAUTHORIZED';
           dispatchRef.current(logout());
           dispatchRef.current(
@@ -258,6 +267,7 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
           );
           return null;
         }
+        dispatchRef.current(tokenRefreshed(result.data.accessToken));
         return result.data.accessToken;
       };
 
@@ -267,7 +277,13 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
       const freshToken = tokenExpiresAt === 0
         ? currentToken
         : await getValidToken(currentToken, tokenExpiresAt, refreshFn);
-      if (!freshToken || cancelled) return;
+      if (!freshToken || cancelled) {
+        logger.warn(
+          'useRealtimeSession',
+          `connect cycle aborted before socket connect (#${reconnectAttempt})`,
+        );
+        return;
+      }
 
       // Record the token we are about to connect with so subsequent renders
       // with the same token are no-ops.
@@ -283,6 +299,10 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
         dispatch(setRealtimeError(result.error.message));
       } else {
         console.log('[useRealtimeSession] connect dispatched — status=', result.data);
+        logger.info(
+          'useRealtimeSession',
+          `connect cycle completed (#${reconnectAttempt})`,
+        );
       }
     };
 

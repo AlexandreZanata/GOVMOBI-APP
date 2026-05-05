@@ -30,6 +30,9 @@ module.exports = {
     '^react-native-safe-area-context$':
       '<rootDir>/src/__mocks__/react-native-safe-area-context.tsx',
     '^expo-constants$': '<rootDir>/src/__mocks__/expo-constants.ts',
+    '^expo-image-picker$': '<rootDir>/src/__mocks__/expo-image-picker.ts',
+    '^react-native-keyboard-controller$':
+      '<rootDir>/src/__mocks__/react-native-keyboard-controller.ts',
     '^@components/(.*)$': '<rootDir>/src/components/$1',
     '^@screens/(.*)$': '<rootDir>/src/screens/$1',
     '^@navigation/(.*)$': '<rootDir>/src/navigation/$1',

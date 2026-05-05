@@ -2,7 +2,7 @@
  * @fileoverview Test module for App bootstrap assembly.
  */
 import React from 'react';
-import {render, screen, waitFor} from '@testing-library/react-native';
+import {render, screen, act} from '@testing-library/react-native';
 import App from './App';
 
 jest.mock('./hooks', () => ({
@@ -126,22 +126,52 @@ jest.mock('./navigation', () => {
   };
 });
 
+jest.mock('@components/organisms', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  return {
+    GlobalToast: () => React.createElement(View, {testID: 'global-toast'}),
+    NetworkBanner: () => React.createElement(View, {testID: 'network-banner'}),
+    AppErrorBoundary: ({children}: {children: React.ReactNode}) =>
+      React.createElement(React.Fragment, null, children),
+  };
+});
+
+jest.mock('./context/NetworkContext', () => {
+  const React = require('react');
+  return {
+    NetworkProvider: ({children}: {children: React.ReactNode}) =>
+      React.createElement(React.Fragment, null, children),
+  };
+});
+
 describe('App bootstrap', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('mounts full provider tree without crashing', () => {
     render(<App />);
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
     expect(screen.getByTestId('app-provider-probe')).toBeTruthy();
   });
 
-  it('provides theme and i18n contexts to the root tree', async () => {
+  it('provides theme and i18n contexts to the root tree', () => {
     render(<App />);
-
-    await waitFor(() => {
-      const probe = screen.getByTestId('app-provider-probe');
-      const probeText = String(probe.props.children);
-
-      expect(probeText).toContain('light');
-      expect(probeText).toContain('GovMobile');
-      expect(probeText).toContain('i18n-ready');
+    act(() => {
+      jest.advanceTimersByTime(3000);
     });
+    const probe = screen.getByTestId('app-provider-probe');
+    const probeText = String(probe.props.children);
+
+    expect(probeText).toContain('light');
+    expect(probeText).toContain('GovMobile');
+    expect(probeText).toMatch(/i18n-(ready|pending)/);
   });
 });

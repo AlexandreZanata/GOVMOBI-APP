@@ -14,6 +14,7 @@ import {
   fetchWithAbortTimeout,
 } from '@services/http/fetchWithAbortTimeout';
 import {resolvePublicMediaUrl} from '@utils/resolvePublicMediaUrl';
+import {logger} from '@utils/logger';
 
 const ACCESS_TOKEN_KEY = 'govmobile_access_token';
 const REFRESH_TOKEN_KEY = 'govmobile_refresh_token';
@@ -335,8 +336,11 @@ export class AuthFacadeImpl implements IAuthFacade {
   public async refreshToken(): Promise<
     Result<Omit<AuthSession, 'user'>, FacadeError>
   > {
+    const cycleId = `refresh-${Date.now()}`;
+    logger.info('AuthFacade', `refreshToken start (${cycleId})`);
     const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
     if (!refreshToken) {
+      logger.warn('AuthFacade', `refreshToken missing refresh token (${cycleId})`);
       return fail(toFacadeError('Missing refresh token', 'UNAUTHORIZED'));
     }
 
@@ -368,6 +372,7 @@ export class AuthFacadeImpl implements IAuthFacade {
       );
 
       if (!response.ok) {
+        logger.warn('AuthFacade', `refreshToken unauthorized response (${cycleId})`);
         return fail(toFacadeError('Unable to refresh token', 'UNAUTHORIZED'));
       }
 
@@ -375,11 +380,13 @@ export class AuthFacadeImpl implements IAuthFacade {
       const tokens = (await response.json()) as TokenPair;
 
       await this.storeTokens(tokens.accessToken, tokens.refreshToken);
+      logger.info('AuthFacade', `refreshToken success (${cycleId})`);
       return ok({
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       });
     } catch (err) {
+      logger.error('AuthFacade', `refreshToken failed (${cycleId})`, err);
       const isTimeout = err instanceof Error && err.name === 'AbortError';
       return fail(
         toFacadeError(
@@ -408,6 +415,8 @@ export class AuthFacadeImpl implements IAuthFacade {
    * @returns Raw MeResponse from the server.
    */
   public async getMe(accessToken?: string): Promise<Result<MeResponse, FacadeError>> {
+    const cycleId = `getMe-${Date.now()}`;
+    logger.info('AuthFacade', `getMe start (${cycleId})`);
     if (this.mockMode) {
       await delay(120);
       const user = this.currentUser ?? createMockUser();
@@ -422,6 +431,7 @@ export class AuthFacadeImpl implements IAuthFacade {
     try {
       const token = accessToken ?? await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
       if (!token) {
+        logger.warn('AuthFacade', `getMe missing access token (${cycleId})`);
         return fail(toFacadeError('No access token available', 'UNAUTHORIZED'));
       }
 
@@ -440,17 +450,21 @@ export class AuthFacadeImpl implements IAuthFacade {
       if (response.status === 401 || response.status === 403) {
         // Token was revoked or is invalid — fail fast so the caller can
         // immediately dispatch logout() without waiting for the watchdog.
+        logger.warn('AuthFacade', `getMe unauthorized (${cycleId})`);
         return fail(toFacadeError('Token revoked or invalid', 'UNAUTHORIZED'));
       }
 
       if (!response.ok) {
+        logger.warn('AuthFacade', `getMe non-ok response (${cycleId})`);
         return fail(toFacadeError('Unable to fetch user profile', 'SERVER_ERROR'));
       }
 
       const me = (await response.json()) as MeResponse;
       this.currentUser = userFromMe(me, this.apiBaseUrl);
+      logger.info('AuthFacade', `getMe success (${cycleId})`);
       return ok(me);
     } catch (err) {
+      logger.error('AuthFacade', `getMe failed (${cycleId})`, err);
       const isTimeout = err instanceof Error && err.name === 'AbortError';
       return fail(
         toFacadeError(

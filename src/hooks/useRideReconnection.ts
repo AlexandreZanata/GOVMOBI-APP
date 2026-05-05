@@ -24,10 +24,12 @@ import {
   setPendingCorridaId,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
-import {tokenRefreshed, setStatusOperacional} from '@store/slices/authSlice';
+import {logout, tokenRefreshed, setStatusOperacional} from '@store/slices/authSlice';
+import {addToast} from '@store/slices/uiSlice';
 import {TERMINAL_STATUSES} from '@models/Corrida';
 import {getValidToken} from '@utils/tokenUtils';
 import type {ReconexaoConcluida} from '../types/realtime';
+import {logger} from '@utils/logger';
 
 const TAG = '[useRideReconnection]';
 const RECONNECTION_TIMEOUT_MS = 3_000;
@@ -276,11 +278,24 @@ export const useRideReconnection = (): void => {
             }
             const refreshFn = async (): Promise<string | null> => {
               const result = await authFacadeRef.current.refreshToken();
+              if (result.error || !result.data) {
+                logger.warn(TAG, 'Foreground refresh failed — ending session', result.error);
+                const isRevoked = result.error?.code === 'UNAUTHORIZED';
+                dispatchRef.current(logout());
+                dispatchRef.current(
+                  addToast({
+                    id: `reconnection-session-ended-${Date.now()}`,
+                    message: isRevoked ? 'errors.sessionRevoked' : 'errors.sessionExpired',
+                    type: 'warning',
+                  }),
+                );
+                return null;
+              }
               if (result.data?.accessToken) {
                 // Dispatch the refreshed token to Redux so all consumers see it.
                 dispatchRef.current(tokenRefreshed(result.data.accessToken));
               }
-              return result.data?.accessToken ?? null;
+              return result.data.accessToken;
             };
             void getValidToken(currentToken, tokenExpiresAt, refreshFn);
           }
