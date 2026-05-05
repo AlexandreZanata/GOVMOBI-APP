@@ -11,7 +11,7 @@ const mockDispatch = jest.fn();
 const mockSetDriverAvailable = jest.fn().mockResolvedValue({data: true, error: null});
 
 let mockActiveCorrida: {id: string; status: string} | null = null;
-let mockConnectionStatus = 'connected';
+let mockConnectionStatus = 'disconnected';
 
 jest.mock('@services/facades', () => ({
   useFacades: () => ({
@@ -46,7 +46,7 @@ describe('useMotoristaRealtime POC — setPendingOffer(null) on active ride', ()
     jest.useRealTimers();
     jest.clearAllMocks();
     mockActiveCorrida = null;
-    mockConnectionStatus = 'connected';
+    mockConnectionStatus = 'disconnected';
   });
 
   afterEach(() => {
@@ -55,8 +55,7 @@ describe('useMotoristaRealtime POC — setPendingOffer(null) on active ride', ()
 
   it('dispatches setPendingOffer(null) when activeCorrida transitions to non-terminal status', () => {
     mockActiveCorrida = {id: 'ride-1', status: 'ACEITA'};
-
-    renderHook(() => useMotoristaRealtime(null));
+    const {unmount} = renderHook(() => useMotoristaRealtime(null));
 
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -64,15 +63,16 @@ describe('useMotoristaRealtime POC — setPendingOffer(null) on active ride', ()
         payload: null,
       }),
     );
+    unmount();
   });
 
   it('does NOT dispatch setPendingOffer(null) when activeCorrida is null', () => {
     mockActiveCorrida = null;
-
-    renderHook(() => useMotoristaRealtime(null));
+    const {unmount} = renderHook(() => useMotoristaRealtime(null));
 
     expect(mockDispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({type: 'realtime/setPendingOffer'}),
     );
+    unmount();
   });
 });
