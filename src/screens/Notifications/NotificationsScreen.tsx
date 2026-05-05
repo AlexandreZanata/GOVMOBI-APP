@@ -1,0 +1,139 @@
+/**
+ * @fileoverview Notification inbox screen.
+ * Tab root — SafeAreaView covers top only; BottomTabBar handles the bottom inset.
+ * Header follows the same pattern as PassageiroCorridasListScreen (navy800 bg,
+ * headingLg centred title, surface200 content area).
+ */
+import React, {useCallback, useMemo} from 'react';
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StatusBar,
+  Text,
+  View,
+  type ListRenderItem,
+} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useTranslation} from 'react-i18next';
+import {useTheme} from '../../theme';
+import {Skeleton} from '@components/atoms';
+import {NotificationItem} from '@components/molecules';
+import {useAppDispatch, useAppSelector} from '../../store';
+import {markAllAsRead, markAsRead} from '@store/slices/notificationsSlice';
+import {type Notification} from '../../models';
+import {createNotificationsStyles} from './NotificationsScreen.styles';
+
+/** Formats a notification timestamp as a relative label. */
+const formatTimeLabel = (createdAt: string): string => {
+  const diffMs = Date.now() - new Date(createdAt).getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return 'now';
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h`;
+  return `${Math.floor(diffH / 24)}d`;
+};
+
+/**
+ * Notification inbox with mark-as-read and mark-all-read support.
+ */
+export const NotificationsScreen = (): React.JSX.Element => {
+  const {t} = useTranslation();
+  const theme = useTheme();
+  const styles = useMemo(() => createNotificationsStyles(theme), [theme]);
+  const dispatch = useAppDispatch();
+
+  const notifications = useAppSelector(state => state.notifications.notifications);
+  const _unreadCount = useAppSelector(state => state.notifications.unreadCount);
+
+  const isLoading = false;
+  const isRefreshing = false;
+  const onRefresh = useCallback(() => {}, []);
+
+  const handleMarkAsRead = useCallback(
+    (id: string) => { dispatch(markAsRead(id)); },
+    [dispatch],
+  );
+
+  const _handleMarkAllAsRead = useCallback(() => {
+    dispatch(markAllAsRead());
+  }, [dispatch]);
+
+  const renderItem = useCallback<ListRenderItem<Notification>>(
+    ({item}) => (
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => handleMarkAsRead(item.id)}
+        testID={`notification-item-${item.id}`}>
+        <NotificationItem
+          notification={item}
+          timeLabel={formatTimeLabel(item.createdAt)}
+        />
+      </Pressable>
+    ),
+    [handleMarkAsRead],
+  );
+
+  const renderSkeleton = () => (
+    <>
+      {Array.from({length: 5}).map((_, i) => (
+        <View key={i} style={styles.skeletonItem}>
+          <Skeleton width={40} height={40} borderRadius={20} />
+          <View style={styles.skeletonContent}>
+            <Skeleton width={160} height={14} />
+            <Skeleton width="90%" height={12} />
+          </View>
+        </View>
+      ))}
+    </>
+  );
+
+  return (
+    <SafeAreaView edges={['top']} style={styles.safeArea} testID="notifications-screen">
+      <StatusBar barStyle="light-content" backgroundColor={theme.design.navy800} />
+
+      {/* Header — same pattern as PassageiroCorridasListScreen */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>
+          {t('navigation.titles.notifications')}
+        </Text>
+      </View>
+
+      {isLoading ? (
+        renderSkeleton()
+      ) : (
+        <View style={styles.contentArea}>
+          <FlatList
+            data={notifications}
+            keyExtractor={item => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={
+              notifications.length === 0 ? styles.emptyState : styles.listContent
+            }
+            windowSize={10}
+            removeClippedSubviews
+            refreshControl={
+              <RefreshControl
+                colors={[theme.colors.accent]}
+                refreshing={isRefreshing}
+                onRefresh={onRefresh}
+                tintColor={theme.colors.accent}
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyState} testID="notifications-empty">
+                <Text style={styles.emptySubtitle}>
+                  {t('notifications.empty.message')}
+                </Text>
+              </View>
+            }
+            testID="notifications-list"
+          />
+        </View>
+      )}
+    </SafeAreaView>
+  );
+};
+
+NotificationsScreen.displayName = 'NotificationsScreen';

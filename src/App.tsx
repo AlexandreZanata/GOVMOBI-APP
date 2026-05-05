@@ -1,0 +1,211 @@
+/**
+ * @fileoverview Main application assembly module.
+ */
+// Must be the first import — patches TurboModuleRegistry.getEnforcing so
+// optional native modules (OneSignal) fail silently instead of logging ERROR.
+import './polyfills/turboModuleGuard';
+import React, {useCallback, useEffect, useState} from 'react';
+import {StyleSheet, View} from 'react-native';
+import {Provider} from 'react-redux';
+import {PersistGate} from 'redux-persist/integration/react';
+import {NavigationContainer} from '@react-navigation/native';
+import {I18nextProvider} from 'react-i18next';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {StatusBar} from 'expo-status-bar';
+import {ThemeProvider} from './theme';
+import {designColors} from './theme';
+import {store, persistor, useAppSelector, useAppDispatch} from './store';
+import {tokenRefreshed, logout} from '@store/slices/authSlice';
+import {addToast} from '@store/slices/uiSlice';
+import {AuthFacadeImpl} from '@services/facades';
+import {getValidToken} from '@utils/tokenUtils';
+import {ENV} from './config/env';
+import {i18n} from './i18n';
+import {RootNavigator} from './navigation';
+import {navigationRef} from './navigation/navigationRef';
+import {GlobalToast, NetworkBanner, AppErrorBoundary} from '@components/organisms';
+import {
+  useAppLocationBootstrap,
+  useAuthSession,
+  useNetworkStatus,
+  useNotifications,
+  useRealtimeSession,
+} from './hooks';
+import {useCorridaContexto} from '@hooks/useCorridaContexto';
+import {useDriverLocationStream} from '@hooks/useDriverLocationStream';
+import {useRideReconnection} from '@hooks/useRideReconnection';
+import {FacadeProvider} from '@services/facades';
+import {NetworkProvider} from './context/NetworkContext';
+import {KeyboardProvider} from 'react-native-keyboard-controller';
+
+/**
+ * Startup side-effect hooks that depend on app providers.
+ */
+const AppStartupEffects = (): null => {
+  useAppLocationBootstrap();
+  useNetworkStatus();
+  useNotifications();
+  useAuthSession();
+  useRealtimeSession();
+  useRideReconnection();
+  useCorridaContexto();
+  useDriverLocationStream();
+  return null;
+};
+
+AppStartupEffects.displayName = 'AppStartupEffects';
+
+/**
+ * App tree rendered after all global providers are mounted.
+ *
+ * @returns Fully wired application shell.
+ */
+const AppShell = (): React.JSX.Element => {
+  const themeMode = useAppSelector(state => state.ui.themeMode);
+  const dispatch = useAppDispatch();
+
+  // Stable getter — same function identity forever (facades are not recreated),
+  // but always reads the current access token from the Redux store. That keeps
+  // Authorization headers correct in the same tick as `dispatch(tokenRefreshed)`
+  // during cold-start hydration (refresh → getMe → PATCH status) — critical for
+  // motoristas where a stale ref would send an old JWT to /frota after refresh.
+  const getToken = useCallback((): string | null => store.getState().auth.token, []);
+
+  /**
+   * Token refresher for the realtime transport's 401 recovery cycle.
+   * Routes through the shared `getValidToken()` mutex so the 401 handler
+   * and `useAuthSession`'s interval refresh serialize through the same
+   * promise — preventing duplicate refresh calls (P3, P7).
+   */
+  const refreshToken = useCallback(async (): Promise<string | null> => {
+    const currentToken = store.getState().auth.token;
+    if (!currentToken) return null;
+
+    // Decode expiry from the current token.
+    let tokenExpiresAt = 0;
+    const parts = currentToken.split('.');
+    if (parts.length === 3) {
+      try {
+        const decode = (globalThis as {atob?: (v: string) => string}).atob;
+        if (typeof decode === 'function') {
+          const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(decode(normalized)) as {exp?: number};
+          tokenExpiresAt = typeof payload.exp === 'number' ? payload.exp : 0;
+        } else {
+          const payload = JSON.parse(
+            Buffer.from(parts[1], 'base64').toString('utf-8'),
+          ) as {exp?: number};
+          tokenExpiresAt = typeof payload.exp === 'number' ? payload.exp : 0;
+        }
+      } catch {
+        tokenExpiresAt = 0;
+      }
+    }
+
+    const refreshFn = async (): Promise<string | null> => {
+      const authFacade = new AuthFacadeImpl({apiBaseUrl: ENV.apiUrl});
+      const result = await authFacade.refreshToken();
+      if (result.error || !result.data) {
+        const isRevoked = result.error?.code === 'UNAUTHORIZED';
+        dispatch(logout());
+        dispatch(
+          addToast({
+            id: `session-ended-${Date.now()}`,
+            message: isRevoked ? 'errors.sessionRevoked' : 'errors.sessionExpired',
+            type: 'warning',
+          }),
+        );
+        return null;
+      }
+      dispatch(tokenRefreshed(result.data.accessToken));
+      return result.data.accessToken;
+    };
+
+    return getValidToken(currentToken, tokenExpiresAt, refreshFn);
+  }, [dispatch]);
+
+  return (
+    <ThemeProvider mode={themeMode}>
+      <FacadeProvider getToken={getToken} refreshToken={refreshToken}>
+        <NetworkProvider>
+          <AppStartupEffects />
+          <StatusBar
+            style="light"
+            backgroundColor={designColors.navy800}
+            translucent={false}
+          />
+          <View style={styles.container}>
+            <AppErrorBoundary>
+              <NavigationContainer ref={navigationRef}>
+                <RootNavigator />
+              </NavigationContainer>
+            </AppErrorBoundary>
+            <NetworkBanner />
+            <GlobalToast />
+          </View>
+        </NetworkProvider>
+      </FacadeProvider>
+    </ThemeProvider>
+  );
+};
+
+AppShell.displayName = 'AppShell';
+
+/**
+ * Wraps PersistGate with a 3-second safety timeout.
+ * If redux-persist does not finish rehydrating within 3s (e.g. corrupted
+ * AsyncStorage from a previous Expo Go session), the app renders anyway.
+ * This prevents the infinite blue-screen on physical device debug builds.
+ */
+const SafePersistGate = ({children}: {children: React.ReactNode}): React.JSX.Element => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // Force-unblock after 3 seconds regardless of persist state
+    const timeout = setTimeout(() => setReady(true), 3000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return (
+    <PersistGate
+      loading={<View style={styles.container} />}
+      onBeforeLift={() => { setReady(true); }}
+      persistor={persistor}>
+      {ready ? children : <View style={styles.container} />}
+    </PersistGate>
+  );
+};
+
+SafePersistGate.displayName = 'SafePersistGate';
+
+/**
+ * Creates main application provider composition.
+ *
+ * @returns App root component.
+ */
+const App = (): React.JSX.Element => {
+  return (
+    <GestureHandlerRootView style={styles.container}>
+      <SafeAreaProvider>
+        <KeyboardProvider>
+          <I18nextProvider i18n={i18n}>
+            <Provider store={store}>
+              <SafePersistGate>
+                <AppShell />
+              </SafePersistGate>
+            </Provider>
+          </I18nextProvider>
+        </KeyboardProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
+
+export default App;

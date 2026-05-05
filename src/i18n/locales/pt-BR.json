@@ -1,0 +1,637 @@
+{
+  "common": {
+    "appName": "GovMobile",
+    "loading": "Carregando",
+    "retry": "Tentar novamente",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Salvar",
+    "back": "Voltar",
+    "search": "Pesquisar",
+    "notifications": "Notificacoes",
+    "clear": "Limpar",
+    "delete": "Excluir",
+    "unknownUser": "Usuario desconhecido",
+    "role": {
+      "ADMIN": "Administrador",
+      "MANAGER": "Gerente",
+      "OFFICER": "Oficial",
+      "CITIZEN": "Cidadao"
+    },
+    "status": {
+      "ACTIVE": "Ativo",
+      "INACTIVE": "Inativo",
+      "SUSPENDED": "Suspenso",
+      "PENDING": "Pendente"
+    }
+  },
+  "home": {
+    "greeting": "Ola, {{name}}",
+    "services": "Servicos",
+    "recentActivity": "Atividade recente",
+    "announcements": "Comunicados"
+  },
+  "chat": {
+    "newMessage": "Nova mensagem",
+    "typing": "Digitando",
+    "online": "Online",
+    "offline": "Offline",
+    "send": "Enviar",
+    "attach": "Anexar",
+    "you": "Voce",
+    "imageAttachment": "Imagem",
+    "fileAttachment": "Arquivo",
+    "audioAttachment": "Audio",
+    "systemMessage": "Mensagem do sistema",
+    "sending": "Enviando",
+    "sent": "Enviada",
+    "delivered": "Entregue",
+    "read": "Lida",
+    "failed": "Falhou"
+  },
+  "calls": {
+    "incomingCall": "Chamada recebida",
+    "outgoingCall": "Chamada realizada",
+    "missedCall": "Chamada perdida",
+    "duration": "Duracao",
+    "answer": "Atender",
+    "decline": "Recusar",
+    "endCall": "Encerrar chamada",
+    "active": "Ativa",
+    "ended": "Encerrada",
+    "callBack": "Retornar"
+  },
+  "notificationsList": {
+    "system": "Sistema",
+    "message": "Mensagem",
+    "call": "Chamada",
+    "announcement": "Comunicado",
+    "task": "Tarefa"
+  },
+  "homeActions": {
+    "newMessage": {
+      "label": "Nova mensagem",
+      "description": "Iniciar conversa direta"
+    },
+    "callDirectory": {
+      "label": "Diretorio de chamadas",
+      "description": "Buscar oficiais e departamentos"
+    },
+    "announcements": {
+      "label": "Comunicados",
+      "description": "Ler atualizacoes governamentais"
+    },
+    "reports": {
+      "label": "Relatorios",
+      "description": "Revisar relatorios operacionais"
+    },
+    "schedule": {
+      "label": "Agenda",
+      "description": "Ver calendario e reunioes"
+    },
+    "documents": {
+      "label": "Documentos",
+      "description": "Acessar documentos oficiais"
+    }
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "cpf": "CPF",
+    "cpfPlaceholder": "000.000.000-00",
+    "cpfInvalid": "CPF inválido",
+    "cpfRequired": "Informe o CPF",
+    "password": "Senha",
+    "passwordRequired": "Informe a senha",
+    "forgotPassword": "Esqueci minha senha",
+    "loginFailed": "CPF ou senha inválidos.",
+    "subtitle": "Sistema de Mobilidade Operacional",
+    "version": "v{{version}}",
+    "hydrationTakingLong": "Verificando sua sessão com o servidor… Se demorar, a conexão pode estar instável ou o serviço indisponível."
+  },
+  "errors": {
+    "networkError": "Erro de rede",
+    "sessionExpired": "Sessao expirada",
+    "sessionRevoked": "Sua sessão foi encerrada pelo servidor. Faça login novamente.",
+    "hydrationTimeout": "Não foi possível contatar o servidor a tempo. Entre novamente quando a conexão estiver estável.",
+    "unknownError": "Erro desconhecido"
+  },
+  "navigation": {
+    "tabs": {
+      "home": "Inicio",
+      "messages": "Mensagens",
+      "calls": "Chamadas",
+      "alerts": "Alertas",
+      "profile": "Perfil"
+    },
+    "titles": {
+      "home": "GovMobile",
+      "messages": "Mensagens",
+      "calls": "Chamadas",
+      "notifications": "Notificacoes",
+      "profile": "Perfil",
+      "login": "Entrar",
+      "forgotPassword": "Esqueci minha senha",
+      "chatRoom": "Conversa",
+      "newMessage": "Nova mensagem",
+      "activeCall": "Chamada ativa",
+      "incomingCall": "Chamada recebida",
+      "settings": "Configuracoes"
+    }
+  },
+  "ui": {
+    "toast": {
+      "dismiss": "Dispensar notificacao"
+    },
+    "network": {
+      "offline": "Voce esta offline",
+      "offlineSubtitle": "Verifique sua conexão com a internet.",
+      "reconnecting_plain": "Reconectando...",
+      "reconnecting": "Reconectando... (tentativa {{count}})",
+      "reconnectingSubtitle": "Aguarde enquanto restabelecemos a conexão.",
+      "recovered": "Conexao restaurada"
+    }
+  },
+  "servidores": {
+    "list": {
+      "title": "Servidores",
+      "searchPlaceholder": "Buscar por nome ou email",
+      "filters": {
+        "all": "Todos",
+        "active": "Ativos",
+        "inactive": "Inativos"
+      },
+      "empty": {
+        "title": "Nenhum servidor encontrado",
+        "message": "Nenhum servidor corresponde aos filtros selecionados."
+      }
+    },
+    "detail": {
+      "title": "Servidor",
+      "cpf": "CPF",
+      "email": "Email",
+      "telefone": "Telefone",
+      "cargo": "Cargo",
+      "lotacao": "Lotacao",
+      "papeis": "Papeis",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo"
+    },
+    "papeis": {
+      "USUARIO": "Usuario",
+      "ADMIN": "Admin",
+      "MOTORISTA": "Motorista"
+    }
+  },
+  "frota": {
+    "title": "Frota",
+    "tabs": {
+      "veiculos": "Veiculos",
+      "motoristas": "Motoristas"
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo"
+    },
+    "veiculos": {
+      "filters": {
+        "all": "Todos",
+        "active": "Ativos",
+        "inactive": "Inativos"
+      },
+      "empty": {
+        "title": "Nenhum veiculo encontrado",
+        "message": "Nenhum veiculo corresponde ao filtro selecionado."
+      }
+    },
+    "motoristas": {
+      "filters": {
+        "all": "Todos"
+      },
+      "status": {
+        "DISPONIVEL": "Disponivel",
+        "EM_ROTA": "Em rota",
+        "AFASTADO": "Afastado"
+      },
+      "empty": {
+        "title": "Nenhum motorista encontrado",
+        "message": "Nenhum motorista corresponde ao filtro selecionado."
+      }
+    }
+  },
+  "notifications": {
+    "markAllRead": "Marcar tudo como lido",
+    "empty": {
+      "title": "Sem notificacoes",
+      "message": "Voce nao tem notificacoes no momento."
+    },
+    "push": {
+      "corridaAceita": {
+        "title": "Corrida Aceita",
+        "body": "Seu motorista está a caminho."
+      },
+      "corridaRecusada": {
+        "title": "Corrida Recusada",
+        "body": "Nenhum motorista aceitou sua corrida. Tente novamente."
+      },
+      "novaCorridaDisponivel": {
+        "title": "Nova Corrida Disponível",
+        "body": "Uma nova solicitação de corrida está aguardando."
+      },
+      "motoristaChegando": {
+        "title": "Motorista Chegando",
+        "body": "Seu motorista está próximo ao ponto de embarque."
+      },
+      "corridaCancelada": {
+        "title": "Corrida Cancelada",
+        "body": "Sua corrida foi cancelada."
+      },
+      "corridaConcluida": {
+        "title": "Corrida Concluída",
+        "body": "Sua corrida foi finalizada. Avalie sua experiência."
+      }
+    },
+    "permissionDenied": "Permissão de notificação negada. Ative nas configurações do dispositivo."
+  },
+  "profile": {
+    "save": "Salvar",
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "signOut": "Sair",
+    "settings": "Configuracoes",
+    "fields": {
+      "name": "Nome",
+      "email": "Email",
+      "role": "Funcao",
+      "department": "Departamento"
+    },
+    "toast": {
+      "updated": "Perfil atualizado com sucesso.",
+      "updateFailed": "Nao foi possivel atualizar o perfil."
+    },
+    "photo": {
+      "changeLabel": "Alterar foto de perfil",
+      "uploadSuccess": "Foto atualizada com sucesso.",
+      "uploadFailed": "Não foi possível enviar a foto.",
+      "permissionDenied": "Permissão de acesso à galeria negada.",
+      "tooLarge": "Arquivo muito grande (máx. 5MB).",
+      "invalidFile": "Formato inválido. Use JPEG, PNG ou WebP."
+    },
+    "changePassword": {
+      "sectionTitle": "Alterar Senha",
+      "senhaAntiga": "Senha atual",
+      "novaSenha": "Nova senha",
+      "confirmarSenha": "Confirmar nova senha",
+      "submit": "Alterar Senha",
+      "success": "Senha alterada com sucesso.",
+      "failed": "Nao foi possivel alterar a senha.",
+      "wrongPassword": "Senha atual incorreta.",
+      "mismatch": "As senhas nao coincidem.",
+      "required": "Preencha todos os campos."
+    }
+  },
+  "settings": {
+    "title": "Configuracoes",
+    "sections": {
+      "language": "Idioma",
+      "notifications": "Notificacoes",
+      "about": "Sobre"
+    },
+    "about": {
+      "version": "Versao",
+      "build": "Build"
+    }
+  },
+  "passageiro": {
+    "currentLocation": "Minha localização",
+    "requestSuccess": "Corrida solicitada com sucesso!",
+    "map": {
+      "label": "Mapa",
+      "notInstalled": "Mapa não disponível",
+      "zoomIn": "Aproximar",
+      "zoomOut": "Afastar",
+      "centerOnUser": "Centralizar na minha localização"
+    },
+    "searchBar": {
+      "placeholder": "Para onde você vai?",
+      "placeholderTyping": "Digite o destino",
+      "results": "Resultados",
+      "noResults": "Nenhum resultado encontrado",
+      "recentLabel": "Recentes",
+      "home": "Casa",
+      "work": "Trabalho"
+    },
+    "bottomSheet": {
+      "title": "Nova Corrida",
+      "destinoLabel": "DESTINO",
+      "destinoPlaceholder": "Selecione um destino",
+      "cta": "Solicitar Corrida",
+      "ctaSelectAddress": "Selecionar endereço",
+      "expand": "Expandir painel",
+      "collapse": "Minimizar painel"
+    },
+    "tabs": {
+      "home": "Início",
+      "corridas": "Corridas",
+      "notificacoes": "Alertas",
+      "perfil": "Perfil"
+    },
+    "errors": {
+      "selectDestination": "Selecione um destino antes de solicitar.",
+      "locationRequired": "Aguardando sua localização.",
+      "requestFailed": "Não foi possível solicitar a corrida.",
+      "alreadyHasActiveRide": "Você já possui uma corrida ativa. Acompanhe-a no mapa."
+    }
+  },
+  "motorista": {
+    "title": "Área do Motorista",
+    "subtitle": "Aguarde corridas disponíveis.",
+    "tabs": {
+      "home": "Início",
+      "corridas": "Corridas",
+      "notificacoes": "Alertas",
+      "perfil": "Perfil"
+    },
+    "map": {
+      "label": "Mapa",
+      "driverLocation": "Minha localização"
+    },
+    "status": {
+      "disponivel": "Disponível",
+      "emRota": "Em Rota",
+      "afastado": "Indisponível",
+      "offline": "Offline",
+      "ativo": "Disponível",
+      "indisponivel": "Indisponível",
+      "toggleLabel": "Alternar disponibilidade",
+      "disponivelMsg": "Você está disponível para corridas.",
+      "afastadoMsg": "Você está indisponível para corridas.",
+      "offlineMsg": "Você está offline.",
+      "emCorrida": "Em Corrida",
+      "managedBySystem": "Status gerenciado pelo sistema durante a corrida."
+    },
+    "idle": {
+      "title": "Aguardando Corridas",
+      "subtitle": "Você receberá notificações quando houver corridas disponíveis.",
+      "connecting": "Conectando ao servidor...",
+      "reconnecting": "Reconectando..."
+    },
+    "realtime": {
+      "connected": "Online",
+      "connecting": "Conectando",
+      "disconnected": "Offline",
+      "error": "Erro de conexão"
+    },
+    "activeRide": {
+      "title": "Corrida Ativa"
+    },
+    "actions": {
+      "chegar": "Cheguei ao Local",
+      "chegarSuccess": "Chegada confirmada no ponto de embarque."
+    },
+    "novaCorridaModal": {
+      "title": "Nova Corrida Disponível",
+      "timerLabel": "segundos para responder",
+      "highPriority": "Alta Prioridade"
+    },
+    "corridas": {
+      "title": "Minhas Corridas",
+      "subtitle": "Corridas disponíveis e histórico",
+      "activeRide": "Corrida Ativa",
+      "available": "Corridas Disponíveis",
+      "noAvailable": "Nenhuma corrida disponível no momento.",
+      "acceptRide": "Aceitar corrida"
+    },
+    "veiculo": {
+      "title": "Associar Veículo",
+      "selectLabel": "Selecione um veículo",
+      "associateBtn": "Associar Veículo",
+      "disassociateBtn": "Desassociar Veículo",
+      "noVehicles": "Nenhum veículo ativo disponível.",
+      "conflictError": "Este veículo já está em uso por outro motorista.",
+      "disassociateConflict": "Não é possível desassociar o veículo durante uma corrida ativa.",
+      "successAssociated": "Veículo associado com sucesso.",
+      "successDisassociated": "Veículo desassociado com sucesso."
+    },
+    "reconnection": {
+      "checking": "Verificando corrida ativa...",
+      "restored": "Corrida restaurada com sucesso.",
+      "fallbackUsed": "Conexão restaurada via servidor."
+    },
+    "info": {
+      "title": "Informações do Motorista",
+      "nomeLabel": "Motorista",
+      "fallbackNome": "Motorista a caminho",
+      "cnhLabel": "CNH",
+      "cnhCategoriaLabel": "Categoria CNH",
+      "veiculoLabel": "Veículo",
+      "placaLabel": "Placa",
+      "anoLabel": "Ano",
+      "statusAceita": "Motorista Aceitou!",
+      "statusEmRota": "Motorista a Caminho",
+      "statusPassageiroABordo": "Motorista Chegou!"
+    }
+  },
+  "corridas": {
+    "history": {
+      "title": "Histórico de Corridas",
+      "subtitle": "Suas corridas anteriores",
+      "empty": {
+        "title": "Nenhuma corrida ainda",
+        "subtitle": "Suas corridas finalizadas aparecerão aqui."
+      }
+    },
+    "list": {
+      "title": "Corridas",
+      "viewActive": "Ver corrida ativa",
+      "requestRide": "Solicitar Corrida",
+      "empty": {
+        "title": "Nenhuma corrida ativa",
+        "subtitle": "Solicite uma corrida para começar."
+      }
+    },
+    "detail": {
+      "title": "Detalhes da Corrida",
+      "route": "Rota",
+      "origem": "Origem",
+      "destino": "Destino",
+      "motivo": "Motivo do Serviço",
+      "observacoes": "Observações",
+      "passageiroId": "Passageiro",
+      "motoristaId": "Motorista",
+      "createdAt": "Solicitado em",
+      "metadata": "Informações",
+      "coordsUnavailable": "Coordenadas não disponíveis",
+      "addressLoading": "Carregando endereço...",
+      "addressUnavailable": "Endereço não disponível",
+      "distancia": "Distância",
+      "duracao": "Duração",
+      "duracaoValue": "{{min}} min",
+      "distanciaValue": "{{km}} km",
+      "veiculo": "Veículo",
+      "placa": "Placa",
+      "modelo": "Modelo",
+      "timestamps": "Linha do Tempo",
+      "solicitadaEm": "Solicitada em",
+      "aceitaEm": "Aceita em",
+      "iniciadaEm": "Iniciada em",
+      "embarqueEm": "Embarque em",
+      "finalizadaEm": "Finalizada em",
+      "canceladaEm": "Cancelada em",
+      "motoristaNome": "Motorista",
+      "cnhCategoria": "Categoria CNH"
+    },
+    "acompanhar": {
+      "title": "Acompanhar Corrida"
+    },
+    "fila": {
+      "title": "Posição na Fila",
+      "posicao": "Posição",
+      "total": "Na Fila",
+      "esperaMin": "Espera (min)",
+      "estimativa": "Previsão de atendimento: ~{{min}} min",
+      "dispatchCycle": "Buscando motorista disponível...",
+      "loading": "Verificando posição na fila..."
+    },
+    "solicitar": {
+      "title": "Solicitar Corrida",
+      "modalTitle": "Detalhes da Corrida",
+      "destino": "Destino selecionado",
+      "motivoLabel": "Motivo do Serviço",
+      "motivoPlaceholder": "Ex: Visita técnica ao canteiro de obras",
+      "motivoRequired": "O motivo do serviço é obrigatório.",
+      "observacoesLabel": "Observações (opcional)",
+      "observacoesPlaceholder": "Ex: Levar material de medição",
+      "submit": "Solicitar Corrida"
+    },
+    "motorista": {
+      "title": "Ação do Motorista"
+    },
+    "avaliar": {
+      "title": "Avaliar Corrida",
+      "notaLabel": "Sua avaliação",
+      "comentarioLabel": "Comentário (opcional)",
+      "comentarioPlaceholder": "Conte como foi sua experiência...",
+      "submit": "Enviar Avaliação",
+      "skipLabel": "Pular avaliação",
+      "alreadyRated": "Você já avaliou esta corrida.",
+      "deadlinePassed": "O prazo para avaliação expirou.",
+      "validationError": "Dados inválidos. Verifique sua avaliação.",
+      "forbidden": "Você não tem permissão para avaliar esta corrida.",
+      "notFound": "Corrida não encontrada."
+    },
+    "status": {
+      "solicitada": "Solicitada",
+      "aguardando_aceite": "Aguardando Aceite",
+      "aceita": "Aceita",
+      "em_rota": "Em Rota",
+      "passageiro_a_bordo": "Passageiro a Bordo",
+      "concluida": "Concluída",
+      "avaliada": "Avaliada",
+      "cancelada": "Cancelada",
+      "expirada": "Expirada"
+    },
+    "actions": {
+      "title": "Ações",
+      "aceitar": "Aceitar Corrida",
+      "recusar": "Recusar Corrida",
+      "iniciarDeslocamento": "Iniciar Deslocamento",
+      "confirmarEmbarque": "Confirmar Embarque",
+      "passageiroABordo": "Passageiro a Bordo",
+      "finalizar": "Finalizar Corrida"
+    },
+    "recusar": {
+      "motivoPlaceholder": "Motivo da recusa (opcional)"
+    },
+    "cancel": {
+      "title": "Cancelar Corrida",
+      "confirm": "Confirmar cancelamento",
+      "motivoRequired": "Informe o motivo do cancelamento.",
+      "motivoPlaceholder": "Motivo do cancelamento",
+      "defaultMotivo": "Cancelado pelo motorista",
+      "notAllowed": "Cancelamento não permitido nesta etapa da corrida."
+    },
+    "finalizar": {
+      "title": "Finalizar Corrida",
+      "confirm": "Confirmar finalização da corrida?"
+    },
+    "mensagens": {
+      "title": "Mensagens",
+      "empty": "Nenhuma mensagem ainda.",
+      "inputPlaceholder": "Digite uma mensagem...",
+      "tickSent": "Enviada",
+      "tickRead": "Lida",
+      "tickViewed": "Visualizada"
+    },
+    "terminal": {
+      "concluida": "Corrida concluída com sucesso.",
+      "avaliada": "Corrida avaliada.",
+      "cancelada": "Corrida cancelada.",
+      "expirada": "Corrida expirada — nenhum motorista disponível."
+    },
+    "success": {
+      "aceita": "Corrida aceita com sucesso.",
+      "recusada": "Corrida recusada.",
+      "emDeslocamento": "Deslocamento iniciado.",
+      "embarcado": "Embarque confirmado.",
+      "passageiroABordo": "Passageiro a bordo confirmado.",
+      "finalizada": "Corrida finalizada.",
+      "cancelada": "Corrida cancelada."
+    },
+    "errors": {
+      "jaAceita": "Esta corrida já foi aceita por outro motorista.",
+      "jaFinalizada": "Não é possível cancelar uma corrida já finalizada.",
+      "aceitarFailed": "Não foi possível aceitar a corrida.",
+      "recusarFailed": "Não foi possível recusar a corrida.",
+      "deslocamentoFailed": "Não foi possível iniciar o deslocamento.",
+      "embarqueFailed": "Não foi possível confirmar o embarque.",
+      "passageiroABordoFailed": "Não foi possível confirmar passageiro a bordo.",
+      "finalizarFailed": "Não foi possível finalizar a corrida.",
+      "cancelarFailed": "Não foi possível cancelar a corrida."
+    }
+  },
+  "avaliacoes": {
+    "admin": {
+      "title": "Avaliações",
+      "empty": "Nenhuma avaliação encontrada.",
+      "errorMessage": "Não foi possível carregar as avaliações.",
+      "retry": "Tentar novamente",
+      "notaLabel": "Nota",
+      "comentarioLabel": "Comentário",
+      "createdAtLabel": "Data"
+    },
+    "minhaNota": {
+      "title": "Minha Nota",
+      "mediaLabel": "Média",
+      "totalLabel": "Total de avaliações",
+      "errorMessage": "Não foi possível carregar sua nota.",
+      "retry": "Tentar novamente",
+      "noRatingsYet": "Sem avaliações ainda.",
+      "totalCount": "({{count}})"
+    }
+  },
+  "pesquisa": {
+    "geocoding": {
+      "minChars": "Digite pelo menos 3 caracteres",
+      "noResults": "Nenhum endereço encontrado",
+      "error": "Erro ao buscar endereço",
+      "rateLimited": "Muitas buscas. Aguarde um momento.",
+      "unauthorized": "Sessão expirada. Faça login novamente."
+    },
+    "reverseGeocoding": {
+      "error": "Não foi possível obter o endereço"
+    },
+    "config": {
+      "error": "Erro ao carregar configurações do mapa"
+    },
+    "route": {
+      "loading": "Calculando rota...",
+      "error": "Não foi possível calcular a rota.",
+      "empty": "Selecione um destino para visualizar a rota.",
+      "summary": "Rota: {{distance}} km · {{duration}} min"
+    }
+  }
+}

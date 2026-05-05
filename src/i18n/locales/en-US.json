@@ -1,0 +1,638 @@
+{
+  "common": {
+    "appName": "GovMobile",
+    "loading": "Loading",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "back": "Back",
+    "search": "Search",
+    "notifications": "Notifications",
+    "clear": "Clear",
+    "delete": "Delete",
+    "unknownUser": "Unknown user",
+    "role": {
+      "ADMIN": "Admin",
+      "MANAGER": "Manager",
+      "OFFICER": "Officer",
+      "CITIZEN": "Citizen"
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "SUSPENDED": "Suspended",
+      "PENDING": "Pending"
+    }
+  },
+  "home": {
+    "greeting": "Hello, {{name}}",
+    "services": "Services",
+    "recentActivity": "Recent activity",
+    "announcements": "Announcements"
+  },
+  "chat": {
+    "newMessage": "New message",
+    "typing": "Typing",
+    "online": "Online",
+    "offline": "Offline",
+    "send": "Send",
+    "attach": "Attach",
+    "you": "You",
+    "imageAttachment": "Image",
+    "fileAttachment": "File",
+    "audioAttachment": "Audio",
+    "systemMessage": "System message",
+    "sending": "Sending",
+    "sent": "Sent",
+    "delivered": "Delivered",
+    "read": "Read",
+    "failed": "Failed"
+  },
+  "calls": {
+    "incomingCall": "Incoming call",
+    "outgoingCall": "Outgoing call",
+    "missedCall": "Missed call",
+    "duration": "Duration",
+    "answer": "Answer",
+    "decline": "Decline",
+    "endCall": "End call",
+    "active": "Active",
+    "ended": "Ended",
+    "callBack": "Call back"
+  },
+  "notificationsList": {
+    "system": "System",
+    "message": "Message",
+    "call": "Call",
+    "announcement": "Announcement",
+    "task": "Task"
+  },
+  "homeActions": {
+    "newMessage": {
+      "label": "New message",
+      "description": "Start a direct conversation"
+    },
+    "callDirectory": {
+      "label": "Call directory",
+      "description": "Find officers and departments"
+    },
+    "announcements": {
+      "label": "Announcements",
+      "description": "Read latest government updates"
+    },
+    "reports": {
+      "label": "Reports",
+      "description": "Review operational reports"
+    },
+    "schedule": {
+      "label": "Schedule",
+      "description": "View calendar and meetings"
+    },
+    "documents": {
+      "label": "Documents",
+      "description": "Access official documents"
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "cpf": "CPF",
+    "cpfPlaceholder": "000.000.000-00",
+    "cpfInvalid": "Invalid CPF",
+    "cpfRequired": "CPF is required",
+    "password": "Password",
+    "passwordRequired": "Password is required",
+    "forgotPassword": "Forgot password",
+    "loginFailed": "Invalid CPF or password.",
+    "subtitle": "Government Operational Mobility System",
+    "version": "v{{version}}",
+    "hydrationTakingLong": "Checking your session with the server… If this takes too long, the connection may be unstable or the service unavailable."
+  },
+  "errors": {
+    "networkError": "Network error",
+    "sessionExpired": "Session expired",
+    "sessionRevoked": "Your session was ended by the server. Please sign in again.",
+    "hydrationTimeout": "Could not reach the server in time. Please sign in again when the connection is stable.",
+    "unknownError": "Unknown error"
+  },
+  "navigation": {
+    "tabs": {
+      "home": "Home",
+      "messages": "Messages",
+      "calls": "Calls",
+      "alerts": "Alerts",
+      "profile": "Profile"
+    },
+    "titles": {
+      "home": "GovMobile",
+      "messages": "Messages",
+      "calls": "Calls",
+      "notifications": "Notifications",
+      "profile": "Profile",
+      "login": "Login",
+      "forgotPassword": "Forgot password",
+      "chatRoom": "Conversation",
+      "newMessage": "New message",
+      "activeCall": "Active call",
+      "incomingCall": "Incoming call",
+      "settings": "Settings"
+    }
+  },
+  "ui": {
+    "toast": {
+      "dismiss": "Dismiss notification"
+    },
+    "network": {
+      "offline": "You are offline",
+      "offlineSubtitle": "Check your internet connection.",
+      "reconnecting_plain": "Reconnecting...",
+      "reconnecting": "Reconnecting... (attempt {{count}})",
+      "reconnectingSubtitle": "Please wait while we restore the connection.",
+      "recovered": "Connection restored"
+    }
+  },
+  "servidores": {
+    "list": {
+      "title": "Public Servants",
+      "searchPlaceholder": "Search by name or email",
+      "filters": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "empty": {
+        "title": "No servants found",
+        "message": "No servants match the selected filters."
+      }
+    },
+    "detail": {
+      "title": "Servant",
+      "cpf": "CPF",
+      "email": "Email",
+      "telefone": "Phone",
+      "cargo": "Position",
+      "lotacao": "Unit",
+      "papeis": "Roles",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "papeis": {
+      "USUARIO": "User",
+      "ADMIN": "Admin",
+      "MOTORISTA": "Driver"
+    }
+  },
+  "frota": {
+    "title": "Fleet",
+    "tabs": {
+      "veiculos": "Vehicles",
+      "motoristas": "Drivers"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "veiculos": {
+      "filters": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "empty": {
+        "title": "No vehicles found",
+        "message": "No vehicles match the selected filter."
+      }
+    },
+    "motoristas": {
+      "filters": {
+        "all": "All"
+      },
+      "status": {
+        "DISPONIVEL": "Available",
+        "EM_ROTA": "On route",
+        "AFASTADO": "Off duty"
+      },
+      "empty": {
+        "title": "No drivers found",
+        "message": "No drivers match the selected filter."
+      }
+    }
+  },
+  "notifications": {
+    "markAllRead": "Mark all as read",
+    "empty": {
+      "title": "No notifications",
+      "message": "You have no notifications at this time."
+    },
+    "push": {
+      "corridaAceita": {
+        "title": "Ride Accepted",
+        "body": "Your driver is on the way."
+      },
+      "corridaRecusada": {
+        "title": "Ride Declined",
+        "body": "No driver accepted your ride. Please try again."
+      },
+      "novaCorridaDisponivel": {
+        "title": "New Ride Available",
+        "body": "A new ride request is waiting for you."
+      },
+      "motoristaChegando": {
+        "title": "Driver Arriving",
+        "body": "Your driver is near the pickup point."
+      },
+      "corridaCancelada": {
+        "title": "Ride Cancelled",
+        "body": "Your ride was cancelled."
+      },
+      "corridaConcluida": {
+        "title": "Ride Completed",
+        "body": "Your ride has ended. Rate your experience."
+      }
+    },
+    "permissionDenied": "Notification permission denied. Enable it in your device settings."
+  },
+  "profile": {
+    "save": "Save",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "signOut": "Sign out",
+    "settings": "Settings",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "department": "Department"
+    },
+    "toast": {
+      "updated": "Profile updated.",
+      "updateFailed": "Could not update profile."
+    },
+    "photo": {
+      "changeLabel": "Change profile photo",
+      "uploadSuccess": "Photo updated successfully.",
+      "uploadFailed": "Could not upload photo.",
+      "permissionDenied": "Gallery access permission denied.",
+      "tooLarge": "File too large (max 5MB).",
+      "invalidFile": "Invalid format. Use JPEG, PNG or WebP."
+    },
+    "changePassword": {
+      "sectionTitle": "Change Password",
+      "senhaAntiga": "Current password",
+      "novaSenha": "New password",
+      "confirmarSenha": "Confirm new password",
+      "submit": "Change Password",
+      "success": "Password changed successfully.",
+      "failed": "Could not change password.",
+      "wrongPassword": "Current password is incorrect.",
+      "mismatch": "Passwords do not match.",
+      "required": "Please fill in all fields."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "sections": {
+      "language": "Language",
+      "notifications": "Notifications",
+      "about": "About"
+    },
+    "about": {
+      "version": "Version",
+      "build": "Build"
+    }
+  },
+  "passageiro": {
+    "currentLocation": "My location",
+    "requestSuccess": "Ride requested successfully!",
+    "map": {
+      "label": "Map",
+      "notInstalled": "Map not available",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "centerOnUser": "Center on my location"
+    },
+    "searchBar": {
+      "placeholder": "Where are you going?",
+      "placeholderTyping": "Enter destination",
+      "results": "Results",
+      "noResults": "No results found",
+      "recentLabel": "Recent",
+      "home": "Home",
+      "work": "Work"
+    },
+    "bottomSheet": {
+      "title": "New Ride",
+      "destinoLabel": "DESTINATION",
+      "destinoPlaceholder": "Select a destination",
+      "cta": "Request Ride",
+      "ctaSelectAddress": "Select address",
+      "expand": "Expand panel",
+      "collapse": "Collapse panel"
+    },
+    "tabs": {
+      "home": "Home",
+      "corridas": "Rides",
+      "notificacoes": "Alerts",
+      "perfil": "Profile"
+    },
+    "errors": {
+      "selectDestination": "Please select a destination first.",
+      "locationRequired": "Waiting for your location.",
+      "requestFailed": "Could not request the ride.",
+      "alreadyHasActiveRide": "You already have an active ride. Track it on the map."
+    }
+  },
+  "motorista": {
+    "title": "Driver Area",
+    "subtitle": "Waiting for available rides.",
+    "tabs": {
+      "home": "Home",
+      "corridas": "Rides",
+      "notificacoes": "Alerts",
+      "perfil": "Profile"
+    },
+    "map": {
+      "label": "Map",
+      "driverLocation": "My location"
+    },
+    "status": {
+      "disponivel": "Available",
+      "emRota": "On Route",
+      "afastado": "Off Duty",
+      "offline": "Offline",
+      "ativo": "Available",
+      "indisponivel": "Unavailable",
+      "toggleLabel": "Toggle availability",
+      "disponivelMsg": "You are now available for rides.",
+      "afastadoMsg": "You are now off duty.",
+      "offlineMsg": "You are now offline.",
+      "emCorrida": "On Ride",
+      "managedBySystem": "Status managed by the system during the ride."
+    },
+    "idle": {
+      "title": "Waiting for Rides",
+      "subtitle": "You will be notified when rides are available.",
+      "connecting": "Connecting to server...",
+      "reconnecting": "Reconnecting..."
+    },
+    "realtime": {
+      "connected": "Online",
+      "connecting": "Connecting",
+      "disconnected": "Offline",
+      "error": "Connection error"
+    },
+    "activeRide": {
+      "title": "Active Ride"
+    },
+    "actions": {
+      "chegar": "Arrived at Pickup",
+      "chegarSuccess": "Arrival confirmed at pickup point."
+    },
+    "novaCorridaModal": {
+      "title": "New Ride Available",
+      "timerLabel": "seconds to respond",
+      "highPriority": "High Priority"
+    },
+    "corridas": {
+      "title": "My Rides",
+      "subtitle": "Available rides and history",
+      "activeRide": "Active Ride",
+      "available": "Available Rides",
+      "noAvailable": "No rides available at the moment.",
+      "acceptRide": "Accept ride"
+    },
+    "veiculo": {
+      "title": "Associate Vehicle",
+      "selectLabel": "Select a vehicle",
+      "associateBtn": "Associate Vehicle",
+      "disassociateBtn": "Disassociate Vehicle",
+      "noVehicles": "No active vehicles available.",
+      "conflictError": "This vehicle is already in use by another driver.",
+      "disassociateConflict": "Cannot disassociate vehicle during an active ride.",
+      "successAssociated": "Vehicle associated successfully.",
+      "successDisassociated": "Vehicle disassociated successfully."
+    },
+    "reconnection": {
+      "checking": "Checking for active ride...",
+      "restored": "Ride restored successfully.",
+      "fallbackUsed": "Connection restored via server."
+    },
+    "info": {
+      "title": "Driver Information",
+      "nomeLabel": "Driver",
+      "fallbackNome": "Driver on the way",
+      "cnhLabel": "Driver License",
+      "cnhCategoriaLabel": "License Category",
+      "veiculoLabel": "Vehicle",
+      "placaLabel": "Plate",
+      "anoLabel": "Year",
+      "statusAceita": "Driver Accepted!",
+      "statusEmRota": "Driver On The Way",
+      "statusPassageiroABordo": "Driver Arrived!"
+    }
+  },
+  "corridas": {
+    "history": {
+      "title": "Ride History",
+      "subtitle": "Your previous rides",
+      "empty": {
+        "title": "No rides yet",
+        "subtitle": "Your completed rides will appear here."
+      }
+    },
+    "list": {
+      "title": "Rides",
+      "viewActive": "View active ride",
+      "requestRide": "Request Ride",
+      "empty": {
+        "title": "No active ride",
+        "subtitle": "Request a ride to get started."
+      }
+    },
+    "detail": {
+      "title": "Ride Details",
+      "route": "Route",
+      "origem": "Origin",
+      "destino": "Destination",
+      "motivo": "Service Reason",
+      "observacoes": "Notes",
+      "passageiroId": "Passenger",
+      "motoristaId": "Driver",
+      "createdAt": "Requested at",
+      "metadata": "Information",
+      "coordsUnavailable": "Coordinates unavailable",
+      "addressLoading": "Loading address...",
+      "addressUnavailable": "Address unavailable",
+      "distancia": "Distance",
+      "duracao": "Duration",
+      "duracaoValue": "{{min}} min",
+      "distanciaValue": "{{km}} km",
+      "veiculo": "Vehicle",
+      "placa": "Plate",
+      "modelo": "Model",
+      "timestamps": "Timeline",
+      "solicitadaEm": "Requested at",
+      "aceitaEm": "Accepted at",
+      "iniciadaEm": "Started at",
+      "embarqueEm": "Boarded at",
+      "finalizadaEm": "Completed at",
+      "canceladaEm": "Cancelled at",
+      "motoristaNome": "Driver",
+      "cnhCategoria": "License Category"
+    },
+    "acompanhar": {
+      "title": "Track Ride"
+    },
+    "fila": {
+      "title": "Queue Position",
+      "posicao": "Position",
+      "total": "In Queue",
+      "esperaMin": "Wait (min)",
+      "estimativa": "Estimated service: ~{{min}} min",
+      "dispatchCycle": "Looking for an available driver...",
+      "loading": "Checking queue position..."
+    },
+    "solicitar": {
+      "title": "Request Ride",
+      "modalTitle": "Ride Details",
+      "destino": "Selected destination",
+      "motivoLabel": "Service Reason",
+      "motivoPlaceholder": "e.g. Technical visit to construction site",
+      "motivoRequired": "Service reason is required.",
+      "observacoesLabel": "Notes (optional)",
+      "observacoesPlaceholder": "e.g. Bring measuring equipment",
+      "submit": "Request Ride"
+    },
+    "motorista": {
+      "title": "Driver Action"
+    },
+    "avaliar": {
+      "title": "Rate Ride",
+      "notaLabel": "Your rating",
+      "comentarioLabel": "Comment (optional)",
+      "comentarioPlaceholder": "Tell us about your experience...",
+      "submit": "Submit Rating",
+      "skipLabel": "Skip rating",
+      "alreadyRated": "You have already rated this ride.",
+      "deadlinePassed": "The rating deadline has passed."
+    },
+    "status": {
+      "SOLICITADA": "Requested",
+      "ACEITA": "Accepted",
+      "RECUSADA": "Refused",
+      "EM_DESLOCAMENTO": "En Route",
+      "EM_ROTA": "En Route",
+      "PASSAGEIRO_EMBARCADO": "Passenger Boarded",
+      "PASSAGEIRO_A_BORDO": "Passenger On Board",
+      "FINALIZADA": "Completed",
+      "CANCELADA": "Cancelled",
+      "AGUARDANDO_ACEITE": "Awaiting Acceptance",
+      "AVALIADA": "Rated",
+      "CONCLUIDA": "Completed",
+      "EXPIRADA": "Expired"
+    },
+    "actions": {
+      "title": "Actions",
+      "aceitar": "Accept Ride",
+      "recusar": "Refuse Ride",
+      "iniciarDeslocamento": "Start Driving",
+      "confirmarEmbarque": "Confirm Boarding",
+      "passageiroABordo": "Passenger On Board",
+      "finalizar": "Complete Ride"
+    },
+    "recusar": {
+      "motivoPlaceholder": "Reason for refusal (optional)"
+    },
+    "cancel": {
+      "title": "Cancel Ride",
+      "confirm": "Confirm cancellation",
+      "motivoRequired": "Please provide a cancellation reason.",
+      "motivoPlaceholder": "Cancellation reason",
+      "defaultMotivo": "Cancelled by driver",
+      "notAllowed": "Cancellation is not allowed at this stage of the ride."
+    },
+    "finalizar": {
+      "title": "Complete Ride",
+      "confirm": "Confirm ride completion?"
+    },
+    "mensagens": {
+      "title": "Messages",
+      "empty": "No messages yet.",
+      "inputPlaceholder": "Type a message...",
+      "tickSent": "Sent",
+      "tickRead": "Read",
+      "tickViewed": "Viewed"
+    },
+    "terminal": {
+      "FINALIZADA": "Ride completed successfully.",
+      "CONCLUIDA": "Ride completed successfully.",
+      "AVALIADA": "Ride rated.",
+      "CANCELADA": "Ride cancelled.",
+      "RECUSADA": "Ride refused.",
+      "EXPIRADA": "Ride expired — no driver available."
+    },
+    "success": {
+      "aceita": "Ride accepted.",
+      "recusada": "Ride refused.",
+      "emDeslocamento": "Driving to pickup.",
+      "embarcado": "Boarding confirmed.",
+      "finalizada": "Ride completed.",
+      "cancelada": "Ride cancelled."
+    },
+    "errors": {
+      "jaAceita": "This ride was already accepted by another driver.",
+      "jaFinalizada": "Cannot cancel a completed ride.",
+      "aceitarFailed": "Could not accept the ride.",
+      "recusarFailed": "Could not refuse the ride.",
+      "deslocamentoFailed": "Could not start driving.",
+      "embarqueFailed": "Could not confirm boarding.",
+      "finalizarFailed": "Could not complete the ride.",
+      "cancelarFailed": "Could not cancel the ride."
+    }
+  },
+  "avaliacoes": {
+    "admin": {
+      "title": "Ratings",
+      "empty": "No ratings found.",
+      "errorMessage": "Could not load ratings.",
+      "retry": "Retry",
+      "notaLabel": "Rating",
+      "comentarioLabel": "Comment",
+      "createdAtLabel": "Date"
+    },
+    "minhaNota": {
+      "title": "My Rating",
+      "mediaLabel": "Average",
+      "totalLabel": "Total ratings",
+      "errorMessage": "Could not load your rating.",
+      "retry": "Retry",
+      "noRatingsYet": "No ratings yet.",
+      "totalCount": "({{count}})"
+    }
+  },
+  "pesquisa": {
+    "geocoding": {
+      "minChars": "Type at least 3 characters",
+      "noResults": "No address found",
+      "error": "Error searching address",
+      "rateLimited": "Too many searches. Please wait.",
+      "unauthorized": "Session expired. Please log in again."
+    },
+    "reverseGeocoding": {
+      "error": "Could not retrieve address"
+    },
+    "config": {
+      "error": "Error loading map configuration"
+    },
+    "route": {
+      "loading": "Calculating route...",
+      "error": "Could not calculate the route.",
+      "empty": "Select a destination to preview the route.",
+      "summary": "Route: {{distance}} km · {{duration}} min"
+    }
+  }
+}

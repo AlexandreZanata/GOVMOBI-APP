@@ -1,0 +1,628 @@
+{
+  "common": {
+    "appName": "GovMobile",
+    "loading": "Cargando",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "back": "Volver",
+    "search": "Buscar",
+    "notifications": "Notificaciones",
+    "clear": "Limpiar",
+    "delete": "Eliminar",
+    "unknownUser": "Usuario desconocido",
+    "role": {
+      "ADMIN": "Administrador",
+      "MANAGER": "Gerente",
+      "OFFICER": "Oficial",
+      "CITIZEN": "Ciudadano"
+    },
+    "status": {
+      "ACTIVE": "Activo",
+      "INACTIVE": "Inactivo",
+      "SUSPENDED": "Suspendido",
+      "PENDING": "Pendiente"
+    }
+  },
+  "home": {
+    "greeting": "Hola, {{name}}",
+    "services": "Servicios",
+    "recentActivity": "Actividad reciente",
+    "announcements": "Anuncios"
+  },
+  "chat": {
+    "newMessage": "Nuevo mensaje",
+    "typing": "Escribiendo",
+    "online": "En linea",
+    "offline": "Desconectado",
+    "send": "Enviar",
+    "attach": "Adjuntar",
+    "you": "Tu",
+    "imageAttachment": "Imagen",
+    "fileAttachment": "Archivo",
+    "audioAttachment": "Audio",
+    "systemMessage": "Mensaje del sistema",
+    "sending": "Enviando",
+    "sent": "Enviado",
+    "delivered": "Entregado",
+    "read": "Leido",
+    "failed": "Fallido"
+  },
+  "calls": {
+    "incomingCall": "Llamada entrante",
+    "outgoingCall": "Llamada saliente",
+    "missedCall": "Llamada perdida",
+    "duration": "Duracion",
+    "answer": "Responder",
+    "decline": "Rechazar",
+    "endCall": "Finalizar llamada",
+    "active": "Activa",
+    "ended": "Finalizada",
+    "callBack": "Devolver llamada"
+  },
+  "notificationsList": {
+    "system": "Sistema",
+    "message": "Mensaje",
+    "call": "Llamada",
+    "announcement": "Anuncio",
+    "task": "Tarea"
+  },
+  "homeActions": {
+    "newMessage": {
+      "label": "Nuevo mensaje",
+      "description": "Iniciar conversacion directa"
+    },
+    "callDirectory": {
+      "label": "Directorio de llamadas",
+      "description": "Buscar oficiales y departamentos"
+    },
+    "announcements": {
+      "label": "Anuncios",
+      "description": "Leer actualizaciones gubernamentales"
+    },
+    "reports": {
+      "label": "Informes",
+      "description": "Revisar informes operativos"
+    },
+    "schedule": {
+      "label": "Agenda",
+      "description": "Ver calendario y reuniones"
+    },
+    "documents": {
+      "label": "Documentos",
+      "description": "Acceder a documentos oficiales"
+    }
+  },
+  "auth": {
+    "login": "Iniciar sesion",
+    "logout": "Cerrar sesion",
+    "cpf": "CPF",
+    "cpfPlaceholder": "000.000.000-00",
+    "cpfInvalid": "CPF invalido",
+    "cpfRequired": "Ingrese el CPF",
+    "password": "Contrasena",
+    "passwordRequired": "Ingrese la contrasena",
+    "forgotPassword": "Olvide mi contrasena",
+    "loginFailed": "CPF o contrasena invalidos.",
+    "subtitle": "Sistema de Movilidad Operacional",
+    "version": "v{{version}}",
+    "hydrationTakingLong": "Verificando su sesión con el servidor… Si tarda demasiado, la conexión puede ser inestable o el servicio no está disponible."
+  },
+  "errors": {
+    "networkError": "Error de red",
+    "sessionExpired": "Sesion expirada",
+    "sessionRevoked": "Tu sesión fue cerrada por el servidor. Inicia sesión nuevamente.",
+    "hydrationTimeout": "No se pudo contactar al servidor a tiempo. Inicie sesión de nuevo cuando la conexión sea estable.",
+    "unknownError": "Error desconocido"
+  },
+  "navigation": {
+    "tabs": {
+      "home": "Inicio",
+      "messages": "Mensajes",
+      "calls": "Llamadas",
+      "alerts": "Alertas",
+      "profile": "Perfil"
+    },
+    "titles": {
+      "home": "GovMobile",
+      "messages": "Mensajes",
+      "calls": "Llamadas",
+      "notifications": "Notificaciones",
+      "profile": "Perfil",
+      "login": "Iniciar sesion",
+      "forgotPassword": "Olvide mi contrasena",
+      "chatRoom": "Conversacion",
+      "newMessage": "Nuevo mensaje",
+      "activeCall": "Llamada activa",
+      "incomingCall": "Llamada entrante",
+      "settings": "Configuracion"
+    }
+  },
+  "ui": {
+    "toast": {
+      "dismiss": "Descartar notificacion"
+    },
+    "network": {
+      "offline": "No tienes conexion",
+      "offlineSubtitle": "Verifica tu conexión a internet.",
+      "reconnecting_plain": "Reconectando...",
+      "reconnecting": "Reconectando... (intento {{count}})",
+      "reconnectingSubtitle": "Espera mientras restablecemos la conexión.",
+      "recovered": "Conexion restaurada"
+    }
+  },
+  "servidores": {
+    "list": {
+      "title": "Servidores",
+      "searchPlaceholder": "Buscar por nombre o email",
+      "filters": {
+        "all": "Todos",
+        "active": "Activos",
+        "inactive": "Inactivos"
+      },
+      "empty": {
+        "title": "Sin servidores",
+        "message": "Ningun servidor coincide con los filtros."
+      }
+    },
+    "detail": {
+      "title": "Servidor",
+      "cpf": "CPF",
+      "email": "Email",
+      "telefone": "Telefono",
+      "cargo": "Cargo",
+      "lotacao": "Unidad",
+      "papeis": "Roles",
+      "status": "Estado"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "papeis": {
+      "USUARIO": "Usuario",
+      "ADMIN": "Admin",
+      "MOTORISTA": "Conductor"
+    }
+  },
+  "frota": {
+    "title": "Flota",
+    "tabs": {
+      "veiculos": "Vehiculos",
+      "motoristas": "Conductores"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "veiculos": {
+      "filters": {
+        "all": "Todos",
+        "active": "Activos",
+        "inactive": "Inactivos"
+      },
+      "empty": {
+        "title": "Sin vehiculos",
+        "message": "Ningun vehiculo coincide con el filtro."
+      }
+    },
+    "motoristas": {
+      "filters": {
+        "all": "Todos"
+      },
+      "status": {
+        "DISPONIVEL": "Disponible",
+        "EM_ROTA": "En ruta",
+        "AFASTADO": "Ausente"
+      },
+      "empty": {
+        "title": "Sin conductores",
+        "message": "Ningun conductor coincide con el filtro."
+      }
+    }
+  },
+  "notifications": {
+    "markAllRead": "Marcar todo como leido",
+    "empty": {
+      "title": "Sin notificaciones",
+      "message": "No tienes notificaciones en este momento."
+    },
+    "push": {
+      "corridaAceita": {
+        "title": "Viaje Aceptado",
+        "body": "Tu conductor está en camino."
+      },
+      "corridaRecusada": {
+        "title": "Viaje Rechazado",
+        "body": "Ningún conductor aceptó tu viaje. Inténtalo de nuevo."
+      },
+      "novaCorridaDisponivel": {
+        "title": "Nuevo Viaje Disponible",
+        "body": "Hay una nueva solicitud de viaje esperándote."
+      },
+      "motoristaChegando": {
+        "title": "Conductor Llegando",
+        "body": "Tu conductor está cerca del punto de recogida."
+      },
+      "corridaCancelada": {
+        "title": "Viaje Cancelado",
+        "body": "Tu viaje fue cancelado."
+      },
+      "corridaConcluida": {
+        "title": "Viaje Completado",
+        "body": "Tu viaje ha finalizado. Califica tu experiencia."
+      }
+    },
+    "permissionDenied": "Permiso de notificación denegado. Actívalo en la configuración de tu dispositivo."
+  },
+  "profile": {
+    "save": "Guardar",
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "signOut": "Cerrar sesion",
+    "settings": "Configuracion",
+    "fields": {
+      "name": "Nombre",
+      "email": "Email",
+      "role": "Rol",
+      "department": "Departamento"
+    },
+    "toast": {
+      "updated": "Perfil actualizado.",
+      "updateFailed": "No se pudo actualizar el perfil."
+    },
+    "photo": {
+      "changeLabel": "Cambiar foto de perfil",
+      "uploadSuccess": "Foto actualizada con éxito.",
+      "uploadFailed": "No se pudo subir la foto.",
+      "permissionDenied": "Permiso de acceso a la galería denegado.",
+      "tooLarge": "Archivo demasiado grande (máx. 5MB).",
+      "invalidFile": "Formato inválido. Use JPEG, PNG o WebP."
+    },
+    "changePassword": {
+      "sectionTitle": "Cambiar Contrasena",
+      "senhaAntiga": "Contrasena actual",
+      "novaSenha": "Nueva contrasena",
+      "confirmarSenha": "Confirmar nueva contrasena",
+      "submit": "Cambiar Contrasena",
+      "success": "Contrasena cambiada con exito.",
+      "failed": "No se pudo cambiar la contrasena.",
+      "wrongPassword": "La contrasena actual es incorrecta.",
+      "mismatch": "Las contrasenas no coinciden.",
+      "required": "Complete todos los campos."
+    }
+  },
+  "settings": {
+    "title": "Configuracion",
+    "sections": {
+      "language": "Idioma",
+      "notifications": "Notificaciones",
+      "about": "Acerca de"
+    },
+    "about": {
+      "version": "Version",
+      "build": "Build"
+    }
+  },
+  "passageiro": {
+    "currentLocation": "Mi ubicación",
+    "requestSuccess": "¡Viaje solicitado con éxito!",
+    "map": {
+      "label": "Mapa",
+      "notInstalled": "Mapa no disponible",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "centerOnUser": "Centrar en mi ubicación"
+    },
+    "searchBar": {
+      "placeholder": "¿A dónde enviar?",
+      "results": "Resultados",
+      "noResults": "Sin resultados"
+    },
+    "bottomSheet": {
+      "title": "Nuevo Viaje",
+      "destinoLabel": "DESTINO",
+      "destinoPlaceholder": "Seleccione un destino",
+      "cta": "Solicitar Viaje",
+      "ctaSelectAddress": "Seleccionar dirección",
+      "expand": "Expandir panel",
+      "collapse": "Minimizar panel"
+    },
+    "tabs": {
+      "home": "Inicio",
+      "corridas": "Viajes",
+      "notificacoes": "Alertas",
+      "perfil": "Perfil"
+    },
+    "errors": {
+      "selectDestination": "Seleccione un destino primero.",
+      "locationRequired": "Esperando su ubicación.",
+      "requestFailed": "No se pudo solicitar el viaje.",
+      "alreadyHasActiveRide": "Ya tienes un viaje activo. Síguelo en el mapa."
+    }
+  },
+  "motorista": {
+    "title": "Área del Conductor",
+    "subtitle": "Esperando viajes disponibles.",
+    "tabs": {
+      "home": "Inicio",
+      "corridas": "Viajes",
+      "notificacoes": "Alertas",
+      "perfil": "Perfil"
+    },
+    "map": {
+      "label": "Mapa",
+      "driverLocation": "Mi ubicación"
+    },
+    "status": {
+      "disponivel": "Disponible",
+      "emRota": "En Ruta",
+      "emCorrida": "En Viaje",
+      "offline": "Sin conexión",
+      "ativo": "Disponible",
+      "indisponivel": "No disponible",
+      "managedBySystem": "Estado gestionado por el sistema durante el viaje."
+    },
+    "idle": {
+      "title": "Esperando Viajes",
+      "subtitle": "Recibirás notificaciones cuando haya viajes disponibles.",
+      "connecting": "Conectando al servidor...",
+      "reconnecting": "Reconectando..."
+    },
+    "realtime": {
+      "connected": "En línea",
+      "connecting": "Conectando",
+      "disconnected": "Sin conexión",
+      "error": "Error de conexión"
+    },
+    "activeRide": {
+      "title": "Viaje Activo"
+    },
+    "actions": {
+      "chegar": "Llegué al Punto",
+      "chegarSuccess": "Llegada confirmada en el punto de recogida."
+    },
+    "novaCorridaModal": {
+      "title": "Nuevo Viaje Disponible",
+      "timerLabel": "segundos para responder",
+      "highPriority": "Alta Prioridad"
+    },
+    "corridas": {
+      "title": "Mis Viajes",
+      "subtitle": "Viajes disponibles e historial",
+      "activeRide": "Viaje Activo",
+      "available": "Viajes Disponibles",
+      "noAvailable": "No hay viajes disponibles en este momento.",
+      "acceptRide": "Aceptar viaje"
+    },
+    "veiculo": {
+      "title": "Asociar Vehículo",
+      "selectLabel": "Selecciona un vehículo",
+      "associateBtn": "Asociar Vehículo",
+      "disassociateBtn": "Desasociar Vehículo",
+      "noVehicles": "No hay vehículos activos disponibles.",
+      "conflictError": "Este vehículo ya está en uso por otro conductor.",
+      "disassociateConflict": "No se puede desasociar el vehículo durante un viaje activo.",
+      "successAssociated": "Vehículo asociado con éxito.",
+      "successDisassociated": "Vehículo desasociado con éxito."
+    },
+    "reconnection": {
+      "checking": "Verificando viaje activo...",
+      "restored": "Viaje restaurado con éxito.",
+      "fallbackUsed": "Conexión restaurada a través del servidor."
+    },
+    "info": {
+      "title": "Información del Conductor",
+      "nomeLabel": "Conductor",
+      "cnhLabel": "Licencia",
+      "cnhCategoriaLabel": "Categoría de Licencia",
+      "veiculoLabel": "Vehículo",
+      "placaLabel": "Placa",
+      "anoLabel": "Año",
+      "statusAceita": "¡Conductor Aceptó!",
+      "statusEmRota": "Conductor en Camino",
+      "statusPassageiroABordo": "¡Conductor Llegó!"
+    }
+  },
+  "corridas": {
+    "history": {
+      "title": "Historial de Viajes",
+      "subtitle": "Tus viajes anteriores",
+      "empty": {
+        "title": "Sin viajes aún",
+        "subtitle": "Tus viajes finalizados aparecerán aquí."
+      }
+    },
+    "list": {
+      "title": "Viajes",
+      "viewActive": "Ver viaje activo",
+      "requestRide": "Solicitar Viaje",
+      "empty": {
+        "title": "Sin viaje activo",
+        "subtitle": "Solicita un viaje para comenzar."
+      }
+    },
+    "detail": {
+      "title": "Detalles del Viaje",
+      "route": "Ruta",
+      "origem": "Origen",
+      "destino": "Destino",
+      "motivo": "Motivo del Servicio",
+      "observacoes": "Notas",
+      "passageiroId": "Pasajero",
+      "motoristaId": "Conductor",
+      "createdAt": "Solicitado el",
+      "metadata": "Información",
+      "coordsUnavailable": "Coordenadas no disponibles",
+      "addressLoading": "Cargando dirección...",
+      "addressUnavailable": "Dirección no disponible",
+      "distancia": "Distancia",
+      "duracao": "Duración",
+      "duracaoValue": "{{min}} min",
+      "distanciaValue": "{{km}} km",
+      "veiculo": "Vehículo",
+      "placa": "Placa",
+      "modelo": "Modelo",
+      "timestamps": "Línea de Tiempo",
+      "solicitadaEm": "Solicitado en",
+      "aceitaEm": "Aceptado en",
+      "iniciadaEm": "Iniciado en",
+      "embarqueEm": "Abordaje en",
+      "finalizadaEm": "Finalizado en",
+      "canceladaEm": "Cancelado en",
+      "motoristaNome": "Conductor",
+      "cnhCategoria": "Categoría Licencia"
+    },
+    "acompanhar": {
+      "title": "Seguir Viaje"
+    },
+    "fila": {
+      "title": "Posición en Cola",
+      "posicao": "Posición",
+      "total": "En Cola",
+      "esperaMin": "Espera (min)",
+      "estimativa": "Atención estimada: ~{{min}} min",
+      "dispatchCycle": "Buscando conductor disponible...",
+      "loading": "Verificando posición en cola..."
+    },
+    "solicitar": {
+      "title": "Solicitar Viaje",
+      "modalTitle": "Detalles del Viaje",
+      "destino": "Destino seleccionado",
+      "motivoLabel": "Motivo del Servicio",
+      "motivoPlaceholder": "Ej: Visita técnica a la obra",
+      "motivoRequired": "El motivo del servicio es obligatorio.",
+      "observacoesLabel": "Notas (opcional)",
+      "observacoesPlaceholder": "Ej: Llevar material de medición",
+      "submit": "Solicitar Viaje"
+    },
+    "motorista": {
+      "title": "Acción del Conductor"
+    },
+    "avaliar": {
+      "title": "Calificar Viaje",
+      "notaLabel": "Tu calificación",
+      "comentarioLabel": "Comentario (opcional)",
+      "comentarioPlaceholder": "Cuéntanos sobre tu experiencia...",
+      "submit": "Enviar Calificación",
+      "skipLabel": "Omitir calificación",
+      "alreadyRated": "Ya calificaste este viaje.",
+      "deadlinePassed": "El plazo para calificar ha expirado."
+    },
+    "status": {
+      "SOLICITADA": "Solicitado",
+      "ACEITA": "Aceptado",
+      "RECUSADA": "Rechazado",
+      "EM_DESLOCAMENTO": "En Camino",
+      "EM_ROTA": "En Camino",
+      "PASSAGEIRO_EMBARCADO": "Pasajero Abordado",
+      "PASSAGEIRO_A_BORDO": "Pasajero a Bordo",
+      "FINALIZADA": "Finalizado",
+      "CANCELADA": "Cancelado",
+      "AGUARDANDO_ACEITE": "Esperando Aceptación",
+      "AVALIADA": "Calificado",
+      "CONCLUIDA": "Completado",
+      "EXPIRADA": "Expirado"
+    },
+    "actions": {
+      "title": "Acciones",
+      "aceitar": "Aceptar Viaje",
+      "recusar": "Rechazar Viaje",
+      "iniciarDeslocamento": "Iniciar Desplazamiento",
+      "confirmarEmbarque": "Confirmar Abordaje",
+      "passageiroABordo": "Pasajero a Bordo",
+      "finalizar": "Finalizar Viaje"
+    },
+    "recusar": {
+      "motivoPlaceholder": "Motivo del rechazo (opcional)"
+    },
+    "cancel": {
+      "title": "Cancelar Viaje",
+      "confirm": "Confirmar cancelación",
+      "motivoRequired": "Ingrese el motivo de cancelación.",
+      "motivoPlaceholder": "Motivo de cancelación",
+      "defaultMotivo": "Cancelado por el conductor",
+      "notAllowed": "La cancelación no está permitida en esta etapa del viaje."
+    },
+    "finalizar": {
+      "title": "Finalizar Viaje",
+      "confirm": "¿Confirmar finalización del viaje?"
+    },
+    "mensagens": {
+      "title": "Mensajes",
+      "empty": "Sin mensajes aún.",
+      "inputPlaceholder": "Escribe un mensaje...",
+      "tickSent": "Enviado",
+      "tickRead": "Leído",
+      "tickViewed": "Visto"
+    },
+    "terminal": {
+      "FINALIZADA": "Viaje finalizado con éxito.",
+      "CONCLUIDA": "Viaje completado con éxito.",
+      "AVALIADA": "Viaje calificado.",
+      "CANCELADA": "Viaje cancelado.",
+      "RECUSADA": "Viaje rechazado.",
+      "EXPIRADA": "Viaje expirado — ningún conductor disponible."
+    },
+    "success": {
+      "aceita": "Viaje aceptado.",
+      "recusada": "Viaje rechazado.",
+      "emDeslocamento": "En camino al punto de recogida.",
+      "embarcado": "Abordaje confirmado.",
+      "finalizada": "Viaje finalizado.",
+      "cancelada": "Viaje cancelado."
+    },
+    "errors": {
+      "jaAceita": "Este viaje ya fue aceptado por otro conductor.",
+      "jaFinalizada": "No se puede cancelar un viaje ya finalizado.",
+      "aceitarFailed": "No se pudo aceptar el viaje.",
+      "recusarFailed": "No se pudo rechazar el viaje.",
+      "deslocamentoFailed": "No se pudo iniciar el desplazamiento.",
+      "embarqueFailed": "No se pudo confirmar el abordaje.",
+      "finalizarFailed": "No se pudo finalizar el viaje.",
+      "cancelarFailed": "No se pudo cancelar el viaje."
+    }
+  },
+  "avaliacoes": {
+    "admin": {
+      "title": "Calificaciones",
+      "empty": "No se encontraron calificaciones.",
+      "errorMessage": "No se pudieron cargar las calificaciones.",
+      "retry": "Reintentar",
+      "notaLabel": "Calificación",
+      "comentarioLabel": "Comentario",
+      "createdAtLabel": "Fecha"
+    },
+    "minhaNota": {
+      "title": "Mi Calificación",
+      "mediaLabel": "Promedio",
+      "totalLabel": "Total de calificaciones",
+      "errorMessage": "No se pudo cargar tu calificación.",
+      "retry": "Reintentar",
+      "noRatingsYet": "Sin calificaciones aún.",
+      "totalCount": "({{count}})"
+    }
+  },
+  "pesquisa": {
+    "geocoding": {
+      "minChars": "Escribe al menos 3 caracteres",
+      "noResults": "No se encontró ninguna dirección",
+      "error": "Error al buscar dirección",
+      "rateLimited": "Demasiadas búsquedas. Espera un momento.",
+      "unauthorized": "Sesión expirada. Inicia sesión nuevamente."
+    },
+    "reverseGeocoding": {
+      "error": "No se pudo obtener la dirección"
+    },
+    "config": {
+      "error": "Error al cargar la configuración del mapa"
+    },
+    "route": {
+      "loading": "Calculando ruta...",
+      "error": "No se pudo calcular la ruta.",
+      "empty": "Seleccione un destino para ver la ruta.",
+      "summary": "Ruta: {{distance}} km · {{duration}} min"
+    }
+  }
+}

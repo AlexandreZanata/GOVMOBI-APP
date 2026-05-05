@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "GovMobile",
+    "slug": "govmobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A1628"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "gov.govmobile.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A1628"
+      },
+      "package": "gov.govmobile.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-splash-screen",
+      "expo-secure-store",
+      "expo-file-system",
+      "expo-image-picker",
+      "expo-av",
+      "expo-font"
+    ],
+    "scheme": "govmobile",
+    "extra": {
+      "apiUrl": "",
+      "wsUrl": "",
+      "appEnv": "development",
+      "mockMode": false
+    }
+  }
+}

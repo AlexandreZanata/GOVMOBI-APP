@@ -1,0 +1,485 @@
+/**
+ * @fileoverview MotoristaScreen — driver home screen with map + active ride panel.
+ *
+ * Z-layers (bottom → top):
+ *   1. MapboxMap          full-screen base layer
+ *   2. Status pill        floating top-center, z=10
+ *   3. Right FAB column   floating buttons, z=10
+ *   4. Bottom sheet       white card — idle / active / terminal, z=20
+ *   5. Chat FAB           above bottom sheet when ride is active, z=25
+ *   6. Loading overlay    z=100
+ */
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  StatusBar,
+  Text,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useTranslation} from 'react-i18next';
+import {MaterialIcons} from '@expo/vector-icons';
+import {useNavigation} from '@react-navigation/native';
+import type {CompositeNavigationProp} from '@react-navigation/native';
+import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useMotorista} from './useMotorista';
+import {useMotoristaRealtime} from './useMotoristaRealtime';
+import {NovaCorridaModal} from './components/NovaCorridaModal';
+import {createMotoristaStyles, MotoristaColors as C} from './MotoristaScreen.styles';
+import {useTheme} from '../../theme';
+import {MapboxGL} from '@components/molecules/MapboxContainer';
+import {useMapboxToken} from '../../hooks/useMapboxToken';
+import {MotoristaIdleSheet} from './components/MotoristaIdleSheet';
+import {MotoristaTerminalSheet} from './components/MotoristaTerminalSheet';
+import {MotoristaActiveSheet} from './components/MotoristaActiveSheet';
+import type {MotoristaTabParamList, MotoristaCorridasStackParamList} from '@navigation/types';
+import {normalizeStatus, TERMINAL_STATUSES} from '@models/Corrida';
+import {useAppSelector} from '../../store';
+import {useFacades} from '@services/facades';
+
+type MotoristaNavProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MotoristaTabParamList, 'MotoristaHome'>,
+  NativeStackNavigationProp<MotoristaCorridasStackParamList>
+>;
+
+const activeRouteLineStyle = {
+  lineColor: '#2F80FF',
+  lineWidth: 4,
+  lineOpacity: 1,
+  lineCap: 'round' as const,
+  lineJoin: 'round' as const,
+};
+
+/**
+ * Driver home screen — map + active ride panel.
+ *
+ * @returns JSX element for the MotoristaScreen.
+ */
+export const MotoristaScreen = (): React.JSX.Element => {
+  const {t} = useTranslation();
+  const theme = useTheme();
+  const styles = useMemo(() => createMotoristaStyles(theme), [theme]);
+  const navigation = useNavigation<MotoristaNavProp>();
+
+  const {pesquisaFacade} = useFacades();
+  const isMapboxTokenApplied = useMapboxToken();
+  const cameraRef = useRef<{flyTo: (coordinates: [number, number], duration?: number) => void} | null>(null);
+
+  const {
+    userLocation,
+    mapRegion,
+    activeCorrida,
+    isActionLoading,
+    onCenterOnUser: onCenterOnUserBase,
+    onIniciarDeslocamento,
+    onChegar,
+    onConfirmarEmbarque,
+    onPassageiroABordo,
+    onFinalizar,
+    onCancelar,
+    onAceitar,
+    onRecusar,
+    statusOperacional,
+    isTogglingStatus,
+    onToggleStatus,
+  } = useMotorista();
+
+  // Wraps the hook's center handler and also animates the Mapbox camera.
+  const onCenterOnUser = useCallback(() => {
+    onCenterOnUserBase();
+    if (userLocation) {
+      cameraRef.current?.flyTo(
+        [userLocation.longitude, userLocation.latitude],
+        600,
+      );
+    }
+  }, [onCenterOnUserBase, userLocation]);
+
+  // Realtime: location streaming + nova-corrida-disponivel modal
+  const {pendingOffer, dismissOffer} = useMotoristaRealtime(userLocation);
+  const unreadMensagens = useAppSelector(s => s.corrida.unreadMensagens);
+
+  const [cancelMotivo, setCancelMotivo] = useState('');
+  const [showCancelInput, setShowCancelInput] = useState(false);
+  const [recusaMotivo, setRecusaMotivo] = useState('');
+  const [showRecusaInput, setShowRecusaInput] = useState(false);
+
+  const sheetTranslate = useRef(new Animated.Value(0)).current;
+  const sheetAnimated = useRef(false);
+  // Measured height of the bottom sheet — used to position the chat FAB above it
+  const [sheetHeight, setSheetHeight] = useState(0);
+
+  const normalizedActiveStatus = activeCorrida
+    ? normalizeStatus(activeCorrida.status)
+    : null;
+  const hasActiveRide =
+    activeCorrida !== null &&
+    normalizedActiveStatus !== null &&
+    !TERMINAL_STATUSES.has(normalizedActiveStatus);
+  const isTerminal =
+    activeCorrida !== null &&
+    normalizedActiveStatus !== null &&
+    TERMINAL_STATUSES.has(normalizedActiveStatus);
+
+  // ── Route line for active ride ──────────────────────────────────────────────
+  const [activeRouteCoords, setActiveRouteCoords] = useState<[number, number][]>([]);
+  const activeRouteRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (
+      !activeCorrida || !hasActiveRide ||
+      !Number.isFinite(activeCorrida.origemLat) || !Number.isFinite(activeCorrida.origemLng) ||
+      !Number.isFinite(activeCorrida.destinoLat) || !Number.isFinite(activeCorrida.destinoLng)
+    ) {
+      setActiveRouteCoords([]);
+      return;
+    }
+    let cancelled = false;
+    const requestId = ++activeRouteRequestRef.current;
+    void (async () => {
+      const result = await pesquisaFacade.getRouteBetweenPoints({
+        origemLat: activeCorrida.origemLat,
+        origemLng: activeCorrida.origemLng,
+        destinoLat: activeCorrida.destinoLat,
+        destinoLng: activeCorrida.destinoLng,
+      });
+      if (cancelled || requestId !== activeRouteRequestRef.current) return;
+      const coords = result.data?.geometry.coordinates;
+      if (coords && coords.length >= 2) setActiveRouteCoords(coords);
+    })();
+    return () => { cancelled = true; };
+  }, [activeCorrida, hasActiveRide, pesquisaFacade]);
+
+  const onSheetLayout = useCallback((event: LayoutChangeEvent) => {
+    const h = event.nativeEvent.layout.height;
+    if (h > 0) setSheetHeight(h);
+    if (sheetAnimated.current) return;
+    sheetAnimated.current = true;
+    sheetTranslate.setValue(200);
+    Animated.timing(sheetTranslate, {toValue: 0, duration: 280, useNativeDriver: true}).start();
+  }, [sheetTranslate]);
+
+  useEffect(() => {
+    sheetAnimated.current = false;
+  }, [hasActiveRide]);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const handleAceitar = useCallback(() => {
+    if (!activeCorrida) return;
+    void onAceitar(activeCorrida.id, {});
+  }, [activeCorrida, onAceitar]);
+
+  const handleRecusar = useCallback(() => {
+    if (!activeCorrida) return;
+    void onRecusar(activeCorrida.id, recusaMotivo || undefined).then(() => {
+      setRecusaMotivo('');
+      setShowRecusaInput(false);
+    });
+  }, [activeCorrida, onRecusar, recusaMotivo]);
+
+  const handleIniciarDeslocamento = useCallback(() => {
+    if (!activeCorrida) return;
+    void onIniciarDeslocamento(activeCorrida.id);
+  }, [activeCorrida, onIniciarDeslocamento]);
+
+  const handleChegar = useCallback(() => {
+    if (!activeCorrida) return;
+    void onChegar(activeCorrida.id);
+  }, [activeCorrida, onChegar]);
+
+  const handleConfirmarEmbarque = useCallback(() => {
+    if (!activeCorrida) return;
+    void onConfirmarEmbarque(activeCorrida.id, {
+      posicaoLat: userLocation?.latitude ?? activeCorrida.origemLat,
+      posicaoLng: userLocation?.longitude ?? activeCorrida.origemLng,
+    });
+  }, [activeCorrida, onConfirmarEmbarque, userLocation]);
+
+  const handlePassageiroABordo = useCallback(() => {
+    if (!activeCorrida) return;
+    void onPassageiroABordo(activeCorrida.id);
+  }, [activeCorrida, onPassageiroABordo]);
+
+  const handleFinalizar = useCallback(() => {
+    if (!activeCorrida) return;
+    // ficar-disponivel is emitted by useMotoristaRealtime when activeCorrida reaches terminal status
+    void onFinalizar(activeCorrida.id, {
+      posicaoFinalLat: userLocation?.latitude ?? activeCorrida.destinoLat,
+      posicaoFinalLng: userLocation?.longitude ?? activeCorrida.destinoLng,
+    });
+  }, [activeCorrida, onFinalizar, userLocation]);
+
+  const handleCancelar = useCallback(() => {
+    if (!activeCorrida) return;
+    void onCancelar(activeCorrida.id, cancelMotivo.trim()).then(() => {
+      setCancelMotivo('');
+      setShowCancelInput(false);
+    });
+  }, [activeCorrida, cancelMotivo, onCancelar]);
+
+  const handleOpenMessages = useCallback(() => {
+    if (!activeCorrida) return;
+    navigation.navigate('MotoristaCorridas', {
+      screen: 'CorridaMensagens',
+      params: {corridaId: activeCorrida.id},
+    });
+  }, [activeCorrida, navigation]);
+
+  // ── Nova corrida offer handlers ──────────────────────────────────────────
+
+  const handleAcceptOffer = useCallback((corridaId: string) => {
+    dismissOffer();
+    void onAceitar(corridaId, {});
+  }, [dismissOffer, onAceitar]);
+
+  const handleRefuseOffer = useCallback((corridaId: string) => {
+    dismissOffer();
+    void onRecusar(corridaId);
+  }, [dismissOffer, onRecusar]);
+
+  // ── Map ─────────────────────────────────────────────────────────────────────
+  const activeRouteFeature = useMemo(() => {
+    if (activeRouteCoords.length < 2) return null;
+    return {
+      type: 'Feature' as const,
+      properties: {},
+      geometry: {type: 'LineString' as const, coordinates: activeRouteCoords},
+    };
+  }, [activeRouteCoords]);
+
+  const mapContent =
+    MapboxGL && isMapboxTokenApplied ? (
+      <MapboxGL.MapView
+        accessibilityLabel={t('motorista.map.label')}
+        logoEnabled={false}
+        attributionEnabled={false}
+        scaleBarEnabled={false}
+        onDidFinishLoadingMap={() => console.info('[Mapbox][Motorista] Map loaded')}
+        onMapLoadingError={(e?: unknown) => console.error('[Mapbox][Motorista] Error', e)}
+        style={styles.map}
+        styleURL="mapbox://styles/mapbox/light-v11"
+        testID="motorista-map">
+        <MapboxGL.Camera
+          ref={cameraRef}
+          animationDuration={600}
+          centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
+          zoomLevel={mapRegion.zoomLevel}
+        />
+        {/* Disable the default Mapbox blue dot — we render our own pulse marker below */}
+        {MapboxGL.UserLocation && (
+          <MapboxGL.UserLocation visible={false} />
+        )}
+        {/* ── Layer order inside MapView (bottom → top):
+             1. Route LineLayer  — always below all annotations
+             2. Origin pin       — passenger pickup (person-pin icon)
+             3. Destination pin  — drop-off (location-on icon)
+             4. Driver location  — topmost so it's never hidden
+        ── */}
+
+        {/* 1. Route line — declared first so it renders BELOW all PointAnnotations */}
+        {hasActiveRide && activeRouteFeature && MapboxGL.ShapeSource && MapboxGL.LineLayer && (
+          <MapboxGL.ShapeSource id="active-route-source" shape={activeRouteFeature}>
+            <MapboxGL.LineLayer id="active-route-line" style={activeRouteLineStyle} />
+          </MapboxGL.ShapeSource>
+        )}
+
+        {/* 2. Origin — passenger pickup point (person-pin, green) */}
+        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.origemLng) && Number.isFinite(activeCorrida.origemLat) && (
+          <MapboxGL.PointAnnotation
+            coordinate={[activeCorrida.origemLng, activeCorrida.origemLat]}
+            id="ride-origin"
+            title={t('corridas.detail.origem')}>
+            <View style={styles.originPinWrapper}>
+              <MaterialIcons name="person-pin" size={34} color={C.success} />
+            </View>
+          </MapboxGL.PointAnnotation>
+        )}
+
+        {/* 3. Destination — drop-off point (location-on, red) */}
+        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.destinoLng) && Number.isFinite(activeCorrida.destinoLat) && (
+          <MapboxGL.PointAnnotation
+            coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
+            id="ride-destination"
+            title={t('corridas.detail.destino')}>
+            <View style={styles.destinationPinWrapper}>
+              <MaterialIcons name="location-on" size={34} color={C.danger} />
+            </View>
+          </MapboxGL.PointAnnotation>
+        )}
+
+        {/* 4. Driver location — declared last = topmost layer, never hidden by the route line */}
+        {userLocation && (
+          <MapboxGL.PointAnnotation
+            coordinate={[userLocation.longitude, userLocation.latitude]}
+            id="driver-location"
+            title={t('motorista.map.driverLocation')}>
+            {/*
+              Exact same three-layer pulse the passenger sees for their own dot:
+                outer ring  — translucent blue halo  (pulseBg)
+                middle ring — white card background
+                inner dot   — solid interactive blue
+            */}
+            <View style={styles.userMarkerPulse} testID="driver-marker">
+              <View style={styles.userMarkerRing}>
+                <View style={styles.userMarkerDot} />
+              </View>
+            </View>
+          </MapboxGL.PointAnnotation>
+        )}
+      </MapboxGL.MapView>
+    ) : (
+      <View style={styles.mapFallback} testID="map-fallback">
+        <MaterialIcons name="map" size={56} color={C.textMuted} />
+        <Text style={styles.mapFallbackText}>{t('passageiro.map.notInstalled')}</Text>
+      </View>
+    );
+
+  const sheetPaddingBottom = 14;
+  const fabTop = 12;
+  // FAB sits 16px above the sheet — dynamically computed from measured sheet height.
+  // Falls back to 80px until the first layout event fires.
+  const FAB_GAP = 16;
+  const chatFabBottom = sheetHeight > 0 ? sheetHeight + FAB_GAP : 80;
+
+  return (
+    <SafeAreaView edges={['top']} style={[styles.container, {backgroundColor: theme.colors.primary}]} testID="motorista-home-screen">
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+
+      {/* Header bar — navy background, status highlighted via inline badge */}
+      {(() => {
+        const isAtivo = statusOperacional === 'DISPONIVEL' || statusOperacional === 'EM_CORRIDA';
+        const statusText = hasActiveRide && activeCorrida
+          ? t(`corridas.status.${normalizedActiveStatus}`, {defaultValue: normalizedActiveStatus ?? ''})
+          : isAtivo
+            ? t('motorista.status.ativo', {defaultValue: 'Disponível'})
+            : t('motorista.status.indisponivel', {defaultValue: 'Indisponível'});
+        const badgeBg = isAtivo ? C.statusBadgeActiveBg : C.statusBadgeOfflineBg;
+        const badgeDot = isAtivo ? C.headerActiveDot : C.headerOfflineDot;
+        return (
+          <View style={styles.statusHeaderRow} testID="status-header">
+            <View style={[styles.statusInlineBadge, {backgroundColor: badgeBg}]}>
+              <View style={[styles.statusPillDot, {backgroundColor: badgeDot}]} />
+              <Text style={styles.statusHeaderText}>{statusText}</Text>
+            </View>
+          </View>
+        );
+      })()}
+
+      {/* Map area */}
+      <View style={styles.mapWrapper}>
+        {/* Layer 1: Map */}
+        {mapContent}
+
+        {/* Layer 3: Right FAB column */}
+        <View style={[styles.fabColumn, {top: fabTop}]} testID="fab-column">
+          <Pressable
+            accessibilityLabel={t('common.notifications')}
+            accessibilityRole="button"
+            style={styles.fab}
+            testID="fab-notifications">
+            <MaterialIcons name="notifications" size={20} color={C.textOnDark} />
+            <View style={styles.fabBadge} />
+          </Pressable>
+          <Pressable
+            accessibilityLabel={t('passageiro.map.centerOnUser')}
+            accessibilityRole="button"
+            onPress={onCenterOnUser}
+            style={[styles.fab, styles.fabLocation]}
+            testID="fab-center">
+            <MaterialIcons name="my-location" size={20} color={C.textOnDark} />
+          </Pressable>
+        </View>
+
+        {/* Chat FAB — only when ride is active */}
+        {hasActiveRide && (
+          <Pressable
+            accessibilityLabel={t('corridas.mensagens.title')}
+            accessibilityRole="button"
+            onPress={handleOpenMessages}
+            style={[styles.chatFab, {bottom: chatFabBottom}]}
+            testID="chat-fab">
+            <MaterialIcons name="chat" size={24} color={C.textOnDark} />
+            {unreadMensagens > 0 && (
+              <View style={styles.chatFabBadge} testID="chat-fab-badge">
+                <Text style={styles.chatFabBadgeText}>
+                  {unreadMensagens > 99 ? '99+' : String(unreadMensagens)}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        )}
+
+        {/* Bottom sheet — three states */}
+        {!hasActiveRide && !isTerminal && (
+          <MotoristaIdleSheet
+            isTogglingStatus={isTogglingStatus}
+            onLayout={onSheetLayout}
+            onToggleStatus={onToggleStatus}
+            paddingBottom={sheetPaddingBottom}
+            sheetTranslate={sheetTranslate}
+            statusOperacional={statusOperacional}
+          />
+        )}
+
+        {isTerminal && activeCorrida && (
+          <MotoristaTerminalSheet
+            corrida={activeCorrida}
+            onLayout={onSheetLayout}
+            paddingBottom={sheetPaddingBottom}
+            sheetTranslate={sheetTranslate}
+          />
+        )}
+
+        {hasActiveRide && activeCorrida && (
+          <MotoristaActiveSheet
+            cancelMotivo={cancelMotivo}
+            corrida={activeCorrida}
+            isActionLoading={isActionLoading}
+            onAceitar={handleAceitar}
+            onCancelar={handleCancelar}
+            onCancelMotivoChange={setCancelMotivo}
+            onChegar={handleChegar}
+            onConfirmarEmbarque={handleConfirmarEmbarque}
+            onPassageiroABordo={handlePassageiroABordo}
+            onFinalizar={handleFinalizar}
+            onIniciarDeslocamento={handleIniciarDeslocamento}
+            onLayout={onSheetLayout}
+            onRecusar={handleRecusar}
+            onRecusaMotivoChange={setRecusaMotivo}
+            onShowCancelInput={() => setShowCancelInput(true)}
+            onShowRecusaInput={() => setShowRecusaInput(true)}
+            paddingBottom={sheetPaddingBottom}
+            recusaMotivo={recusaMotivo}
+            sheetTranslate={sheetTranslate}
+            showCancelInput={showCancelInput}
+            showRecusaInput={showRecusaInput}
+          />
+        )}
+
+        {/* Nova corrida offer modal */}
+        {pendingOffer && (
+          <NovaCorridaModal
+            isLoading={isActionLoading}
+            offer={pendingOffer}
+            onAccept={handleAcceptOffer}
+            onRefuse={handleRefuseOffer}
+          />
+        )}
+
+        {/* Loading overlay */}
+        {isActionLoading && (
+          <View style={styles.loadingOverlay} testID="loading-overlay">
+            <ActivityIndicator color={C.textOnDark} size="large" />
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+};
+
+MotoristaScreen.displayName = 'MotoristaScreen';

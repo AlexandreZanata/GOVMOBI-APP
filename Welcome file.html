@@ -1,0 +1,1353 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome file</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__left">
+    <div class="stackedit__toc">
+      
+<ul>
+<li><a href="#govmob-backend-—-documentação-técnica">GovMob Backend — Documentação Técnica</a>
+<ul>
+<li><a href="#sumário">Sumário</a></li>
+<li><a href="#arquitetura-geral">1. Arquitetura Geral</a></li>
+<li><a href="#ciclo-completo-de-uma-corrida">3. Ciclo Completo de uma Corrida</a></li>
+<li><a href="#telemetria-e-validação-de-trajetória">4. Telemetria e Validação de Trajetória</a></li>
+<li><a href="#segurança-e-autenticação">6. Segurança e Autenticação</a></li>
+<li><a href="#índices-redis">7. Índices Redis</a></li>
+<li><a href="#jobs-e-monitoramento">8. Jobs e Monitoramento</a></li>
+<li><a href="#requisitos-para-o-motorista-ser-chamado-a-uma-corrida">10. Requisitos para o Motorista Ser Chamado a uma Corrida</a></li>
+<li><a href="#referência-de-erros">11. Referência de Erros</a></li>
+<li><a href="#variáveis-de-ambiente">Variáveis de Ambiente</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+  </div>
+  <div class="stackedit__right">
+    <div class="stackedit__html">
+      <h1 id="govmob-backend-—-documentação-técnica">GovMob Backend — Documentação Técnica</h1>
+<p>Sistema de transporte governamental (ride-sharing para servidores públicos). Este documento cobre o ciclo completo de uma corrida, a integração em tempo real via WebSocket, as regras de negócio, os índices Redis e os fluxos de segurança.</p>
+<hr>
+<h2 id="sumário">Sumário</h2>
+<ol>
+<li><a href="#1-arquitetura-geral">Arquitetura Geral</a></li>
+<li><a href="#2-pr%C3%A9-requisito-associa%C3%A7%C3%A3o-motorista-ve%C3%ADculo">Pré-requisito: Associação Motorista-Veículo</a></li>
+<li><a href="#3-ciclo-completo-de-uma-corrida">Ciclo Completo de uma Corrida</a></li>
+<li><a href="#4-telemetria-e-valida%C3%A7%C3%A3o-de-trajet%C3%B3ria">Telemetria e Validação de Trajetória</a></li>
+<li><a href="#5-integra%C3%A7%C3%A3o-websocket">Integração WebSocket</a></li>
+<li><a href="#6-seguran%C3%A7a-e-autentica%C3%A7%C3%A3o">Segurança e Autenticação</a></li>
+<li><a href="#7-%C3%ADndices-redis">Índices Redis</a></li>
+<li><a href="#8-jobs-e-monitoramento">Jobs e Monitoramento</a></li>
+<li><a href="#9-algoritmo-de-despacho-e-scoring">Algoritmo de Despacho e Scoring</a></li>
+<li><a href="#10-requisitos-para-o-motorista-ser-chamado-a-uma-corrida">Requisitos para o Motorista Ser Chamado a uma Corrida</a></li>
+<li><a href="#11-refer%C3%AAncia-de-erros">Referência de Erros</a></li>
+</ol>
+<hr>
+<h2 id="arquitetura-geral">1. Arquitetura Geral</h2>
+<pre><code>Cliente (App Mobile)  
+ │ ├── REST (HTTP)  ──►  NestJS Controllers │                         │ └── WebSocket   ──►  DespachoGateway (/despacho) │ Application Layer (Handlers CQRS) │ Domain Layer (Aggregates, Value Objects) │ ┌───────────────┼───────────────┐ │               │               │ PostgreSQL         Redis          Outbox (TypeORM)       (Geo/Cache)    (Eventos async)```  
+  
+**Stack:** NestJS 11 · TypeScript · PostgreSQL + PostGIS · Redis · Socket.io · Bull/BullMQ · JWT · OneSignal  
+  
+**Padrões:** DDD · Clean Architecture · CQRS · Outbox Pattern · Ports &amp; Adapters  
+  
+---  
+  
+## 2. Pré-requisito: Associação Motorista-Veículo  
+  
+Antes de aceitar qualquer corrida, o motorista **obrigatoriamente** precisa ter um veículo associado ao seu turno. Essa associação persiste durante todo o turno — o motorista pode realizar múltiplas corridas com o mesmo veículo sem precisar reassociar.  
+  
+### Endpoints de Associação  
+  
+| Método   | Rota                            | Descrição                                     |  
+| -------- | ------------------------------- | --------------------------------------------- |  
+| `POST`   | `/frota/motoristas/:id/veiculo` | Associar veículo ao motorista                 |  
+| `DELETE` | `/frota/motoristas/:id/veiculo` | Desassociar veículo                           |  
+| `GET`    | `/frota/motoristas/:id/veiculo` | Consultar veículo atual                       |  
+| `GET`    | `/frota/motoristas/me/veiculo`  | Consultar meu veículo (motorista autenticado) |  
+  
+O próprio motorista pode usar `/me/veiculo` ou os endpoints com `:id` (desde que seja o seu próprio ID). Admins podem operar em qualquer motorista.  
+  
+### Regras de Associação  
+  
+- O veículo deve estar com status `DISPONIVEL` e `ativo = true`  
+- O motorista não pode ter outro veículo já associado (deve desassociar primeiro)  
+- O veículo não pode estar associado a outro motorista  
+- Não é possível desassociar enquanto o motorista está `EM_CORRIDA`  
+- Ao finalizar ou cancelar uma corrida, a associação **não é removida automaticamente**  
+  
+### Payload — Associar Veículo  
+  
+```json  
+POST /frota/motoristas/me/veiculo  
+{  
+ "veiculoId": "uuid-do-veiculo"}  
+</code></pre>
+<hr>
+<h2 id="ciclo-completo-de-uma-corrida">3. Ciclo Completo de uma Corrida</h2>
+<h3 id="estados-e-transições">Estados e Transições</h3>
+<pre><code>SOLICITADA ──────────────────────────────────────────────────────► CANCELADA (passageiro)  
+ │ ├──► AGUARDANDO_ACEITE ──────────────────────────────────────► CANCELADA (passageiro) │         │                                                     EXPIRADA  (sistema) │         │ │         └──► ACEITA ──────────────────────────────────────► CANCELADA (passageiro ou motorista) │                 │ │                 └──► EM_ROTA ──► CONCLUIDA ──► AVALIADA │                          ↑ │                    NÃO CANCELÁVEL │ └──► ACEITA (direto, sem AGUARDANDO_ACEITE — raro)```  
+  
+**Estados terminais:** `CONCLUIDA`, `AVALIADA`, `CANCELADA`, `EXPIRADA` — nenhuma transição é possível a partir deles.  
+  
+### Regras de Cancelamento por Estado  
+  
+| Estado atual                                        | Quem pode cancelar                    | Resultado                                                                       |  
+| --------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------- |  
+| `SOLICITADA`                                        | Passageiro                            | Corrida cancelada. Nenhum motorista envolvido.                                  |  
+| `AGUARDANDO_ACEITE`                                 | Passageiro                            | Corrida cancelada. Nenhum motorista envolvido.                                  |  
+| `ACEITA`                                            | Passageiro **ou** Motorista vinculado | Corrida cancelada. Motorista liberado para `DISPONIVEL` imediatamente.          |  
+| `EM_ROTA`                                           | **Ninguém**                           | Bloqueado — `podeSerCancelada = false`. Retorna `409 INVALID_STATE_TRANSITION`. |  
+| `CONCLUIDA` / `AVALIADA` / `CANCELADA` / `EXPIRADA` | **Ninguém**                           | Estado terminal — retorna `409 INVALID_STATE_TRANSITION`.                       |  
+  
+&gt; **Por que `EM_ROTA` não pode ser cancelada?** O passageiro já embarcou. Cancelar nesse ponto criaria ambiguidade operacional (onde o passageiro fica?). A única saída é finalizar a corrida normalmente.  
+  
+**Efeitos colaterais do cancelamento:**  
+  
+- Se havia motorista vinculado (`ACEITA`): status do motorista volta para `DISPONIVEL` no banco e nos índices Redis  
+- Evento `CorridaCancelada` publicado via Outbox → WebSocket notifica o outro participante  
+- Push notification enviado ao lado que **não** cancelou  
+- Cooldown de cancelamento incrementado **apenas para o passageiro** (3 cancelamentos/hora → bloqueio de 5 min para solicitar novas corridas)  
+  
+---  
+  
+### 3.1 Solicitar Corrida  
+  
+**Ator:** Passageiro  
+  
+</code></pre>
+<p>POST /corridas<br>
+Authorization: Bearer &lt;access_token&gt;</p>
+<p>{<br>
+“origemLat”: -2.529, “origemLng”: -44.301, “destinoLat”: -2.535, “destinoLng”: -44.295, “motivoServico”: “Visita técnica ao canteiro de obras”, “observacoes”: “Levar material de medição”  // opcional}</p>
+<pre><code>  
+**Resposta:** `202 Accepted` com `{ "corridaId": "uuid" }`  
+  
+&gt; O campo `passageiroId` **não deve ser enviado** no body — o sistema usa o ID do token JWT.  
+  
+**Validações executadas:**  
+  
+| Validação                | Detalhe                                                                              |  
+| ------------------------ | ------------------------------------------------------------------------------------ |  
+| Corrida ativa            | Passageiro não pode ter outra corrida em andamento                                   |  
+| Cooldown de cancelamento | 3 cancelamentos na última hora bloqueiam por 5 min                                   |  
+| Distância mínima         | Origem → Destino deve ser ≥ 200m                                                     |  
+| Limite municipal         | Destino deve estar dentro do município configurado (se `GEO_LIMITAR_MUNICIPIO=true`) |  
+| `motivoServico`          | Obrigatório, 1–200 caracteres                                                        |  
+| `prioridadeNivel`        | Derivado do `nivelHierarquia` do servidor; deve estar entre 1 e 10                   |  
+  
+---  
+  
+### 3.2 Aceitar Corrida  
+  
+**Ator:** Motorista  
+  
+</code></pre>
+<p>POST /corridas/:id/aceitar<br>
+Authorization: Bearer &lt;access_token&gt;</p>
+<pre><code>  
+Body vazio — o veículo é resolvido automaticamente pelo sistema a partir da associação do motorista.  
+  
+**Validações executadas:**  
+  
+| Validação                  | Detalhe                                                                   |  
+| -------------------------- | ------------------------------------------------------------------------- |  
+| Lock Redis                 | `setNX corrida:{id}:lock` garante que apenas um motorista vence a disputa |  
+| Veículo associado          | Motorista deve ter veículo associado ao turno                             |  
+| Veículo em uso             | Veículo não pode estar em outra corrida ativa                             |  
+| Corrida ativa do motorista | Motorista não pode ter outra corrida em andamento                         |  
+  
+O lock é liberado imediatamente após a transação bem-sucedida (não aguarda TTL de 35s).  
+  
+---  
+  
+### 3.3 Recusar Corrida  
+  
+**Ator:** Motorista  
+  
+</code></pre>
+<p>POST /corridas/:id/recusar<br>
+{<br>
+“motivo”: “Muito longe”  // opcional}</p>
+<pre><code>  
+Cada recusa incrementa um contador Redis (`motorista:{id}:recusas`, TTL 1h) que penaliza o score de despacho futuro.  
+  
+---  
+  
+### 3.4 Iniciar Deslocamento  
+  
+**Ator:** Motorista  
+  
+</code></pre>
+<p>POST /corridas/:id/iniciar-deslocamento</p>
+<pre><code>  
+Transição: `ACEITA` → `EM_ROTA`. Apenas o motorista vinculado pode executar.  
+  
+---  
+  
+### 3.5 Chegar ao Local  
+  
+**Ator:** Motorista (manual) ou Sistema (automático via telemetria)  
+  
+</code></pre>
+<p>POST /corridas/:id/chegar</p>
+<pre><code>  
+O sistema também dispara automaticamente quando o motorista está a &lt; 200m da origem via telemetria. A operação é **idempotente** — chamadas duplicadas são ignoradas silenciosamente.  
+  
+---  
+  
+### 3.6 Confirmar Embarque  
+  
+**Ator:** Motorista  
+  
+</code></pre>
+<p>POST /corridas/:id/confirmar-embarque<br>
+{<br>
+“posicaoLat”: -2.529,  // opcional “posicaoLng”: -44.301  // opcional}</p>
+<pre><code>  
+Apenas o motorista vinculado pode confirmar. A corrida deve estar em `ACEITA` ou `EM_ROTA`.  
+  
+---  
+  
+### 3.7 Finalizar Corrida  
+  
+**Ator:** Motorista  
+  
+</code></pre>
+<p>POST /corridas/:id/finalizar<br>
+{<br>
+“posicaoFinalLat”: -2.535,  // opcional “posicaoFinalLng”: -44.295  // opcional}</p>
+<pre><code>  
+**Cálculos realizados:**  
+  
+- **Distância:** Soma das distâncias haversine entre pontos consecutivos da rota registrada (snapshots a cada 10 posições). Se a rota tiver menos de 2 pontos, retorna 0.  
+- **Duração:** Calculada a partir de `embarqueEm` → `iniciadaEm` → `solicitadaEm` (nessa ordem de prioridade), excluindo o tempo de espera pelo motorista.  
+  
+---  
+  
+### 3.8 Cancelar Corrida  
+  
+**Ator:** Passageiro ou Motorista vinculado  
+  
+</code></pre>
+<p>POST /corridas/:id/cancelar<br>
+Authorization: Bearer &lt;access_token&gt;</p>
+<p>{<br>
+“motivo”: “Mudança de planos”  // obrigatório no DTO, mas aceita string vazia}</p>
+<pre><code>  
+**Quem pode cancelar e quando:**  
+  
+| Quem chama | `solicitanteId` usado       | Estados permitidos                          |  
+| ---------- | --------------------------- | ------------------------------------------- |  
+| Passageiro | `user.id` (servidorId)      | `SOLICITADA`, `AGUARDANDO_ACEITE`, `ACEITA` |  
+| Motorista  | `user.motoristaId`          | `ACEITA`                                    |  
+| Admin      | não suportado via esta rota | —                                           |  
+  
+&gt; O sistema determina automaticamente se o solicitante é passageiro ou motorista pelo JWT — não é necessário informar no body.  
+  
+**Erros possíveis:**  
+  
+| Código                         | Situação                                              |  
+| ------------------------------ | ----------------------------------------------------- |  
+| `404 NOT_FOUND`                | Corrida não encontrada                                |  
+| `409 INVALID_STATE_TRANSITION` | Corrida em `EM_ROTA` ou já em estado terminal         |  
+| `403 FORBIDDEN`                | Solicitante não é passageiro nem motorista da corrida |  
+  
+**O que acontece após o cancelamento:**  
+  
+1. Status da corrida → `CANCELADA`  
+2. Se havia motorista vinculado (`ACEITA`): motorista volta para `DISPONIVEL` no banco e é removido do índice Redis `motoristas:posicoes:ocupados`  
+3. Evento `CorridaCancelada` publicado via Outbox → WebSocket emite `status-corrida-alterado` para todos na sala  
+4. Push notification enviado ao participante que **não** cancelou  
+5. Cooldown incrementado para o passageiro (se foi ele quem cancelou)  
+  
+**Impacto no cooldown do passageiro:**  
+  
+O cooldown é verificado na **solicitação** de nova corrida, não no cancelamento. Se o passageiro cancelar 3 corridas em 1 hora, a próxima tentativa de `POST /corridas` retorna `409 CONFLICT` com mensagem de bloqueio por 5 minutos.  
+  
+---  
+  
+### 3.9 Avaliar Corrida  
+  
+**Ator:** Passageiro (qualquer servidor que foi passageiro na corrida)  
+  
+</code></pre>
+<p>POST /corridas/:id/avaliar<br>
+{<br>
+“nota”: 5, “comentario”: “Ótimo motorista!”  // opcional, máx. 500 chars}</p>
+<pre><code>  
+**Regras:**  
+  
+- Apenas corridas com status `CONCLUIDA` podem ser avaliadas  
+- Prazo: 3 dias após a conclusão (configurável via `GEO_MAX_DIAS_AVALIACAO`)  
+- Avaliação duplicada é rejeitada  
+- `nota` deve ser inteiro entre 1 e 5  
+- A nota atualiza a `notaMedia` do motorista via média ponderada incremental  
+- Não há restrição de papel — qualquer servidor autenticado que seja o passageiro da corrida pode avaliar  
+  
+---  
+  
+## 3.10 Rotas de Suporte ao Frontend  
+  
+### `GET /corridas/ativa`  
+  
+Retorna a corrida ativa do usuário autenticado com posição atual do motorista. Ideal para recuperação de estado ao reabrir o app.  
+  
+```json  
+// Resposta com corrida ativa  
+{  
+ "corridaAtiva": { "id": "uuid", "status": "aceita", "origem": { "lat": -2.529, "lng": -44.301 }, "destino": { "lat": -2.535, "lng": -44.295 }, "motivoServico": "Visita técnica", "motoristaId": "uuid", "veiculoId": "uuid", "passageiroId": "uuid", "timestamps": { "solicitadaEm": "2026-04-18T12:00:00.000Z", "aceitaEm": "2026-04-18T12:01:00.000Z" }, "posicaoMotorista": { "lat": -2.530, "lng": -44.302 } }}  
+  
+// Resposta sem corrida ativa  
+{ "corridaAtiva": null }  
+</code></pre>
+<h3 id="get-corridascontexto"><code>GET /corridas/contexto</code></h3>
+<p>Retorna o contexto completo do usuário (dados do usuário + corrida ativa). Equivalente ao <code>/ativa</code> mas inclui os dados do JWT.</p>
+<h3 id="get-corridasidposicao-motorista"><code>GET /corridas/:id/posicao-motorista</code></h3>
+<p>Retorna a última posição conhecida do motorista via Redis. Use como <strong>fallback de polling</strong> quando o WebSocket não estiver disponível (ex: app em background).</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"posicao"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span> <span class="token string">"lat"</span><span class="token punctuation">:</span> <span class="token operator">-</span><span class="token number">2.53</span><span class="token punctuation">,</span> <span class="token string">"lng"</span><span class="token punctuation">:</span> <span class="token operator">-</span><span class="token number">44.302</span><span class="token punctuation">,</span> <span class="token string">"velocidade"</span><span class="token punctuation">:</span> <span class="token number">45.5</span><span class="token punctuation">,</span> <span class="token string">"heading"</span><span class="token punctuation">:</span> <span class="token number">180</span> <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token string">"timestamp"</span><span class="token punctuation">:</span> <span class="token number">1713273600000</span><span class="token punctuation">}</span>  
+<span class="token comment">// ou { "posicao": null, "timestamp": null } se sem dados recentes  </span>
+</code></pre>
+<h3 id="get-corridasidstatus"><code>GET /corridas/:id/status</code></h3>
+<p>Retorna apenas o status atual da corrida (otimizado via Redis). Use para polling leve de status.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span> <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"status"</span><span class="token punctuation">:</span> <span class="token string">"em_rota"</span> <span class="token punctuation">}</span>  
+</code></pre>
+<h3 id="get-corridasidmensagens"><code>GET /corridas/:id/mensagens</code></h3>
+<p>Retorna o histórico de mensagens da corrida e marca como lidas. Disponível para passageiro e motorista da corrida.</p>
+<h3 id="get-frotamotoristasmeveiculo"><code>GET /frota/motoristas/me/veiculo</code></h3>
+<p>Retorna o veículo atualmente associado ao motorista autenticado. Útil para exibir na tela inicial do motorista.</p>
+<hr>
+<h2 id="telemetria-e-validação-de-trajetória">4. Telemetria e Validação de Trajetória</h2>
+<h3 id="fluxo-de-processamento">Fluxo de Processamento</h3>
+<p>O motorista envia posições via WebSocket. Para cada posição recebida:</p>
+<pre><code>1. Rate limit (1 msg/s por motorista via Redis)  
+ └── Excedeu? → Descartar silenciosamente  
+2. Verificar status online  
+ ├── Redis: motorista:{id}:online (TTL 3600s) └── Fallback: banco de dados └── OFFLINE ou inativo? → Descartar + remover dos índices  
+3. Atualizar índice GEO no Redis  
+  
+4. Se corridaId presente:  
+ ├── Buscar corrida no banco ├── Validar trajetória: │   ├── Rota vazia? → validarPrimeiroPonto (máx. 50km da origem) │   └── Rota com pontos? → validarSalto (velocidade máx. 150 km/h) │       └── tempoMs ≤ 0 e distância &gt; 10m? → Rejeitar (timestamp manipulada) ├── Verificar proximidade da origem (&lt; 200m) → registrarChegada (idempotente) ├── Snapshot a cada 10 posições (contador atômico Redis INCR) └── Publicar posição para passageiro via PubSub```  
+  
+### Validação Anti-Teleporte  
+  
+| Condição                          | Resultado                        |  
+| --------------------------------- | -------------------------------- |  
+| `tempoMs ≤ 0` e `distância &gt; 10m` | Rejeitado (timestamp manipulada) |  
+| `tempoMs ≤ 0` e `distância ≤ 10m` | Aceito (posição estacionária)    |  
+| Velocidade calculada &gt; 150 km/h   | Rejeitado (teleporte)            |  
+| Primeiro ponto &gt; 50km da origem   | Rejeitado                        |  
+  
+### Snapshots de Rota  
+  
+- Contador atômico por corrida: `corrida:{id}:snapshot_count` (Redis INCR, TTL 24h)  
+- A cada 10 incrementos, a posição é persistida no banco  
+- Usado para calcular a distância real na finalização  
+  
+---  
+  
+## 5. Integração WebSocket  
+  
+### Conexão  
+  
+```javascript  
+const socket = io('https://api.govmob.gov.br/despacho', {  
+ auth: { token: 'Bearer &lt;access_token&gt;' },});  
+</code></pre>
+<p><strong>Namespace:</strong> <code>/despacho</code></p>
+<p><strong>Ao conectar, o servidor automaticamente:</strong></p>
+<ol>
+<li>Valida o JWT</li>
+<li>Recupera corrida ativa (se houver) e adiciona o cliente à sala <code>corrida:{id}</code></li>
+<li>Envia histórico de mensagens da corrida ativa</li>
+<li>Para motoristas: emite <code>estado-operacional</code> e sincroniza status online no Redis</li>
+<li>Emite <code>reconexao-concluida</code> se havia corrida ativa</li>
+</ol>
+<p><strong>Ao desconectar:</strong></p>
+<ul>
+<li>O flag <code>motorista:{id}:online</code> é removido imediatamente do Redis</li>
+<li>O motorista permanece nos índices GEO por até 90s (TTL do heartbeat <code>motorista:{id}:estado</code>)</li>
+<li>O <code>MotoristaInatividadeCron</code> (1 min) detecta a ausência de heartbeat e marca como OFFLINE</li>
+</ul>
+<h3 id="fluxo-de-reconexão-recomendado-frontend">Fluxo de Reconexão Recomendado (Frontend)</h3>
+<pre><code>1. App abre / reconecta WebSocket  
+2. Servidor emite automaticamente:  
+ - estado-operacional (motorista) - reconexao-concluida + historico-mensagens (se corrida ativa)3. Se não receber reconexao-concluida em 3s:  
+ → Chamar GET /corridas/ativa via REST → Se corridaAtiva != null: assinar-corrida via WS4. Motorista sem corrida ativa: emitir ficar-disponivel  
+</code></pre>
+<hr>
+<h3 id="eventos-cliente-→-servidor">Eventos: Cliente → Servidor</h3>
+<h4 id="atualizar-posicao"><code>atualizar-posicao</code></h4>
+<p>Telemetria do motorista. Sujeito a rate limit de 1 msg/segundo.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token comment">// opcional — omitir se disponível sem corrida "lat": -2.529, "lng": -44.301, "velocidade": 45.5, // km/h "heading": 180 // graus, opcional}  </span>
+</code></pre>
+<h4 id="assinar-corrida"><code>assinar-corrida</code></h4>
+<p>Subscreve às atualizações de uma corrida específica. O servidor verifica se o usuário é participante (passageiro, motorista ou admin) antes de adicionar à sala.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span> <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span> <span class="token punctuation">}</span>  
+</code></pre>
+<p><strong>Resposta em caso de erro:</strong> evento <code>erro-assinar</code> com <code>{ "mensagem": "..." }</code></p>
+<h4 id="ficar-disponivel"><code>ficar-disponivel</code></h4>
+<p>Motorista entra na sala <code>motoristas-disponiveis</code> para receber o <strong>broadcast de fallback</strong> (quando o raio máximo é atingido e nenhum candidato aceitou).</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span><span class="token punctuation">}</span>  
+</code></pre>
+<p><strong>Importante:</strong> Com o modelo de fila sequencial, as ofertas normais são enviadas <strong>diretamente</strong> para o socket do motorista — não dependem desta sala. O <code>ficar-disponivel</code> é necessário apenas para o fallback de último recurso.</p>
+<p><strong>Quando usar:</strong> Ao conectar sem corrida ativa (o servidor já entra automaticamente). Após finalizar/cancelar uma corrida, emitir novamente para garantir que está na sala de fallback.</p>
+<p><strong>Comportamento automático na conexão:</strong></p>
+<ul>
+<li>Conecta <strong>sem corrida ativa</strong> → entra automaticamente em <code>motoristas-disponiveis</code></li>
+<li>Conecta <strong>com corrida ativa</strong> → entra na sala <code>corrida:{id}</code> e <strong>não</strong> entra em <code>motoristas-disponiveis</code></li>
+<li>Após finalizar/cancelar uma corrida, o motorista deve emitir <code>ficar-disponivel</code> manualmente</li>
+</ul>
+<p>Não há resposta de confirmação — fire-and-forget.</p>
+<h4 id="enviar-mensagem"><code>enviar-mensagem</code></h4>
+<p>Chat em tempo real durante a corrida.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"conteudo"</span><span class="token punctuation">:</span> <span class="token string">"Estou chegando em 2 minutos"</span> <span class="token comment">// máx. 1000 chars}  </span>
+</code></pre>
+<hr>
+<h3 id="eventos-servidor-→-cliente">Eventos: Servidor → Cliente</h3>
+<h4 id="estado-operacional"><code>estado-operacional</code></h4>
+<p>Enviado ao conectar para motoristas, e automaticamente pelo sistema sempre que o status muda por evento (aceite, finalização, cancelamento) — sem depender de chamada HTTP do app.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span> <span class="token string">"status"</span><span class="token punctuation">:</span> <span class="token string">"DISPONIVEL"</span><span class="token punctuation">,</span> <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span> <span class="token punctuation">}</span>  
+<span class="token comment">// status: "DISPONIVEL" | "EM_CORRIDA" | "OFFLINE"  </span>
+<span class="token comment">// corridaId: presente quando a mudança está associada a uma corrida específica  </span>
+</code></pre>
+<p><strong>Quando é emitido:</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Status emitido</th>
+<th>Quem emite</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Conexão WebSocket</td>
+<td>status atual do banco</td>
+<td><code>DespachoGateway.handleConnection</code></td>
+</tr>
+<tr>
+<td>Aceite de corrida</td>
+<td><code>EM_CORRIDA</code></td>
+<td><code>DespachoEventSubscriber</code> → <code>emitirEstadoOperacionalMotorista</code></td>
+</tr>
+<tr>
+<td>Finalização de corrida</td>
+<td><code>DISPONIVEL</code></td>
+<td><code>DespachoEventSubscriber</code> → <code>emitirEstadoOperacionalMotorista</code></td>
+</tr>
+<tr>
+<td>Cancelamento de corrida (com motorista)</td>
+<td><code>DISPONIVEL</code></td>
+<td><code>DespachoEventSubscriber</code> → <code>emitirEstadoOperacionalMotorista</code></td>
+</tr>
+<tr>
+<td>Expiração de corrida</td>
+<td><code>DISPONIVEL</code></td>
+<td><code>DespachoEventSubscriber</code> → <code>emitirEstadoOperacionalMotorista</code></td>
+</tr>
+</tbody>
+</table><h4 id="posicao-confirmada"><code>posicao-confirmada</code></h4>
+<p>Feedback após <code>atualizar-posicao</code> ser processado.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"timestamp"</span><span class="token punctuation">:</span> <span class="token number">1713273600000</span><span class="token punctuation">,</span> <span class="token string">"disponivel"</span><span class="token punctuation">:</span> <span class="token boolean">false</span><span class="token punctuation">}</span>  
+</code></pre>
+<h4 id="posicao-atualizada"><code>posicao-atualizada</code></h4>
+<p>Broadcast da posição do motorista para o passageiro.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"motoristaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"lat"</span><span class="token punctuation">:</span> <span class="token operator">-</span><span class="token number">2.529</span><span class="token punctuation">,</span> <span class="token string">"lng"</span><span class="token punctuation">:</span> <span class="token operator">-</span><span class="token number">44.301</span><span class="token punctuation">,</span> <span class="token string">"velocidade"</span><span class="token punctuation">:</span> <span class="token number">45.5</span><span class="token punctuation">,</span> <span class="token string">"heading"</span><span class="token punctuation">:</span> <span class="token number">180</span><span class="token punctuation">,</span> <span class="token string">"timestamp"</span><span class="token punctuation">:</span> <span class="token number">1713273600000</span><span class="token punctuation">}</span>  
+</code></pre>
+<h4 id="status-corrida-alterado"><code>status-corrida-alterado</code></h4>
+<p>Mudança de estado da corrida. Emitido para todos na sala <code>corrida:{id}</code>.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"status"</span><span class="token punctuation">:</span> <span class="token string">"CorridaAceita"</span><span class="token punctuation">,</span> <span class="token string">"motoristaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"veiculoId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"etaSegundos"</span><span class="token punctuation">:</span> <span class="token number">300</span><span class="token punctuation">}</span>  
+</code></pre>
+<p><strong>Eventos possíveis:</strong> <code>CorridaAceita</code> · <code>DeslocamentoIniciado</code> · <code>MotoristaChegando</code> · <code>EmbarqueConfirmado</code> · <code>CorridaConcluida</code> · <code>CorridaCancelada</code></p>
+<h4 id="nova-corrida-disponivel"><code>nova-corrida-disponivel</code></h4>
+<p>Oferta exclusiva de corrida enviada <strong>diretamente</strong> para o motorista que está no topo da fila de despacho. Apenas um motorista recebe por vez.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"mensagem"</span><span class="token punctuation">:</span> <span class="token string">"Nova corrida disponível para você!"</span><span class="token punctuation">,</span> <span class="token string">"timeoutSeg"</span><span class="token punctuation">:</span> <span class="token number">30</span><span class="token punctuation">}</span>  
+</code></pre>
+<p><strong>O motorista tem <code>timeoutSeg</code> segundos para aceitar ou recusar.</strong> Se não responder, o sistema avança automaticamente para o próximo candidato.</p>
+<p><strong>Ações esperadas do app ao receber:</strong></p>
+<ol>
+<li>Exibir notificação de oferta com countdown de <code>timeoutSeg</code> segundos</li>
+<li>Motorista aceita → <code>POST /corridas/:id/aceitar</code></li>
+<li>Motorista recusa → <code>POST /corridas/:id/recusar</code></li>
+<li>Timeout sem resposta → o sistema avança automaticamente (o app pode esconder a oferta ao receber novo <code>nova-corrida-disponivel</code> ou ao verificar que a corrida não está mais disponível)</li>
+</ol>
+<h4 id="nova-mensagem"><code>nova-mensagem</code></h4>
+<p>Nova mensagem de chat.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"id"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"remetenteId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"conteudo"</span><span class="token punctuation">:</span> <span class="token string">"Estou chegando"</span><span class="token punctuation">,</span> <span class="token string">"timestamp"</span><span class="token punctuation">:</span> <span class="token string">"2026-04-18T12:00:00.000Z"</span><span class="token punctuation">}</span>  
+</code></pre>
+<h4 id="historico-mensagens"><code>historico-mensagens</code></h4>
+<p>Enviado ao entrar na sala de uma corrida.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">[</span>  
+ <span class="token punctuation">{</span> <span class="token string">"id"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"remetenteId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"conteudo"</span><span class="token punctuation">:</span> <span class="token string">"Olá!"</span><span class="token punctuation">,</span> <span class="token string">"lida"</span><span class="token punctuation">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token string">"createdAt"</span><span class="token punctuation">:</span> <span class="token string">"2026-04-18T12:00:00.000Z"</span> <span class="token punctuation">}</span><span class="token punctuation">]</span>  
+</code></pre>
+<h4 id="reconexao-concluida"><code>reconexao-concluida</code></h4>
+<p>Enviado após reconexão bem-sucedida com corrida ativa.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"status"</span><span class="token punctuation">:</span> <span class="token string">"success"</span><span class="token punctuation">,</span> <span class="token string">"corridaId"</span><span class="token punctuation">:</span> <span class="token string">"uuid"</span><span class="token punctuation">,</span> <span class="token string">"rideState"</span><span class="token punctuation">:</span> <span class="token string">"em_rota"</span><span class="token punctuation">}</span>  
+</code></pre>
+<h4 id="erro-assinar"><code>erro-assinar</code></h4>
+<p>Emitido quando <code>assinar-corrida</code> é negado.</p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span> <span class="token string">"mensagem"</span><span class="token punctuation">:</span> <span class="token string">"Acesso negado a esta corrida"</span> <span class="token punctuation">}</span>  
+</code></pre>
+<hr>
+<h2 id="segurança-e-autenticação">6. Segurança e Autenticação</h2>
+<h3 id="jwt">JWT</h3>
+<ul>
+<li><strong>Access Token:</strong> 15 minutos · contém <code>sub</code>, <code>motoristaId</code>, <code>municipioId</code>, <code>nome</code>, <code>papeis</code>, <code>resetSenhaObrigatorio</code>, <code>jti</code> (UUID v7), <code>type: "access"</code></li>
+<li><strong>Refresh Token:</strong> 7 dias · mesmo payload com <code>type: "refresh"</code> e <code>jti</code> diferente</li>
+<li><strong>CPF e email NÃO estão no payload</strong> (conformidade LGPD)</li>
+<li>Cada token tem <code>jti</code> único — previne replay attacks</li>
+<li>Tokens revogados são armazenados na blacklist Redis até expiração</li>
+</ul>
+<h3 id="endpoints-de-auth">Endpoints de Auth</h3>
+
+<table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Rota</th>
+<th>Throttle</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/auth/login</code></td>
+<td>3/min</td>
+<td>Login com CPF + senha</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/auth/refresh</code></td>
+<td>5/min</td>
+<td>Rotacionar tokens</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/auth/logout</code></td>
+<td>—</td>
+<td>Revogar tokens</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/auth/register</code></td>
+<td>3/min</td>
+<td>Auto-registro (fica pendente)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/auth/activate/:id</code></td>
+<td>10/min</td>
+<td>Ativar servidor (ADMIN)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/auth/change-password</code></td>
+<td>—</td>
+<td>Trocar senha</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/auth/me</code></td>
+<td>—</td>
+<td>Dados do usuário autenticado</td>
+</tr>
+</tbody>
+</table><h3 id="papéis-roles">Papéis (Roles)</h3>
+
+<table>
+<thead>
+<tr>
+<th>Papel</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ADMIN</code></td>
+<td>Acesso total</td>
+</tr>
+<tr>
+<td><code>MOTORISTA</code></td>
+<td>Operações de motorista</td>
+</tr>
+<tr>
+<td><code>USUARIO</code></td>
+<td>Passageiro padrão</td>
+</tr>
+</tbody>
+</table><h3 id="rate-limiting">Rate Limiting</h3>
+<ul>
+<li>Implementado via Redis (ThrottlerRedisStorageService)</li>
+<li>Default: 20 requisições/60s por IP</li>
+<li>Endpoints de auth têm limites específicos (ver tabela acima)</li>
+<li>WebSocket <code>atualizar-posicao</code>: 1 msg/2s por motorista (<code>ws:rate:{motoristaId}:posicao</code>)</li>
+</ul>
+<hr>
+<h2 id="índices-redis">7. Índices Redis</h2>
+
+<table>
+<thead>
+<tr>
+<th>Chave</th>
+<th>Tipo</th>
+<th>TTL</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>motoristas:posicoes</code></td>
+<td>GeoSet</td>
+<td>—</td>
+<td>Motoristas disponíveis (posição geográfica)</td>
+</tr>
+<tr>
+<td><code>motoristas:posicoes:ocupados</code></td>
+<td>GeoSet</td>
+<td>—</td>
+<td>Motoristas em corrida ativa</td>
+</tr>
+<tr>
+<td><code>motorista:{id}:estado</code></td>
+<td>Hash</td>
+<td>90s</td>
+<td>Estado completo: lat, lng, velocidade, status, corridaId</td>
+</tr>
+<tr>
+<td><code>motorista:{id}:online</code></td>
+<td>String</td>
+<td>3600s</td>
+<td>Heartbeat de disponibilidade</td>
+</tr>
+<tr>
+<td><code>motorista:{id}:recusas</code></td>
+<td>String (counter)</td>
+<td>3600s</td>
+<td>Contador de recusas na última hora</td>
+</tr>
+<tr>
+<td><code>corrida:{id}:lock</code></td>
+<td>String</td>
+<td>35s</td>
+<td>Lock de aceite (liberado após sucesso)</td>
+</tr>
+<tr>
+<td><code>corrida:{id}:snapshot_count</code></td>
+<td>String (counter)</td>
+<td>86400s</td>
+<td>Contador de posições para snapshot</td>
+</tr>
+<tr>
+<td><code>fila:corrida:{id}:candidatos</code></td>
+<td>SortedSet</td>
+<td>600s</td>
+<td>Fila de candidatos ordenada por score</td>
+</tr>
+<tr>
+<td><code>despacho:{corridaId}:oferta_ativa</code></td>
+<td>String</td>
+<td>timeout+5s</td>
+<td>motoristaId com oferta exclusiva ativa</td>
+</tr>
+<tr>
+<td><code>ws:rate:{motoristaId}:posicao</code></td>
+<td>String</td>
+<td>2s</td>
+<td>Rate limit de telemetria WebSocket</td>
+</tr>
+</tbody>
+</table><p><strong>Regra de unicidade:</strong> Ao atualizar posição, o motorista é removido do GeoSet oposto (disponível ↔ ocupado) para garantir que nunca apareça nos dois ao mesmo tempo.</p>
+<hr>
+<h2 id="jobs-e-monitoramento">8. Jobs e Monitoramento</h2>
+<h3 id="outboxworker-500ms">OutboxWorker (500ms)</h3>
+<p>Processa eventos pendentes na tabela <code>outbox_events</code>:</p>
+<ul>
+<li>Eventos <code>Notification</code>: envia push via OneSignal e marca como publicado (sem publicar no PubSub)</li>
+<li>Demais eventos: publica no canal Redis <code>{aggregateType}-events</code></li>
+<li>Retry com backoff exponencial: 2s, 4s, 8s, 16s, 32s (máx. 5 tentativas)</li>
+</ul>
+<h3 id="monitorinatividadejob-2-min">MonitorInatividadeJob (2 min)</h3>
+<p>Verifica corridas presas:</p>
+<ul>
+<li>Corridas <code>ACEITA</code> há mais de 10 min (configurável via <code>GHOST_RIDE_TIMEOUT_MIN</code>) → expira e libera motorista</li>
+<li>Corridas <code>AGUARDANDO_ACEITE</code> há mais de 3× o timeout de aceite → expira</li>
+<li>Ao expirar: persiste via Outbox, atualiza status do motorista para <code>DISPONIVEL</code>, limpa índices Redis</li>
+</ul>
+<blockquote>
+<p><strong>Nota:</strong> Ao finalizar ou cancelar uma corrida normalmente (via handler), o motorista é liberado imediatamente — não depende deste job.</p>
+</blockquote>
+<h3 id="motoristainatividadecron-1-min">MotoristaInatividadeCron (1 min)</h3>
+<p>Verifica motoristas <code>DISPONIVEL</code> no banco sem heartbeat Redis:</p>
+<ul>
+<li>Sem <code>motorista:{id}:estado</code> → marca como <code>OFFLINE</code> no banco</li>
+<li>Remove das chaves <code>motoristas:posicoes</code> e <code>motoristas:posicoes:ocupados</code></li>
+<li>Remove <code>motorista:{id}:online</code></li>
+</ul>
+<h3 id="despachoprocessor-bull-queue">DespachoProcessor (Bull Queue)</h3>
+<p>Job <code>buscar-motoristas</code> disparado pelo <code>DespachoEventSubscriber</code> ao receber <code>NovaCorridaSolicitada</code>:</p>
+<h4 id="fluxo-de-despacho-sequencial-por-score">Fluxo de Despacho Sequencial por Score</h4>
+<pre><code>1. NovaCorridaSolicitada → job buscar-motoristas enfileirado  
+  
+2. buscar-motoristas:  
+ ├── Busca candidatos no raio via Redis Geo (Haversine para distância real) ├── Filtra por município (se GEO_LIMITAR_MUNICIPIO=true) ├── Calcula score de cada candidato (distância, hierarquia, espera, reputação) ├── Cria fila ordenada no Redis: fila:corrida:{id}:candidatos (SortedSet, TTL 10min) └── Chama oferecerAoProximoCandidato()  
+3. oferecerAoProximoCandidato():  
+ ├── ZPOPMAX da fila → pega o melhor candidato restante ├── Se fila vazia → expandirRaio() ├── Registra oferta ativa: despacho:{corridaId}:oferta_ativa = motoristaId (TTL timeout+5s) ├── Envia nova-corrida-disponivel DIRETAMENTE para o socket do motorista │   └── Se motorista não conectado → avança imediatamente para o próximo └── Agenda job proximo-candidato com delay = GEO_TIMEOUT_ACEITE_SEG  
+4. Motorista recebe nova-corrida-disponivel (oferta exclusiva):  
+ ├── Aceita (POST /corridas/:id/aceitar): │   ├── Limpa despacho:{corridaId}:oferta_ativa │   ├── Corrida → ACEITA, motorista → EM_CORRIDA │   └── Job proximo-candidato é ignorado (corrida não está mais em AGUARDANDO_ACEITE) └── Recusa (POST /corridas/:id/recusar): ├── Limpa despacho:{corridaId}:oferta_ativa ├── Incrementa motorista:{id}:recusas (penaliza score futuro) └── Chama oferecerAoProximoCandidato() imediatamente  
+5. proximo-candidato (timeout):  
+ ├── Verifica se despacho:{corridaId}:oferta_ativa ainda existe ├── Se não existe → corrida já foi aceita, ignorar └── Se existe → limpa e chama oferecerAoProximoCandidato()  
+6. expandirRaio():  
+ ├── Se raio + passo ≤ raioMax → agenda buscar-motoristas com delay GEO_INTERVALO_EXPANSAO_SEG └── Se raio máximo atingido → broadcast final para todos os disponíveis no município```  
+  
+#### Parâmetros de Configuração  
+  
+| Variável                     | Padrão | Descrição                              |  
+| ---------------------------- | ------ | -------------------------------------- |  
+| `GEO_RAIO_INICIAL_KM`        | `5`    | Raio inicial de busca                  |  
+| `GEO_RAIO_PASSO_KM`          | `5`    | Incremento por expansão                |  
+| `GEO_RAIO_MAX_DESPACHO_KM`   | `20`   | Raio máximo                            |  
+| `GEO_TIMEOUT_ACEITE_SEG`     | `30`   | Tempo que o motorista tem para aceitar |  
+| `GEO_INTERVALO_EXPANSAO_SEG` | `30`   | Delay entre expansões de raio          |  
+  
+#### Penalização por Recusa  
+  
+Cada recusa incrementa `motorista:{id}:recusas` (TTL 1h). O score futuro é penalizado: cada recusa reduz a reputação normalizada em ~0.1. Um motorista com 5 recusas na última hora terá score significativamente menor e aparecerá mais abaixo na fila.  
+  
+---  
+  
+## 9. Algoritmo de Despacho e Scoring  
+  
+### Fórmula  
+  
+</code></pre>
+<p>score = distância × 0.60</p>
+<ul>
+<li>hierarquia × 0.30 + espera     × 0.05 + reputação  × 0.05```</li>
+</ul>
+<p>Todos os componentes são normalizados para [0, 1]:</p>
+
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Normalização</th>
+<th>Direção</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Distância</td>
+<td><code>1 - (dist / raioMax)</code></td>
+<td>Mais perto = melhor</td>
+</tr>
+<tr>
+<td>Hierarquia</td>
+<td><code>nivel / 10</code></td>
+<td>Maior nível = melhor</td>
+</tr>
+<tr>
+<td>Espera</td>
+<td><code>min(espera / 600s, 1)</code></td>
+<td>Mais tempo esperando = melhor</td>
+</tr>
+<tr>
+<td>Reputação</td>
+<td><code>(notaMedia - 1) / 4</code> mapeando [1,5]→[0,1]</td>
+<td>Nota mais alta = melhor</td>
+</tr>
+</tbody>
+</table><p><strong>Motoristas sem avaliações</strong> recebem reputação neutra de 0.6.</p>
+<p><strong>Override de autoridade:</strong> Motoristas com <code>nivelHierarquia ≥ 8</code> (<code>isAutoridade = true</code>) recebem score mínimo garantido de 0.90.</p>
+<h3 id="expansão-de-raio">Expansão de Raio</h3>
+<pre><code>Raio inicial: GEO_RAIO_INICIAL_KM (padrão: 5km)  
+Passo:        GEO_RAIO_PASSO_KM   (padrão: 5km)  
+Máximo:       GEO_RAIO_MAX_DESPACHO_KM (padrão: 20km)  
+Intervalo:    GEO_INTERVALO_EXPANSAO_SEG (padrão: 30s)  
+</code></pre>
+<hr>
+<h2 id="requisitos-para-o-motorista-ser-chamado-a-uma-corrida">10. Requisitos para o Motorista Ser Chamado a uma Corrida</h2>
+<p>Para que um motorista apareça como candidato no despacho, <strong>todos</strong> os critérios abaixo devem ser satisfeitos simultaneamente. Esta seção documenta cada critério com rastreamento exato de <strong>como é adquirido</strong>, <strong>como é perdido</strong> e <strong>quem o altera</strong>.</p>
+<hr>
+<h3 id="critério-1-—-statusoperacional--disponivel-banco-de-dados">Critério 1 — <code>statusOperacional = DISPONIVEL</code> (banco de dados)</h3>
+<p><strong>O que é:</strong> Campo <code>statusOperacional</code> na tabela <code>motoristas</code>. Enum com 3 valores possíveis.</p>
+<h4 id="enum-statusoperacional">Enum <code>StatusOperacional</code></h4>
+
+<table>
+<thead>
+<tr>
+<th>Valor</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DISPONIVEL</code></td>
+<td>Motorista está em turno, pronto para receber corridas</td>
+</tr>
+<tr>
+<td><code>EM_CORRIDA</code></td>
+<td>Motorista está executando uma corrida ativa — <strong>gerenciado exclusivamente pelo sistema</strong></td>
+</tr>
+<tr>
+<td><code>OFFLINE</code></td>
+<td>Motorista está fora de turno ou foi desconectado por inatividade</td>
+</tr>
+</tbody>
+</table><blockquote>
+<p><code>EM_CORRIDA</code> <strong>não pode ser definido via HTTP</strong> (<code>PATCH /me/status</code>). Qualquer tentativa retorna <code>409 CONFLICT</code>. Apenas o <code>AceitarCorridaHandler</code> pode transicionar para este estado.</p>
+</blockquote>
+<p><strong>Valor inicial ao criar motorista:</strong> <code>OFFLINE</code></p>
+<h4 id="como-disponivel-é-adquirido">Como <code>DISPONIVEL</code> é adquirido</h4>
+
+<table>
+<thead>
+<tr>
+<th>Origem</th>
+<th>Ação</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP — próprio motorista</td>
+<td><code>PATCH /frota/motoristas/me/status</code> com <code>{ "status": "DISPONIVEL" }</code></td>
+<td><code>AtualizarStatusMotoristaHandler</code></td>
+</tr>
+<tr>
+<td>HTTP — admin</td>
+<td><code>PATCH /frota/motoristas/:id/status</code> com <code>{ "status": "DISPONIVEL" }</code></td>
+<td><code>AtualizarStatusMotoristaHandler</code></td>
+</tr>
+<tr>
+<td>Sistema — após finalizar corrida</td>
+<td><code>POST /corridas/:id/finalizar</code></td>
+<td><code>FinalizarCorridaHandler</code> — chama <code>motorista.atualizarStatus(DISPONIVEL)</code></td>
+</tr>
+<tr>
+<td>Sistema — após cancelar corrida <code>ACEITA</code></td>
+<td><code>POST /corridas/:id/cancelar</code></td>
+<td><code>CancelarCorridaHandler</code> — chama <code>motorista.atualizarStatus(DISPONIVEL)</code></td>
+</tr>
+<tr>
+<td>Sistema — após corrida expirar</td>
+<td><code>MonitorInatividadeJob</code> (a cada 2 min)</td>
+<td><code>expirarCorridaELiberarMotorista()</code> — chama <code>motorista.atualizarStatus(DISPONIVEL)</code></td>
+</tr>
+</tbody>
+</table><h4 id="como-disponivel-é-perdido">Como <code>DISPONIVEL</code> é perdido</h4>
+
+<table>
+<thead>
+<tr>
+<th>Origem</th>
+<th>Novo valor</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP — próprio motorista</td>
+<td><code>OFFLINE</code> apenas</td>
+<td><code>PATCH /frota/motoristas/me/status</code> — <code>EM_CORRIDA</code> via HTTP é <strong>bloqueado</strong> com <code>409 CONFLICT</code></td>
+</tr>
+<tr>
+<td>HTTP — admin</td>
+<td><code>DISPONIVEL</code> ou <code>OFFLINE</code></td>
+<td><code>PATCH /frota/motoristas/:id/status</code> — <code>EM_CORRIDA</code> via HTTP também bloqueado</td>
+</tr>
+<tr>
+<td>Sistema — ao aceitar corrida</td>
+<td><code>EM_CORRIDA</code></td>
+<td><code>AceitarCorridaHandler</code> — atualiza <code>statusOperacional</code> dentro da mesma transação do aceite</td>
+</tr>
+<tr>
+<td>Sistema — inatividade (sem heartbeat Redis)</td>
+<td><code>OFFLINE</code></td>
+<td><code>MotoristaInatividadeCron</code> (a cada 1 min) — se <code>motorista:{id}:estado</code> expirou (90s sem telemetria)</td>
+</tr>
+</tbody>
+</table><hr>
+<h3 id="critério-2-—-flag-motoristaidonline-no-redis">Critério 2 — Flag <code>motorista:{id}:online</code> no Redis</h3>
+<p><strong>O que é:</strong> Chave Redis simples (<code>SET key '1' EX ttl</code>). Funciona como cache de verificação rápida — evita consulta ao banco a cada pacote de telemetria.</p>
+<p><strong>Chave:</strong> <code>motorista:{id}:online</code><br>
+<strong>Valor:</strong> <code>'1'</code></p>
+<h4 id="como-é-criada--renovada">Como é criada / renovada</h4>
+
+<table>
+<thead>
+<tr>
+<th>Origem</th>
+<th>TTL</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WebSocket — ao conectar (se status ≠ <code>OFFLINE</code>)</td>
+<td>3600s (1h)</td>
+<td><code>DespachoGateway.handleConnection</code></td>
+</tr>
+<tr>
+<td>HTTP — ao definir status <code>DISPONIVEL</code></td>
+<td>86400s (24h)</td>
+<td><code>AtualizarStatusMotoristaHandler</code></td>
+</tr>
+<tr>
+<td>WebSocket — ao enviar <code>atualizar-posicao</code> (fallback)</td>
+<td>3600s (1h)</td>
+<td><code>AtualizarPosicaoHandler</code> — se chave ausente, consulta banco; se ativo, recria a chave</td>
+</tr>
+</tbody>
+</table><h4 id="como-é-deletada">Como é deletada</h4>
+
+<table>
+<thead>
+<tr>
+<th>Origem</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WebSocket — ao desconectar</td>
+<td><code>DespachoGateway.handleDisconnect</code> — <code>redis.del(motorista:{id}:online)</code></td>
+</tr>
+<tr>
+<td>HTTP — ao definir status <code>OFFLINE</code> ou <code>EM_CORRIDA</code></td>
+<td><code>AtualizarStatusMotoristaHandler</code> — <code>redis.del(motorista:{id}:online)</code></td>
+</tr>
+<tr>
+<td>Sistema — inatividade (corrida expirada)</td>
+<td><code>MonitorInatividadeJob.expirarCorridaELiberarMotorista</code> — <code>redis.del(motorista:{id}:online)</code></td>
+</tr>
+<tr>
+<td>TTL natural</td>
+<td>Expira após 3600s sem renovação</td>
+</tr>
+</tbody>
+</table><h4 id="comportamento-quando-ausente">Comportamento quando ausente</h4>
+<p>Se a chave não existe ao receber telemetria, o <code>AtualizarPosicaoHandler</code> faz fallback ao banco:</p>
+<ul>
+<li>Se banco: <code>statusOperacional = OFFLINE</code> ou <code>ativo = false</code> → descarta posição, remove dos GeoSets</li>
+<li>Se banco: ativo e não OFFLINE → recria a chave com TTL 3600s e processa normalmente</li>
+</ul>
+<hr>
+<h3 id="critério-3-—-posição-no-geoset-redis-motoristasposicoes">Critério 3 — Posição no GeoSet Redis <code>motoristas:posicoes</code></h3>
+<p><strong>O que é:</strong> Entrada no GeoSet Redis <code>motoristas:posicoes</code>. É o índice espacial usado pelo <code>DespachoProcessor</code> para encontrar candidatos próximos.</p>
+<p><strong>Regra de negócio:</strong> A localização é <strong>obrigatória</strong> para aparecer no despacho. Definir <code>DISPONIVEL</code> via HTTP é apenas uma pré-condição — o motorista só entra na fila de candidatos quando envia telemetria. Isso garante que o motorista está realmente ativo, com GPS funcionando e na área de cobertura.</p>
+<p><strong>Fluxo correto de início de turno:</strong></p>
+<pre><code>1. PATCH /frota/motoristas/me/status { DISPONIVEL }  ← pré-condição  
+2. POST /frota/motoristas/me/veiculo { veiculoId }   ← pré-condição  
+3. Conectar WebSocket                                 ← pré-condição  
+4. Emitir atualizar-posicao { lat, lng, velocidade } ← APARECE NO DESPACHO  
+</code></pre>
+<p>Sem o passo 4, o motorista está “disponível” no banco mas <strong>invisível</strong> para o sistema de despacho.</p>
+<h4 id="como-é-removida">Como é removida</h4>
+
+<table>
+<thead>
+<tr>
+<th>Origem</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ao aceitar corrida</td>
+<td><code>AceitarCorridaHandler</code> — <code>posicaoRedis.removerDisponivel(motoristaId)</code> → <code>ZREM motoristas:posicoes</code></td>
+</tr>
+<tr>
+<td>Ao enviar telemetria com <code>corridaId</code></td>
+<td><code>PosicaoRedis.atualizar</code> — remove do GeoSet oposto antes de adicionar no correto</td>
+</tr>
+<tr>
+<td>Sistema — inatividade (sem heartbeat)</td>
+<td><code>MotoristaInatividadeCron</code> — <code>redis.zRem('motoristas:posicoes', motorista.id)</code></td>
+</tr>
+<tr>
+<td>Sistema — telemetria de motorista OFFLINE</td>
+<td><code>AtualizarPosicaoHandler</code> — <code>posicaoRedis.removerDisponivel</code> + <code>removerOcupado</code></td>
+</tr>
+</tbody>
+</table><p><strong>Não há TTL direto no GeoSet</strong> — a entrada persiste até ser removida explicitamente. O controle de expiração é feito pelo heartbeat <code>motorista:{id}:estado</code> (TTL 90s) + <code>MotoristaInatividadeCron</code>.</p>
+<hr>
+<h3 id="critério-4-—-hash-motoristaidestado-heartbeat-de-telemetria">Critério 4 — Hash <code>motorista:{id}:estado</code> (heartbeat de telemetria)</h3>
+<p><strong>O que é:</strong> Hash Redis com a última posição conhecida e metadados. TTL de 90s — funciona como heartbeat.</p>
+<p><strong>Chave:</strong> <code>motorista:{id}:estado</code><br>
+<strong>Campos:</strong> <code>lat</code>, <code>lng</code>, <code>ts</code>, <code>status</code> (<code>disponivel</code>|<code>ocupado</code>), <code>corridaId?</code>, <code>velocidade?</code>, <code>heading?</code>, <code>municipioId?</code></p>
+<h4 id="como-é-criado--renovado">Como é criado / renovado</h4>
+
+<table>
+<thead>
+<tr>
+<th>Origem</th>
+<th>TTL</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WebSocket — <code>atualizar-posicao</code> (qualquer)</td>
+<td>90s</td>
+<td><code>PosicaoRedis.atualizar</code> — pipeline com <code>HSET</code> + <code>EXPIRE 90</code></td>
+</tr>
+</tbody>
+</table><h4 id="como-expira--é-removido">Como expira / é removido</h4>
+
+<table>
+<thead>
+<tr>
+<th>Origem</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TTL natural (90s sem telemetria)</td>
+<td>Redis expira automaticamente</td>
+</tr>
+<tr>
+<td><code>MotoristaInatividadeCron</code> detecta ausência</td>
+<td>Marca motorista como <code>OFFLINE</code>, remove dos GeoSets</td>
+</tr>
+</tbody>
+</table><hr>
+<h3 id="critério-5-—-municipioid-no-hash-de-estado">Critério 5 — <code>municipioId</code> no hash de estado</h3>
+<p><strong>O que é:</strong> Campo <code>municipioId</code> dentro do hash <code>motorista:{id}:estado</code>. Usado pelo <code>FilaDespachoRedis</code> para filtrar candidatos por município.</p>
+<h4 id="como-é-definido">Como é definido</h4>
+<p>Extraído automaticamente do JWT do motorista (<code>user.municipioId</code>) e enviado em cada <code>atualizar-posicao</code> via <code>AtualizarPosicaoCommand.municipioId</code>. Não requer ação manual.</p>
+<p>O <code>municipioId</code> do JWT é definido no momento do login, a partir do campo <code>municipioId</code> do aggregate <code>Motorista</code> no banco.</p>
+<hr>
+<h3 id="critério-6-—-sem-corrida-ativa-no-banco">Critério 6 — Sem corrida ativa no banco</h3>
+<p><strong>O que é:</strong> <code>corridaRepo.findAtivaByMotoristaId(motoristaId)</code> deve retornar <code>null</code>.</p>
+<p>“Corrida ativa” = qualquer corrida com status fora de <code>CONCLUIDA</code>, <code>AVALIADA</code>, <code>CANCELADA</code>, <code>EXPIRADA</code>.</p>
+<h4 id="quando-passa-a-ter-corrida-ativa">Quando passa a ter corrida ativa</h4>
+
+<table>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Status da corrida</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Motorista aceita corrida</td>
+<td><code>ACEITA</code></td>
+</tr>
+<tr>
+<td>Motorista inicia deslocamento</td>
+<td><code>EM_ROTA</code></td>
+</tr>
+</tbody>
+</table><h4 id="quando-deixa-de-ter-corrida-ativa">Quando deixa de ter corrida ativa</h4>
+
+<table>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Corrida finalizada</td>
+<td><code>FinalizarCorridaHandler</code> → status <code>CONCLUIDA</code></td>
+</tr>
+<tr>
+<td>Corrida cancelada</td>
+<td><code>CancelarCorridaHandler</code> → status <code>CANCELADA</code></td>
+</tr>
+<tr>
+<td>Corrida expirada</td>
+<td><code>MonitorInatividadeJob</code> → status <code>EXPIRADA</code></td>
+</tr>
+</tbody>
+</table><hr>
+<h3 id="critério-7-—-veículo-associado-ao-turno">Critério 7 — Veículo associado ao turno</h3>
+<p><strong>O que é:</strong> <code>veiculoRepo.findByMotorista(motoristaId)</code> deve retornar um veículo com <code>ativo = true</code>.</p>
+<p>Verificado apenas no momento do <strong>aceite</strong> (<code>AceitarCorridaHandler</code>), não no despacho. O motorista aparece como candidato mesmo sem veículo — o bloqueio ocorre ao tentar aceitar.</p>
+<p>Ver seção 2 para como associar/desassociar veículo.</p>
+<hr>
+<h3 id="tabela-resumo-—-ciclo-de-vida-completo-do-statusoperacional">Tabela Resumo — Ciclo de Vida Completo do <code>statusOperacional</code></h3>
+<pre><code>Criação do motorista  
+ │ ▼ OFFLINE  ◄──────────────────────────────────────────────────────────────────┐ │                                                                        │ │  PATCH /me/status { DISPONIVEL }                                       │ │  ou admin PATCH /:id/status { DISPONIVEL }                             │ ▼                                                                        │ DISPONIVEL ──────────────────────────────────────────────────────────────────┤ │                                                                        │ │  AceitarCorridaHandler (automático, dentro da transação)               │ ▼                                                                        │ EM_CORRIDA                                                                    │ │                                                                        │ ├── POST /corridas/:id/finalizar ──────────────────────────────► DISPONIVEL ├── POST /corridas/:id/cancelar (corrida ACEITA) ─────────────► DISPONIVEL └── MonitorInatividadeJob (corrida expirada) ──────────────────► DISPONIVEL │ DISPONIVEL ──── MotoristaInatividadeCron (sem heartbeat 90s) ────────► OFFLINE ┘ DISPONIVEL ──── PATCH /me/status { OFFLINE } ────────────────────────► OFFLINE ┘ EM_CORRIDA ──── PATCH /me/status { OFFLINE } ────────────────────────► OFFLINE ┘```  
+  
+**Notificação WebSocket automática:** A cada mudança de status causada pelo sistema (aceite, finalização, cancelamento), o `DespachoEventSubscriber` chama `gateway.emitirEstadoOperacionalMotorista()` que emite `estado-operacional` diretamente para todos os sockets do motorista. O app não precisa fazer polling nem chamada HTTP para saber o status atual.  
+  
+---  
+  
+### Tabela Resumo — Ciclo de Vida da Flag `motorista:{id}:online`  
+  
+</code></pre>
+<p>Não existe<br>
+│ ├── WS conectar (status ≠ OFFLINE) ──────────────────► ‘1’ TTL 3600s ├── PATCH /me/status { DISPONIVEL } ─────────────────► ‘1’ TTL 86400s └── atualizar-posicao (fallback, banco ativo) ────────► ‘1’ TTL 3600s │ │  Deletada por: ├── WS desconectar ──────────────────────► não existe ├── PATCH /me/status { OFFLINE|EM_CORRIDA } ► não existe ├── MonitorInatividadeJob (corrida expirada) ► não existe └── TTL natural (3600s sem renovação) ────► não existe```</p>
+<hr>
+<h3 id="tabela-resumo-—-ciclo-de-vida-do-geoset-motoristasposicoes">Tabela Resumo — Ciclo de Vida do GeoSet <code>motoristas:posicoes</code></h3>
+<pre><code>Não indexado  
+ │ └── atualizar-posicao (sem corridaId) ──────────────► indexado em motoristas:posicoes │ │  Removido por: ├── aceitar corrida ─────────────────────► removido (vai para :ocupados) ├── atualizar-posicao (com corridaId) ───► removido (vai para :ocupados) ├── MotoristaInatividadeCron ────────────► removido └── atualizar-posicao (motorista OFFLINE) ► removido```  
+  
+---  
+  
+### Enums Completos do Sistema  
+  
+#### `StatusOperacional` (motorista)  
+  
+```typescript  
+DISPONIVEL = 'DISPONIVEL'; // em turno, pronto para corridas  
+EM_CORRIDA = 'EM_CORRIDA'; // executando corrida ativa  
+OFFLINE = 'OFFLINE'; // fora de turno  
+</code></pre>
+<h4 id="corridastatus-corrida"><code>CorridaStatus</code> (corrida)</h4>
+<pre class=" language-typescript"><code class="prism  language-typescript">SOLICITADA <span class="token operator">=</span> <span class="token string">'solicitada'</span><span class="token punctuation">;</span> <span class="token comment">// criada, aguardando despacho  </span>
+AGUARDANDO_ACEITE <span class="token operator">=</span> <span class="token string">'aguardando_aceite'</span><span class="token punctuation">;</span> <span class="token comment">// candidatos notificados, aguardando aceite  </span>
+ACEITA <span class="token operator">=</span> <span class="token string">'aceita'</span><span class="token punctuation">;</span> <span class="token comment">// motorista aceitou, deslocando para origem  </span>
+EM_ROTA <span class="token operator">=</span> <span class="token string">'em_rota'</span><span class="token punctuation">;</span> <span class="token comment">// passageiro embarcou, em deslocamento  </span>
+CONCLUIDA <span class="token operator">=</span> <span class="token string">'concluida'</span><span class="token punctuation">;</span> <span class="token comment">// chegou ao destino  </span>
+AVALIADA <span class="token operator">=</span> <span class="token string">'avaliada'</span><span class="token punctuation">;</span> <span class="token comment">// passageiro avaliou (terminal)  </span>
+CANCELADA <span class="token operator">=</span> <span class="token string">'cancelada'</span><span class="token punctuation">;</span> <span class="token comment">// cancelada por passageiro/motorista (terminal)  </span>
+EXPIRADA <span class="token operator">=</span> <span class="token string">'expirada'</span><span class="token punctuation">;</span> <span class="token comment">// timeout sem aceite ou inatividade (terminal)  </span>
+</code></pre>
+<h4 id="statusveiculo-veículo"><code>StatusVeiculo</code> (veículo)</h4>
+<pre class=" language-typescript"><code class="prism  language-typescript">DISPONIVEL <span class="token operator">=</span> <span class="token string">'disponivel'</span><span class="token punctuation">;</span> <span class="token comment">// livre para associação  </span>
+EM_USO <span class="token operator">=</span> <span class="token string">'em_uso'</span><span class="token punctuation">;</span> <span class="token comment">// associado a um motorista  </span>
+MANUTENCAO <span class="token operator">=</span> <span class="token string">'manutencao'</span><span class="token punctuation">;</span> <span class="token comment">// indisponível por manutenção  </span>
+INATIVO <span class="token operator">=</span> <span class="token string">'inativo'</span><span class="token punctuation">;</span> <span class="token comment">// desativado (soft delete)  </span>
+</code></pre>
+<h4 id="statusconta-servidorusuário"><code>StatusConta</code> (servidor/usuário)</h4>
+<pre class=" language-typescript"><code class="prism  language-typescript"><span class="token string">'pendente'</span><span class="token punctuation">;</span> <span class="token comment">// auto-registro aguardando ativação por admin  </span>
+<span class="token string">'ativo'</span><span class="token punctuation">;</span> <span class="token comment">// conta ativa, pode fazer login  </span>
+<span class="token string">'suspenso'</span><span class="token punctuation">;</span> <span class="token comment">// conta suspensa, login bloqueado  </span>
+</code></pre>
+<h4 id="papel-roles-do-servidor"><code>Papel</code> (roles do servidor)</h4>
+<pre class=" language-typescript"><code class="prism  language-typescript">ADMIN <span class="token operator">=</span> <span class="token string">'ADMIN'</span><span class="token punctuation">;</span> <span class="token comment">// acesso total  </span>
+MOTORISTA <span class="token operator">=</span> <span class="token string">'MOTORISTA'</span><span class="token punctuation">;</span> <span class="token comment">// operações de motorista  </span>
+USUARIO <span class="token operator">=</span> <span class="token string">'USUARIO'</span><span class="token punctuation">;</span> <span class="token comment">// passageiro padrão  </span>
+</code></pre>
+<h4 id="outboxstatus-eventos-do-outbox"><code>OutboxStatus</code> (eventos do outbox)</h4>
+<pre class=" language-typescript"><code class="prism  language-typescript"><span class="token string">'pendente'</span><span class="token punctuation">;</span> <span class="token comment">// aguardando processamento  </span>
+<span class="token string">'publicado'</span><span class="token punctuation">;</span> <span class="token comment">// publicado com sucesso  </span>
+<span class="token string">'falhou'</span><span class="token punctuation">;</span> <span class="token comment">// falhou após MAX_RETRIES tentativas  </span>
+</code></pre>
+<hr>
+<h2 id="referência-de-erros">11. Referência de Erros</h2>
+
+<table>
+<thead>
+<tr>
+<th>Código HTTP</th>
+<th>Código de Domínio</th>
+<th>Situação</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>400</td>
+<td><code>BAD_REQUEST</code></td>
+<td>Dados inválidos, senha incorreta</td>
+</tr>
+<tr>
+<td>401</td>
+<td><code>UNAUTHORIZED</code></td>
+<td>Token inválido ou expirado</td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>FORBIDDEN</code></td>
+<td>Sem permissão para a operação</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>NOT_FOUND</code></td>
+<td>Recurso não encontrado</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>CONFLICT</code></td>
+<td>Corrida já aceita, veículo em uso, corrida ativa existente</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>INVALID_STATE_TRANSITION</code></td>
+<td>Transição de estado inválida (ex: cancelar corrida em EM_ROTA)</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>VALIDATION_ERROR</code></td>
+<td>Violações de validação de domínio</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>GEO_BOUNDARY_ERROR</code></td>
+<td>Destino fora do município</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>CIRCUIT_OPEN</code></td>
+<td>Serviço temporariamente indisponível</td>
+</tr>
+</tbody>
+</table><h3 id="formato-de-resposta-de-erro">Formato de Resposta de Erro</h3>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>  
+ <span class="token string">"statusCode"</span><span class="token punctuation">:</span> <span class="token number">409</span><span class="token punctuation">,</span> <span class="token string">"timestamp"</span><span class="token punctuation">:</span> <span class="token string">"2026-04-18T12:00:00.000Z"</span><span class="token punctuation">,</span> <span class="token string">"path"</span><span class="token punctuation">:</span> <span class="token string">"/corridas/uuid/aceitar"</span><span class="token punctuation">,</span> <span class="token string">"code"</span><span class="token punctuation">:</span> <span class="token string">"CONFLICT"</span><span class="token punctuation">,</span> <span class="token string">"message"</span><span class="token punctuation">:</span> <span class="token string">"Motorista não possui veículo associado para o turno."</span><span class="token punctuation">}</span>  
+</code></pre>
+<hr>
+<h2 id="variáveis-de-ambiente">Variáveis de Ambiente</h2>
+
+<table>
+<thead>
+<tr>
+<th>Variável</th>
+<th>Padrão</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PORT</code></td>
+<td><code>3000</code></td>
+<td>Porta HTTP</td>
+</tr>
+<tr>
+<td><code>NODE_ENV</code></td>
+<td><code>development</code></td>
+<td>Ambiente</td>
+</tr>
+<tr>
+<td><code>DATABASE_HOST</code></td>
+<td>—</td>
+<td>Host PostgreSQL</td>
+</tr>
+<tr>
+<td><code>DATABASE_PORT</code></td>
+<td><code>5432</code></td>
+<td>Porta PostgreSQL</td>
+</tr>
+<tr>
+<td><code>DATABASE_USER</code></td>
+<td>—</td>
+<td>Usuário PostgreSQL</td>
+</tr>
+<tr>
+<td><code>DATABASE_PASSWORD</code></td>
+<td>—</td>
+<td>Senha PostgreSQL</td>
+</tr>
+<tr>
+<td><code>DATABASE_NAME</code></td>
+<td>—</td>
+<td>Nome do banco</td>
+</tr>
+<tr>
+<td><code>REDIS_HOST</code></td>
+<td><code>localhost</code></td>
+<td>Host Redis</td>
+</tr>
+<tr>
+<td><code>REDIS_PORT</code></td>
+<td><code>6379</code></td>
+<td>Porta Redis</td>
+</tr>
+<tr>
+<td><code>JWT_ACCESS_SECRET</code></td>
+<td>—</td>
+<td>Secret do access token (mín. 8 chars)</td>
+</tr>
+<tr>
+<td><code>JWT_REFRESH_SECRET</code></td>
+<td>—</td>
+<td>Secret do refresh token (mín. 8 chars)</td>
+</tr>
+<tr>
+<td><code>MAPBOX_ACCESS_TOKEN</code></td>
+<td>—</td>
+<td>Token Mapbox para geocoding</td>
+</tr>
+<tr>
+<td><code>ONESIGNAL_APP_ID</code></td>
+<td>—</td>
+<td>App ID OneSignal</td>
+</tr>
+<tr>
+<td><code>ONESIGNAL_REST_API_KEY</code></td>
+<td>—</td>
+<td>API Key OneSignal</td>
+</tr>
+<tr>
+<td><code>GEO_MUNICIPIO_ID</code></td>
+<td>—</td>
+<td>UUID do município operacional</td>
+</tr>
+<tr>
+<td><code>GEO_LIMITAR_MUNICIPIO</code></td>
+<td><code>true</code></td>
+<td>Restringir corridas ao município</td>
+</tr>
+<tr>
+<td><code>GEO_RAIO_INICIAL_KM</code></td>
+<td><code>5</code></td>
+<td>Raio inicial de busca de motoristas</td>
+</tr>
+<tr>
+<td><code>GEO_RAIO_PASSO_KM</code></td>
+<td><code>5</code></td>
+<td>Incremento de raio por tentativa</td>
+</tr>
+<tr>
+<td><code>GEO_RAIO_MAX_DESPACHO_KM</code></td>
+<td><code>20</code></td>
+<td>Raio máximo de despacho</td>
+</tr>
+<tr>
+<td><code>GEO_TIMEOUT_ACEITE_SEG</code></td>
+<td><code>30</code></td>
+<td>Timeout para aceite de corrida</td>
+</tr>
+<tr>
+<td><code>GEO_INTERVALO_EXPANSAO_SEG</code></td>
+<td><code>30</code></td>
+<td>Intervalo entre expansões de raio</td>
+</tr>
+<tr>
+<td><code>GEO_MAX_DIAS_AVALIACAO</code></td>
+<td><code>3</code></td>
+<td>Prazo para avaliar corrida (dias)</td>
+</tr>
+<tr>
+<td><code>GHOST_RIDE_TIMEOUT_MIN</code></td>
+<td><code>10</code></td>
+<td>Timeout para corridas fantasma (min)</td>
+</tr>
+<tr>
+<td><code>APP_SKIP_THROTTLE</code></td>
+<td><code>false</code></td>
+<td>Desabilitar rate limiting (dev/test)</td>
+</tr>
+</tbody>
+</table>
+    </div>
+  </div>
+</body>
+
+</html>
