@@ -77,6 +77,10 @@ describe('AuthFacade mock mode', () => {
 
 describe('AuthFacade API mode — HTTP timeouts', () => {
   const originalFetch = global.fetch;
+  const flushMicrotasks = async (): Promise<void> => {
+    await Promise.resolve();
+    await Promise.resolve();
+  };
 
   beforeEach(() => {
     mockSecureStore.clear();
@@ -89,7 +93,21 @@ describe('AuthFacade API mode — HTTP timeouts', () => {
   });
 
   it('getMe returns TIMEOUT when fetch never completes', async () => {
-    global.fetch = jest.fn(() => new Promise<Response>(() => {})) as typeof fetch;
+    global.fetch = jest.fn(
+      (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
+        new Promise<Response>((_resolve, reject) => {
+          const onAbort = (): void => {
+            const err = new Error('Aborted');
+            err.name = 'AbortError';
+            reject(err);
+          };
+          if (init?.signal?.aborted) {
+            onAbort();
+            return;
+          }
+          init?.signal?.addEventListener('abort', onAbort);
+        }),
+    ) as typeof fetch;
 
     const facade = new AuthFacadeImpl({
       mockMode: false,
@@ -97,7 +115,8 @@ describe('AuthFacade API mode — HTTP timeouts', () => {
     });
 
     const pending = facade.getMe('access-token-test');
-    await jest.advanceTimersByTimeAsync(AUTH_HTTP_TIMEOUT_MS);
+    await jest.advanceTimersByTimeAsync(AUTH_HTTP_TIMEOUT_MS + 1);
+    await flushMicrotasks();
     const result = await pending;
 
     expect(result.data).toBeNull();
@@ -106,7 +125,21 @@ describe('AuthFacade API mode — HTTP timeouts', () => {
 
   it('refreshToken returns TIMEOUT when fetch never completes', async () => {
     mockSecureStore.set('govmobile_refresh_token', 'refresh-token-test');
-    global.fetch = jest.fn(() => new Promise<Response>(() => {})) as typeof fetch;
+    global.fetch = jest.fn(
+      (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
+        new Promise<Response>((_resolve, reject) => {
+          const onAbort = (): void => {
+            const err = new Error('Aborted');
+            err.name = 'AbortError';
+            reject(err);
+          };
+          if (init?.signal?.aborted) {
+            onAbort();
+            return;
+          }
+          init?.signal?.addEventListener('abort', onAbort);
+        }),
+    ) as typeof fetch;
 
     const facade = new AuthFacadeImpl({
       mockMode: false,
@@ -114,7 +147,8 @@ describe('AuthFacade API mode — HTTP timeouts', () => {
     });
 
     const pending = facade.refreshToken();
-    await jest.advanceTimersByTimeAsync(AUTH_HTTP_TIMEOUT_MS);
+    await jest.advanceTimersByTimeAsync(AUTH_HTTP_TIMEOUT_MS + 1);
+    await flushMicrotasks();
     const result = await pending;
 
     expect(result.data).toBeNull();
