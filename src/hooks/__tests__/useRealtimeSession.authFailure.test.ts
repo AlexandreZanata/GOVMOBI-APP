@@ -70,6 +70,7 @@ jest.mock('@utils/logger', () => ({
 
 describe('useRealtimeSession - refresh failure fallback', () => {
   beforeEach(() => {
+    jest.useRealTimers();
     jest.clearAllMocks();
     mockToken = createExpiringToken();
     mockIsAuthenticated = true;
@@ -81,9 +82,16 @@ describe('useRealtimeSession - refresh failure fallback', () => {
     mockConnect.mockResolvedValue({data: 'connected', error: null});
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('dispatches logout and does not connect when refresh fails', async () => {
     renderHook(() => useRealtimeSession());
-    await act(async () => {});
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
     expect(mockConnect).not.toHaveBeenCalled();
     expect(mockDispatch).toHaveBeenCalledWith(
@@ -105,7 +113,10 @@ describe('useRealtimeSession - refresh failure fallback', () => {
     });
 
     renderHook(() => useRealtimeSession());
-    await act(async () => {});
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({
