@@ -80,6 +80,26 @@ export const createPassageiroStyles = () =>
       marginTop: 12,
     },
 
+    // ── Map overlay pins (destination + driver car) ──────────────────────────
+    destinationPinWrapper: {
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      marginBottom: -4,
+    },
+    driverCarPin: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: C.interactive,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: C.shadow,
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+
     // ── User location marker ─────────────────────────────────────────────────
     userMarkerPulse: {
       width: 40,

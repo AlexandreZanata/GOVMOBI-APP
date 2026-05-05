@@ -50,6 +50,8 @@ export const MotoristaColors = {
   statusBadgeActiveBg: 'rgba(29,158,117,0.25)',
   /** Semi-transparent red badge background for offline status in header. */
   statusBadgeOfflineBg: 'rgba(216,90,48,0.25)',
+  /** Outer halo for driver map marker — matches passenger pulseBg (rgba(39,110,241,0.15)). */
+  userMarkerPulseBg: 'rgba(39,110,241,0.15)',
 } as const;
 
 /**
@@ -207,7 +209,7 @@ export const createMotoristaStyles = (theme: Theme) => {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: 'rgba(39,110,241,0.15)', // pulseBg
+      backgroundColor: C.userMarkerPulseBg,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -215,7 +217,7 @@ export const createMotoristaStyles = (theme: Theme) => {
       width: 26,
       height: 26,
       borderRadius: 13,
-      backgroundColor: '#FFFFFF',              // surfaceCard
+      backgroundColor: C.cardBg,
       alignItems: 'center',
       justifyContent: 'center',
     },

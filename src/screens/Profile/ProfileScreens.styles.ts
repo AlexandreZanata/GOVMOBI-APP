@@ -17,6 +17,8 @@
 import {StyleSheet} from 'react-native';
 import {type Theme} from '../../theme';
 
+const AVATAR_UPLOAD_OVERLAY_BG = 'rgba(0,0,0,0.45)';
+
 /**
  * Creates the StyleSheet for ProfileScreen and SettingsScreen.
  *
@@ -107,7 +109,7 @@ export const createProfileStyles = (theme: Theme) => {
     /** Semi-transparent overlay shown while uploading. */
     avatarUploadOverlay: {
       alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.45)',
+      backgroundColor: AVATAR_UPLOAD_OVERLAY_BG,
       borderRadius: borderRadius.radius.full,
       bottom: 0,
       justifyContent: 'center',

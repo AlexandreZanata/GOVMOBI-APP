@@ -27,6 +27,8 @@ import {
   setRealtimeError,
   setPendingOffer,
 } from '@store/slices/realtimeSlice';
+import {logout} from '@store/slices/authSlice';
+import {addToast} from '@store/slices/uiSlice';
 import type {
   AssinarCorridaPayload,
   AtualizarPosicaoPayload,
@@ -244,7 +246,18 @@ export const useRealtimeSession = (): UseRealtimeSessionState => {
 
       const refreshFn = async (): Promise<string | null> => {
         const result = await authFacadeRef.current.refreshToken();
-        if (result.error || !result.data) return null;
+        if (result.error || !result.data) {
+          const isRevoked = result.error?.code === 'UNAUTHORIZED';
+          dispatchRef.current(logout());
+          dispatchRef.current(
+            addToast({
+              id: `realtime-session-ended-${Date.now()}`,
+              message: isRevoked ? 'errors.sessionRevoked' : 'errors.sessionExpired',
+              type: 'warning',
+            }),
+          );
+          return null;
+        }
         return result.data.accessToken;
       };
 

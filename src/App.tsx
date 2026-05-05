@@ -4,7 +4,7 @@
 // Must be the first import — patches TurboModuleRegistry.getEnforcing so
 // optional native modules (OneSignal) fail silently instead of logging ERROR.
 import './polyfills/turboModuleGuard';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Provider} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
@@ -17,6 +17,7 @@ import {ThemeProvider} from './theme';
 import {designColors} from './theme';
 import {store, persistor, useAppSelector, useAppDispatch} from './store';
 import {tokenRefreshed, logout} from '@store/slices/authSlice';
+import {addToast} from '@store/slices/uiSlice';
 import {AuthFacadeImpl} from '@services/facades';
 import {getValidToken} from '@utils/tokenUtils';
 import {ENV} from './config/env';
@@ -106,7 +107,15 @@ const AppShell = (): React.JSX.Element => {
       const authFacade = new AuthFacadeImpl({apiBaseUrl: ENV.apiUrl});
       const result = await authFacade.refreshToken();
       if (result.error || !result.data) {
+        const isRevoked = result.error?.code === 'UNAUTHORIZED';
         dispatch(logout());
+        dispatch(
+          addToast({
+            id: `session-ended-${Date.now()}`,
+            message: isRevoked ? 'errors.sessionRevoked' : 'errors.sessionExpired',
+            type: 'warning',
+          }),
+        );
         return null;
       }
       dispatch(tokenRefreshed(result.data.accessToken));
@@ -176,8 +185,6 @@ SafePersistGate.displayName = 'SafePersistGate';
  * @returns App root component.
  */
 const App = (): React.JSX.Element => {
-  const loadingFallback = useMemo(() => <View style={styles.container} />, []);
-
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>

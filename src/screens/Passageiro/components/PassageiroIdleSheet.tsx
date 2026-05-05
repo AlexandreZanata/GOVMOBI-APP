@@ -59,7 +59,7 @@ export interface PassageiroIdleSheetProps {
  */
 export const PassageiroIdleSheet = ({
   sheetTranslate,
-  paddingBottom,
+  paddingBottom: _paddingBottom,
   onLayout,
   selectedDestinoLabel,
   isRouting,

@@ -25,7 +25,8 @@ describe('fetchWithAbortTimeout', () => {
 
   it('rejects with AbortError when fetch hangs past timeout', async () => {
     jest.useFakeTimers();
-    global.fetch = jest.fn((_input: RequestInfo | URL, init?: RequestInit) =>
+    global.fetch = jest.fn(
+      (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
       new Promise<Response>((_resolve, reject) => {
         const onAbort = (): void => {
           const err = new Error('Aborted');

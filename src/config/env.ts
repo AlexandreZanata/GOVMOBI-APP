@@ -50,6 +50,8 @@ export const ENV: AppConfig = {
 };
 
 // Log resolved API URL in development so you can confirm it's correct on device
+// __DEV__ is injected by Metro; eslint no-undef does not know it in plain TS.
+/* eslint-disable-next-line no-undef */
 if (__DEV__) {
   console.info('[ENV] apiUrl =', ENV.apiUrl);
   console.info('[ENV] wsUrl  =', ENV.wsUrl);

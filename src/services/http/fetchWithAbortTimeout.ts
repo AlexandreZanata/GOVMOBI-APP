@@ -23,8 +23,8 @@ export const HYDRATION_WATCHDOG_MS = AUTH_HTTP_TIMEOUT_MS * 4 + 10_000;
  * @throws `DOMException` with name `AbortError` when the timeout elapses.
  */
 export async function fetchWithAbortTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit | undefined,
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1] | undefined,
   timeoutMs: number = AUTH_HTTP_TIMEOUT_MS,
 ): Promise<Response> {
   const controller = new AbortController();

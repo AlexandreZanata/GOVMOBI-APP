@@ -137,6 +137,18 @@ export const useAuthSession = (): void => {
   const statusOperacionalRef = useRef(statusOperacional);
   statusOperacionalRef.current = statusOperacional;
 
+  const endSession = (code?: string): void => {
+    const isRevoked = code === 'UNAUTHORIZED';
+    dispatch(logout());
+    dispatch(
+      addToast({
+        id: `session-ended-${Date.now()}`,
+        message: isRevoked ? t('errors.sessionRevoked') : t('errors.sessionExpired'),
+        type: 'warning',
+      }),
+    );
+  };
+
   // ---------------------------------------------------------------------------
   // Shared refresh helper
   // ---------------------------------------------------------------------------
@@ -187,12 +199,7 @@ export const useAuthSession = (): void => {
       const result = await authFacade.refreshToken();
       if (result.error || !result.data) {
         logger.warn('useAuthSession', 'Token refresh failed — ending session');
-        dispatch(logout());
-        dispatch(addToast({
-          id: `session-expired-${Date.now()}`,
-          message: t('errors.sessionRevoked'),
-          type: 'warning',
-        }));
+        endSession(result.error?.code);
         return null;
       }
       dispatch(tokenRefreshed(result.data.accessToken));
@@ -245,17 +252,7 @@ export const useAuthSession = (): void => {
         'useAuthSession',
         `getMe failed — code=${errorCode ?? 'unknown'} — ending session`,
       );
-      dispatch(logout());
-      dispatch(
-        addToast({
-          id: `session-ended-${Date.now()}`,
-          message:
-            errorCode === 'UNAUTHORIZED'
-              ? t('errors.sessionRevoked')
-              : t('errors.sessionExpired'),
-          type: 'warning',
-        }),
-      );
+      endSession(errorCode);
       return false;
     }
     const me = meResult.data;

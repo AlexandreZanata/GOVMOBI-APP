@@ -108,6 +108,7 @@ export const RootNavigator = (): React.JSX.Element => {
   const dispatch = useAppDispatch();
   const {t} = useTranslation();
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
+  const token = useAppSelector(state => state.auth.token);
   const isHydrating = useAppSelector(state => state.auth.isHydrating);
   const papeis = useAppSelector(state => state.auth.papeis);
   const motoristaId = useAppSelector(state => state.auth.motoristaId);
@@ -126,6 +127,18 @@ export const RootNavigator = (): React.JSX.Element => {
     }, HYDRATION_UI_FAILSAFE_MS);
     return () => clearTimeout(id);
   }, [dispatch, isAuthenticated, isHydrating, t]);
+
+  useEffect(() => {
+    if (!isAuthenticated || token) return;
+    dispatch(logout());
+    dispatch(
+      addToast({
+        id: `missing-token-${Date.now()}`,
+        message: t('errors.sessionExpired'),
+        type: 'warning',
+      }),
+    );
+  }, [dispatch, isAuthenticated, token, t]);
 
   // Block rendering until getMe() resolves — prevents driver → passenger flash
   if (isAuthenticated && isHydrating) {

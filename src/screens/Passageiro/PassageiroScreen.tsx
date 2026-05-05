@@ -90,28 +90,18 @@ const activeRouteLineStyle = {
 const TERMINAL_STATUSES = CORRIDA_TERMINAL_STATUSES;
 const STATUS_POLL_MS = 5000;
 
+const passageiroMapPinStyles = createPassageiroStyles();
+
 // ── Destination pin — same location-on icon the driver uses ──────────────────
 const DestinationPin = (): React.JSX.Element => (
-  <View style={{alignItems: 'center', justifyContent: 'flex-end', marginBottom: -4}}>
+  <View style={passageiroMapPinStyles.destinationPinWrapper}>
     <MaterialIcons name="location-on" size={34} color="#D85A30" />
   </View>
 );
 
 // ── Driver car marker ─────────────────────────────────────────────────────────
 const DriverCarPin = (): React.JSX.Element => (
-  <View style={{
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#2F80FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
-  }}>
+  <View style={passageiroMapPinStyles.driverCarPin}>
     <MaterialIcons name="directions-car" size={20} color="#FFFFFF" />
   </View>
 );

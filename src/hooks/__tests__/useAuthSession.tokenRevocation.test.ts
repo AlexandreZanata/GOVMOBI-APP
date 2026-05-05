@@ -236,4 +236,47 @@ describe('useAuthSession — token revocation fast-fail', () => {
     // after a failure — that's what causes the infinite blue screen.
     expect(store.getState().auth.isHydrating).toBe(false);
   });
+
+  it('uses sessionExpired toast when refresh fails with NETWORK_ERROR', async () => {
+    const expiringToken = [
+      'header',
+      btoa(JSON.stringify({sub: 'user-1', exp: 1})),
+      'signature',
+    ].join('.');
+    mockRefreshToken.mockResolvedValue({
+      data: null,
+      error: {code: 'NETWORK_ERROR', message: 'Network error while refreshing token'},
+    });
+
+    const store = configureStore({
+      reducer: {auth: authReducer, ui: uiReducer},
+    });
+    store.dispatch(
+      setUser({
+        id: 'user-1',
+        fullName: 'Test User',
+        email: 'test@govmobile.local',
+        role: 'OFFICER' as never,
+        status: 'ACTIVE' as never,
+        createdAt: '',
+        updatedAt: '',
+      }),
+    );
+    store.dispatch(setToken(expiringToken));
+
+    renderHook(() => useAuthSession(), {
+      wrapper: ({children}) =>
+        React.createElement(Provider, {store, children}),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(store.getState().auth.isAuthenticated).toBe(false);
+    const toasts = store.getState().ui.toasts;
+    expect(toasts.some(t => t.message === 'errors.sessionExpired')).toBe(true);
+    expect(toasts.some(t => t.message === 'errors.sessionRevoked')).toBe(false);
+  });
 });
