@@ -27,6 +27,14 @@ const ThemeProbe = () => {
 };
 
 describe('theme tokens', () => {
+  beforeEach(() => {
+    jest.useRealTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('defines all token groups', () => {
     expect(colors.light.primary).toBe('#0A1628');
     expect(colors.light.secondary).toBe('#1B3A6B');
@@ -68,6 +76,14 @@ describe('theme tokens', () => {
 });
 
 describe('useTheme', () => {
+  beforeEach(() => {
+    jest.useRealTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('returns default light theme without provider', () => {
     const {getByTestId} = render(React.createElement(ThemeProbe));
 
