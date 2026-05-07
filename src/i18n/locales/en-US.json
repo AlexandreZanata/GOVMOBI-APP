@@ -547,6 +547,15 @@
     "recusar": {
       "motivoPlaceholder": "Reason for refusal (optional)"
     },
+    "stops": {
+      "title": "Stop points (optional)",
+      "searchPlaceholder": "Search stop address",
+      "item": "Stop {{ordem}}",
+      "next": "Next stop {{ordem}}",
+      "arrive": "Confirm arrival",
+      "skip": "Skip stop",
+      "remove": "Remove stop"
+    },
     "cancel": {
       "title": "Cancel Ride",
       "confirm": "Confirm cancellation",
@@ -589,6 +598,8 @@
       "aceitarFailed": "Could not accept the ride.",
       "recusarFailed": "Could not refuse the ride.",
       "deslocamentoFailed": "Could not start driving.",
+      "chegarParadaFailed": "Could not confirm stop arrival.",
+      "pularParadaFailed": "Could not skip the stop.",
       "embarqueFailed": "Could not confirm boarding.",
       "finalizarFailed": "Could not complete the ride.",
       "cancelarFailed": "Could not cancel the ride."

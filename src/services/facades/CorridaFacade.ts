@@ -37,9 +37,11 @@ import type {
   PosicaoMotoristaResponse,
   PosicaoFilaResponse,
   SearchResult,
+  CorridaParada,
 } from '../../types';
 import {type FacadeConfig, type FacadeError, type Result} from './types';
 import {ENV} from '../../config/env';
+import {z} from 'zod';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -133,8 +135,8 @@ const normalizeStatus = (status: string): Corrida['status'] => {
  */
 interface RawCorrida {
   id: string;
-  passageiroId: string;
-  motoristaId: string | null;
+  passageiroId?: string;
+  motoristaId?: string | null;
   veiculoId?: string | null;
   status: string;
   motivoServico?: string;
@@ -177,7 +179,65 @@ interface RawCorrida {
     ano?: number;
     tipo?: string;
   };
+  pontosParada?: CorridaParada[];
 }
+
+const rawCorridaParadaSchema = z.object({
+  id: z.string().min(1),
+  lat: z.number(),
+  lng: z.number(),
+  ordem: z.number().int().nonnegative(),
+  status: z.enum(['pendente', 'chegou', 'pulada']),
+  chegouEm: z.string().datetime().nullish(),
+  puladaEm: z.string().datetime().nullish(),
+});
+
+const rawCorridaSchema = z.object({
+  id: z.string().min(1),
+  passageiroId: z.string().optional(),
+  motoristaId: z.string().nullable().optional(),
+  veiculoId: z.string().nullable().optional(),
+  status: z.string().min(1),
+  motivoServico: z.string().optional(),
+  observacoes: z.string().optional(),
+  distanciaMetros: z.number().optional(),
+  duracaoSegundos: z.number().optional(),
+  canceladoPor: z.string().nullable().optional(),
+  motivoCancelamento: z.string().nullable().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  origem: z.object({lat: z.number(), lng: z.number(), endereco: z.string().optional()}).optional(),
+  destino: z.object({lat: z.number(), lng: z.number(), endereco: z.string().optional()}).optional(),
+  origemLat: z.number().optional(),
+  origemLng: z.number().optional(),
+  destinoLat: z.number().optional(),
+  destinoLng: z.number().optional(),
+  timestamps: z.object({
+    solicitadaEm: z.string().optional(),
+    aceitaEm: z.string().optional(),
+    iniciadaEm: z.string().optional(),
+    embarqueEm: z.string().optional(),
+    finalizadaEm: z.string().optional(),
+    canceladaEm: z.string().optional(),
+  }).optional(),
+  motorista: z.object({
+    id: z.string(),
+    servidorId: z.string().optional(),
+    cnhCategoria: z.string().optional(),
+    statusOperacional: z.string().optional(),
+    notaMedia: z.number().optional(),
+    totalAvaliacoes: z.number().optional(),
+    fotoPerfilUrl: z.string().nullable().optional(),
+  }).optional(),
+  veiculo: z.object({
+    id: z.string(),
+    placa: z.string().optional(),
+    modelo: z.string().optional(),
+    ano: z.number().optional(),
+    tipo: z.string().optional(),
+  }).optional(),
+  pontosParada: z.array(rawCorridaParadaSchema).optional(),
+});
 
 /**
  * Normalizes a raw backend corrida response into the app's Corrida model.
@@ -188,8 +248,8 @@ interface RawCorrida {
  */
 const normalizeCorrida = (raw: RawCorrida): Corrida => ({
   id: raw.id,
-  passageiroId: raw.passageiroId,
-  motoristaId: raw.motoristaId,
+  passageiroId: raw.passageiroId ?? '',
+  motoristaId: raw.motoristaId ?? null,
   veiculoId: raw.veiculoId ?? null,
   origemLat: raw.origemLat ?? raw.origem?.lat ?? 0,
   origemLng: raw.origemLng ?? raw.origem?.lng ?? 0,
@@ -205,6 +265,7 @@ const normalizeCorrida = (raw: RawCorrida): Corrida => ({
   timestamps: raw.timestamps,
   motorista: raw.motorista,
   veiculo: raw.veiculo,
+  pontosParada: raw.pontosParada,
   createdAt: raw.createdAt ?? new Date().toISOString(),
   updatedAt: raw.updatedAt ?? new Date().toISOString(),
 });
@@ -234,6 +295,12 @@ export interface ICorridaFacade {
 
   /** POST /corridas/:id/chegar */
   chegarAoLocal(corridaId: string): Promise<Result<Corrida, FacadeError>>;
+
+  /** POST /corridas/:id/paradas/:paradaId/chegar */
+  chegarParada(corridaId: string, paradaId: string): Promise<Result<Corrida, FacadeError>>;
+
+  /** POST /corridas/:id/paradas/:paradaId/pular */
+  pularParada(corridaId: string, paradaId: string): Promise<Result<Corrida, FacadeError>>;
 
   /** POST /corridas/:id/confirmar-embarque */
   confirmarEmbarque(corridaId: string, input: ConfirmarEmbarqueInput): Promise<Result<Corrida, FacadeError>>;
@@ -469,6 +536,30 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   }
 
   /** @inheritdoc */
+  public async chegarParada(corridaId: string, paradaId: string): Promise<Result<Corrida, FacadeError>> {
+    console.log(`[CorridaFacade] POST /corridas/${corridaId}/paradas/${paradaId}/chegar`);
+    const result = await this.postCorrida(`/corridas/${corridaId}/paradas/${paradaId}/chegar`, {}, corridaId);
+    if (result.error) {
+      console.error(`[CorridaFacade] chegarParada FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] chegarParada OK → status=${result.data?.status}`);
+    }
+    return result;
+  }
+
+  /** @inheritdoc */
+  public async pularParada(corridaId: string, paradaId: string): Promise<Result<Corrida, FacadeError>> {
+    console.log(`[CorridaFacade] POST /corridas/${corridaId}/paradas/${paradaId}/pular`);
+    const result = await this.postCorrida(`/corridas/${corridaId}/paradas/${paradaId}/pular`, {}, corridaId);
+    if (result.error) {
+      console.error(`[CorridaFacade] pularParada FAILED → code=${result.error.code} status=${result.error.statusCode ?? '?'} msg=${result.error.message}`);
+    } else {
+      console.log(`[CorridaFacade] pularParada OK → status=${result.data?.status}`);
+    }
+    return result;
+  }
+
+  /** @inheritdoc */
   public async confirmarEmbarque(
     corridaId: string,
     input: ConfirmarEmbarqueInput,
@@ -532,8 +623,12 @@ export class CorridaFacadeImpl implements ICorridaFacade {
         headers: this.authHeaders(),
       });
       if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
-      const raw = (await response.json()) as RawCorrida;
-      return ok(normalizeCorrida(raw));
+      const rawUnknown = await response.json();
+      const parsed = rawCorridaSchema.safeParse(this.extractCorridaPayload(rawUnknown));
+      if (!parsed.success) {
+        return fail(toError('Invalid corrida payload', 'VALIDATION_ERROR', response.status));
+      }
+      return ok(normalizeCorrida(parsed.data));
     } catch {
       return fail(toError('Network error', 'NETWORK_ERROR'));
     }
@@ -811,6 +906,16 @@ export class CorridaFacadeImpl implements ICorridaFacade {
     return headers;
   }
 
+  private extractCorridaPayload(payload: unknown): unknown {
+    if (typeof payload !== 'object' || payload === null) return payload;
+    const envelope = payload as {
+      data?: unknown;
+      corrida?: unknown;
+      corridaAtiva?: unknown;
+    };
+    return envelope.data ?? envelope.corrida ?? envelope.corridaAtiva ?? payload;
+  }
+
   private async get<T>(endpoint: string): Promise<Result<T, FacadeError>> {
     try {
       const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
@@ -885,16 +990,24 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
 
       // Try to parse the response body — many lifecycle endpoints return partial objects
-      const raw = await response.json().catch(() => ({})) as RawCorrida;
-      console.log(`[CorridaFacade] raw response →`, JSON.stringify(raw));
+      const rawUnknown = await response.json().catch(() => ({}));
+      const parsed = rawCorridaSchema.safeParse(this.extractCorridaPayload(rawUnknown));
+      console.log(`[CorridaFacade] raw response →`, JSON.stringify(rawUnknown));
 
       // If the response has a valid id, normalize and return it directly
-      if (raw.id && raw.status) {
-        return ok(normalizeCorrida(raw));
+      if (parsed.success) {
+        return ok(normalizeCorrida(parsed.data));
       }
 
       // Partial body (e.g. iniciar-deslocamento returns {}) — fetch full corrida
-      const id = corridaId ?? raw.id;
+      const idFromRaw =
+        typeof rawUnknown === 'object' &&
+        rawUnknown !== null &&
+        'id' in rawUnknown &&
+        typeof (rawUnknown as {id?: unknown}).id === 'string'
+          ? (rawUnknown as {id: string}).id
+          : undefined;
+      const id = corridaId ?? idFromRaw;
       if (!id) {
         return fail(toError('Response missing corrida id and no corridaId provided', 'INTERNAL_ERROR'));
       }

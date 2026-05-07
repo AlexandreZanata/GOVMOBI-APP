@@ -98,6 +98,8 @@ const buildMockFacade = (overrides: Partial<ICorridaFacade> = {}): ICorridaFacad
   recusarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('cancelada'))),
   iniciarDeslocamento: jest.fn().mockResolvedValue(ok(makeCorrida('em_rota'))),
   chegarAoLocal: jest.fn().mockResolvedValue(ok(makeCorrida('em_rota'))),
+  chegarParada: jest.fn().mockResolvedValue(ok(makeCorrida('em_rota'))),
+  pularParada: jest.fn().mockResolvedValue(ok(makeCorrida('em_rota'))),
   confirmarEmbarque: jest.fn().mockResolvedValue(ok(makeCorrida('passageiro_a_bordo'))),
   passageiroABordo: jest.fn().mockResolvedValue(ok(makeCorrida('passageiro_a_bordo'))),
   finalizarCorrida: jest.fn().mockResolvedValue(ok(makeCorrida('concluida'))),

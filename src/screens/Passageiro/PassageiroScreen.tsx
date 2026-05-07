@@ -156,6 +156,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     isSearching,
     selectedDestinoLabel,
     selectedDestinoCoords,
+    selectedParadas,
     isRequestModalOpen,
     isRouting,
     routeFeedback,
@@ -167,6 +168,8 @@ export const PassageiroScreen = (): React.JSX.Element => {
     onCloseSearch,
     onSearchChange,
     onSelectResult,
+    onStartParadaSelection,
+    onRemoveParada,
     onOpenRequestModal,
     onCloseRequestModal,
     onCenterOnUser: onCenterOnUserBase,
@@ -194,6 +197,19 @@ export const PassageiroScreen = (): React.JSX.Element => {
       searchBarRef.current?.focus();
     }, 120);
   }, [onOpenSearch]);
+
+  const onOpenStopSearchAndFocus = useCallback(() => {
+    onStartParadaSelection();
+    setTimeout(() => {
+      searchBarRef.current?.focus();
+    }, 120);
+  }, [onStartParadaSelection]);
+
+  const handleClearSearch = useCallback(() => {
+    // Keep overlay open so the next typed query immediately shows results.
+    onOpenSearch();
+    onSearchChange('');
+  }, [onOpenSearch, onSearchChange]);
 
   // ── Active ride from Redux ──────────────────────────────────────────────────
   const activeCorrida = useAppSelector(s => s.corrida.activeCorrida);
@@ -471,6 +487,8 @@ export const PassageiroScreen = (): React.JSX.Element => {
     };
   }, [routePreviewCoords]);
 
+  const PointAnnotation = MapboxGL?.PointAnnotation;
+
   // ── Map content ─────────────────────────────────────────────────────────────
   const mapContent =
     MapboxGL && isMapboxTokenApplied && isContainerReady ? (
@@ -505,14 +523,25 @@ export const PassageiroScreen = (): React.JSX.Element => {
         )}
 
         {/* 2. Destination pin — location-on icon (same as motorista) */}
-        {!hasActiveRide && selectedDestinoCoords && (
-          <MapboxGL.PointAnnotation
+        {!hasActiveRide && selectedDestinoCoords && PointAnnotation && (
+          <PointAnnotation
             coordinate={[selectedDestinoCoords.longitude, selectedDestinoCoords.latitude]}
             id="destination"
             title={selectedDestinoLabel ?? ''}>
             <DestinationPin />
-          </MapboxGL.PointAnnotation>
+          </PointAnnotation>
         )}
+        {!hasActiveRide && PointAnnotation && selectedParadas.map((parada, index) => (
+          <PointAnnotation
+            coordinate={[parada.coordinates.longitude, parada.coordinates.latitude]}
+            id={`stop-${index}-${parada.id}`}
+            key={`stop-${index}-${parada.id}`}
+            title={parada.placeName}>
+            <View style={styles.destinationPinWrapper}>
+              <MaterialIcons name="assistant-navigation" size={24} color={C.interactive} />
+            </View>
+          </PointAnnotation>
+        ))}
         {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.destinoLng) && Number.isFinite(activeCorrida.destinoLat) && (
           <MapboxGL.PointAnnotation
             coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
@@ -595,7 +624,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
         isInputFocused={isInputFocused}
         onBlur={() => setIsInputFocused(false)}
         onChangeText={onSearchChange}
-        onClear={onCloseSearch}
+        onClear={handleClearSearch}
         onFocus={() => { setIsInputFocused(true); onOpenSearch(); }}
         paddingTop={insets.top + 10}
         searchBarTranslate={searchBarTranslate}
@@ -648,6 +677,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
           onOpenSearch={onOpenSearchAndFocus}
           paddingBottom={sheetPaddingBottom}
           routeFeedback={routeFeedback}
+          selectedParadas={selectedParadas}
+          onAddParada={onOpenStopSearchAndFocus}
+          onRemoveParada={onRemoveParada}
           routeSummary={routeSummary}
           selectedDestinoLabel={selectedDestinoLabel}
           sheetTranslate={sheetTranslate}
@@ -681,6 +713,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
       <SolicitarCorridaModal
         onClose={onCloseRequestModal}
         onSuccess={() => onCloseRequestModal()}
+        selectedParadas={selectedParadas}
         visible={isRequestModalOpen}
       />
 

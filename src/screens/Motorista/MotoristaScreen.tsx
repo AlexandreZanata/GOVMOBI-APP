@@ -77,6 +77,8 @@ export const MotoristaScreen = (): React.JSX.Element => {
     onCenterOnUser: onCenterOnUserBase,
     onIniciarDeslocamento,
     onChegar,
+    onChegarParada,
+    onPularParada,
     onConfirmarEmbarque,
     onPassageiroABordo,
     onFinalizar,
@@ -444,8 +446,16 @@ export const MotoristaScreen = (): React.JSX.Element => {
             onCancelar={handleCancelar}
             onCancelMotivoChange={setCancelMotivo}
             onChegar={handleChegar}
+            onChegarParada={paradaId => {
+              if (!activeCorrida) return;
+              void onChegarParada(activeCorrida.id, paradaId);
+            }}
             onConfirmarEmbarque={handleConfirmarEmbarque}
             onPassageiroABordo={handlePassageiroABordo}
+            onPularParada={paradaId => {
+              if (!activeCorrida) return;
+              void onPularParada(activeCorrida.id, paradaId);
+            }}
             onFinalizar={handleFinalizar}
             onIniciarDeslocamento={handleIniciarDeslocamento}
             onLayout={onSheetLayout}

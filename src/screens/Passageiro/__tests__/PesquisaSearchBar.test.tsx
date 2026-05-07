@@ -327,4 +327,35 @@ describe('Pesquisa geocoding — SearchBar integration', () => {
       expect(queryByTestId('search-overlay')).toBeNull();
     });
   }, 10000);
+
+  it('keeps searching after pressing clear (x) with destination flow', async () => {
+    const geocodeAddress = jest
+      .fn()
+      .mockResolvedValueOnce({data: MOCK_RESULTS, error: null})
+      .mockResolvedValueOnce({data: MOCK_RESULTS, error: null});
+    const pesquisaMock = makePesquisaMock({geocodeAddress});
+    const {getByTestId, queryByTestId} = renderScreen(pesquisaMock);
+
+    typeInSearchInput(getByTestId, 'flores');
+    await delay(500);
+
+    await waitFor(() => {
+      expect(geocodeAddress).toHaveBeenCalledTimes(1);
+      expect(getByTestId('search-overlay')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('search-clear-btn'));
+    expect(queryByTestId('search-overlay')).toBeTruthy();
+
+    typeInSearchInput(getByTestId, 'avenida');
+    await delay(500);
+
+    await waitFor(() => {
+      expect(geocodeAddress).toHaveBeenCalledTimes(2);
+      expect(geocodeAddress).toHaveBeenLastCalledWith({
+        query: 'avenida',
+        proximity: undefined,
+      });
+    });
+  }, 10000);
 });

@@ -144,6 +144,12 @@ const buildMockFacade = (
   chegarAoLocal: jest
     .fn()
     .mockResolvedValue(ok({...mockCorrida, status: 'em_rota'} as Corrida)),
+  chegarParada: jest
+    .fn()
+    .mockResolvedValue(ok({...mockCorrida, status: 'em_rota'} as Corrida)),
+  pularParada: jest
+    .fn()
+    .mockResolvedValue(ok({...mockCorrida, status: 'em_rota'} as Corrida)),
   confirmarEmbarque: jest
     .fn()
     .mockResolvedValue(ok({...mockCorrida, status: 'passageiro_a_bordo'} as Corrida)),

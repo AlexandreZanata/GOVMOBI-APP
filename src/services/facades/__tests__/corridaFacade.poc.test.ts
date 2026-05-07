@@ -41,6 +41,92 @@ describe('CorridaFacadeImpl.solicitarCorrida', () => {
   });
 });
 
+describe('CorridaFacadeImpl stop endpoints', () => {
+  it('calls chegarParada with corridaId/paradaId path', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+    const corridaId = 'corrida-123';
+    const paradaId = 'parada-1';
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (url, options) => {
+      if (String(url).includes(`/corridas/${corridaId}/paradas/${paradaId}/chegar`)) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        } as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: corridaId,
+          passageiroId: 'pas-1',
+          motoristaId: 'mot-1',
+          status: 'em_rota',
+          origemLat: -2.529,
+          origemLng: -44.301,
+          destinoLat: -2.535,
+          destinoLng: -44.295,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      } as Response;
+    });
+
+    const result = await facade.chegarParada(corridaId, paradaId);
+    expect(result.error).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(`/corridas/${corridaId}/paradas/${paradaId}/chegar`),
+      expect.objectContaining({method: 'POST', body: JSON.stringify({})}),
+    );
+    fetchMock.mockRestore();
+  });
+
+  it('calls pularParada with corridaId/paradaId path', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+    const corridaId = 'corrida-456';
+    const paradaId = 'parada-2';
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (url, options) => {
+      if (String(url).includes(`/corridas/${corridaId}/paradas/${paradaId}/pular`)) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        } as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: corridaId,
+          passageiroId: 'pas-2',
+          motoristaId: 'mot-2',
+          status: 'em_rota',
+          origemLat: -2.529,
+          origemLng: -44.301,
+          destinoLat: -2.535,
+          destinoLng: -44.295,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      } as Response;
+    });
+
+    const result = await facade.pularParada(corridaId, paradaId);
+    expect(result.error).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(`/corridas/${corridaId}/paradas/${paradaId}/pular`),
+      expect.objectContaining({method: 'POST', body: JSON.stringify({})}),
+    );
+    fetchMock.mockRestore();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Test 19.2: FrotaFacade.updateMyStatus sends the correct status
 // ---------------------------------------------------------------------------

@@ -79,6 +79,15 @@ const makeCorrida = (
   destinoLng: input.destinoLng,
   motivoServico: input.motivoServico,
   observacoes: input.observacoes,
+  pontosParada: input.pontosParada?.map(parada => ({
+    id: uuid(),
+    lat: parada.lat,
+    lng: parada.lng,
+    ordem: parada.ordem,
+    status: 'pendente',
+    chegouEm: null,
+    puladaEm: null,
+  })),
   status,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -171,6 +180,36 @@ export class CorridaFacadeMock implements ICorridaFacade {
     const corrida = store.get(corridaId);
     if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
     const updated = transition(corrida, 'em_rota');
+    store.set(corridaId, updated);
+    return ok(updated);
+  }
+
+  /** @inheritdoc */
+  public async chegarParada(corridaId: string, paradaId: string): Promise<Result<Corrida, FacadeError>> {
+    await delay(200);
+    const corrida = store.get(corridaId);
+    if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
+    const pontosParada = corrida.pontosParada?.map(parada =>
+      parada.id === paradaId
+        ? {...parada, status: 'chegou' as const, chegouEm: new Date().toISOString()}
+        : parada,
+    );
+    const updated = transition(corrida, corrida.status, {pontosParada});
+    store.set(corridaId, updated);
+    return ok(updated);
+  }
+
+  /** @inheritdoc */
+  public async pularParada(corridaId: string, paradaId: string): Promise<Result<Corrida, FacadeError>> {
+    await delay(200);
+    const corrida = store.get(corridaId);
+    if (!corrida) return fail(toError('Corrida not found', 'NOT_FOUND'));
+    const pontosParada = corrida.pontosParada?.map(parada =>
+      parada.id === paradaId
+        ? {...parada, status: 'pulada' as const, puladaEm: new Date().toISOString()}
+        : parada,
+    );
+    const updated = transition(corrida, corrida.status, {pontosParada});
     store.set(corridaId, updated);
     return ok(updated);
   }

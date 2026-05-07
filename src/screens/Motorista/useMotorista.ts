@@ -97,6 +97,10 @@ export interface MotoristaState {
   onIniciarDeslocamento: (corridaId: string) => Promise<void>;
   /** Confirms arrival at pickup point (maps to iniciar-deslocamento endpoint). */
   onChegar: (corridaId: string) => Promise<void>;
+  /** Confirms arrival at an intermediate stop. */
+  onChegarParada: (corridaId: string, paradaId: string) => Promise<void>;
+  /** Skips an intermediate stop. */
+  onPularParada: (corridaId: string, paradaId: string) => Promise<void>;
   /** Confirms passenger boarded. */
   onConfirmarEmbarque: (corridaId: string, input: ConfirmarEmbarqueInput) => Promise<void>;
   /** Confirms passenger is in the vehicle — transitions to PASSAGEIRO_A_BORDO. */
@@ -481,6 +485,40 @@ export const useMotorista = (): MotoristaState => {
     [corridaFacade, dispatch, withAction],
   );
 
+  const onChegarParada = useCallback(
+    async (corridaId: string, paradaId: string): Promise<void> => {
+      await withAction(
+        async () => {
+          const r = await corridaFacade.chegarParada(corridaId, paradaId);
+          if (r.error) throw new Error(r.error.message);
+          return r.data;
+        },
+        data => {
+          if (data) dispatch(setActiveCorrida(data));
+        },
+        'corridas.errors.chegarParadaFailed',
+      );
+    },
+    [corridaFacade, dispatch, withAction],
+  );
+
+  const onPularParada = useCallback(
+    async (corridaId: string, paradaId: string): Promise<void> => {
+      await withAction(
+        async () => {
+          const r = await corridaFacade.pularParada(corridaId, paradaId);
+          if (r.error) throw new Error(r.error.message);
+          return r.data;
+        },
+        data => {
+          if (data) dispatch(setActiveCorrida(data));
+        },
+        'corridas.errors.pularParadaFailed',
+      );
+    },
+    [corridaFacade, dispatch, withAction],
+  );
+
   /**
    * Confirms passenger boarded (POST /corridas/:id/confirmar-embarque).
    *
@@ -654,6 +692,8 @@ export const useMotorista = (): MotoristaState => {
     onRecusar,
     onIniciarDeslocamento,
     onChegar,
+    onChegarParada,
+    onPularParada,
     onConfirmarEmbarque,
     onPassageiroABordo,
     onFinalizar,

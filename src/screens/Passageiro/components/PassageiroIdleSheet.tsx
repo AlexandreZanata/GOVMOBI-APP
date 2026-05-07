@@ -23,6 +23,7 @@ import {
   createPassageiroStyles,
   PassageiroColors as C,
 } from '../PassageiroScreen.styles';
+import type {SearchResult} from '../../../types';
 
 export interface PassageiroIdleSheetProps {
   /** Animated translateY for the slide-up entrance. */
@@ -41,12 +42,18 @@ export interface PassageiroIdleSheetProps {
   routeSummary: string | null;
   /** Localized route feedback/error message. */
   routeFeedback: string | null;
+  /** Selected stop points sorted by proximity. */
+  selectedParadas: SearchResult[];
   /**
    * @deprecated No longer used — CTA is always enabled.
    * Kept for API compatibility; will be removed in a future cleanup.
    */
   ctaDisabled: boolean;
   onOpenRequestModal: () => void;
+  /** Opens search mode to add a stop point. */
+  onAddParada: () => void;
+  /** Removes one stop point from the list. */
+  onRemoveParada: (index: number) => void;
   /** Opens the address search bar (called when CTA is pressed without a destination). */
   onOpenSearch: () => void;
 }
@@ -66,7 +73,10 @@ export const PassageiroIdleSheet = ({
   canPreviewRoute,
   routeSummary,
   routeFeedback,
+  selectedParadas,
   onOpenRequestModal,
+  onAddParada,
+  onRemoveParada,
   onOpenSearch,
 }: PassageiroIdleSheetProps): React.JSX.Element => {
   const {t} = useTranslation();
@@ -163,6 +173,32 @@ export const PassageiroIdleSheet = ({
               )}
             </View>
           )}
+
+          {hasDestination && (
+            <Pressable
+              accessibilityRole="button"
+              onPress={onAddParada}
+              style={styles.addStopButton}
+              testID="btn-add-stop">
+              <Text style={styles.addStopButtonText}>
+                {t('corridas.stops.title')}
+              </Text>
+            </Pressable>
+          )}
+
+          {selectedParadas.map((parada, index) => (
+            <View key={`${parada.id}-${index}`} style={styles.stopRow}>
+              <Text numberOfLines={1} style={styles.stopRowText}>
+                {t('corridas.stops.item', {ordem: index + 1})} - {parada.placeName}
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onRemoveParada(index)}
+                style={styles.stopRowRemove}>
+                <MaterialIcons color={C.surfaceCard} name="close" size={14} />
+              </Pressable>
+            </View>
+          ))}
         </>
       )}
 

@@ -136,6 +136,16 @@ export interface Corrida {
     ano?: number;
     tipo?: string;
   };
+  /** Optional intermediate stop points in route order. */
+  pontosParada?: Array<{
+    id: string;
+    lat: number;
+    lng: number;
+    ordem: number;
+    status: 'pendente' | 'chegou' | 'pulada';
+    chegouEm?: string | null;
+    puladaEm?: string | null;
+  }>;
   status: CorridaStatus;
   createdAt: string;
   updatedAt: string;

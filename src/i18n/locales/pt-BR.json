@@ -546,6 +546,15 @@
     "recusar": {
       "motivoPlaceholder": "Motivo da recusa (opcional)"
     },
+    "stops": {
+      "title": "Pontos de parada (opcional)",
+      "searchPlaceholder": "Buscar endereço para parada",
+      "item": "Parada {{ordem}}",
+      "next": "Próxima parada {{ordem}}",
+      "arrive": "Confirmar chegada",
+      "skip": "Pular parada",
+      "remove": "Remover parada"
+    },
     "cancel": {
       "title": "Cancelar Corrida",
       "confirm": "Confirmar cancelamento",
@@ -587,6 +596,8 @@
       "aceitarFailed": "Não foi possível aceitar a corrida.",
       "recusarFailed": "Não foi possível recusar a corrida.",
       "deslocamentoFailed": "Não foi possível iniciar o deslocamento.",
+      "chegarParadaFailed": "Não foi possível confirmar chegada na parada.",
+      "pularParadaFailed": "Não foi possível pular a parada.",
       "embarqueFailed": "Não foi possível confirmar o embarque.",
       "passageiroABordoFailed": "Não foi possível confirmar passageiro a bordo.",
       "finalizarFailed": "Não foi possível finalizar a corrida.",

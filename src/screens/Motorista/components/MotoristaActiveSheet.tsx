@@ -60,6 +60,8 @@ export interface MotoristaActiveSheetProps {
   onRecusar: () => void;
   onIniciarDeslocamento: () => void;
   onChegar: () => void;
+  onChegarParada: (paradaId: string) => void;
+  onPularParada: (paradaId: string) => void;
   onConfirmarEmbarque: () => void;
   onPassageiroABordo: () => void;
   onFinalizar: () => void;
@@ -110,6 +112,8 @@ export const MotoristaActiveSheet = ({
   onRecusar,
   onIniciarDeslocamento,
   onChegar,
+  onChegarParada,
+  onPularParada,
   onConfirmarEmbarque,
   onPassageiroABordo,
   onFinalizar,
@@ -127,6 +131,10 @@ export const MotoristaActiveSheet = ({
   const destinoAddress = useReverseGeocode(corrida.destinoLat, corrida.destinoLng);
 
   const actions = getVisibleActions(normalizedStatus);
+  const proximaParada = corrida.pontosParada
+    ?.filter(parada => parada.status === 'pendente')
+    .sort((a, b) => a.ordem - b.ordem)[0];
+  const hasPendingStops = !!proximaParada;
 
   // ---------------------------------------------------------------------------
   // Optimistic per-action lock
@@ -307,7 +315,7 @@ export const MotoristaActiveSheet = ({
         )}
 
         {/* EM_ROTA → Confirmar Embarque */}
-        {actions.showConfirmarEmbarque && (
+        {actions.showConfirmarEmbarque && !hasPendingStops && (
           <Pressable
             accessibilityLabel={t('corridas.actions.confirmarEmbarque')}
             accessibilityRole="button"
@@ -321,6 +329,30 @@ export const MotoristaActiveSheet = ({
               <Text style={styles.actionButtonText}>{t('corridas.actions.confirmarEmbarque')}</Text>
             )}
           </Pressable>
+        )}
+
+        {normalizedStatus === 'em_rota' && hasPendingStops && (
+          <View style={styles.stopCard}>
+            <Text style={styles.stopTitle}>
+              {t('corridas.stops.next', {ordem: proximaParada.ordem})}
+            </Text>
+            <View style={styles.stopActionsRow}>
+              <Pressable
+                accessibilityRole="button"
+                disabled={isBusy('chegarParada')}
+                onPress={withLock('chegarParada', () => onChegarParada(proximaParada.id))}
+                style={[styles.stopActionBtn, styles.stopActionSuccess]}>
+                <Text style={styles.stopActionText}>{t('corridas.stops.arrive')}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={isBusy('pularParada')}
+                onPress={withLock('pularParada', () => onPularParada(proximaParada.id))}
+                style={[styles.stopActionBtn, styles.stopActionDanger]}>
+                <Text style={styles.stopActionText}>{t('corridas.stops.skip')}</Text>
+              </Pressable>
+            </View>
+          </View>
         )}
 
         {/* PASSAGEIRO_EMBARCADO → Passageiro a Bordo */}

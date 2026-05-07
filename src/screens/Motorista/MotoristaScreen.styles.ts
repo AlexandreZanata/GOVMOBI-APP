@@ -413,6 +413,40 @@ export const createMotoristaStyles = (theme: Theme) => {
       marginBottom: spacing[3],
       ...typo.scale.bodyMd,
     },
+    stopCard: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: borderRadius.radius.md,
+      padding: spacing[3],
+      marginBottom: spacing[3],
+      backgroundColor: theme.design.surface300,
+    },
+    stopTitle: {
+      ...typo.scale.labelMd,
+      color: C.textDark,
+      marginBottom: spacing[2],
+    },
+    stopActionsRow: {
+      flexDirection: 'row',
+      gap: spacing[2],
+    },
+    stopActionBtn: {
+      flex: 1,
+      borderRadius: borderRadius.radius.sm,
+      paddingVertical: spacing[2],
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stopActionSuccess: {
+      backgroundColor: C.success,
+    },
+    stopActionDanger: {
+      backgroundColor: C.danger,
+    },
+    stopActionText: {
+      ...typo.scale.labelSm,
+      color: C.textOnDark,
+    },
 
     // ── Terminal state ────────────────────────────────────────────────────────
     terminalContainer: {

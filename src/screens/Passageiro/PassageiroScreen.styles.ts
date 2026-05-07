@@ -391,6 +391,47 @@ export const createPassageiroStyles = () =>
       fontWeight: '500',
       color: C.errorRed,
     },
+    addStopButton: {
+      width: '100%',
+      height: 42,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: C.interactive,
+      backgroundColor: C.interactiveBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 10,
+    },
+    addStopButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: C.interactive,
+    },
+    stopRow: {
+      width: '100%',
+      minHeight: 36,
+      borderRadius: 10,
+      backgroundColor: C.interactive,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 10,
+      marginBottom: 8,
+    },
+    stopRowText: {
+      fontSize: 12,
+      color: C.surfaceCard,
+      flex: 1,
+      marginRight: 8,
+    },
+    stopRowRemove: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: C.interactivePress,
+    },
 
     // CTA button
     ctaButton: {

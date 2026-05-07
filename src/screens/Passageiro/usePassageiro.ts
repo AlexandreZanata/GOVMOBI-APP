@@ -46,6 +46,10 @@ export interface PassageiroState {
   selectedDestinoLabel: string | null;
   /** Selected destination coordinates. */
   selectedDestinoCoords: Coordenada | null;
+  /** Intermediate stop points sorted nearest-to-farthest from current user location. */
+  selectedParadas: SearchResult[];
+  /** Whether current search selection should be saved as a stop point. */
+  isSelectingParada: boolean;
   /** Whether the ride request modal is open. */
   isRequestModalOpen: boolean;
   /** True while route preview is loading from /pesquisa/rota. */
@@ -73,6 +77,10 @@ export interface PassageiroState {
   onSearchChange: (text: string) => void;
   /** Selects a search result as the destination. */
   onSelectResult: (result: SearchResult) => void;
+  /** Opens search in stop-selection mode. */
+  onStartParadaSelection: () => void;
+  /** Removes one selected stop point by index. */
+  onRemoveParada: (index: number) => void;
   /**
    * Opens the ride request modal.
    * Validates that a destination is selected first.
@@ -106,6 +114,12 @@ const formatRouteCoordinates = (route: PesquisaRouteResult): Coordenada[] =>
     longitude: lng,
   }));
 
+const distanceMeters = (a: Coordenada, b: Coordenada): number => {
+  const dx = a.latitude - b.latitude;
+  const dy = a.longitude - b.longitude;
+  return Math.sqrt((dx * dx) + (dy * dy));
+};
+
 /**
  * Encapsulates all state and logic for the PassageiroScreen.
  *
@@ -132,6 +146,8 @@ export const usePassageiro = (): PassageiroState => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [selectedParadas, setSelectedParadas] = useState<SearchResult[]>([]);
+  const [isSelectingParada, setIsSelectingParada] = useState(false);
   const [isRouting, setIsRouting] = useState(false);
   const [routeFeedback, setRouteFeedback] = useState<string | null>(null);
   const [routePreviewCoords, setRoutePreviewCoords] = useState<Coordenada[]>(
@@ -228,6 +244,7 @@ export const usePassageiro = (): PassageiroState => {
     dispatch(setIsSearching(false));
     setIsSearchOpen(false);
     setSearchQuery('');
+    setIsSelectingParada(false);
     dispatch(clearSearch());
   }, [dispatch]);
 
@@ -322,6 +339,30 @@ export const usePassageiro = (): PassageiroState => {
 
   const onSelectResult = useCallback(
     (result: SearchResult): void => {
+      if (isSelectingParada && selectedDestino) {
+        setSelectedParadas(prev => {
+          const exists = prev.some(
+            parada =>
+              parada.coordinates.latitude === result.coordinates.latitude &&
+              parada.coordinates.longitude === result.coordinates.longitude,
+          );
+          if (exists) return prev;
+          const next = [...prev, result];
+          const currentOrigin = userLocationRef.current;
+          if (!currentOrigin) return next;
+          return next.sort(
+            (a, b) =>
+              distanceMeters(a.coordinates, currentOrigin) -
+              distanceMeters(b.coordinates, currentOrigin),
+          );
+        });
+        setIsSearchOpen(false);
+        setSearchQuery('');
+        dispatch(clearSearch());
+        setIsSelectingParada(false);
+        return;
+      }
+
       dispatch(
         setSelectedDestino({
           latitude: result.coordinates.latitude,
@@ -336,6 +377,8 @@ export const usePassageiro = (): PassageiroState => {
       setIsSearchOpen(false);
       setSearchQuery('');
       dispatch(clearSearch());
+      setSelectedParadas([]);
+      setIsSelectingParada(false);
 
       // Pan map to destination
       setMapRegion({
@@ -344,8 +387,18 @@ export const usePassageiro = (): PassageiroState => {
         zoomLevel: DEFAULT_ZOOM,
       });
     },
-    [dispatch],
+    [dispatch, isSelectingParada, selectedDestino],
   );
+
+  const onStartParadaSelection = useCallback((): void => {
+    if (!selectedDestino) return;
+    setIsSelectingParada(true);
+    setIsSearchOpen(true);
+  }, [selectedDestino]);
+
+  const onRemoveParada = useCallback((index: number): void => {
+    setSelectedParadas(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Route preview
@@ -472,6 +525,8 @@ export const usePassageiro = (): PassageiroState => {
           longitude: selectedDestino.longitude,
         }
       : null,
+    selectedParadas,
+    isSelectingParada,
     isRequestModalOpen,
     isRouting,
     routeFeedback,
@@ -484,6 +539,8 @@ export const usePassageiro = (): PassageiroState => {
     onCloseSearch,
     onSearchChange,
     onSelectResult,
+    onStartParadaSelection,
+    onRemoveParada,
     onOpenRequestModal,
     onCloseRequestModal,
     onZoomIn,

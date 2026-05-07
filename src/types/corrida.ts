@@ -34,6 +34,14 @@ export interface SolicitarCorridaInput {
   destinoLng: number;
   motivoServico: string;
   observacoes?: string;
+  pontosParada?: CorridaParadaInput[];
+}
+
+/** Stop point payload used when requesting a ride with intermediate stops. */
+export interface CorridaParadaInput {
+  lat: number;
+  lng: number;
+  ordem: number;
 }
 
 /**
@@ -130,6 +138,17 @@ export interface PosicaoMotoristaResponse {
   velocidade: number;
   heading: number;
   timestamp: string;
+}
+
+/** Individual stop point returned by ride lifecycle endpoints. */
+export interface CorridaParada {
+  id: string;
+  lat: number;
+  lng: number;
+  ordem: number;
+  status: 'pendente' | 'chegou' | 'pulada';
+  chegouEm?: string | null;
+  puladaEm?: string | null;
 }
 
 // ---------------------------------------------------------------------------

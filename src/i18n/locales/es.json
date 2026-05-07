@@ -537,6 +537,15 @@
     "recusar": {
       "motivoPlaceholder": "Motivo del rechazo (opcional)"
     },
+    "stops": {
+      "title": "Puntos de parada (opcional)",
+      "searchPlaceholder": "Buscar dirección de parada",
+      "item": "Parada {{ordem}}",
+      "next": "Próxima parada {{ordem}}",
+      "arrive": "Confirmar llegada",
+      "skip": "Omitir parada",
+      "remove": "Eliminar parada"
+    },
     "cancel": {
       "title": "Cancelar Viaje",
       "confirm": "Confirmar cancelación",
@@ -579,6 +588,8 @@
       "aceitarFailed": "No se pudo aceptar el viaje.",
       "recusarFailed": "No se pudo rechazar el viaje.",
       "deslocamentoFailed": "No se pudo iniciar el desplazamiento.",
+      "chegarParadaFailed": "No se pudo confirmar llegada a la parada.",
+      "pularParadaFailed": "No se pudo omitir la parada.",
       "embarqueFailed": "No se pudo confirmar el abordaje.",
       "finalizarFailed": "No se pudo finalizar el viaje.",
       "cancelarFailed": "No se pudo cancelar el viaje."
