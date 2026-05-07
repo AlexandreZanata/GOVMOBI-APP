@@ -14,6 +14,7 @@ import {
   Alert,
   Animated,
   StatusBar,
+  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -95,7 +96,13 @@ const passageiroMapPinStyles = createPassageiroStyles();
 // ── Destination pin — same location-on icon the driver uses ──────────────────
 const DestinationPin = (): React.JSX.Element => (
   <View style={passageiroMapPinStyles.destinationPinWrapper}>
-    <MaterialIcons name="location-on" size={34} color="#D85A30" />
+    <MaterialIcons
+      name="location-on"
+      size={36}
+      color={C.successGreen}
+      style={passageiroMapPinStyles.destinationPinIcon}
+    />
+    <View style={passageiroMapPinStyles.destinationPinShadowDot} />
   </View>
 );
 
@@ -158,6 +165,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     selectedDestinoCoords,
     selectedParadas,
     isRequestModalOpen,
+    stopSelectionError,
     isRouting,
     routeFeedback,
     routePreviewCoords,
@@ -170,6 +178,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
     onSelectResult,
     onStartParadaSelection,
     onRemoveParada,
+    onClearDestino,
     onOpenRequestModal,
     onCloseRequestModal,
     onCenterOnUser: onCenterOnUserBase,
@@ -531,17 +540,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
             <DestinationPin />
           </PointAnnotation>
         )}
-        {!hasActiveRide && PointAnnotation && selectedParadas.map((parada, index) => (
-          <PointAnnotation
-            coordinate={[parada.coordinates.longitude, parada.coordinates.latitude]}
-            id={`stop-${index}-${parada.id}`}
-            key={`stop-${index}-${parada.id}`}
-            title={parada.placeName}>
-            <View style={styles.destinationPinWrapper}>
-              <MaterialIcons name="assistant-navigation" size={24} color={C.interactive} />
-            </View>
-          </PointAnnotation>
-        ))}
         {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.destinoLng) && Number.isFinite(activeCorrida.destinoLat) && (
           <MapboxGL.PointAnnotation
             coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
@@ -587,6 +585,21 @@ export const PassageiroScreen = (): React.JSX.Element => {
             </View>
           </MapboxGL.PointAnnotation>
         ) : null}
+
+        {/* Stop pins rendered last to stay above route and other map layers */}
+        {!hasActiveRide && PointAnnotation && selectedParadas.map((parada, index) => (
+          <PointAnnotation
+            coordinate={[parada.coordinates.longitude, parada.coordinates.latitude]}
+            id={`stop-${index}-${parada.id}`}
+            key={`stop-${index}-${parada.id}`}
+            title={parada.placeName}>
+            <View style={styles.destinationPinWrapper}>
+              <View style={styles.stopPin}>
+                <Text style={styles.stopPinText}>{String(index + 1)}</Text>
+              </View>
+            </View>
+          </PointAnnotation>
+        ))}
       </MapboxGL.MapView>
     ) : (
       <View style={styles.mapFallback} testID="map-fallback">
@@ -678,8 +691,10 @@ export const PassageiroScreen = (): React.JSX.Element => {
           paddingBottom={sheetPaddingBottom}
           routeFeedback={routeFeedback}
           selectedParadas={selectedParadas}
+          stopSelectionError={stopSelectionError}
           onAddParada={onOpenStopSearchAndFocus}
           onRemoveParada={onRemoveParada}
+          onClearDestino={onClearDestino}
           routeSummary={routeSummary}
           selectedDestinoLabel={selectedDestinoLabel}
           sheetTranslate={sheetTranslate}

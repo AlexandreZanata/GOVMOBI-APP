@@ -50,6 +50,8 @@ export interface PassageiroState {
   selectedParadas: SearchResult[];
   /** Whether current search selection should be saved as a stop point. */
   isSelectingParada: boolean;
+  /** Validation message for invalid stop selection. */
+  stopSelectionError: string | null;
   /** Whether the ride request modal is open. */
   isRequestModalOpen: boolean;
   /** True while route preview is loading from /pesquisa/rota. */
@@ -81,6 +83,8 @@ export interface PassageiroState {
   onStartParadaSelection: () => void;
   /** Removes one selected stop point by index. */
   onRemoveParada: (index: number) => void;
+  /** Clears current final destination and resets stop points. */
+  onClearDestino: () => void;
   /**
    * Opens the ride request modal.
    * Validates that a destination is selected first.
@@ -108,7 +112,7 @@ const DEFAULT_REGION: MapRegion = {
   zoomLevel: DEFAULT_ZOOM,
 };
 
-const formatRouteCoordinates = (route: PesquisaRouteResult): Coordenada[] =>
+const formatSegmentCoordinates = (route: PesquisaRouteResult): Coordenada[] =>
   route.geometry.coordinates.map(([lng, lat]) => ({
     latitude: lat,
     longitude: lng,
@@ -119,6 +123,10 @@ const distanceMeters = (a: Coordenada, b: Coordenada): number => {
   const dy = a.longitude - b.longitude;
   return Math.sqrt((dx * dx) + (dy * dy));
 };
+
+const isSameCoordinate = (a: Coordenada, b: Coordenada): boolean =>
+  Math.abs(a.latitude - b.latitude) < 0.000001 &&
+  Math.abs(a.longitude - b.longitude) < 0.000001;
 
 /**
  * Encapsulates all state and logic for the PassageiroScreen.
@@ -148,6 +156,7 @@ export const usePassageiro = (): PassageiroState => {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [selectedParadas, setSelectedParadas] = useState<SearchResult[]>([]);
   const [isSelectingParada, setIsSelectingParada] = useState(false);
+  const [stopSelectionError, setStopSelectionError] = useState<string | null>(null);
   const [isRouting, setIsRouting] = useState(false);
   const [routeFeedback, setRouteFeedback] = useState<string | null>(null);
   const [routePreviewCoords, setRoutePreviewCoords] = useState<Coordenada[]>(
@@ -339,7 +348,15 @@ export const usePassageiro = (): PassageiroState => {
 
   const onSelectResult = useCallback(
     (result: SearchResult): void => {
-      if (isSelectingParada && selectedDestino) {
+      if (selectedDestino) {
+        const isSameAsDestination = isSameCoordinate(
+          result.coordinates,
+          {latitude: selectedDestino.latitude, longitude: selectedDestino.longitude},
+        );
+        if (isSameAsDestination) {
+          setStopSelectionError(t('corridas.stops.sameAsDestinationError'));
+          return;
+        }
         setSelectedParadas(prev => {
           const exists = prev.some(
             parada =>
@@ -360,6 +377,7 @@ export const usePassageiro = (): PassageiroState => {
         setSearchQuery('');
         dispatch(clearSearch());
         setIsSelectingParada(false);
+        setStopSelectionError(null);
         return;
       }
 
@@ -379,6 +397,7 @@ export const usePassageiro = (): PassageiroState => {
       dispatch(clearSearch());
       setSelectedParadas([]);
       setIsSelectingParada(false);
+      setStopSelectionError(null);
 
       // Pan map to destination
       setMapRegion({
@@ -387,18 +406,27 @@ export const usePassageiro = (): PassageiroState => {
         zoomLevel: DEFAULT_ZOOM,
       });
     },
-    [dispatch, isSelectingParada, selectedDestino],
+    [dispatch, selectedDestino, t],
   );
 
   const onStartParadaSelection = useCallback((): void => {
     if (!selectedDestino) return;
+    setStopSelectionError(null);
     setIsSelectingParada(true);
     setIsSearchOpen(true);
   }, [selectedDestino]);
 
   const onRemoveParada = useCallback((index: number): void => {
     setSelectedParadas(prev => prev.filter((_, i) => i !== index));
+    setStopSelectionError(null);
   }, []);
+
+  const onClearDestino = useCallback((): void => {
+    dispatch(setSelectedDestino(null));
+    setSelectedParadas([]);
+    setStopSelectionError(null);
+    setIsSelectingParada(false);
+  }, [dispatch]);
 
   // ---------------------------------------------------------------------------
   // Route preview
@@ -422,20 +450,32 @@ export const usePassageiro = (): PassageiroState => {
       setIsRouting(true);
       setRouteFeedback(t('pesquisa.route.loading'));
 
-      const result = await pesquisaFacade.getRouteBetweenPoints({
-        origemLat: userLocation.latitude,
-        origemLng: userLocation.longitude,
-        destinoLat: selectedDestino.latitude,
-        destinoLng: selectedDestino.longitude,
+      const orderedStops = selectedParadas.map(parada => parada.coordinates);
+      const checkpoints: Coordenada[] = [
+        userLocation,
+        ...orderedStops,
+        {
+          latitude: selectedDestino.latitude,
+          longitude: selectedDestino.longitude,
+        },
+      ];
+
+      const segmentPromises = checkpoints.slice(0, -1).map((origem, index) => {
+        const destino = checkpoints[index + 1];
+        return pesquisaFacade.getRouteBetweenPoints({
+          origemLat: origem.latitude,
+          origemLng: origem.longitude,
+          destinoLat: destino.latitude,
+          destinoLng: destino.longitude,
+        });
       });
+      const segmentResults = await Promise.all(segmentPromises);
 
-      if (cancelled || requestId !== routeRequestRef.current) {
-        return;
-      }
+      if (cancelled || requestId !== routeRequestRef.current) return;
 
-      setIsRouting(false);
-
-      if (!result.data || result.error) {
+      const hasError = segmentResults.some(result => !!result.error || !result.data);
+      if (hasError) {
+        setIsRouting(false);
         setRoutePreviewCoords([]);
         setRouteDistanceMeters(null);
         setRouteDurationSeconds(null);
@@ -443,10 +483,25 @@ export const usePassageiro = (): PassageiroState => {
         return;
       }
 
-      const mappedCoords = formatRouteCoordinates(result.data);
-      setRoutePreviewCoords(mappedCoords);
-      setRouteDistanceMeters(result.data.distanciaMetros);
-      setRouteDurationSeconds(result.data.duracaoSegundos);
+      const mergedCoords: Coordenada[] = [];
+      let totalDistance = 0;
+      let totalDuration = 0;
+      segmentResults.forEach((result, index) => {
+        const route = result.data as PesquisaRouteResult;
+        const coords = formatSegmentCoordinates(route);
+        totalDistance += route.distanciaMetros;
+        totalDuration += route.duracaoSegundos;
+        if (index === 0) {
+          mergedCoords.push(...coords);
+        } else {
+          mergedCoords.push(...coords.slice(1));
+        }
+      });
+
+      setIsRouting(false);
+      setRoutePreviewCoords(mergedCoords);
+      setRouteDistanceMeters(totalDistance);
+      setRouteDurationSeconds(totalDuration);
       setRouteFeedback(null);
     };
 
@@ -455,7 +510,7 @@ export const usePassageiro = (): PassageiroState => {
     return () => {
       cancelled = true;
     };
-  }, [canPreviewRoute, pesquisaFacade, selectedDestino, t, userLocation]);
+  }, [canPreviewRoute, pesquisaFacade, selectedDestino, selectedParadas, t, userLocation]);
 
   // ---------------------------------------------------------------------------
   // Request modal
@@ -527,6 +582,7 @@ export const usePassageiro = (): PassageiroState => {
       : null,
     selectedParadas,
     isSelectingParada,
+    stopSelectionError,
     isRequestModalOpen,
     isRouting,
     routeFeedback,
@@ -541,6 +597,7 @@ export const usePassageiro = (): PassageiroState => {
     onSelectResult,
     onStartParadaSelection,
     onRemoveParada,
+    onClearDestino,
     onOpenRequestModal,
     onCloseRequestModal,
     onZoomIn,

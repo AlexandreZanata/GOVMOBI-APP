@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Animated,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from 'react-native';
@@ -44,6 +45,8 @@ export interface PassageiroIdleSheetProps {
   routeFeedback: string | null;
   /** Selected stop points sorted by proximity. */
   selectedParadas: SearchResult[];
+  /** Validation message shown when an invalid stop is selected. */
+  stopSelectionError: string | null;
   /**
    * @deprecated No longer used — CTA is always enabled.
    * Kept for API compatibility; will be removed in a future cleanup.
@@ -54,6 +57,8 @@ export interface PassageiroIdleSheetProps {
   onAddParada: () => void;
   /** Removes one stop point from the list. */
   onRemoveParada: (index: number) => void;
+  /** Clears the currently selected final destination. */
+  onClearDestino: () => void;
   /** Opens the address search bar (called when CTA is pressed without a destination). */
   onOpenSearch: () => void;
 }
@@ -74,9 +79,11 @@ export const PassageiroIdleSheet = ({
   routeSummary,
   routeFeedback,
   selectedParadas,
+  stopSelectionError,
   onOpenRequestModal,
   onAddParada,
   onRemoveParada,
+  onClearDestino,
   onOpenSearch,
 }: PassageiroIdleSheetProps): React.JSX.Element => {
   const {t} = useTranslation();
@@ -148,6 +155,16 @@ export const PassageiroIdleSheet = ({
                 {selectedDestinoLabel ?? t('passageiro.bottomSheet.destinoPlaceholder')}
               </Text>
             </View>
+            {hasDestination && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('corridas.stops.remove')}
+                onPress={onClearDestino}
+                style={styles.destinoClearBtn}
+                testID="btn-clear-destino">
+                <MaterialIcons color={C.surfaceCard} name="close" size={14} />
+              </Pressable>
+            )}
           </View>
 
           {/* Route preview status */}
@@ -185,20 +202,33 @@ export const PassageiroIdleSheet = ({
               </Text>
             </Pressable>
           )}
+          {stopSelectionError && (
+            <Text style={styles.routeErrorText} testID="stop-selection-error">
+              {stopSelectionError}
+            </Text>
+          )}
 
-          {selectedParadas.map((parada, index) => (
-            <View key={`${parada.id}-${index}`} style={styles.stopRow}>
-              <Text numberOfLines={1} style={styles.stopRowText}>
-                {t('corridas.stops.item', {ordem: index + 1})} - {parada.placeName}
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => onRemoveParada(index)}
-                style={styles.stopRowRemove}>
-                <MaterialIcons color={C.surfaceCard} name="close" size={14} />
-              </Pressable>
-            </View>
-          ))}
+          {selectedParadas.length > 0 && (
+            <ScrollView
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={selectedParadas.length > 3}
+              style={styles.stopListScroll}
+              testID="stop-list-scroll">
+              {selectedParadas.map((parada, index) => (
+                <View key={`${parada.id}-${index}`} style={styles.stopRow}>
+                  <Text numberOfLines={1} style={styles.stopRowText}>
+                    {t('corridas.stops.item', {ordem: index + 1})} - {parada.placeName}
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => onRemoveParada(index)}
+                    style={styles.stopRowRemove}>
+                    <MaterialIcons color={C.surfaceCard} name="close" size={14} />
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </>
       )}
 

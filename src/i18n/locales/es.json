@@ -544,7 +544,8 @@
       "next": "Próxima parada {{ordem}}",
       "arrive": "Confirmar llegada",
       "skip": "Omitir parada",
-      "remove": "Eliminar parada"
+      "remove": "Eliminar parada",
+      "sameAsDestinationError": "La parada no puede ser igual al destino final."
     },
     "cancel": {
       "title": "Cancelar Viaje",

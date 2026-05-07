@@ -553,7 +553,8 @@
       "next": "Próxima parada {{ordem}}",
       "arrive": "Confirmar chegada",
       "skip": "Pular parada",
-      "remove": "Remover parada"
+      "remove": "Remover parada",
+      "sameAsDestinationError": "A parada não pode ser igual ao destino final."
     },
     "cancel": {
       "title": "Cancelar Corrida",

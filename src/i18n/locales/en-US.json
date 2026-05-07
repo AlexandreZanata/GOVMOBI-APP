@@ -554,7 +554,8 @@
       "next": "Next stop {{ordem}}",
       "arrive": "Confirm arrival",
       "skip": "Skip stop",
-      "remove": "Remove stop"
+      "remove": "Remove stop",
+      "sameAsDestinationError": "Stop point cannot be the same as final destination."
     },
     "cancel": {
       "title": "Cancel Ride",
