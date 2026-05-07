@@ -214,6 +214,15 @@ export const PassageiroScreen = (): React.JSX.Element => {
     }, 120);
   }, [onStartParadaSelection]);
 
+  const handleSearchFocus = useCallback(() => {
+    setIsInputFocused(true);
+    if (selectedDestinoLabel) {
+      onStartParadaSelection();
+      return;
+    }
+    onOpenSearch();
+  }, [onOpenSearch, onStartParadaSelection, selectedDestinoLabel]);
+
   const handleClearSearch = useCallback(() => {
     // Keep overlay open so the next typed query immediately shows results.
     onOpenSearch();
@@ -638,7 +647,7 @@ export const PassageiroScreen = (): React.JSX.Element => {
         onBlur={() => setIsInputFocused(false)}
         onChangeText={onSearchChange}
         onClear={handleClearSearch}
-        onFocus={() => { setIsInputFocused(true); onOpenSearch(); }}
+        onFocus={handleSearchFocus}
         paddingTop={insets.top + 10}
         searchBarTranslate={searchBarTranslate}
         searchQuery={searchQuery}
