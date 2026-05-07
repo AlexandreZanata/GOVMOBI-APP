@@ -28,6 +28,7 @@ import {createCorridasStyles} from './CorridasScreens.styles';
 import {CorridaStatusBadge} from '@components/molecules/CorridaStatusBadge';
 import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
 import {CorridaRouteMiniMap} from '@components/molecules/CorridaRouteMiniMap';
+import {useCorridaRoutePolyline} from '@hooks/useCorridaRoutePolyline';
 import {useAppSelector} from '@store/index';
 import type {CorridasStackParamList} from '@navigation/types';
 
@@ -64,6 +65,8 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
     onCancelar,
     onLoadCorrida,
   } = useCorridas(corridaId);
+
+  const {coordinates: routePolyline} = useCorridaRoutePolyline(activeCorrida, !!activeCorrida);
 
   const [recusaMotivo, setRecusaMotivo] = useState('');
   const [showRecusaInput, setShowRecusaInput] = useState(false);
@@ -142,7 +145,11 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
         {/* Route card */}
         <View style={styles.card} testID="route-card">
           <Text style={styles.cardTitle}>{t('corridas.detail.route')}</Text>
-          <CorridaRouteMiniMap corrida={activeCorrida} testID="motorista-route-map" />
+          <CorridaRouteMiniMap
+            corrida={activeCorrida}
+            routePolyline={routePolyline}
+            testID="motorista-route-map"
+          />
           <RouteInfoRow
             type="origin"
             label={t('corridas.detail.origem')}

@@ -7,17 +7,20 @@ import type {Corrida} from '@models/Corrida';
 
 interface CorridaRouteMiniMapProps {
   corrida: Corrida;
+  /** Road geometry from `/pesquisa/rota` (merged legs). When omitted, draws a straight path through stops. */
+  routePolyline?: [number, number][] | null;
   driverPosition?: {lat: number; lng: number} | null;
   testID?: string;
 }
 
 export const CorridaRouteMiniMap = ({
   corrida,
+  routePolyline,
   driverPosition,
   testID = 'corrida-route-map',
 }: CorridaRouteMiniMapProps): React.JSX.Element => {
   const theme = useTheme();
-  const points = useMemo(() => {
+  const straightPoints = useMemo(() => {
     const stops = (corrida.pontosParada ?? [])
       .slice()
       .sort((a, b) => a.ordem - b.ordem)
@@ -29,13 +32,19 @@ export const CorridaRouteMiniMap = ({
     ];
   }, [corrida]);
 
+  const routeCoordinates = useMemo(
+    () =>
+      routePolyline && routePolyline.length >= 2 ? routePolyline : straightPoints,
+    [routePolyline, straightPoints],
+  );
+
   const routeFeature = useMemo(
     () => ({
       type: 'Feature' as const,
       properties: {},
-      geometry: {type: 'LineString' as const, coordinates: points},
+      geometry: {type: 'LineString' as const, coordinates: routeCoordinates},
     }),
-    [points],
+    [routeCoordinates],
   );
 
   const styles = useMemo(

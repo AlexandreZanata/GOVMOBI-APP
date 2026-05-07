@@ -164,7 +164,7 @@ interface RawCorrida {
     canceladaEm?: string;
   };
   motorista?: {
-    id: string;
+    id?: string;
     servidorId?: string;
     cnhCategoria?: string;
     statusOperacional?: string;
@@ -173,7 +173,7 @@ interface RawCorrida {
     fotoPerfilUrl?: string | null;
   };
   veiculo?: {
-    id: string;
+    id?: string | null;
     placa?: string;
     modelo?: string;
     ano?: number;
@@ -182,23 +182,43 @@ interface RawCorrida {
   pontosParada?: CorridaParada[];
 }
 
-const rawCorridaParadaSchema = z.object({
-  id: z.string().min(1).optional(),
-  lat: z.number(),
-  lng: z.number(),
-  ordem: z.number().int().nonnegative(),
-  status: z.enum(['pendente', 'chegou', 'pulada']).optional(),
-  chegouEm: z.string().datetime().nullish(),
-  puladaEm: z.string().datetime().nullish(),
-}).transform(value => ({
-  id: value.id ?? `parada-${value.ordem}`,
-  lat: value.lat,
-  lng: value.lng,
-  ordem: value.ordem,
-  status: value.status ?? 'pendente',
-  chegouEm: value.chegouEm ?? null,
-  puladaEm: value.puladaEm ?? null,
-}));
+const rawCorridaParadaSchema = z.union([
+  z.object({
+    id: z.string().min(1).optional(),
+    lat: z.number(),
+    lng: z.number(),
+    ordem: z.coerce.number(),
+    status: z.union([z.enum(['pendente', 'chegou', 'pulada']), z.string()]).optional(),
+    chegouEm: z.union([z.string(), z.null()]).optional(),
+    puladaEm: z.union([z.string(), z.null()]).optional(),
+  }),
+  z.object({
+    id: z.string().min(1).optional(),
+    latitude: z.number(),
+    longitude: z.number(),
+    ordem: z.coerce.number(),
+    status: z.union([z.enum(['pendente', 'chegou', 'pulada']), z.string()]).optional(),
+    chegouEm: z.union([z.string(), z.null()]).optional(),
+    puladaEm: z.union([z.string(), z.null()]).optional(),
+  }),
+]).transform(value => {
+  const lat = 'lat' in value ? value.lat : value.latitude;
+  const lng = 'lng' in value ? value.lng : value.longitude;
+  const ordem = Math.max(0, Math.trunc(Number(value.ordem)));
+  const raw = value.status;
+  const lower = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+  const status: 'pendente' | 'chegou' | 'pulada' =
+    lower === 'chegou' || lower === 'pulada' || lower === 'pendente' ? lower : 'pendente';
+  return {
+    id: value.id ?? `parada-${ordem}`,
+    lat,
+    lng,
+    ordem,
+    status,
+    chegouEm: value.chegouEm ?? null,
+    puladaEm: value.puladaEm ?? null,
+  };
+});
 
 const rawCoordinateSchema = z.union([
   z.object({
@@ -246,7 +266,7 @@ const rawCorridaSchema = z.object({
     canceladaEm: z.string().optional(),
   }).optional(),
   motorista: z.object({
-    id: z.string(),
+    id: z.string().optional(),
     servidorId: z.string().optional(),
     cnhCategoria: z.string().optional(),
     statusOperacional: z.string().optional(),
@@ -255,7 +275,7 @@ const rawCorridaSchema = z.object({
     fotoPerfilUrl: z.string().nullable().optional(),
   }).optional(),
   veiculo: z.object({
-    id: z.string(),
+    id: z.union([z.string(), z.null()]).optional(),
     placa: z.string().optional(),
     modelo: z.string().optional(),
     ano: z.number().optional(),
@@ -397,6 +417,37 @@ export interface ICorridaFacade {
 // ---------------------------------------------------------------------------
 // Implementation
 // ---------------------------------------------------------------------------
+
+/**
+ * Unwraps common API envelopes and normalizes `paradas` → `pontosParada`.
+ */
+function unwrapCorridaRecord(payload: unknown): unknown {
+  if (typeof payload !== 'object' || payload === null) return payload;
+  const root = payload as Record<string, unknown>;
+  let cur: unknown = root['data'] ?? root['corrida'] ?? root['corridaAtiva'] ?? payload;
+
+  if (typeof cur === 'object' && cur !== null) {
+    const layer = cur as Record<string, unknown>;
+    const hasId = typeof layer['id'] === 'string';
+    if (!hasId) {
+      const nested = layer['data'] ?? layer['corrida'];
+      if (
+        typeof nested === 'object' &&
+        nested !== null &&
+        typeof (nested as Record<string, unknown>)['id'] === 'string'
+      ) {
+        cur = nested;
+      }
+    }
+  }
+
+  if (typeof cur !== 'object' || cur === null) return cur;
+  const obj = {...(cur as Record<string, unknown>)};
+  if (!obj['pontosParada'] && Array.isArray(obj['paradas'])) {
+    obj['pontosParada'] = obj['paradas'];
+  }
+  return obj;
+}
 
 /**
  * API-backed corrida facade.
@@ -651,6 +702,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       const rawUnknown = await response.json();
       const parsed = rawCorridaSchema.safeParse(this.extractCorridaPayload(rawUnknown));
       if (!parsed.success) {
+        console.error('[CorridaFacade] getCorrida Zod', parsed.error.flatten());
         return fail(toError('Invalid corrida payload', 'VALIDATION_ERROR', response.status));
       }
       return ok(normalizeCorrida(parsed.data));
@@ -932,13 +984,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
   }
 
   private extractCorridaPayload(payload: unknown): unknown {
-    if (typeof payload !== 'object' || payload === null) return payload;
-    const envelope = payload as {
-      data?: unknown;
-      corrida?: unknown;
-      corridaAtiva?: unknown;
-    };
-    return envelope.data ?? envelope.corrida ?? envelope.corridaAtiva ?? payload;
+    return unwrapCorridaRecord(payload);
   }
 
   private async get<T>(endpoint: string): Promise<Result<T, FacadeError>> {
@@ -1023,6 +1069,7 @@ export class CorridaFacadeImpl implements ICorridaFacade {
       if (parsed.success) {
         return ok(normalizeCorrida(parsed.data));
       }
+      console.error('[CorridaFacade] postCorrida Zod', parsed.error.flatten());
 
       // Partial body (e.g. iniciar-deslocamento returns {}) — fetch full corrida
       const idFromRaw =

@@ -29,6 +29,7 @@ import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import {createAcompanharStyles} from './AcompanharCorrida.styles';
 import {FilaEsperaCard} from './FilaEsperaCard';
 import {CorridaRouteMiniMap} from '@components/molecules/CorridaRouteMiniMap';
+import {useCorridaRoutePolyline} from '@hooks/useCorridaRoutePolyline';
 import type {CorridaMensagem} from '@models/Corrida';
 import {podeSerCancelada, TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
@@ -65,6 +66,8 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
     onLoadCorrida,
     onLoadMensagens,
   } = usePassageiroCorrida(corridaId);
+
+  const {coordinates: routePolyline} = useCorridaRoutePolyline(activeCorrida, !!activeCorrida);
 
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [showCancelInput, setShowCancelInput] = useState(false);
@@ -150,6 +153,7 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
       <View style={[s.card, {margin: theme.spacing[4]}]} testID="route-card">
         <CorridaRouteMiniMap
           corrida={activeCorrida}
+          routePolyline={routePolyline}
           driverPosition={
             driverPosition
               ? {lat: driverPosition.lat, lng: driverPosition.lng}

@@ -583,6 +583,22 @@ export const createMotoristaStyles = (theme: Theme) => {
       marginBottom: -4,
     },
 
+    waypointPin: {
+      width: spacing[6],
+      height: spacing[6],
+      borderRadius: spacing[6] / 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.error,
+      borderWidth: 1,
+      borderColor: theme.colors.background,
+    },
+    waypointPinText: {
+      ...typo.scale.labelSm,
+      color: theme.colors.background,
+      fontWeight: '700',
+    },
+
     // ── Legacy solid pins (kept for reference, no longer rendered) ────────────
     destinationPin: {
       width: 20,

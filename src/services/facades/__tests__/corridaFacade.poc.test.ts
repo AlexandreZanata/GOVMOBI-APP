@@ -157,6 +157,47 @@ describe('CorridaFacadeImpl.getCorrida payload normalization', () => {
 
     fetchMock.mockRestore();
   });
+
+  it('accepts paradas alias, latitude/longitude stops, and non-ISO timestamps', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          data: {
+            id: 'corrida-nested-1',
+            status: 'aceita',
+            origem: {lat: -2.529, lng: -44.301},
+            destino: {lat: -2.535, lng: -44.295},
+            paradas: [
+              {
+                id: 'p1',
+                latitude: -2.531,
+                longitude: -44.302,
+                ordem: 1,
+                status: 'PENDENTE',
+                chegouEm: '2026-05-07 10:00:00',
+              },
+            ],
+            motorista: {servidorId: 'srv-1'},
+            veiculo: {id: null, placa: 'ABC1D23'},
+          },
+        },
+      }),
+    } as Response);
+
+    const result = await facade.getCorrida('corrida-nested-1');
+    expect(result.error).toBeNull();
+    expect(result.data?.pontosParada?.[0].lat).toBe(-2.531);
+    expect(result.data?.pontosParada?.[0].status).toBe('pendente');
+
+    fetchMock.mockRestore();
+  });
 });
 
 // ---------------------------------------------------------------------------

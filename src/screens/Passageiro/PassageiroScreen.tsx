@@ -41,6 +41,7 @@ import {createPassageiroStyles} from './PassageiroScreen.styles';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setLocationSuccess} from '@store/slices/locationSlice';
 import {useFacades} from '@services/facades';
+import {fetchCorridaRouteCoordinates} from '@services/routing/corridaRouteGeometry';
 import {
   setActiveCorrida,
   setCorridaError,
@@ -399,13 +400,9 @@ export const PassageiroScreen = (): React.JSX.Element => {
     let cancelled = false;
     const requestId = ++activeRouteRequestRef.current;
     void (async () => {
-      const result = await pesquisaFacade.getRouteBetweenPoints({
-        origemLat: activeCorrida.origemLat, origemLng: activeCorrida.origemLng,
-        destinoLat: activeCorrida.destinoLat, destinoLng: activeCorrida.destinoLng,
-      });
+      const coords = await fetchCorridaRouteCoordinates(activeCorrida, pesquisaFacade);
       if (cancelled || requestId !== activeRouteRequestRef.current) return;
-      const coords = result.data?.geometry.coordinates;
-      if (coords && coords.length >= 2) setActiveRouteCoords(coords);
+      if (coords.length >= 2) setActiveRouteCoords(coords);
     })();
     return () => { cancelled = true; };
   }, [activeCorrida, hasActiveRide, pesquisaFacade]);
@@ -557,6 +554,37 @@ export const PassageiroScreen = (): React.JSX.Element => {
             <DestinationPin />
           </MapboxGL.PointAnnotation>
         )}
+
+        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.origemLng) && Number.isFinite(activeCorrida.origemLat) && (
+          <MapboxGL.PointAnnotation
+            coordinate={[activeCorrida.origemLng, activeCorrida.origemLat]}
+            id="active-origin"
+            title={t('corridas.detail.origem')}>
+            <View style={passageiroMapPinStyles.destinationPinWrapper}>
+              <MaterialIcons name="person-pin" size={34} color={C.successGreen} />
+            </View>
+          </MapboxGL.PointAnnotation>
+        )}
+
+        {hasActiveRide &&
+          activeCorrida &&
+          PointAnnotation &&
+          (activeCorrida.pontosParada ?? [])
+            .slice()
+            .sort((a, b) => a.ordem - b.ordem)
+            .map((stop, index) => (
+              <PointAnnotation
+                coordinate={[stop.lng, stop.lat]}
+                id={`active-stop-${stop.id}-${index}`}
+                key={`${stop.id}-${index}`}
+                title={t('corridas.paradas.next', {ordem: index + 1})}>
+                <View style={passageiroMapPinStyles.destinationPinWrapper}>
+                  <View style={passageiroMapPinStyles.stopPin}>
+                    <Text style={passageiroMapPinStyles.stopPinText}>{String(index + 1)}</Text>
+                  </View>
+                </View>
+              </PointAnnotation>
+            ))}
 
         {/* 3. Driver car marker — shown when ride is active and WS position is known */}
         {hasActiveRide && driverPosition && Number.isFinite(driverPosition.lng) && Number.isFinite(driverPosition.lat) && (

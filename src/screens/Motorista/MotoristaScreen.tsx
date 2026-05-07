@@ -40,19 +40,12 @@ import type {MotoristaTabParamList, MotoristaCorridasStackParamList} from '@navi
 import {normalizeStatus, TERMINAL_STATUSES} from '@models/Corrida';
 import {useAppSelector} from '../../store';
 import {useFacades} from '@services/facades';
+import {fetchCorridaRouteCoordinates} from '@services/routing/corridaRouteGeometry';
 
 type MotoristaNavProp = CompositeNavigationProp<
   BottomTabNavigationProp<MotoristaTabParamList, 'MotoristaHome'>,
   NativeStackNavigationProp<MotoristaCorridasStackParamList>
 >;
-
-const activeRouteLineStyle = {
-  lineColor: '#2F80FF',
-  lineWidth: 4,
-  lineOpacity: 1,
-  lineCap: 'round' as const,
-  lineJoin: 'round' as const,
-};
 
 /**
  * Driver home screen — map + active ride panel.
@@ -143,15 +136,9 @@ export const MotoristaScreen = (): React.JSX.Element => {
     let cancelled = false;
     const requestId = ++activeRouteRequestRef.current;
     void (async () => {
-      const result = await pesquisaFacade.getRouteBetweenPoints({
-        origemLat: activeCorrida.origemLat,
-        origemLng: activeCorrida.origemLng,
-        destinoLat: activeCorrida.destinoLat,
-        destinoLng: activeCorrida.destinoLng,
-      });
+      const coords = await fetchCorridaRouteCoordinates(activeCorrida, pesquisaFacade);
       if (cancelled || requestId !== activeRouteRequestRef.current) return;
-      const coords = result.data?.geometry.coordinates;
-      if (coords && coords.length >= 2) setActiveRouteCoords(coords);
+      if (coords.length >= 2) setActiveRouteCoords(coords);
     })();
     return () => { cancelled = true; };
   }, [activeCorrida, hasActiveRide, pesquisaFacade]);
@@ -254,6 +241,19 @@ export const MotoristaScreen = (): React.JSX.Element => {
     };
   }, [activeRouteCoords]);
 
+  const activeRouteLineStyle = useMemo(
+    () => ({
+      lineColor: theme.colors.primary,
+      lineWidth: 4,
+      lineOpacity: 1,
+      lineCap: 'round' as const,
+      lineJoin: 'round' as const,
+    }),
+    [theme],
+  );
+
+  const MotoristaPointAnnotation = MapboxGL?.PointAnnotation;
+
   const mapContent =
     MapboxGL && isMapboxTokenApplied ? (
       <MapboxGL.MapView
@@ -313,6 +313,23 @@ export const MotoristaScreen = (): React.JSX.Element => {
             </View>
           </MapboxGL.PointAnnotation>
         )}
+
+        {hasActiveRide &&
+          activeCorrida &&
+          MotoristaPointAnnotation &&
+          (activeCorrida.pontosParada ?? [])
+            .slice()
+            .sort((a, b) => a.ordem - b.ordem)
+            .map((stop, index) => (
+              <MotoristaPointAnnotation
+                coordinate={[stop.lng, stop.lat]}
+                id={`ride-waypoint-${stop.id}-${index}`}
+                key={`${stop.id}-${index}`}>
+                <View style={styles.waypointPin}>
+                  <Text style={styles.waypointPinText}>{String(index + 1)}</Text>
+                </View>
+              </MotoristaPointAnnotation>
+            ))}
 
         {/* 4. Driver location — declared last = topmost layer, never hidden by the route line */}
         {userLocation && (

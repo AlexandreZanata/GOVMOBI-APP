@@ -119,7 +119,7 @@ export interface Corrida {
   };
   /** Driver summary embedded in the list response. */
   motorista?: {
-    id: string;
+    id?: string;
     servidorId?: string;
     cnhCategoria?: string;
     statusOperacional?: string;
@@ -130,7 +130,7 @@ export interface Corrida {
   };
   /** Vehicle summary embedded in the list response. */
   veiculo?: {
-    id: string;
+    id?: string | null;
     placa?: string;
     modelo?: string;
     ano?: number;
