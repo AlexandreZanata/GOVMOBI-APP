@@ -60,8 +60,6 @@ export interface MotoristaActiveSheetProps {
   onRecusar: () => void;
   onIniciarDeslocamento: () => void;
   onChegar: () => void;
-  onChegarParada: (paradaId: string) => void;
-  onPularParada: (paradaId: string) => void;
   onConfirmarEmbarque: () => void;
   onPassageiroABordo: () => void;
   onFinalizar: () => void;
@@ -74,9 +72,9 @@ export interface MotoristaActiveSheetProps {
  *
  * State machine:
  *   SOLICITADA / AGUARDANDO_ACEITE → Aceitar + Recusar
- *   aceita              → Iniciar Deslocamento (→ em_rota)
- *   em_rota             → Confirmar Embarque (→ passageiro_a_bordo)
- *   passageiro_a_bordo  → Finalizar (→ concluida)
+ *   aceita              → Iniciar deslocamento (→ em_rota)
+ *   em_rota             → Confirmar embarque (→ passageiro_a_bordo)
+ *   passageiro_a_bordo  → Finalizar
  */
 const getVisibleActions = (status: Corrida['status']) => ({
   showAceitar:             status === 'solicitada' || status === 'aguardando_aceite',
@@ -112,8 +110,6 @@ export const MotoristaActiveSheet = ({
   onRecusar,
   onIniciarDeslocamento,
   onChegar,
-  onChegarParada,
-  onPularParada,
   onConfirmarEmbarque,
   onPassageiroABordo,
   onFinalizar,
@@ -131,10 +127,6 @@ export const MotoristaActiveSheet = ({
   const destinoAddress = useReverseGeocode(corrida.destinoLat, corrida.destinoLng);
 
   const actions = getVisibleActions(normalizedStatus);
-  const proximaParada = corrida.pontosParada
-    ?.filter(parada => parada.status === 'pendente')
-    .sort((a, b) => a.ordem - b.ordem)[0];
-  const hasPendingStops = !!proximaParada;
 
   // ---------------------------------------------------------------------------
   // Optimistic per-action lock
@@ -223,9 +215,8 @@ export const MotoristaActiveSheet = ({
         </Text>
       </View>
 
-      <View>
-        {/* SOLICITADA / AGUARDANDO_ACEITE → Aceitar */}
-        {actions.showAceitar && (
+      {/* SOLICITADA / AGUARDANDO_ACEITE → Aceitar */}
+      {actions.showAceitar && (
           <Pressable
             accessibilityLabel={t('corridas.actions.aceitar')}
             accessibilityRole="button"
@@ -314,8 +305,8 @@ export const MotoristaActiveSheet = ({
           </Pressable>
         )}
 
-        {/* EM_ROTA → Confirmar Embarque */}
-        {actions.showConfirmarEmbarque && !hasPendingStops && (
+      {/* EM_ROTA → Confirmar embarque (fluxo normal; paradas só após passageiro a bordo) */}
+      {actions.showConfirmarEmbarque && (
           <Pressable
             accessibilityLabel={t('corridas.actions.confirmarEmbarque')}
             accessibilityRole="button"
@@ -329,30 +320,6 @@ export const MotoristaActiveSheet = ({
               <Text style={styles.actionButtonText}>{t('corridas.actions.confirmarEmbarque')}</Text>
             )}
           </Pressable>
-        )}
-
-        {normalizedStatus === 'em_rota' && hasPendingStops && (
-          <View style={styles.stopCard}>
-            <Text style={styles.stopTitle}>
-              {t('corridas.stops.next', {ordem: proximaParada.ordem})}
-            </Text>
-            <View style={styles.stopActionsRow}>
-              <Pressable
-                accessibilityRole="button"
-                disabled={isBusy('chegarParada')}
-                onPress={withLock('chegarParada', () => onChegarParada(proximaParada.id))}
-                style={[styles.stopActionBtn, styles.stopActionSuccess]}>
-                <Text style={styles.stopActionText}>{t('corridas.stops.arrive')}</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                disabled={isBusy('pularParada')}
-                onPress={withLock('pularParada', () => onPularParada(proximaParada.id))}
-                style={[styles.stopActionBtn, styles.stopActionDanger]}>
-                <Text style={styles.stopActionText}>{t('corridas.stops.skip')}</Text>
-              </Pressable>
-            </View>
-          </View>
         )}
 
         {/* PASSAGEIRO_EMBARCADO → Passageiro a Bordo */}
@@ -372,8 +339,8 @@ export const MotoristaActiveSheet = ({
           </Pressable>
         )}
 
-        {/* PASSAGEIRO_A_BORDO → Finalizar */}
-        {actions.showFinalizar && (
+      {/* PASSAGEIRO_A_BORDO → Finalizar */}
+      {actions.showFinalizar && (
           <Pressable
             accessibilityLabel={t('corridas.actions.finalizar')}
             accessibilityRole="button"
@@ -389,8 +356,8 @@ export const MotoristaActiveSheet = ({
           </Pressable>
         )}
 
-        {/* Cancel — only for cancellable states */}
-        {canCancel && (showCancelInput ? (
+      {/* Cancel — only for cancellable states */}
+      {canCancel && (showCancelInput ? (
           <>
             <TextInput
               accessibilityLabel={t('corridas.cancel.motivoPlaceholder')}
@@ -425,7 +392,6 @@ export const MotoristaActiveSheet = ({
             <Text style={styles.actionButtonText}>{t('corridas.cancel.title')}</Text>
           </Pressable>
         ))}
-      </View>
 
       {/* ── Finalizar confirmation modal ─────────────────────────────────── */}
       <Modal

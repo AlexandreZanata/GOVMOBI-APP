@@ -51,6 +51,16 @@ export type MapboxModule = {
     title?: string;
     children?: React.ReactNode;
   }>;
+  /**
+   * View annotation — renders above style layers (unlike PointAnnotation, which can sit under LineLayer).
+   * @see https://github.com/rnmapbox/maps/issues/3732
+   */
+  MarkerView?: React.ComponentType<{
+    coordinate: [number, number];
+    anchor?: {x: number; y: number};
+    allowOverlap?: boolean;
+    children: React.ReactElement;
+  }>;
   ShapeSource: React.ComponentType<{
     id: string;
     shape: {
@@ -88,6 +98,7 @@ try {
     PointAnnotation: MapboxModule['PointAnnotation'];
     ShapeSource: MapboxModule['ShapeSource'];
     LineLayer: MapboxModule['LineLayer'];
+    MarkerView?: MapboxModule['MarkerView'];
   };
 
   // setAccessToken must always be called before any MapView is created.
@@ -97,7 +108,7 @@ try {
   // GET /pesquisa/config returns it after login.
   mod.default.setAccessToken(ENV.MAPBOX_ACCESS_TOKEN || '');
 
-  MapboxGL = {
+  const mapbox: MapboxModule = {
     setAccessToken: mod.default.setAccessToken.bind(mod.default),
     MapView: mod.MapView,
     Camera: mod.Camera,
@@ -106,6 +117,10 @@ try {
     ShapeSource: mod.ShapeSource,
     LineLayer: mod.LineLayer,
   };
+  if (mod.MarkerView) {
+    mapbox.MarkerView = mod.MarkerView;
+  }
+  MapboxGL = mapbox;
 } catch {
   MapboxGL = null;
 }

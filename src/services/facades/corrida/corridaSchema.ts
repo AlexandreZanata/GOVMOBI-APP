@@ -103,5 +103,5 @@ export const rawCorridaSchema = z.object({
     ano: z.number().optional(),
     tipo: z.string().optional(),
   }).optional(),
-  pontosParada: z.array(rawCorridaParadaSchema).optional(),
+  pontosParada: z.array(rawCorridaParadaSchema).nullable().optional(),
 });

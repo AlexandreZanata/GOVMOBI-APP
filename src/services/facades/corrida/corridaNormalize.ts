@@ -52,7 +52,7 @@ export const normalizeCorrida = (raw: RawCorrida): Corrida => ({
   timestamps: raw.timestamps,
   motorista: raw.motorista,
   veiculo: raw.veiculo,
-  pontosParada: raw.pontosParada,
+  pontosParada: raw.pontosParada ?? undefined,
   createdAt: raw.createdAt ?? new Date().toISOString(),
   updatedAt: raw.updatedAt ?? new Date().toISOString(),
 });
@@ -84,6 +84,9 @@ export function unwrapCorridaRecord(payload: unknown): unknown {
   const obj = {...(cur as Record<string, unknown>)};
   if (!obj['pontosParada'] && Array.isArray(obj['paradas'])) {
     obj['pontosParada'] = obj['paradas'];
+  }
+  if (!obj['pontosParada'] && Array.isArray(obj['pontos_parada'])) {
+    obj['pontosParada'] = obj['pontos_parada'];
   }
   return obj;
 }

@@ -121,10 +121,15 @@ const corridaSlice = createSlice({
   reducers: {
     /**
      * Sets the active corrida returned from the server.
+     *
+     * Lifecycle POSTs often return a partial DTO without `pontosParada`. When the
+     * payload omits stops (`undefined`) for the same ride ID, keep the previous
+     * list so maps and sheets keep showing waypoints until a full GET refreshes them.
      */
     setActiveCorrida(state, action: PayloadAction<Corrida | null>) {
-      state.activeCorrida = action.payload;
-      if (action.payload === null) {
+      const next = action.payload;
+      if (next === null) {
+        state.activeCorrida = null;
         state.ratingSubmitted = false;
         state.driverPosition = null;
         state.unreadMensagens = 0;
@@ -132,7 +137,18 @@ const corridaSlice = createSlice({
         state.isChatScreenOpen = false;
         state.motoristaNomeCache = null;
         state.motoristaFotoUrlCache = null;
+        return;
       }
+      const prev = state.activeCorrida;
+      const shouldPreserveParadas =
+        prev !== null &&
+        prev.id === next.id &&
+        next.pontosParada === undefined &&
+        prev.pontosParada !== undefined &&
+        prev.pontosParada.length > 0;
+      state.activeCorrida = shouldPreserveParadas
+        ? {...next, pontosParada: prev.pontosParada}
+        : next;
     },
 
     /**

@@ -78,6 +78,53 @@ describe('CorridaFacadeImpl.solicitarCorrida', () => {
   });
 });
 
+describe('CorridaFacadeImpl lifecycle POST empty body', () => {
+  it('refetches corrida when POST returns 200 {}', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+    const corridaId = 'corrida-empty-post-1';
+
+    const getPayload = {
+      id: corridaId,
+      status: 'em_rota',
+      passageiroId: 'pas-1',
+      origemLat: -2.529,
+      origemLng: -44.301,
+      destinoLat: -2.535,
+      destinoLng: -44.295,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (url, init) => {
+      const u = String(url);
+      if (u.includes('/iniciar-deslocamento') && init && (init as {method?: string}).method === 'POST') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        } as Response;
+      }
+      if (u.endsWith(`/corridas/${corridaId}`) && (!init || !(init as {method?: string}).method)) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => getPayload,
+        } as Response;
+      }
+      return {ok: false, status: 404, json: async () => ({})} as Response;
+    });
+
+    const result = await facade.iniciarDeslocamento(corridaId);
+    expect(result.error).toBeNull();
+    expect(result.data?.id).toBe(corridaId);
+    expect(result.data?.status).toBe('em_rota');
+
+    fetchMock.mockRestore();
+  });
+});
+
 describe('CorridaFacadeImpl stop endpoints', () => {
   it('calls chegarParada with corridaId/paradaId path', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -221,6 +268,35 @@ describe('CorridaFacadeImpl.getCorrida payload normalization', () => {
     expect(result.error).toBeNull();
     expect(result.data?.distanciaMetros).toBeUndefined();
     expect(result.data?.duracaoSegundos).toBeUndefined();
+
+    fetchMock.mockRestore();
+  });
+
+  it('maps pontos_parada snake_case to pontosParada', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: 'corrida-snake-paradas',
+        status: 'em_rota',
+        origemLat: -2.529,
+        origemLng: -44.301,
+        destinoLat: -2.535,
+        destinoLng: -44.295,
+        pontos_parada: [{lat: -2.531, lng: -44.302, ordem: 1}],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }),
+    } as Response);
+
+    const result = await facade.getCorrida('corrida-snake-paradas');
+    expect(result.error).toBeNull();
+    expect(result.data?.pontosParada?.length).toBe(1);
+    expect(result.data?.pontosParada?.[0].lat).toBe(-2.531);
 
     fetchMock.mockRestore();
   });

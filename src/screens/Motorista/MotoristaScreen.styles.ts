@@ -583,20 +583,32 @@ export const createMotoristaStyles = (theme: Theme) => {
       marginBottom: -4,
     },
 
-    waypointPin: {
-      width: spacing[6],
-      height: spacing[6],
-      borderRadius: spacing[6] / 2,
+    /** Intermediate stops — matches PassageiroScreen active-ride stop pins. */
+    paradaStopPinWrapper: {
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      paddingBottom: 2,
+      marginBottom: -4,
+    },
+    paradaStopPin: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.colors.error,
-      borderWidth: 1,
-      borderColor: theme.colors.background,
+      backgroundColor: C.danger,
+      borderWidth: 2,
+      borderColor: C.cardBg,
+      shadowColor: C.shadowDark,
+      shadowOffset: {width: 0, height: 1},
+      shadowOpacity: 0.2,
+      shadowRadius: 2,
+      elevation: 2,
     },
-    waypointPinText: {
-      ...typo.scale.labelSm,
-      color: theme.colors.background,
-      fontWeight: '700',
+    paradaStopPinText: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: C.cardBg,
     },
 
     // ── Legacy solid pins (kept for reference, no longer rendered) ────────────

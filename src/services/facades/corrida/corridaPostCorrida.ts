@@ -38,13 +38,17 @@ export async function corridaPostCorrida(
     if (!response.ok) return fail(toError('Request failed', 'NETWORK_ERROR', response.status));
 
     const rawUnknown = await response.json().catch(() => ({}));
-    const parsed = rawCorridaSchema.safeParse(unwrapCorridaRecord(rawUnknown));
+    const unwrapped = unwrapCorridaRecord(rawUnknown);
+    const parsed = rawCorridaSchema.safeParse(unwrapped);
+    const rawKeys =
+      typeof rawUnknown === 'object' && rawUnknown !== null
+        ? Object.keys(rawUnknown as Record<string, unknown>)
+        : [];
     console.log(`[CorridaFacade] raw response →`, JSON.stringify(rawUnknown));
 
     if (parsed.success) {
       return ok(normalizeCorrida(parsed.data as unknown as RawCorrida));
     }
-    console.error('[CorridaFacade] postCorrida Zod', parsed.error.flatten());
 
     const idFromRaw =
       typeof rawUnknown === 'object' &&
@@ -55,9 +59,15 @@ export async function corridaPostCorrida(
         : undefined;
     const id = corridaId ?? idFromRaw;
     if (!id) {
+      console.error('[CorridaFacade] postCorrida Zod', parsed.error.flatten());
       return fail(toError('Response missing corrida id and no corridaId provided', 'INTERNAL_ERROR'));
     }
-    console.log(`[CorridaFacade] partial response — fetching full corrida ${id}`);
+    // Many lifecycle endpoints return 200 with `{}` or a minimal DTO — refetch is expected, not a validation failure.
+    if (rawKeys.length > 0) {
+      console.log('[CorridaFacade] postCorrida partial body — fetching full corrida', id);
+    } else {
+      console.log('[CorridaFacade] postCorrida empty body — fetching full corrida', id);
+    }
     return getCorrida(id);
   } catch {
     return fail(toError('Network error', 'NETWORK_ERROR'));
