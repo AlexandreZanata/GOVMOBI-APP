@@ -125,6 +125,63 @@ describe('CorridaFacadeImpl lifecycle POST empty body', () => {
   });
 });
 
+describe('CorridaFacadeImpl.getContexto', () => {
+  it('fetches full corrida so pontosParada survive context sync', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+    const corridaId = 'ctx-hydrate-1';
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async url => {
+      const u = String(url);
+      if (u.endsWith('/corridas/contexto')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            usuario: {id: 'u1', email: 'a@b', papeis: ['USUARIO'], nome: 'N'},
+            corridaAtiva: {
+              id: corridaId,
+              status: 'em_rota',
+              origem: {lat: -2.529, lng: -44.301},
+              destino: {lat: -2.535, lng: -44.295},
+              motoristaId: 'm1',
+              passageiroId: 'p1',
+            },
+          }),
+        } as Response;
+      }
+      if (u.endsWith(`/corridas/${corridaId}`)) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: corridaId,
+            status: 'em_rota',
+            passageiroId: 'p1',
+            motoristaId: 'm1',
+            origemLat: -2.529,
+            origemLng: -44.301,
+            destinoLat: -2.535,
+            destinoLng: -44.295,
+            pontosParada: [{lat: -2.531, lng: -44.302, ordem: 1}],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+        } as Response;
+      }
+      return {ok: false, status: 404, json: async () => ({})} as Response;
+    });
+
+    const result = await facade.getContexto();
+    expect(result.error).toBeNull();
+    expect(result.data?.corridaAtiva?.pontosParada?.length).toBe(1);
+    expect(result.data?.corridaAtiva?.pontosParada?.[0].lat).toBe(-2.531);
+
+    fetchMock.mockRestore();
+  });
+});
+
 describe('CorridaFacadeImpl stop endpoints', () => {
   it('calls chegarParada with corridaId/paradaId path', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

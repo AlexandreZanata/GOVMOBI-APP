@@ -9,6 +9,7 @@ import type {
 } from '../../../types';
 import type {FacadeError, Result} from '../types';
 import {fail, ok, toError} from './corridaResult';
+import {corridaGetCorrida} from './corridaGetCorrida';
 import {normalizeCorrida, normalizeStatus} from './corridaNormalize';
 import type {CorridasPage, RawCorrida, RawCorridaListItem} from './corridaTypes';
 
@@ -90,8 +91,17 @@ export async function corridaGetContexto(
 
     console.log('[CorridaFacade] getContexto corridaAtiva →', JSON.stringify(raw.corridaAtiva));
 
-    const corridaAtiva: Corrida | null = raw.corridaAtiva
-      ? {
+    let corridaAtiva: Corrida | null = null;
+    if (raw.corridaAtiva) {
+      const full = await corridaGetCorrida(apiBaseUrl, authHeaders, raw.corridaAtiva.id);
+      if (full.data) {
+        corridaAtiva = full.data;
+      } else {
+        console.warn(
+          '[CorridaFacade] getContexto GET /corridas/:id failed — using minimal context',
+          full.error?.message,
+        );
+        corridaAtiva = {
           id: raw.corridaAtiva.id,
           passageiroId: raw.corridaAtiva.passageiroId,
           motoristaId: raw.corridaAtiva.motoristaId,
@@ -104,8 +114,9 @@ export async function corridaGetContexto(
           motivoServico: '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        }
-      : null;
+        };
+      }
+    }
 
     return ok({usuario: raw.usuario, corridaAtiva});
   } catch (err) {

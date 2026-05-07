@@ -57,6 +57,13 @@ const locationPersistConfig = {
   whitelist: ['lastKnown', 'lastFixAt', 'permissionStatus'],
 };
 
+/** Survives app kill: full ride (incl. pontosParada) for map/route after cold start. */
+const corridaPersistConfig = {
+  key: 'corrida',
+  storage: AsyncStorage,
+  whitelist: ['activeCorrida', 'pendingCorridaId'],
+};
+
 // --- Root reducer ---
 
 const rootReducer = combineReducers({
@@ -65,7 +72,7 @@ const rootReducer = combineReducers({
   calls: callsReducer,
   notifications: notificationsReducer,
   ui: persistReducer(uiPersistConfig, uiReducer),
-  corrida: corridaReducer,
+  corrida: persistReducer(corridaPersistConfig, corridaReducer),
   realtime: realtimeReducer,
   location: persistReducer(locationPersistConfig, locationReducer),
   [baseApi.reducerPath]: baseApi.reducer,
@@ -75,7 +82,7 @@ const rootReducer = combineReducers({
 
 /**
  * Configured Redux store for GovMobile.
- * Auth and UI slices are persisted via AsyncStorage.
+ * Auth, UI, location, and corrida (active ride id + snapshot) are persisted.
  * Chat, calls, and notifications are ephemeral (refreshed from server).
  */
 export const store = configureStore({

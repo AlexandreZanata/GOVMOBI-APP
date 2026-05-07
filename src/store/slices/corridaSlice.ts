@@ -2,6 +2,7 @@
  * @fileoverview Redux slice for the full corrida lifecycle state.
  */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
+import {logout} from './authSlice';
 import type {
   Corrida,
   CorridaMensagem,
@@ -386,6 +387,9 @@ const corridaSlice = createSlice({
     setDriverPosition(state, action: PayloadAction<PosicaoMotorista | null>) {
       state.driverPosition = action.payload;
     },
+  },
+  extraReducers: builder => {
+    builder.addCase(logout, () => initialState);
   },
 });
 
