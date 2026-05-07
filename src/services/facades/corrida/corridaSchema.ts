@@ -66,8 +66,9 @@ export const rawCorridaSchema = z.object({
   status: z.string().min(1).optional(),
   motivoServico: z.string().optional(),
   observacoes: z.string().optional(),
-  distanciaMetros: z.number().optional(),
-  duracaoSegundos: z.number().optional(),
+  /** Backend may return null before a route is computed. */
+  distanciaMetros: z.number().nullable().optional(),
+  duracaoSegundos: z.number().nullable().optional(),
   canceladoPor: z.string().nullable().optional(),
   motivoCancelamento: z.string().nullable().optional(),
   createdAt: z.string().optional(),

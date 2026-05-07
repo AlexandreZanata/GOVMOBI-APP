@@ -39,6 +39,43 @@ describe('CorridaFacadeImpl.solicitarCorrida', () => {
 
     jest.restoreAllMocks();
   });
+
+  it('includes pontosParada in the serialized body when provided', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+
+    let capturedBody: string | null = null;
+    jest.spyOn(global, 'fetch').mockImplementation(async (_url, options) => {
+      capturedBody = options?.body as string;
+      return {
+        ok: true,
+        status: 202,
+        json: async () => ({corridaId: 'with-paradas'}),
+      } as Response;
+    });
+
+    await facade.solicitarCorrida({
+      origemLat: -2.529,
+      origemLng: -44.301,
+      destinoLat: -2.535,
+      destinoLng: -44.295,
+      motivoServico: 'Visita técnica com múltiplas paradas',
+      pontosParada: [
+        {lat: -2.531, lng: -44.302, ordem: 1},
+        {lat: -2.533, lng: -44.298, ordem: 2},
+      ],
+    });
+
+    expect(capturedBody).not.toBeNull();
+    const parsed = JSON.parse(capturedBody!);
+    expect(parsed.pontosParada).toEqual([
+      {lat: -2.531, lng: -44.302, ordem: 1},
+      {lat: -2.533, lng: -44.298, ordem: 2},
+    ]);
+
+    jest.restoreAllMocks();
+  });
 });
 
 describe('CorridaFacadeImpl stop endpoints', () => {
@@ -154,6 +191,36 @@ describe('CorridaFacadeImpl.getCorrida payload normalization', () => {
     expect(result.data?.destinoLng).toBe(-44.295);
     expect(result.data?.pontosParada?.[0].id).toBe('parada-1');
     expect(result.data?.pontosParada?.[0].status).toBe('pendente');
+
+    fetchMock.mockRestore();
+  });
+
+  it('accepts null distanciaMetros and duracaoSegundos', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: 'corrida-null-metrics',
+        status: 'aguardando_aceite',
+        distanciaMetros: null,
+        duracaoSegundos: null,
+        origemLat: -2.529,
+        origemLng: -44.301,
+        destinoLat: -2.535,
+        destinoLng: -44.295,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }),
+    } as Response);
+
+    const result = await facade.getCorrida('corrida-null-metrics');
+    expect(result.error).toBeNull();
+    expect(result.data?.distanciaMetros).toBeUndefined();
+    expect(result.data?.duracaoSegundos).toBeUndefined();
 
     fetchMock.mockRestore();
   });

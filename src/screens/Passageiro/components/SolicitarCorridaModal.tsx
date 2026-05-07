@@ -45,7 +45,10 @@ export interface SolicitarCorridaModalProps {
    * @param corridaId - The UUID returned by the server.
    */
   onSuccess: (corridaId: string) => void;
-  /** Stop points selected on the passenger screen before opening modal. */
+  /**
+   * Fallback stop points if Redux `corrida.selectedParadas` is empty (e.g. sync edge case).
+   * Payload uses store first when non-empty.
+   */
   selectedParadas?: SearchResult[];
 }
 
@@ -75,6 +78,7 @@ export const SolicitarCorridaModal = ({
   const userId = useAppSelector(s => s.auth.user?.id ?? '');
   const selectedDestino = useAppSelector(s => s.corrida.selectedDestino);
   const userLocation = useAppSelector(s => s.corrida.userLocationSnapshot);
+  const selectedParadasStore = useAppSelector(s => s.corrida.selectedParadas);
 
   const [motivoServico, setMotivoServico] = useState('');
   const [observacoes, setObservacoes] = useState('');
@@ -140,7 +144,9 @@ export const SolicitarCorridaModal = ({
 
     const origemLat = userLocation.latitude;
     const origemLng = userLocation.longitude;
-    const pontosParadaPayload = selectedParadas
+    const paradasSource =
+      selectedParadasStore.length > 0 ? selectedParadasStore : selectedParadas;
+    const pontosParadaPayload = paradasSource
       .map((ponto, index) => ({
         lat: ponto.coordinates.latitude,
         lng: ponto.coordinates.longitude,
@@ -262,6 +268,7 @@ export const SolicitarCorridaModal = ({
     resetForm,
     selectedDestino,
     selectedParadas,
+    selectedParadasStore,
     t,
     userId,
     userLocation,

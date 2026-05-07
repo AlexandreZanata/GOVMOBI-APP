@@ -15,8 +15,8 @@ export interface RawCorridaListItem {
   origem: {lat: number; lng: number; endereco?: string};
   destino: {lat: number; lng: number; endereco?: string};
   motivoServico?: string;
-  distanciaMetros?: number;
-  duracaoSegundos?: number;
+  distanciaMetros?: number | null;
+  duracaoSegundos?: number | null;
   timestamps?: {
     solicitadaEm?: string;
     aceitaEm?: string;
@@ -67,8 +67,8 @@ export interface RawCorrida {
   status?: string;
   motivoServico?: string;
   observacoes?: string;
-  distanciaMetros?: number;
-  duracaoSegundos?: number;
+  distanciaMetros?: number | null;
+  duracaoSegundos?: number | null;
   canceladoPor?: string | null;
   motivoCancelamento?: string | null;
   createdAt?: string;
