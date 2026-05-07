@@ -49,7 +49,7 @@ describe('CorridaFacadeImpl stop endpoints', () => {
     const corridaId = 'corrida-123';
     const paradaId = 'parada-1';
 
-    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (url, options) => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (url, _options) => {
       if (String(url).includes(`/corridas/${corridaId}/paradas/${paradaId}/chegar`)) {
         return {
           ok: true,
@@ -91,7 +91,7 @@ describe('CorridaFacadeImpl stop endpoints', () => {
     const corridaId = 'corrida-456';
     const paradaId = 'parada-2';
 
-    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (url, options) => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (url, _options) => {
       if (String(url).includes(`/corridas/${corridaId}/paradas/${paradaId}/pular`)) {
         return {
           ok: true,
