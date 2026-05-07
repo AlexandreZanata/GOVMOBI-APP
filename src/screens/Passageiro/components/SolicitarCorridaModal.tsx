@@ -80,10 +80,6 @@ export const SolicitarCorridaModal = ({
   const [observacoes, setObservacoes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [motivoError, setMotivoError] = useState(false);
-  const [stopQuery, setStopQuery] = useState('');
-  const [stopResults, setStopResults] = useState<SearchResult[]>([]);
-  const [isSearchingStop, setIsSearchingStop] = useState(false);
-  const [pontosParada, setPontosParada] = useState<SearchResult[]>([]);
 
   // Slide-up animation
   const slideAnim = useRef(new Animated.Value(300)).current;
@@ -102,10 +98,6 @@ export const SolicitarCorridaModal = ({
     setMotivoServico('');
     setObservacoes('');
     setMotivoError(false);
-    setStopQuery('');
-    setStopResults([]);
-    setPontosParada([]);
-    setIsSearchingStop(false);
     setIsSubmitting(false);
   }, []);
 
@@ -113,39 +105,6 @@ export const SolicitarCorridaModal = ({
     resetForm();
     onClose();
   }, [onClose, resetForm]);
-
-  const handleStopSearch = useCallback(
-    async (text: string): Promise<void> => {
-      setStopQuery(text);
-      if (text.trim().length < 3) {
-        setStopResults([]);
-        return;
-      }
-      setIsSearchingStop(true);
-      const result = await corridaFacade.searchLocations(text.trim());
-      setIsSearchingStop(false);
-      setStopResults(result.data ?? []);
-    },
-    [corridaFacade],
-  );
-
-  const handleAddStop = useCallback((stop: SearchResult): void => {
-    setPontosParada(prev => {
-      const alreadyAdded = prev.some(
-        item =>
-          item.coordinates.latitude === stop.coordinates.latitude &&
-          item.coordinates.longitude === stop.coordinates.longitude,
-      );
-      if (alreadyAdded) return prev;
-      return [...prev, stop];
-    });
-    setStopQuery('');
-    setStopResults([]);
-  }, []);
-
-  const handleRemoveStop = useCallback((index: number): void => {
-    setPontosParada(prev => prev.filter((_, i) => i !== index));
-  }, []);
 
   const handleSubmit = useCallback(async (): Promise<void> => {
     if (!motivoServico.trim()) {
@@ -181,6 +140,17 @@ export const SolicitarCorridaModal = ({
 
     const origemLat = userLocation.latitude;
     const origemLng = userLocation.longitude;
+    const pontosParadaPayload = selectedParadas
+      .map((ponto, index) => ({
+        lat: ponto.coordinates.latitude,
+        lng: ponto.coordinates.longitude,
+        ordem: index + 1,
+      }))
+      .filter(
+        ponto =>
+          ponto.lat !== selectedDestino.latitude ||
+          ponto.lng !== selectedDestino.longitude,
+      );
 
     const result = await corridaFacade.solicitarCorrida({
       origemLat,
@@ -189,13 +159,7 @@ export const SolicitarCorridaModal = ({
       destinoLng: selectedDestino.longitude,
       motivoServico: motivoServico.trim(),
       observacoes: observacoes.trim() || undefined,
-      pontosParada: (selectedParadas.length ? selectedParadas : pontosParada).length
-        ? (selectedParadas.length ? selectedParadas : pontosParada).map((ponto, index) => ({
-            lat: ponto.coordinates.latitude,
-            lng: ponto.coordinates.longitude,
-            ordem: index + 1,
-          }))
-        : undefined,
+      pontosParada: pontosParadaPayload.length > 0 ? pontosParadaPayload : undefined,
     });
 
     setIsSubmitting(false);
@@ -271,10 +235,10 @@ export const SolicitarCorridaModal = ({
         destinoLng: selectedDestino.longitude,
         motivoServico: motivoServico.trim(),
         observacoes: observacoes.trim() || undefined,
-        pontosParada: (selectedParadas.length ? selectedParadas : pontosParada).map((ponto, index) => ({
+        pontosParada: pontosParadaPayload.map((ponto, index) => ({
           id: `tmp-parada-${index + 1}`,
-          lat: ponto.coordinates.latitude,
-          lng: ponto.coordinates.longitude,
+          lat: ponto.lat,
+          lng: ponto.lng,
           ordem: index + 1,
           status: 'pendente',
           chegouEm: null,
@@ -297,7 +261,6 @@ export const SolicitarCorridaModal = ({
     onSuccess,
     resetForm,
     selectedDestino,
-    pontosParada,
     selectedParadas,
     t,
     userId,
@@ -404,48 +367,6 @@ export const SolicitarCorridaModal = ({
               testID="observacoes-input"
               value={observacoes}
             />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>{t('corridas.stops.title')}</Text>
-            <TextInput
-              accessibilityLabel={t('corridas.stops.searchPlaceholder')}
-              onChangeText={text => {
-                void handleStopSearch(text);
-              }}
-              placeholder={t('corridas.stops.searchPlaceholder')}
-              placeholderTextColor={C.textMuted}
-              style={styles.textInput}
-              testID="stop-search-input"
-              value={stopQuery}
-            />
-            {isSearchingStop && (
-              <View style={styles.stopLoadingRow}>
-                <ActivityIndicator color={C.interactive} size="small" />
-              </View>
-            )}
-            {stopResults.slice(0, 3).map(result => (
-              <Pressable
-                key={result.id}
-                onPress={() => handleAddStop(result)}
-                style={styles.stopResultItem}>
-                <Text numberOfLines={1} style={styles.stopResultTitle}>{result.placeName}</Text>
-                <Text numberOfLines={1} style={styles.stopResultAddress}>{result.address}</Text>
-              </Pressable>
-            ))}
-            {pontosParada.map((parada, index) => (
-              <View key={`${parada.id}-${index}`} style={styles.stopChip}>
-                <Text numberOfLines={1} style={styles.stopChipText}>
-                  {t('corridas.stops.item', {ordem: index + 1})} - {parada.placeName}
-                </Text>
-                <Pressable
-                  accessibilityLabel={t('corridas.stops.remove')}
-                  onPress={() => handleRemoveStop(index)}
-                  style={styles.stopChipRemove}>
-                  <MaterialIcons color={C.surfaceCard} name="close" size={14} />
-                </Pressable>
-              </View>
-            ))}
           </View>
 
           {/* Submit */}
@@ -607,51 +528,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: C.surfaceCard,
     letterSpacing: 0.3,
-  },
-  stopLoadingRow: {
-    alignItems: 'flex-start',
-    marginTop: 8,
-  },
-  stopResultItem: {
-    backgroundColor: C.surfaceSubtle,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginTop: 8,
-  },
-  stopResultTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: C.textDark,
-  },
-  stopResultAddress: {
-    fontSize: 12,
-    color: C.textMuted,
-    marginTop: 2,
-  },
-  stopChip: {
-    marginTop: 8,
-    backgroundColor: C.interactive,
-    borderRadius: 10,
-    paddingLeft: 10,
-    paddingVertical: 8,
-    paddingRight: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  stopChipText: {
-    fontSize: 12,
-    color: C.surfaceCard,
-    flex: 1,
-    marginRight: 6,
-  },
-  stopChipRemove: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: C.interactivePress,
   },
 });

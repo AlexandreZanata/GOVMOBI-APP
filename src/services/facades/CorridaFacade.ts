@@ -138,7 +138,7 @@ interface RawCorrida {
   passageiroId?: string;
   motoristaId?: string | null;
   veiculoId?: string | null;
-  status: string;
+  status?: string;
   motivoServico?: string;
   observacoes?: string;
   distanciaMetros?: number;
@@ -183,21 +183,46 @@ interface RawCorrida {
 }
 
 const rawCorridaParadaSchema = z.object({
-  id: z.string().min(1),
+  id: z.string().min(1).optional(),
   lat: z.number(),
   lng: z.number(),
   ordem: z.number().int().nonnegative(),
-  status: z.enum(['pendente', 'chegou', 'pulada']),
+  status: z.enum(['pendente', 'chegou', 'pulada']).optional(),
   chegouEm: z.string().datetime().nullish(),
   puladaEm: z.string().datetime().nullish(),
-});
+}).transform(value => ({
+  id: value.id ?? `parada-${value.ordem}`,
+  lat: value.lat,
+  lng: value.lng,
+  ordem: value.ordem,
+  status: value.status ?? 'pendente',
+  chegouEm: value.chegouEm ?? null,
+  puladaEm: value.puladaEm ?? null,
+}));
+
+const rawCoordinateSchema = z.union([
+  z.object({
+    lat: z.number(),
+    lng: z.number(),
+    endereco: z.string().optional(),
+  }),
+  z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+    endereco: z.string().optional(),
+  }),
+]).transform(value => ({
+  lat: 'lat' in value ? value.lat : value.latitude,
+  lng: 'lng' in value ? value.lng : value.longitude,
+  endereco: value.endereco,
+}));
 
 const rawCorridaSchema = z.object({
   id: z.string().min(1),
   passageiroId: z.string().optional(),
   motoristaId: z.string().nullable().optional(),
   veiculoId: z.string().nullable().optional(),
-  status: z.string().min(1),
+  status: z.string().min(1).optional(),
   motivoServico: z.string().optional(),
   observacoes: z.string().optional(),
   distanciaMetros: z.number().optional(),
@@ -206,8 +231,8 @@ const rawCorridaSchema = z.object({
   motivoCancelamento: z.string().nullable().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
-  origem: z.object({lat: z.number(), lng: z.number(), endereco: z.string().optional()}).optional(),
-  destino: z.object({lat: z.number(), lng: z.number(), endereco: z.string().optional()}).optional(),
+  origem: rawCoordinateSchema.optional(),
+  destino: rawCoordinateSchema.optional(),
   origemLat: z.number().optional(),
   origemLng: z.number().optional(),
   destinoLat: z.number().optional(),
@@ -257,7 +282,7 @@ const normalizeCorrida = (raw: RawCorrida): Corrida => ({
   destinoLat: raw.destinoLat ?? raw.destino?.lat ?? 0,
   destinoLng: raw.destinoLng ?? raw.destino?.lng ?? 0,
   destinoEndereco: raw.destino?.endereco,
-  status: normalizeStatus(raw.status),
+  status: normalizeStatus(raw.status ?? 'solicitada'),
   motivoServico: raw.motivoServico ?? '',
   observacoes: raw.observacoes,
   distanciaMetros: raw.distanciaMetros,

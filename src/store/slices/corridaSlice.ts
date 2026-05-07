@@ -28,6 +28,8 @@ export interface CorridaState {
   pendingCorridaId: string | null;
   /** Selected destination for the next ride. */
   selectedDestino: (Localizacao & {placeName: string}) | null;
+  /** Selected intermediate stop points for the next ride request. */
+  selectedParadas: SearchResult[];
   /**
    * Snapshot of the user's GPS location at the time they selected a destination.
    * Used by SolicitarCorridaModal so it doesn't need to re-request GPS.
@@ -89,6 +91,7 @@ const initialState: CorridaState = {
   activeCorrida: null,
   pendingCorridaId: null,
   selectedDestino: null,
+  selectedParadas: [],
   userLocationSnapshot: null,
   isRequesting: false,
   isActionLoading: false,
@@ -157,6 +160,13 @@ const corridaSlice = createSlice({
       action: PayloadAction<(Localizacao & {placeName: string}) | null>,
     ) {
       state.selectedDestino = action.payload;
+    },
+
+    /**
+     * Stores selected stop points for the next ride request.
+     */
+    setSelectedParadas(state, action: PayloadAction<SearchResult[]>) {
+      state.selectedParadas = action.payload;
     },
 
     /**
@@ -368,6 +378,7 @@ export const {
   setPendingCorridaId,
   updateCorridaStatus,
   setSelectedDestino,
+  setSelectedParadas,
   setUserLocationSnapshot,
   setIsRequesting,
   setIsActionLoading,

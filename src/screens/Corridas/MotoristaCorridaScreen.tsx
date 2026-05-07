@@ -27,6 +27,7 @@ import {useCorridas} from './useCorridas';
 import {createCorridasStyles} from './CorridasScreens.styles';
 import {CorridaStatusBadge} from '@components/molecules/CorridaStatusBadge';
 import {RouteInfoRow} from '@components/molecules/RouteInfoRow';
+import {CorridaRouteMiniMap} from '@components/molecules/CorridaRouteMiniMap';
 import {useAppSelector} from '@store/index';
 import type {CorridasStackParamList} from '@navigation/types';
 
@@ -141,6 +142,7 @@ export const MotoristaCorridaScreen = (): React.JSX.Element => {
         {/* Route card */}
         <View style={styles.card} testID="route-card">
           <Text style={styles.cardTitle}>{t('corridas.detail.route')}</Text>
+          <CorridaRouteMiniMap corrida={activeCorrida} testID="motorista-route-map" />
           <RouteInfoRow
             type="origin"
             label={t('corridas.detail.origem')}

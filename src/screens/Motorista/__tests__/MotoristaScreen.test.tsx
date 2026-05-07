@@ -195,6 +195,7 @@ const makeStore = (corridaState?: Partial<ReturnType<typeof corridaReducer>>) =>
         activeCorrida: null,
         pendingCorridaId: null,
         selectedDestino: null,
+        selectedParadas: corridaState?.selectedParadas ?? [],
         userLocationSnapshot: null,
         isRequesting: false,
         isActionLoading: false,

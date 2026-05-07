@@ -28,6 +28,7 @@ import {usePassageiroCorrida} from './usePassageiroCorrida';
 import {createCorridasStyles, statusColor} from './CorridasScreens.styles';
 import {createAcompanharStyles} from './AcompanharCorrida.styles';
 import {FilaEsperaCard} from './FilaEsperaCard';
+import {CorridaRouteMiniMap} from '@components/molecules/CorridaRouteMiniMap';
 import type {CorridaMensagem} from '@models/Corrida';
 import {podeSerCancelada, TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
@@ -147,6 +148,15 @@ export const AcompanharCorridaScreen = (): React.JSX.Element => {
 
       {/* Route card */}
       <View style={[s.card, {margin: theme.spacing[4]}]} testID="route-card">
+        <CorridaRouteMiniMap
+          corrida={activeCorrida}
+          driverPosition={
+            driverPosition
+              ? {lat: driverPosition.lat, lng: driverPosition.lng}
+              : null
+          }
+          testID="acompanhar-route-map"
+        />
         <View style={s.routeRow}>
           <MaterialIcons name="trip-origin" size={16} color={theme.colors.success} />
           <Text style={s.cardTitle} numberOfLines={1}>

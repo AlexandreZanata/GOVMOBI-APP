@@ -49,6 +49,7 @@ export const SolicitarCorridaScreen = (): React.JSX.Element => {
 
   const userId = useAppSelector(s => s.auth.user?.id ?? '');
   const selectedDestino = useAppSelector(s => s.corrida.selectedDestino);
+  const selectedParadas = useAppSelector(s => s.corrida.selectedParadas);
 
   const [motivoServico, setMotivoServico] = useState('');
   const [observacoes, setObservacoes] = useState('');
@@ -73,6 +74,12 @@ export const SolicitarCorridaScreen = (): React.JSX.Element => {
 
     setIsSubmitting(true);
 
+    const pontosParadaPayload = selectedParadas.map((ponto, index) => ({
+      lat: ponto.coordinates.latitude,
+      lng: ponto.coordinates.longitude,
+      ordem: index + 1,
+    }));
+
     const result = await corridaFacade.solicitarCorrida({
       origemLat: -16.6869, // In production: from GPS
       origemLng: -49.2648,
@@ -80,6 +87,7 @@ export const SolicitarCorridaScreen = (): React.JSX.Element => {
       destinoLng: selectedDestino.longitude,
       motivoServico: motivoServico.trim(),
       observacoes: observacoes.trim() || undefined,
+      pontosParada: pontosParadaPayload.length > 0 ? pontosParadaPayload : undefined,
     });
 
     setIsSubmitting(false);
@@ -106,13 +114,22 @@ export const SolicitarCorridaScreen = (): React.JSX.Element => {
       destinoLng: selectedDestino.longitude,
       motivoServico: motivoServico.trim(),
       observacoes: observacoes.trim() || undefined,
+      pontosParada: pontosParadaPayload.map((ponto, index) => ({
+        id: `tmp-parada-${index + 1}`,
+        lat: ponto.lat,
+        lng: ponto.lng,
+        ordem: index + 1,
+        status: 'pendente',
+        chegouEm: null,
+        puladaEm: null,
+      })),
       status: 'solicitada',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }));
 
     navigation.replace('AcompanharCorrida', {corridaId: result.data.corridaId});
-  }, [corridaFacade, dispatch, motivoServico, navigation, observacoes, selectedDestino, t, userId]);
+  }, [corridaFacade, dispatch, motivoServico, navigation, observacoes, selectedDestino, selectedParadas, t, userId]);
 
   const inputBorderColor = (hasError: boolean) =>
     hasError ? theme.colors.error : theme.colors.border;

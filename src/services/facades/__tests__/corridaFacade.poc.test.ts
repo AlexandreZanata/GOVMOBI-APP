@@ -127,6 +127,38 @@ describe('CorridaFacadeImpl stop endpoints', () => {
   });
 });
 
+describe('CorridaFacadeImpl.getCorrida payload normalization', () => {
+  it('accepts origem/destino with latitude/longitude and stop points without id/status', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const {CorridaFacadeImpl} = require('../CorridaFacade');
+    const facade = new CorridaFacadeImpl({apiBaseUrl: 'http://test', getToken: () => 'tok'});
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: 'corrida-normalize-1',
+        status: 'aceita',
+        origem: {latitude: -2.529, longitude: -44.301},
+        destino: {latitude: -2.535, longitude: -44.295},
+        pontosParada: [
+          {lat: -2.531, lng: -44.302, ordem: 1},
+          {lat: -2.533, lng: -44.298, ordem: 2},
+        ],
+      }),
+    } as Response);
+
+    const result = await facade.getCorrida('corrida-normalize-1');
+    expect(result.error).toBeNull();
+    expect(result.data?.origemLat).toBe(-2.529);
+    expect(result.data?.destinoLng).toBe(-44.295);
+    expect(result.data?.pontosParada?.[0].id).toBe('parada-1');
+    expect(result.data?.pontosParada?.[0].status).toBe('pendente');
+
+    fetchMock.mockRestore();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Test 19.2: FrotaFacade.updateMyStatus sends the correct status
 // ---------------------------------------------------------------------------

@@ -8,6 +8,7 @@ import {useAppDispatch, useAppSelector} from '../../store';
 import {
   clearSearch,
   setIsSearching,
+  setSelectedParadas as setSelectedParadasStore,
   setSearchResults,
   setSelectedDestino,
   setUserLocationSnapshot,
@@ -188,6 +189,10 @@ export const usePassageiro = (): PassageiroState => {
   useEffect(() => {
     userLocationRef.current = userLocation;
   }, [userLocation]);
+
+  useEffect(() => {
+    dispatch(setSelectedParadasStore(selectedParadas));
+  }, [dispatch, selectedParadas]);
 
   useEffect(() => {
     if (!userLocation) return;

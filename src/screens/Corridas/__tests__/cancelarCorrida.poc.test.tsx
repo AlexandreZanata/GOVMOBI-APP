@@ -135,6 +135,7 @@ const DEFAULT_CORRIDA_STATE: CorridaState = {
   activeCorrida: null,
   pendingCorridaId: null,
   selectedDestino: null,
+  selectedParadas: [],
   userLocationSnapshot: null,
   isRequesting: false,
   isActionLoading: false,

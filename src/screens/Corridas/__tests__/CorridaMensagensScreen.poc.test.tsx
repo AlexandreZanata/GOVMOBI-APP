@@ -129,6 +129,7 @@ const buildStore = (mensagens: CorridaMensagem[] = [], loading = false) => {
         activeCorrida: null,
         pendingCorridaId: null,
         selectedDestino: null,
+        selectedParadas: [],
         userLocationSnapshot: null,
         isRequesting: false,
         isActionLoading: false,
