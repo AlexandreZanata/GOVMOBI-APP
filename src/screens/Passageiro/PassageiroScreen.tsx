@@ -1,6 +1,7 @@
 /**
  * @fileoverview PassageiroScreen — map + active ride tracking, all in one place.
  *
+ * Map pins: MarkerView above route line when available (same as MotoristaScreen).
  * Z-layers (bottom → top):
  *   1. MapboxMap          full screen base layer
  *   2. Top search bar     floating pill, z=10
@@ -95,12 +96,13 @@ const STATUS_POLL_MS = 5000;
 const passageiroMapPinStyles = createPassageiroStyles();
 
 // ── Destination pin — same location-on icon the driver uses ──────────────────
+/** Same palette/order as MotoristaScreen — destino vermelho (danger), não verde. */
 const DestinationPin = (): React.JSX.Element => (
   <View style={passageiroMapPinStyles.destinationPinWrapper}>
     <MaterialIcons
       name="location-on"
-      size={36}
-      color={C.successGreen}
+      size={34}
+      color={C.stopMarker}
       style={passageiroMapPinStyles.destinationPinIcon}
     />
     <View style={passageiroMapPinStyles.destinationPinShadowDot} />
@@ -502,7 +504,35 @@ export const PassageiroScreen = (): React.JSX.Element => {
     };
   }, [routePreviewCoords]);
 
-  const PointAnnotation = MapboxGL?.PointAnnotation;
+  /** MarkerView draws above LineLayer; PointAnnotation often renders underneath (rnmapbox/#3732). */
+  const renderMapPin = useCallback(
+    (
+      pinId: string,
+      coordinate: [number, number],
+      title: string | undefined,
+      pinContent: React.ReactNode,
+    ): React.ReactNode => {
+      if (!MapboxGL) return null;
+      const content = <View collapsable={false}>{pinContent}</View>;
+      if (MapboxGL.MarkerView) {
+        return (
+          <MapboxGL.MarkerView
+            key={pinId}
+            allowOverlap
+            anchor={{x: 0.5, y: 1}}
+            coordinate={coordinate}>
+            {content}
+          </MapboxGL.MarkerView>
+        );
+      }
+      return (
+        <MapboxGL.PointAnnotation key={pinId} coordinate={coordinate} id={pinId} title={title}>
+          {pinContent}
+        </MapboxGL.PointAnnotation>
+      );
+    },
+    [],
+  );
 
   // ── Map content ─────────────────────────────────────────────────────────────
   const mapContent =
@@ -523,9 +553,21 @@ export const PassageiroScreen = (): React.JSX.Element => {
           centerCoordinate={[mapRegion.longitude, mapRegion.latitude]}
           zoomLevel={mapRegion.zoomLevel}
         />
-        {/* ── Layer order: route line (bottom) → destination → driver car → user (top) ── */}
-
-        {/* 1. Route lines — always below all PointAnnotations */}
+        {MapboxGL.UserLocation && (
+          <MapboxGL.UserLocation
+            animated
+            visible={!MapboxGL.MarkerView}
+            minDisplacement={5}
+            onUpdate={loc => {
+              const coords = {
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+              };
+              dispatch(setLocationSuccess({coords, timestamp: Date.now()}));
+            }}
+          />
+        )}
+        {/* Route first (GL); pins use MarkerView when available — same order as MotoristaScreen. */}
         {hasActiveRide && activeRouteFeature && MapboxGL.ShapeSource && MapboxGL.LineLayer && (
           <MapboxGL.ShapeSource id="active-route-source" shape={activeRouteFeature}>
             <MapboxGL.LineLayer id="active-route-line" style={activeRouteLineStyle} />
@@ -537,106 +579,107 @@ export const PassageiroScreen = (): React.JSX.Element => {
           </MapboxGL.ShapeSource>
         )}
 
-        {/* 2. Destination pin — location-on icon (same as motorista) */}
-        {!hasActiveRide && selectedDestinoCoords && PointAnnotation && (
-          <PointAnnotation
-            coordinate={[selectedDestinoCoords.longitude, selectedDestinoCoords.latitude]}
-            id="destination"
-            title={selectedDestinoLabel ?? ''}>
-            <DestinationPin />
-          </PointAnnotation>
-        )}
-        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.destinoLng) && Number.isFinite(activeCorrida.destinoLat) && (
-          <MapboxGL.PointAnnotation
-            coordinate={[activeCorrida.destinoLng, activeCorrida.destinoLat]}
-            id="active-destination"
-            title={destinoAddress ?? ''}>
-            <DestinationPin />
-          </MapboxGL.PointAnnotation>
-        )}
-
-        {hasActiveRide && activeCorrida && Number.isFinite(activeCorrida.origemLng) && Number.isFinite(activeCorrida.origemLat) && (
-          <MapboxGL.PointAnnotation
-            coordinate={[activeCorrida.origemLng, activeCorrida.origemLat]}
-            id="active-origin"
-            title={t('corridas.detail.origem')}>
+        {hasActiveRide &&
+          activeCorrida &&
+          Number.isFinite(activeCorrida.origemLng) &&
+          Number.isFinite(activeCorrida.origemLat) &&
+          renderMapPin(
+            'ride-origin',
+            [activeCorrida.origemLng, activeCorrida.origemLat],
+            t('corridas.detail.origem'),
             <View style={passageiroMapPinStyles.destinationPinWrapper}>
               <MaterialIcons name="person-pin" size={34} color={C.successGreen} />
-            </View>
-          </MapboxGL.PointAnnotation>
-        )}
+            </View>,
+          )}
 
         {hasActiveRide &&
           activeCorrida &&
-          PointAnnotation &&
+          Number.isFinite(activeCorrida.destinoLng) &&
+          Number.isFinite(activeCorrida.destinoLat) &&
+          renderMapPin(
+            'ride-destination',
+            [activeCorrida.destinoLng, activeCorrida.destinoLat],
+            destinoAddress ?? undefined,
+            <DestinationPin />,
+          )}
+
+        {!hasActiveRide &&
+          selectedDestinoCoords &&
+          renderMapPin(
+            'idle-destination',
+            [selectedDestinoCoords.longitude, selectedDestinoCoords.latitude],
+            selectedDestinoLabel ?? undefined,
+            <DestinationPin />,
+          )}
+
+        {hasActiveRide &&
+          activeCorrida &&
           (activeCorrida.pontosParada ?? [])
             .slice()
             .sort((a, b) => a.ordem - b.ordem)
-            .map((stop, index) => (
-              <PointAnnotation
-                coordinate={[stop.lng, stop.lat]}
-                id={`active-stop-${stop.id}-${index}`}
-                key={`${stop.id}-${index}`}
-                title={t('corridas.paradas.next', {ordem: index + 1})}>
+            .map((stop, index) =>
+              renderMapPin(
+                `ride-waypoint-${stop.id}-${index}`,
+                [stop.lng, stop.lat],
+                t('corridas.paradas.next', {ordem: index + 1}),
                 <View style={passageiroMapPinStyles.destinationPinWrapper}>
                   <View style={passageiroMapPinStyles.stopPin}>
                     <Text style={passageiroMapPinStyles.stopPinText}>{String(index + 1)}</Text>
                   </View>
+                </View>,
+              ),
+            )}
+
+        {!hasActiveRide &&
+          selectedParadas.map((parada, index) =>
+            renderMapPin(
+              `idle-stop-${index}-${parada.id}`,
+              [parada.coordinates.longitude, parada.coordinates.latitude],
+              parada.placeName,
+              <View style={styles.destinationPinWrapper}>
+                <View style={styles.stopPin}>
+                  <Text style={styles.stopPinText}>{String(index + 1)}</Text>
                 </View>
-              </PointAnnotation>
-            ))}
+              </View>,
+            ),
+          )}
 
-        {/* 3. Driver car marker — shown when ride is active and WS position is known */}
-        {hasActiveRide && driverPosition && Number.isFinite(driverPosition.lng) && Number.isFinite(driverPosition.lat) && (
-          <MapboxGL.PointAnnotation
-            coordinate={[driverPosition.lng, driverPosition.lat]}
-            id="driver-car"
-            title={t('passageiro.map.driverLocation')}>
-            <DriverCarPin />
-          </MapboxGL.PointAnnotation>
-        )}
+        {hasActiveRide &&
+          driverPosition &&
+          Number.isFinite(driverPosition.lng) &&
+          Number.isFinite(driverPosition.lat) &&
+          renderMapPin(
+            'driver-car',
+            [driverPosition.lng, driverPosition.lat],
+            t('passageiro.map.driverLocation'),
+            <DriverCarPin />,
+          )}
 
-        {/* 4. User location — topmost, never hidden by route line */}
-        {MapboxGL.UserLocation ? (
-          <MapboxGL.UserLocation
-            animated
-            visible
-            minDisplacement={5}
-            onUpdate={loc => {
-              const coords = {
-                latitude: loc.coords.latitude,
-                longitude: loc.coords.longitude,
-              };
-              dispatch(setLocationSuccess({coords, timestamp: Date.now()}));
-            }}
-          />
-        ) : userLocation ? (
-          <MapboxGL.PointAnnotation
-            coordinate={[userLocation.longitude, userLocation.latitude]}
-            id="user-location"
-            title={t('passageiro.currentLocation')}>
+        {MapboxGL.MarkerView &&
+          userLocation &&
+          renderMapPin(
+            'passenger-location',
+            [userLocation.longitude, userLocation.latitude],
+            t('passageiro.currentLocation'),
             <View style={styles.userMarkerPulse} testID="user-marker">
               <View style={styles.userMarkerRing}>
                 <View style={styles.userMarkerDot} />
               </View>
-            </View>
-          </MapboxGL.PointAnnotation>
-        ) : null}
+            </View>,
+          )}
 
-        {/* Stop pins rendered last to stay above route and other map layers */}
-        {!hasActiveRide && PointAnnotation && selectedParadas.map((parada, index) => (
-          <PointAnnotation
-            coordinate={[parada.coordinates.longitude, parada.coordinates.latitude]}
-            id={`stop-${index}-${parada.id}`}
-            key={`stop-${index}-${parada.id}`}
-            title={parada.placeName}>
-            <View style={styles.destinationPinWrapper}>
-              <View style={styles.stopPin}>
-                <Text style={styles.stopPinText}>{String(index + 1)}</Text>
-              </View>
-            </View>
-          </PointAnnotation>
-        ))}
+        {!MapboxGL.MarkerView && !MapboxGL.UserLocation && userLocation
+          ? renderMapPin(
+              'passenger-location-fallback',
+              [userLocation.longitude, userLocation.latitude],
+              t('passageiro.currentLocation'),
+              <View style={styles.userMarkerPulse} testID="user-marker">
+                <View style={styles.userMarkerRing}>
+                  <View style={styles.userMarkerDot} />
+                </View>
+              </View>,
+            )
+          : null}
       </MapboxGL.MapView>
     ) : (
       <View style={styles.mapFallback} testID="map-fallback">

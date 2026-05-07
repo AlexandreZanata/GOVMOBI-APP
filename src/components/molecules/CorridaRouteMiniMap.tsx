@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {MaterialIcons} from '@expo/vector-icons';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
@@ -91,10 +91,39 @@ export const CorridaRouteMiniMap = ({
     [theme],
   );
 
+  const renderMapPin = useCallback(
+    (
+      pinId: string,
+      coordinate: [number, number],
+      title: string | undefined,
+      pinContent: React.ReactNode,
+    ): React.ReactNode => {
+      if (!MapboxGL) return null;
+      const M = MapboxGL;
+      const content = <View collapsable={false}>{pinContent}</View>;
+      if (M.MarkerView) {
+        return (
+          <M.MarkerView
+            key={pinId}
+            allowOverlap
+            anchor={{x: 0.5, y: 1}}
+            coordinate={coordinate}>
+            {content}
+          </M.MarkerView>
+        );
+      }
+      return (
+        <M.PointAnnotation key={pinId} coordinate={coordinate} id={pinId} title={title}>
+          {pinContent}
+        </M.PointAnnotation>
+      );
+    },
+    [],
+  );
+
   if (!MapboxGL) {
     return <View style={styles.wrap} testID={`${testID}-fallback`} />;
   }
-  const PointAnnotation = MapboxGL.PointAnnotation;
 
   return (
     <View style={styles.wrap} testID={testID}>
@@ -112,39 +141,41 @@ export const CorridaRouteMiniMap = ({
           <MapboxGL.LineLayer id={`${testID}-route-line`} style={routeLineStyle} />
         </MapboxGL.ShapeSource>
 
-        <PointAnnotation
-          coordinate={[corrida.origemLng, corrida.origemLat]}
-          id={`${testID}-origem`}>
-          <MaterialIcons color={theme.colors.primary} name="trip-origin" size={18} />
-        </PointAnnotation>
+        {renderMapPin(
+          `${testID}-origem`,
+          [corrida.origemLng, corrida.origemLat],
+          undefined,
+          <MaterialIcons color={theme.design.success} name="person-pin" size={22} />,
+        )}
+
+        {renderMapPin(
+          `${testID}-destino`,
+          [corrida.destinoLng, corrida.destinoLat],
+          undefined,
+          <MaterialIcons color={theme.design.danger} name="location-on" size={26} />,
+        )}
 
         {(corrida.pontosParada ?? [])
           .slice()
           .sort((a, b) => a.ordem - b.ordem)
-          .map((stop, index) => (
-            <PointAnnotation
-              coordinate={[stop.lng, stop.lat]}
-              id={`${testID}-stop-${stop.id}-${index}`}
-              key={`${stop.id}-${index}`}>
+          .map((stop, index) =>
+            renderMapPin(
+              `${testID}-stop-${stop.id}-${index}`,
+              [stop.lng, stop.lat],
+              undefined,
               <View style={styles.stopPin}>
                 <Text style={styles.stopText}>{String(index + 1)}</Text>
-              </View>
-            </PointAnnotation>
-          ))}
+              </View>,
+            ),
+          )}
 
-        <PointAnnotation
-          coordinate={[corrida.destinoLng, corrida.destinoLat]}
-          id={`${testID}-destino`}>
-          <MaterialIcons color={theme.colors.success} name="location-on" size={30} />
-        </PointAnnotation>
-
-        {driverPosition && (
-          <PointAnnotation
-            coordinate={[driverPosition.lng, driverPosition.lat]}
-            id={`${testID}-driver`}>
-            <MaterialIcons color={theme.colors.primary} name="directions-car" size={18} />
-          </PointAnnotation>
-        )}
+        {driverPosition &&
+          renderMapPin(
+            `${testID}-driver`,
+            [driverPosition.lng, driverPosition.lat],
+            undefined,
+            <MaterialIcons color={theme.colors.primary} name="directions-car" size={20} />,
+          )}
       </MapboxGL.MapView>
     </View>
   );
