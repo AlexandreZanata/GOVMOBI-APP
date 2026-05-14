@@ -1,13 +1,9 @@
 /**
  * @fileoverview PassageiroIdleSheet — bottom sheet shown when no active ride exists.
- * Contains destination selector, route preview, and the CTA button.
  *
- * Behaviour:
- * - The chevron (expand-more / expand-less) toggles a collapsed state that
- *   hides the destination row and route preview, showing only the title + CTA.
- * - The CTA is always enabled. When no destination is selected it calls
- *   `onOpenSearch` to focus the address search bar instead of opening the
- *   request modal.
+ * Destination is selected first; a compact + below the address opens search to add
+ * intermediate stops. Stops and the + share one column width; each stop is a white
+ * card with blue border and dark text; long labels truncate to one line. Route summary stays below the stop list.
  */
 import React, {useState} from 'react';
 import {
@@ -150,6 +146,8 @@ export const PassageiroIdleSheet = ({
                 {t('passageiro.bottomSheet.destinoLabel')}
               </Text>
               <Text
+                ellipsizeMode="tail"
+                numberOfLines={1}
                 style={hasDestination ? styles.destinoValue : styles.destinoPlaceholder}
                 testID="destino-value">
                 {selectedDestinoLabel ?? t('passageiro.bottomSheet.destinoPlaceholder')}
@@ -167,7 +165,62 @@ export const PassageiroIdleSheet = ({
             )}
           </View>
 
-          {/* Route preview status */}
+          {hasDestination && (
+            <View style={styles.stopsColumn}>
+              <View style={styles.addStopRow}>
+                <Pressable
+                  accessibilityLabel={t('corridas.stops.addButtonA11y')}
+                  accessibilityRole="button"
+                  accessibilityHint={t('corridas.stops.addButtonHint')}
+                  onPress={onAddParada}
+                  style={({pressed}) => [
+                    styles.addStopIconButton,
+                    pressed && styles.addStopIconButtonPressed,
+                  ]}
+                  testID="btn-add-stop">
+                  <MaterialIcons name="add" size={16} color={C.interactive} />
+                </Pressable>
+              </View>
+
+              {selectedParadas.length > 0 && (
+                <ScrollView
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator={selectedParadas.length > 3}
+                  style={styles.stopListScroll}
+                  testID="stop-list-scroll">
+                  {selectedParadas.map((parada, index) => (
+                    <View key={`${parada.id}-${index}`} style={styles.stopRow}>
+                      <Text
+                        ellipsizeMode="tail"
+                        numberOfLines={1}
+                        style={styles.stopRowText}>
+                        {t('corridas.stops.item', {ordem: index + 1})} — {parada.placeName}
+                      </Text>
+                      <Pressable
+                        accessibilityLabel={t('corridas.stops.removeStopA11y', {
+                          label: parada.placeName,
+                        })}
+                        accessibilityRole="button"
+                        hitSlop={6}
+                        onPress={() => onRemoveParada(index)}
+                        style={styles.stopRowRemove}
+                        testID={`btn-remove-stop-${index}`}>
+                        <MaterialIcons color={C.surfaceCard} name="close" size={16} />
+                      </Pressable>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          )}
+
+          {stopSelectionError && (
+            <Text style={styles.routeErrorText} testID="stop-selection-error">
+              {stopSelectionError}
+            </Text>
+          )}
+
+          {/* Route preview — after destination / stops so the sheet stays scannable */}
           {canPreviewRoute && (
             <View style={styles.routeStatusWrap} testID="route-status">
               {isRouting ? (
@@ -189,45 +242,6 @@ export const PassageiroIdleSheet = ({
                 </Text>
               )}
             </View>
-          )}
-
-          {hasDestination && (
-            <Pressable
-              accessibilityRole="button"
-              onPress={onAddParada}
-              style={styles.addStopButton}
-              testID="btn-add-stop">
-              <Text style={styles.addStopButtonText}>
-                {t('corridas.stops.title')}
-              </Text>
-            </Pressable>
-          )}
-          {stopSelectionError && (
-            <Text style={styles.routeErrorText} testID="stop-selection-error">
-              {stopSelectionError}
-            </Text>
-          )}
-
-          {selectedParadas.length > 0 && (
-            <ScrollView
-              nestedScrollEnabled
-              showsVerticalScrollIndicator={selectedParadas.length > 3}
-              style={styles.stopListScroll}
-              testID="stop-list-scroll">
-              {selectedParadas.map((parada, index) => (
-                <View key={`${parada.id}-${index}`} style={styles.stopRow}>
-                  <Text numberOfLines={1} style={styles.stopRowText}>
-                    {t('corridas.stops.item', {ordem: index + 1})} - {parada.placeName}
-                  </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => onRemoveParada(index)}
-                    style={styles.stopRowRemove}>
-                    <MaterialIcons color={C.surfaceCard} name="close" size={14} />
-                  </Pressable>
-                </View>
-              ))}
-            </ScrollView>
           )}
         </>
       )}

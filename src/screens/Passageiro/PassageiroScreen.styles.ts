@@ -381,6 +381,7 @@ export const createPassageiroStyles = () =>
     },
     destinoTextBlock: {
       flex: 1,
+      minWidth: 0,
     },
     destinoClearBtn: {
       width: 20,
@@ -403,11 +404,13 @@ export const createPassageiroStyles = () =>
       fontSize: 15,
       fontWeight: '500',
       color: C.textDark,
+      flexShrink: 1,
     },
     destinoPlaceholder: {
       fontSize: 15,
       fontWeight: '400',
       color: C.textMuted,
+      flexShrink: 1,
     },
 
     // Route preview status inside bottom sheet
@@ -440,50 +443,73 @@ export const createPassageiroStyles = () =>
       fontWeight: '500',
       color: C.errorRed,
     },
-    addStopButton: {
+    /** Wraps add-stop control and stop list so widths stay aligned. */
+    stopsColumn: {
       width: '100%',
-      height: 42,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: C.interactive,
-      backgroundColor: C.interactiveBg,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignSelf: 'center',
+    },
+    /** Full-width bar matching stop rows; centered +; shorter than primary CTA. */
+    addStopRow: {
+      width: '100%',
+      marginTop: -8,
       marginBottom: 10,
     },
-    addStopButtonText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: C.interactive,
+    /** Outlined control aligned to stop address cards. */
+    addStopIconButton: {
+      width: '100%',
+      height: 40,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: C.interactive,
+      backgroundColor: C.surfaceCard,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addStopIconButtonPressed: {
+      backgroundColor: C.surfaceSubtle,
+      transform: [{scale: 0.99}],
     },
     stopRow: {
       width: '100%',
-      minHeight: 36,
-      borderRadius: 10,
-      backgroundColor: C.interactive,
+      minHeight: 40,
+      borderRadius: 12,
+      backgroundColor: C.surfaceCard,
+      borderWidth: 1.5,
+      borderColor: C.interactive,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       marginBottom: 8,
+      shadowColor: C.shadow,
+      shadowOffset: {width: 0, height: 1},
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      elevation: 1,
     },
     stopListScroll: {
-      maxHeight: 132,
-      marginBottom: 4,
+      maxHeight: 176,
+      marginTop: 6,
+      marginBottom: 8,
     },
     stopRowText: {
-      fontSize: 12,
-      color: C.surfaceCard,
+      fontSize: 13,
+      fontWeight: '500',
+      color: C.textDark,
       flex: 1,
+      flexShrink: 1,
+      minWidth: 0,
       marginRight: 8,
     },
+    /** Matches destination clear control — visible X-style remove for each stop row. */
     stopRowRemove: {
-      width: 20,
-      height: 20,
-      borderRadius: 10,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: C.interactivePress,
+      backgroundColor: C.errorRed,
     },
 
     // CTA button

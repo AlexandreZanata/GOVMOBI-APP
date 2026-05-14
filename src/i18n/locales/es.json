@@ -539,6 +539,9 @@
     },
     "stops": {
       "title": "Puntos de parada (opcional)",
+      "addButtonA11y": "Agregar parada",
+      "addButtonHint": "Abre la búsqueda de dirección para elegir una parada en el trayecto.",
+      "removeStopA11y": "Quitar parada: {{label}}",
       "searchPlaceholder": "Buscar dirección de parada",
       "item": "Parada {{ordem}}",
       "next": "Próxima parada {{ordem}}",

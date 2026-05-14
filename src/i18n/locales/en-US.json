@@ -549,6 +549,9 @@
     },
     "stops": {
       "title": "Stop points (optional)",
+      "addButtonA11y": "Add stop point",
+      "addButtonHint": "Opens address search to pick an intermediate stop on the way.",
+      "removeStopA11y": "Remove stop: {{label}}",
       "searchPlaceholder": "Search stop address",
       "item": "Stop {{ordem}}",
       "next": "Next stop {{ordem}}",
