@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">76.56% </span>
+                <span class="strong">76.92% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>49/64</span>
+                <span class='fraction'>50/65</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">57.69% </span>
+                <span class="strong">58.62% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>15/26</span>
+                <span class='fraction'>17/29</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">75.43% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>42/56</span>
+                <span class='fraction'>43/57</span>
             </div>
         
             
@@ -241,7 +241,11 @@
 <a name='L176'></a><a href='#L176'>176</a>
 <a name='L177'></a><a href='#L177'>177</a>
 <a name='L178'></a><a href='#L178'>178</a>
-<a name='L179'></a><a href='#L179'>179</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -326,16 +330,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -503,9 +511,13 @@ export const useMotoristaRealtime = (
   // ---------------------------------------------------------------------------
   // Subscribe to active ride room when a ride becomes active.
   // Re-subscribes whenever the ride ID changes (covers second ride scenario).
+  // Accepts both 'connected' and 'reconnecting' — when the facade emits
+  // 'reconnecting' the transport handshake has already succeeded.
   // ---------------------------------------------------------------------------
+  const isSocketUp = connectionStatus === 'connected' || connectionStatus === 'reconnecting';
+&nbsp;
   useEffect(() =&gt; {
-    if (!activeCorrida || !isMotorista || connectionStatus !== 'connected') return;
+    if (!activeCorrida || !isMotorista || !isSocketUp) return;
     if (TERMINAL_STATUSES.has(activeCorrida.status)) return;
 &nbsp;
     // Only re-subscribe if this is a different ride than the last one.
@@ -514,7 +526,7 @@ export const useMotoristaRealtime = (
     lastSubscribedCorridaIdRef.current = activeCorrida.id;
     console.log('[useMotoristaRealtime] subscribing to ride room →', activeCorrida.id);
     void realtimeFacade.subscribeToCorrida({corridaId: activeCorrida.id});
-  }, [activeCorrida, isMotorista, connectionStatus, realtimeFacade]);
+  }, [activeCorrida, isMotorista, isSocketUp, connectionStatus, realtimeFacade]);
 &nbsp;
   // ---------------------------------------------------------------------------
   // Handle realtime events: estado-operacional + status-corrida-alterado.
@@ -580,7 +592,7 @@ export const useMotoristaRealtime = (
       realtimeFacadeRef.current.clearCorridaSubscriptions();
 &nbsp;
       // Re-enter the dispatch queue immediately — critical for receiving the second ride.
-      <span class="missing-if-branch" title="else path not taken" >E</span>if (isMotoristaRef.current &amp;&amp; connectionStatusRef.current === 'connected') {
+      <span class="missing-if-branch" title="else path not taken" >E</span>if (isMotoristaRef.current &amp;&amp; (connectionStatusRef.current === 'connected' || <span class="branch-2 cbranch-no" title="branch not covered" >connectionStatusRef.current === 'reconnecting')</span>) {
         console.log('[useMotoristaRealtime] emitting ficar-disponivel after terminal status');
         void realtimeFacadeRef.current.setDriverAvailable();
         dispatchRef.current(setStatusOperacional('DISPONIVEL'));
@@ -604,7 +616,7 @@ export const useMotoristaRealtime = (
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T14:43:46.696Z
+                at 2026-05-14T19:37:17.317Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

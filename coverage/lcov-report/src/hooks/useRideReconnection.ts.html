@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">70.88% </span>
+                <span class="strong">68.29% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>112/158</span>
+                <span class='fraction'>112/164</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">47.88% </span>
+                <span class="strong">45.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>34/71</span>
+                <span class='fraction'>34/75</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">71.05% </span>
+                <span class="strong">68.35% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>108/152</span>
+                <span class='fraction'>108/158</span>
             </div>
         
             
@@ -377,7 +377,24 @@
 <a name='L312'></a><a href='#L312'>312</a>
 <a name='L313'></a><a href='#L313'>313</a>
 <a name='L314'></a><a href='#L314'>314</a>
-<a name='L315'></a><a href='#L315'>315</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L315'></a><a href='#L315'>315</a>
+<a name='L316'></a><a href='#L316'>316</a>
+<a name='L317'></a><a href='#L317'>317</a>
+<a name='L318'></a><a href='#L318'>318</a>
+<a name='L319'></a><a href='#L319'>319</a>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a>
+<a name='L329'></a><a href='#L329'>329</a>
+<a name='L330'></a><a href='#L330'>330</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -656,6 +673,19 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -717,10 +747,12 @@ import {
   setPendingCorridaId,
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
-import {tokenRefreshed, setStatusOperacional} from '@store/slices/authSlice';
+import {logout, tokenRefreshed, setStatusOperacional} from '@store/slices/authSlice';
+import {addToast} from '@store/slices/uiSlice';
 import {TERMINAL_STATUSES} from '@models/Corrida';
 import {getValidToken} from '@utils/tokenUtils';
 import type {ReconexaoConcluida} from '../types/realtime';
+import {logger} from '@utils/logger';
 &nbsp;
 const TAG = '[useRideReconnection]';
 const RECONNECTION_TIMEOUT_MS = 3_000;
@@ -969,11 +1001,24 @@ export const useRideReconnection = (): void =&gt; {
             }
             const refreshFn = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >as</span>ync (): Promise&lt;string | null&gt; =&gt; {</span>
               const result = <span class="cstat-no" title="statement not covered" >await authFacadeRef.current.refreshToken();</span>
+<span class="cstat-no" title="statement not covered" >              if (result.error || !result.data) {</span>
+<span class="cstat-no" title="statement not covered" >                logger.warn(TAG, 'Foreground refresh failed — ending session', result.error);</span>
+                const isRevoked = <span class="cstat-no" title="statement not covered" >result.error?.code === 'UNAUTHORIZED';</span>
+<span class="cstat-no" title="statement not covered" >                dispatchRef.current(logout());</span>
+<span class="cstat-no" title="statement not covered" >                dispatchRef.current(</span>
+                  addToast({
+                    id: `reconnection-session-ended-${Date.now()}`,
+                    message: isRevoked ? 'errors.sessionRevoked' : 'errors.sessionExpired',
+                    type: 'warning',
+                  }),
+                );
+<span class="cstat-no" title="statement not covered" >                return null;</span>
+              }
 <span class="cstat-no" title="statement not covered" >              if (result.data?.accessToken) {</span>
                 // Dispatch the refreshed token to Redux so all consumers see it.
 <span class="cstat-no" title="statement not covered" >                dispatchRef.current(tokenRefreshed(result.data.accessToken));</span>
               }
-<span class="cstat-no" title="statement not covered" >              return result.data?.accessToken ?? null;</span>
+<span class="cstat-no" title="statement not covered" >              return result.data.accessToken;</span>
             };
 <span class="cstat-no" title="statement not covered" >            void getValidToken(currentToken, tokenExpiresAt, refreshFn);</span>
           }
@@ -1012,7 +1057,7 @@ export const useRideReconnection = (): void =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T14:43:46.573Z
+                at 2026-05-14T19:37:17.149Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

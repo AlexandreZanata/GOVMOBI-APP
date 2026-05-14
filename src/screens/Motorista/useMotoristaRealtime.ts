@@ -14,6 +14,9 @@
  *  - Surfacing the pending ride offer from Redux so the screen can render
  *    the accept/refuse modal (offer is set by the always-mounted useRealtimeSession).
  *
+ * Push / persistence safety: never clear `pendingOffer` when `activeCorrida`
+ * refers to a different ride ID — persisted Redux may lag behind a new offer.
+ *
  * Fix for "second ride not received" bug:
  *  - After a terminal status, `ficar-disponivel` is emitted immediately so
  *    the server re-adds the driver to the dispatch pool without waiting for
@@ -144,7 +147,8 @@ export const useMotoristaRealtime = (
   // ---------------------------------------------------------------------------
   // React to activeCorrida changes:
   //  - Terminal status → archive ride, clear Redux, re-enter dispatch queue.
-  //  - Non-terminal → clear pending offer (driver accepted this ride).
+  //  - Non-terminal → clear pending offer only when it targets the same ride
+  //    (hydrated active snapshot replaces the lightweight offer payload).
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!activeCorrida) return;
@@ -169,10 +173,12 @@ export const useMotoristaRealtime = (
         dispatchRef.current(setStatusOperacional('DISPONIVEL'));
       }
     } else {
-      // Active non-terminal ride — clear any pending offer modal.
-      dispatchRef.current(setPendingOffer(null));
+      const offer = pendingOffer;
+      if (offer && activeCorrida.id === offer.corridaId) {
+        dispatchRef.current(setPendingOffer(null));
+      }
     }
-  }, [activeCorrida]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeCorrida, pendingOffer]);
 
   const dismissOffer = useCallback(() => {
     dispatch(setPendingOffer(null));

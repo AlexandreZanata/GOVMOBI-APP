@@ -110,8 +110,12 @@ export interface GovMobNotificationData {
   corridaId?: string;
   /**
    * Current ride status at the time the notification was sent.
-   * Known values: 'nova_corrida' | 'aceita' | 'recusada' | 'cancelada' |
-   *               'em_rota' | 'concluida' | 'nova_mensagem'
+   * Known values include ride lifecycle updates (`aceita`, `recusada`, `cancelada`,
+   * `em_rota`, `concluida`, …) and notification kinds such as `nova_mensagem`.
+   *
+   * Driver offer taps (background / killed) are detected with
+   * {@link isDriverOfferPushStatus}: `nova_corrida`, `aguardando_aceite`, and
+   * `solicitada` (case-insensitive).
    */
   status?: string;
   /** Human-readable driver name (included in passenger notifications). */
@@ -127,6 +131,25 @@ export interface NotificationOpenedEvent {
   title: string;
   body: string;
   data: GovMobNotificationData;
+}
+
+/** Push `status` values that mean the driver should see the new-ride offer UI. */
+const DRIVER_OFFER_PUSH_STATUSES = new Set([
+  'nova_corrida',
+  'aguardando_aceite',
+  'solicitada',
+]);
+
+/**
+ * Returns true when `additionalData.status` indicates a new ride offer for the driver.
+ * Matching is case-insensitive and trims whitespace.
+ *
+ * @param status - Raw `status` string from OneSignal additional data.
+ */
+export function isDriverOfferPushStatus(status: string | undefined): boolean {
+  if (status === undefined || status === null) return false;
+  const normalized = String(status).trim().toLowerCase();
+  return DRIVER_OFFER_PUSH_STATUSES.has(normalized);
 }
 
 /**
@@ -326,7 +349,7 @@ export function registerForegroundHandler(isChatOpen?: () => boolean): () => voi
       const isMsgPush = data?.status === 'nova_mensagem' || !data?.status;
       // Never suppress nova_corrida pushes for drivers — they need to see
       // the banner even when the app is in foreground (WS may have missed it).
-      const isNovaCorridaPush = data?.status === 'nova_corrida' || data?.status === 'aguardando_aceite';
+      const isNovaCorridaPush = isDriverOfferPushStatus(data?.status);
 
       if (isNovaCorridaPush) {
         // Let the OS banner show for nova_corrida — driver must see it.

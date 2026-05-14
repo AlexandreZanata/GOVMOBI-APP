@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">7.69% </span>
+                <span class="strong">8.1% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/39</span>
+                <span class='fraction'>3/37</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/14</span>
+                <span class='fraction'>0/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">9.37% </span>
+                <span class="strong">9.67% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/32</span>
+                <span class='fraction'>3/31</span>
             </div>
         
             
@@ -197,7 +197,16 @@
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
 <a name='L134'></a><a href='#L134'>134</a>
-<a name='L135'></a><a href='#L135'>135</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -238,7 +247,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -286,6 +294,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -334,24 +344,28 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview Notification inbox screen.
  * Tab root — SafeAreaView covers top only; BottomTabBar handles the bottom inset.
+ * Header follows the same pattern as PassageiroCorridasListScreen (navy800 bg,
+ * headingLg centred title, surface200 content area).
  */
 import React, {useCallback, useMemo} from 'react';
 import {
   FlatList,
   Pressable,
   RefreshControl,
+  StatusBar,
+  Text,
   View,
   type ListRenderItem,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {useTheme} from '../../theme';
-import {Skeleton, Text} from '@components/atoms';
+import {Skeleton} from '@components/atoms';
 import {NotificationItem} from '@components/molecules';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {markAllAsRead, markAsRead} from '@store/slices/notificationsSlice';
 import {type Notification} from '../../models';
-import {createNotificationsStyles, createHistoricoStyles} from './NotificationsScreen.styles';
+import {createNotificationsStyles} from './NotificationsScreen.styles';
 &nbsp;
 /** Formats a notification timestamp as a relative label. */
 const formatTimeLabel = <span class="fstat-no" title="function not covered" >(c</span>reatedAt: string): string =&gt; {
@@ -371,7 +385,6 @@ export const NotificationsScreen = <span class="fstat-no" title="function not co
   const {t} = <span class="cstat-no" title="statement not covered" >useTranslation();</span>
   const theme = <span class="cstat-no" title="statement not covered" >useTheme();</span>
   const styles = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >createNotificationsStyles(theme),</span> [theme]);</span>
-  const hs = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >createHistoricoStyles(theme),</span> [theme]);</span>
   const dispatch = <span class="cstat-no" title="statement not covered" >useAppDispatch();</span>
 &nbsp;
   const notifications = <span class="cstat-no" title="statement not covered" >useAppSelector(<span class="fstat-no" title="function not covered" >st</span>ate =&gt; <span class="cstat-no" title="statement not covered" >state.notifications.notifications)</span>;</span>
@@ -420,10 +433,12 @@ export const NotificationsScreen = <span class="fstat-no" title="function not co
   );
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return (</span>
-    &lt;SafeAreaView edges={['top']} style={styles.background}&gt;
-      {/* Inline title row — same pattern as My Rides */}
-      &lt;View style={styles.titleRow}&gt;
-        &lt;Text style={hs.headerTitle}&gt;
+    &lt;SafeAreaView edges={['top']} style={styles.safeArea} testID="notifications-screen"&gt;
+      &lt;StatusBar barStyle="light-content" backgroundColor={theme.design.navy800} /&gt;
+&nbsp;
+      {/* Header — same pattern as PassageiroCorridasListScreen */}
+      &lt;View style={styles.header}&gt;
+        &lt;Text style={styles.headerTitle}&gt;
           {t('navigation.titles.notifications')}
         &lt;/Text&gt;
       &lt;/View&gt;
@@ -451,7 +466,7 @@ export const NotificationsScreen = <span class="fstat-no" title="function not co
             }
             ListEmptyComponent={
               &lt;View style={styles.emptyState} testID="notifications-empty"&gt;
-                &lt;Text style={hs.emptySubtitle}&gt;
+                &lt;Text style={styles.emptySubtitle}&gt;
                   {t('notifications.empty.message')}
                 &lt;/Text&gt;
               &lt;/View&gt;
@@ -472,7 +487,7 @@ NotificationsScreen.displayName = 'NotificationsScreen';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T14:43:46.573Z
+                at 2026-05-14T19:37:17.149Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

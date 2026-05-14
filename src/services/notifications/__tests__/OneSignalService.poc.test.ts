@@ -32,6 +32,7 @@ import {
   removeOneSignalExternalUserId,
   registerForegroundHandler,
   registerNotificationOpenedHandler,
+  isDriverOfferPushStatus,
   _resetCacheForTesting,
 } from '../OneSignalService';
 
@@ -264,6 +265,26 @@ describe('graceful no-op when SDK unavailable', () => {
     // jest.doMock inside isolateModules can leak to the outer registry in Jest 29.
     jest.mock('react-native-onesignal');
     _resetCacheForTesting();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isDriverOfferPushStatus
+// ---------------------------------------------------------------------------
+
+describe('isDriverOfferPushStatus', () => {
+  it('returns true for driver offer statuses (case-insensitive)', () => {
+    expect(isDriverOfferPushStatus('nova_corrida')).toBe(true);
+    expect(isDriverOfferPushStatus('NOVA_CORRIDA')).toBe(true);
+    expect(isDriverOfferPushStatus('  Aguardando_Aceite ')).toBe(true);
+    expect(isDriverOfferPushStatus('solicitada')).toBe(true);
+    expect(isDriverOfferPushStatus('SOLICITADA')).toBe(true);
+  });
+
+  it('returns false for non-offer statuses', () => {
+    expect(isDriverOfferPushStatus('aceita')).toBe(false);
+    expect(isDriverOfferPushStatus(undefined)).toBe(false);
+    expect(isDriverOfferPushStatus('')).toBe(false);
   });
 });
 

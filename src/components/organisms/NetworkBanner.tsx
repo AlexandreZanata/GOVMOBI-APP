@@ -4,7 +4,8 @@
  * Behaviour:
  *  - Offline: centered modal card with wifi-off icon, blocks interaction.
  *  - Reconnecting: centered modal card with spinner + retry count, blocks interaction.
- *  - Recovered: 2-second green success flash (centered), then auto-hides.
+ *  - When the connection is healthy again after an outage, the overlay hides
+ *    immediately (no success flash modal).
  *  - Online + WS connected: renders nothing — zero impact on existing UI.
  *
  * The overlay uses `Modal` with `transparent` so it sits above ALL navigation
@@ -65,9 +66,7 @@ try {
 // Banner mode
 // ---------------------------------------------------------------------------
 
-type BannerMode = 'hidden' | 'offline' | 'reconnecting' | 'recovered';
-
-const SUCCESS_FLASH_MS = 2_000;
+type BannerMode = 'hidden' | 'offline' | 'reconnecting';
 
 /**
  * How long after the app becomes active (cold start or foreground) to suppress
@@ -99,7 +98,7 @@ const toBannerMode = (isOnline: boolean, wsStatus: string): BannerMode => {
 
 /**
  * Connection status overlay. Blocks user interaction while offline or
- * reconnecting. Shows a 2-second success flash on recovery, then hides.
+ * reconnecting. Hides immediately when connectivity is restored (no extra modal).
  *
  * @returns Modal overlay or null when the connection is healthy.
  */
@@ -118,7 +117,6 @@ export const NetworkBanner = (): React.JSX.Element | null => {
 
   const [mode, setMode] = useState<BannerMode>('hidden');
   const prevModeRef = useRef<BannerMode>('hidden');
-  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -176,13 +174,8 @@ export const NetworkBanner = (): React.JSX.Element | null => {
       (prev === 'offline' || prev === 'reconnecting') &&
       targetMode === 'hidden'
     ) {
-      setMode('recovered');
-      prevModeRef.current = 'recovered';
-      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-      flashTimerRef.current = setTimeout(() => {
-        setMode('hidden');
-        prevModeRef.current = 'hidden';
-      }, SUCCESS_FLASH_MS);
+      prevModeRef.current = 'hidden';
+      setMode('hidden');
       return;
     }
 
@@ -191,13 +184,6 @@ export const NetworkBanner = (): React.JSX.Element | null => {
       setMode(targetMode);
     }
   }, [targetMode]);
-
-  useEffect(
-    () => () => {
-      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-    },
-    [],
-  );
 
   // Animate card in/out
   useEffect(() => {
@@ -242,33 +228,18 @@ export const NetworkBanner = (): React.JSX.Element | null => {
 
   if (mode === 'hidden') return null;
 
-  const isRecovered = mode === 'recovered';
   const isReconnecting = mode === 'reconnecting';
   const isOffline = mode === 'offline';
 
-  const cardBg = isRecovered
-    ? theme.colors.success
-    : theme.design.surface100;
+  const cardBg = theme.design.surface100;
 
-  const iconName = isRecovered
-    ? 'check-circle'
-    : isOffline
-      ? 'wifi-off'
-      : 'sync';
+  const iconColor = isOffline ? theme.colors.error : theme.colors.warning;
 
-  const iconColor = isRecovered
-    ? theme.design.textOnDark
-    : isOffline
-      ? theme.colors.error
-      : theme.colors.warning;
-
-  const title = isRecovered
-    ? t('ui.network.recovered')
-    : isOffline
-      ? t('ui.network.offline')
-      : retryCount > 0
-        ? t('ui.network.reconnecting', {count: retryCount})
-        : t('ui.network.reconnecting_plain');
+  const title = isOffline
+    ? t('ui.network.offline')
+    : retryCount > 0
+      ? t('ui.network.reconnecting', {count: retryCount})
+      : t('ui.network.reconnecting_plain');
 
   const subtitle = isOffline
     ? t('ui.network.offlineSubtitle')
@@ -304,20 +275,15 @@ export const NetworkBanner = (): React.JSX.Element | null => {
           ) : (
             <MaterialIcons
               color={iconColor}
-              name={iconName}
+              name="wifi-off"
               size={40}
               style={styles.icon}
-              testID={isRecovered ? 'network-banner-check' : 'network-banner-wifi-off'}
+              testID="network-banner-wifi-off"
             />
           )}
 
           {/* Title */}
-          <Text
-            style={[
-              styles.title,
-              isRecovered && {color: theme.design.textOnDark},
-            ]}
-            variant="subheading">
+          <Text style={styles.title} variant="subheading">
             {title}
           </Text>
 

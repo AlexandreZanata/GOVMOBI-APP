@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">65% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>10/20</span>
+                <span class='fraction'>13/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">31.25% </span>
+                <span class="strong">43.75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>5/16</span>
+                <span class='fraction'>7/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/6</span>
+                <span class='fraction'>4/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">52.63% </span>
+                <span class="strong">68.42% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>10/19</span>
+                <span class='fraction'>13/19</span>
             </div>
         
             
@@ -123,36 +123,36 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">17x</span>
+<span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">19x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview Module implementation for utils/logger.
  */
@@ -183,9 +183,9 @@ const createLogger = () =&gt; {
 <span class="branch-2 cbranch-no" title="branch not covered" >      case 'warn':</span>
 <span class="cstat-no" title="statement not covered" >        console.warn(prefix, message, data ?? '');</span>
 <span class="cstat-no" title="statement not covered" >        break;</span>
-<span class="branch-3 cbranch-no" title="branch not covered" >      case 'error':</span>
-<span class="cstat-no" title="statement not covered" >        console.error(prefix, message, data ?? '');</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
+      case 'error':
+        console.error(prefix, message, data ?? <span class="branch-1 cbranch-no" title="branch not covered" >'')</span>;
+        break;
     }
   };
 &nbsp;
@@ -193,7 +193,7 @@ const createLogger = () =&gt; {
     debug: <span class="fstat-no" title="function not covered" >(t</span>ag: string, message: string, data?: unknown) =&gt; <span class="cstat-no" title="statement not covered" >log('debug', tag, message, data),</span>
     info: (tag: string, message: string, data?: unknown) =&gt; log('info', tag, message, data),
     warn: <span class="fstat-no" title="function not covered" >(t</span>ag: string, message: string, data?: unknown) =&gt; <span class="cstat-no" title="statement not covered" >log('warn', tag, message, data),</span>
-    error: <span class="fstat-no" title="function not covered" >(t</span>ag: string, message: string, data?: unknown) =&gt; <span class="cstat-no" title="statement not covered" >log('error', tag, message, data),</span>
+    error: (tag: string, message: string, data?: unknown) =&gt; log('error', tag, message, data),
   };
 };
 &nbsp;
@@ -205,7 +205,7 @@ export const logger = createLogger();
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T14:43:46.696Z
+                at 2026-05-14T19:37:17.317Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

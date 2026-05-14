@@ -12,8 +12,12 @@
  * Background/killed-app flow:
  *  1. OS delivers push → user taps → app opens cold.
  *  2. `click` handler fires with `corridaId` + `status` in `additionalData`.
- *  3. Hook fetches the full corrida from the API and hydrates Redux.
+ *  3. Hook fetches the full corrida from the API and hydrates Redux (or sets
+ *     `pendingOffer` for driver offer pushes).
  *  4. Navigation is deferred until `navigationRef.isReady()`.
+ *  5. If the session is not hydrated yet when the user taps a notification,
+ *     the payload is queued and processed once `isAuthenticated` and
+ *     `servidorId` are available (cold start / slow persist).
  *
  * Lifecycle:
  *  1. On mount — initialize OneSignal SDK and request OS permission.
@@ -39,6 +43,7 @@ import {
   setOneSignalExternalUserId,
   setOneSignalUserTags,
   clearOneSignalUserTags,
+  isDriverOfferPushStatus,
   type NotificationOpenedEvent,
 } from '@services/notifications/OneSignalService';
 import {navigationRef} from '@navigation/navigationRef';
@@ -119,6 +124,16 @@ export const useNotifications = (): UseNotificationsResult => {
   const isMotoristaRef = useRef(!!motoristaId);
   isMotoristaRef.current = !!motoristaId;
 
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  isAuthenticatedRef.current = isAuthenticated;
+
+  const servidorIdRef = useRef(servidorId);
+  servidorIdRef.current = servidorId;
+
+  /** One pending ride notification replayed after auth hydration (cold start). */
+  const pendingNotificationOpenRef = useRef<NotificationOpenedEvent | null>(null);
+  /** Tracks prior authenticated flag so we only drop the queue on logout, not on first paint before persist. */
+  const wasAuthenticatedRef = useRef(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const sdkInitialized = useRef(false);
   const lastLinkedServidorId = useRef<string | null>(null);
@@ -166,26 +181,21 @@ export const useNotifications = (): UseNotificationsResult => {
    *
    * Flow:
    * 1. Extract `corridaId` and `status` from the push payload.
-   * 2. If driver + nova_corrida push: hydrate Redux with the offer so
-   *    NovaCorridaModal renders immediately on MotoristaHome.
+   * 2. If driver + offer push (`isDriverOfferPushStatus`): hydrate Redux with
+   *    a minimal offer payload so NovaCorridaModal renders on MotoristaHome.
    * 3. Otherwise: fetch the full corrida and hydrate Redux.
    * 4. Navigate to the correct home screen once the navigator is ready.
+   * 5. When the session is not ready, queue the event for the auth effect.
    */
-  const handleNotificationOpened = useCallback((event: NotificationOpenedEvent) => {
-    logger.info('useNotifications', `Notification opened: ${event.title}`, event.data);
-
+  const processOpenedNotification = useCallback((event: NotificationOpenedEvent) => {
     const {corridaId, status} = event.data;
     if (!corridaId) {
       logger.warn('useNotifications', 'Notification opened without corridaId — skipping');
       return;
     }
 
-    const isMotorista = isMotoristaRef.current;
-    const isNovaCorridaPush = status === 'nova_corrida' || status === 'aguardando_aceite';
-
-    if (isMotorista && isNovaCorridaPush) {
+    if (isMotoristaRef.current && isDriverOfferPushStatus(status)) {
       // Driver received a new ride offer push while app was background/killed.
-      // Hydrate Redux with a minimal offer payload so NovaCorridaModal renders.
       const offerPayload: NovaCorridaDisponivelPayload = {
         corridaId,
         mensagem: event.data.passageiroNome,
@@ -193,7 +203,6 @@ export const useNotifications = (): UseNotificationsResult => {
       dispatch(setPendingOffer(offerPayload));
       logger.info('useNotifications', `Driver offer hydrated from push tap: ${corridaId}`);
     } else {
-      // Passenger or non-offer push: fetch full corrida and hydrate Redux.
       void corridaFacade.getCorrida(corridaId).then(result => {
         if (result.data) {
           dispatch(setActiveCorrida(result.data));
@@ -207,21 +216,61 @@ export const useNotifications = (): UseNotificationsResult => {
 
     const doNavigate = (): void => {
       if (navigationRef.isReady()) {
-        navigateToRide(corridaId, status, isMotorista);
+        navigateToRide(corridaId, status, isMotoristaRef.current);
       } else {
         setTimeout(() => {
-          if (navigationRef.isReady()) navigateToRide(corridaId, status, isMotoristaRef.current);
+          if (navigationRef.isReady()) {
+            navigateToRide(corridaId, status, isMotoristaRef.current);
+          }
         }, 1_000);
       }
     };
 
     doNavigate();
-  }, [corridaFacade, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [corridaFacade, dispatch]);
+
+  const handleNotificationOpened = useCallback((event: NotificationOpenedEvent) => {
+    logger.info('useNotifications', `Notification opened: ${event.title}`, event.data);
+
+    if (!event.data.corridaId) {
+      logger.warn('useNotifications', 'Notification opened without corridaId — skipping');
+      return;
+    }
+
+    if (!isAuthenticatedRef.current || !servidorIdRef.current) {
+      pendingNotificationOpenRef.current = event;
+      logger.info('useNotifications', 'Notification open queued until session is hydrated');
+      return;
+    }
+
+    processOpenedNotification(event);
+  }, [processOpenedNotification]);
 
   useEffect(() => {
     const cleanup = registerNotificationOpenedHandler(handleNotificationOpened);
     return cleanup;
   }, [handleNotificationOpened]);
+
+  // Replay a notification tap that arrived before Redux session was ready.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      if (wasAuthenticatedRef.current) {
+        pendingNotificationOpenRef.current = null;
+      }
+      wasAuthenticatedRef.current = false;
+      return;
+    }
+
+    wasAuthenticatedRef.current = true;
+
+    if (!servidorId) return;
+
+    const queued = pendingNotificationOpenRef.current;
+    if (!queued) return;
+
+    pendingNotificationOpenRef.current = null;
+    processOpenedNotification(queued);
+  }, [isAuthenticated, servidorId, processOpenedNotification]);
 
   // ---------------------------------------------------------------------------
   // Sync external user ID and role tags with auth state.

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">65.88% </span>
+                <span class="strong">65.85% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>56/85</span>
+                <span class='fraction'>54/82</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">35.71% </span>
+                <span class="strong">35% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>15/42</span>
+                <span class='fraction'>14/40</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40.9% </span>
+                <span class="strong">40% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>9/22</span>
+                <span class='fraction'>8/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">67.1% </span>
+                <span class="strong">67.56% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>51/76</span>
+                <span class='fraction'>50/74</span>
             </div>
         
             
@@ -468,18 +468,7 @@
 <a name='L403'></a><a href='#L403'>403</a>
 <a name='L404'></a><a href='#L404'>404</a>
 <a name='L405'></a><a href='#L405'>405</a>
-<a name='L406'></a><a href='#L406'>406</a>
-<a name='L407'></a><a href='#L407'>407</a>
-<a name='L408'></a><a href='#L408'>408</a>
-<a name='L409'></a><a href='#L409'>409</a>
-<a name='L410'></a><a href='#L410'>410</a>
-<a name='L411'></a><a href='#L411'>411</a>
-<a name='L412'></a><a href='#L412'>412</a>
-<a name='L413'></a><a href='#L413'>413</a>
-<a name='L414'></a><a href='#L414'>414</a>
-<a name='L415'></a><a href='#L415'>415</a>
-<a name='L416'></a><a href='#L416'>416</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L406'></a><a href='#L406'>406</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -606,7 +595,6 @@
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -721,15 +709,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -770,6 +749,7 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -920,7 +900,6 @@ import {useTheme, type Theme} from '../../theme';
 import {useFacades} from '@services/facades';
 import type {PassageiroCorridasStackParamList} from '@navigation/types';
 import type {Corrida} from '@models/Corrida';
-import {useAppSelector} from '../../store';
 &nbsp;
 type NavProp = NativeStackNavigationProp&lt;PassageiroCorridasStackParamList&gt;;
 &nbsp;
@@ -1021,7 +1000,6 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element =&gt; {
   const theme = useTheme();
   const navigation = useNavigation&lt;NavProp&gt;();
   const {corridaFacade} = useFacades();
-  const papeis = useAppSelector(st =&gt; st.auth.papeis);
 &nbsp;
   const s = useMemo(() =&gt; createScreenStyles(theme), [theme]);
 &nbsp;
@@ -1132,15 +1110,6 @@ export const PassageiroCorridasListScreen = (): React.JSX.Element =&gt; {
       {/* Header */}
       &lt;View style={s.header}&gt;
         &lt;Text style={s.headerTitle}&gt;{t('corridas.history.title')}&lt;/Text&gt;
-        {papeis.includes('ADMIN') &amp;&amp; (
-<span class="branch-1 cbranch-no" title="branch not covered" >          &lt;Pressable</span>
-            accessibilityLabel={t('avaliacoes.admin.title')}
-            accessibilityRole="button"
-            onPress={<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >navigation.navigate('AdminAvaliacoes')}</span>
-            testID="btn-admin-avaliacoes"&gt;
-            &lt;MaterialIcons name="star" size={24} color={theme.design.textOnDark} /&gt;
-          &lt;/Pressable&gt;
-        )}
       &lt;/View&gt;
 &nbsp;
       {/* Content */}
@@ -1189,7 +1158,7 @@ const createScreenStyles = (theme: Theme) =&gt; {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      justifyContent: 'center',
       paddingHorizontal: spacing[5],
       paddingVertical: spacing[4],
       backgroundColor: design.navy800,
@@ -1197,6 +1166,7 @@ const createScreenStyles = (theme: Theme) =&gt; {
     headerTitle: {
       ...typo.scale.headingLg,
       color: design.textOnDark,
+      textAlign: 'center',
     },
     content: {
       flex: 1,
@@ -1315,7 +1285,7 @@ const createCardStyles = <span class="fstat-no" title="function not covered" >(t
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-24T14:43:46.696Z
+                at 2026-05-14T19:37:17.317Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
