@@ -18,9 +18,6 @@
 import {renderHook, act} from '@testing-library/react-native';
 import {useDriverLocationStream} from '../useDriverLocationStream';
 
-// ── Fake timers ──────────────────────────────────────────────────────────────
-jest.useFakeTimers();
-
 // ── Mock expo-location ───────────────────────────────────────────────────────
 jest.mock('expo-location', () => ({
   Accuracy: {Balanced: 3},
@@ -80,6 +77,14 @@ jest.mock('@store/slices/locationSlice', () => ({
 }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+beforeAll(() => {
+  jest.useFakeTimers();
+});
+
+afterAll(() => {
+  jest.useRealTimers();
+});
 
 const setConnectionStatus = (status: string) => {
   selectorState.connectionStatus = status;

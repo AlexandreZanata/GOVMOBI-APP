@@ -13,9 +13,6 @@ import {renderHook, act} from '@testing-library/react-native';
 import {AppState, type AppStateStatus} from 'react-native';
 import {useDriverLocationStream} from '../useDriverLocationStream';
 
-// ── Fake timers ──────────────────────────────────────────────────────────────
-jest.useFakeTimers();
-
 // ── Mock expo-location ───────────────────────────────────────────────────────
 const mockGetCurrentPositionAsync = jest.fn();
 const mockWatchPositionAsync = jest.fn().mockResolvedValue({remove: jest.fn()});
@@ -101,6 +98,14 @@ const simulateForegroundTransition = () => {
 };
 
 // ── Setup / teardown ─────────────────────────────────────────────────────────
+
+beforeAll(() => {
+  jest.useFakeTimers();
+});
+
+afterAll(() => {
+  jest.useRealTimers();
+});
 
 let addEventListenerSpy: jest.SpyInstance;
 

@@ -12,9 +12,6 @@ import {renderHook, act} from '@testing-library/react-native';
 import {AppState} from 'react-native';
 import {useRideReconnection} from '../useRideReconnection';
 
-// ── Fake timers ──────────────────────────────────────────────────────────────
-jest.useFakeTimers();
-
 // ── Captured handlers ────────────────────────────────────────────────────────
 let capturedStatusHandler: ((status: string) => void) | null = null;
 let capturedEventHandler: ((event: unknown) => void) | null = null;
@@ -95,6 +92,14 @@ const advanceTimer = () => act(() => { jest.advanceTimersByTime(3100); });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 describe('useRideReconnection POC', () => {
+  beforeAll(() => {
+    jest.useFakeTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     capturedStatusHandler = null;

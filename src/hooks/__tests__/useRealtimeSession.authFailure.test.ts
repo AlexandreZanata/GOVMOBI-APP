@@ -1,7 +1,7 @@
 /**
  * @fileoverview Ensures realtime token refresh failures always end the session.
  */
-import {renderHook} from '@testing-library/react-native';
+import {renderHook, waitFor} from '@testing-library/react-native';
 import {act} from 'react';
 import {useRealtimeSession} from '../useRealtimeSession';
 
@@ -68,8 +68,11 @@ jest.mock('@utils/logger', () => ({
   logger: {warn: jest.fn(), error: jest.fn(), info: jest.fn()},
 }));
 
+import {resetRefreshMutex} from '@utils/tokenUtils';
+
 describe('useRealtimeSession - refresh failure fallback', () => {
   beforeEach(() => {
+    resetRefreshMutex();
     jest.useRealTimers();
     jest.clearAllMocks();
     mockToken = createExpiringToken();
@@ -83,26 +86,28 @@ describe('useRealtimeSession - refresh failure fallback', () => {
   });
 
   afterEach(() => {
+    resetRefreshMutex();
     jest.useRealTimers();
   });
 
   it('dispatches logout and does not connect when refresh fails', async () => {
-    renderHook(() => useRealtimeSession());
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
+    const {unmount} = renderHook(() => useRealtimeSession());
+    await waitFor(() => {
+      expect(mockDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({type: 'auth/logout'}),
+      );
     });
-
     expect(mockConnect).not.toHaveBeenCalled();
-    expect(mockDispatch).toHaveBeenCalledWith(
-      expect.objectContaining({type: 'auth/logout'}),
-    );
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'ui/addToast',
         payload: expect.objectContaining({message: 'errors.sessionExpired'}),
       }),
     );
+    unmount();
+    await act(async () => {
+      await Promise.resolve();
+    });
   });
 
   it('dispatches tokenRefreshed before connect when refresh succeeds', async () => {
@@ -112,18 +117,19 @@ describe('useRealtimeSession - refresh failure fallback', () => {
       error: null,
     });
 
-    renderHook(() => useRealtimeSession());
+    const {unmount} = renderHook(() => useRealtimeSession());
+    await waitFor(() => {
+      expect(mockDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'auth/tokenRefreshed',
+          payload: refreshedToken,
+        }),
+      );
+    });
+    expect(mockConnect).toHaveBeenCalledWith(refreshedToken);
+    unmount();
     await act(async () => {
       await Promise.resolve();
-      await Promise.resolve();
     });
-
-    expect(mockDispatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'auth/tokenRefreshed',
-        payload: refreshedToken,
-      }),
-    );
-    expect(mockConnect).toHaveBeenCalledWith(refreshedToken);
   });
 });
