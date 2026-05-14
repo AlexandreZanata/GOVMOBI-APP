@@ -18,8 +18,8 @@ const MAPBOX_ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN ?? '';
  */
 module.exports = {
   expo: {
-    name: 'GovMobile',
-    slug: 'govmobile',
+    name: 'Sorrimobi',
+    slug: 'sorrimobi',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -67,7 +67,7 @@ module.exports = {
         'expo-location',
         {
           locationWhenInUsePermission:
-            'GovMobile needs your location to show your position on the map.',
+            'Sorrimobi needs your location to show your position on the map.',
         },
       ],
       [
@@ -90,7 +90,7 @@ module.exports = {
         },
       ],
     ],
-    scheme: 'govmobile',
+    scheme: 'sorrimobi',
     extra: {
       apiUrl: process.env.API_URL,
       wsUrl: process.env.WS_URL,

@@ -6,7 +6,7 @@
 
 ## Core Direction
 
-GovMobile is used in high-cognitive-load contexts. Interaction design must prioritize:
+Sorrimobi is used in high-cognitive-load contexts. Interaction design must prioritize:
 
 - Purposeful feedback
 - Perceived speed

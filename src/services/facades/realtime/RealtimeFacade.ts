@@ -1,5 +1,5 @@
 /**
- * @fileoverview Facade contract and implementation for GovMobile realtime features.
+ * @fileoverview Facade contract and implementation for Sorrimobi realtime features.
  */
 import {ENV} from '../../../config/env';
 import {

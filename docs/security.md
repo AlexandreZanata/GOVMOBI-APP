@@ -1,4 +1,4 @@
-# GovMobile — Security
+# Sorrimobi — Security
 
 > **Goal:** Define authentication, authorization, data protection, and network security standards for a government-grade mobile application.
 

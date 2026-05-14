@@ -129,7 +129,7 @@ AppHeader.displayName = 'AppHeader';
 /**
  * Creates AppHeader stylesheet values from theme tokens.
  *
- * @param theme Active GovMobile theme.
+ * @param theme Active Sorrimobi theme.
  * @param topInset Device top inset from safe area.
  * @returns React Native stylesheet for AppHeader.
  */

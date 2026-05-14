@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "GovMobile",
+    "appName": "Sorrimobi",
     "loading": "Carregando",
     "retry": "Tentar novamente",
     "cancel": "Cancelar",
@@ -125,7 +125,7 @@
       "profile": "Perfil"
     },
     "titles": {
-      "home": "GovMobile",
+      "home": "Sorrimobi",
       "messages": "Mensagens",
       "calls": "Chamadas",
       "notifications": "Notificacoes",

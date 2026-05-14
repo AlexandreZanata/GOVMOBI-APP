@@ -1,4 +1,4 @@
-# GovMobile — System Design
+# Sorrimobi — System Design
 
 > **Goal:** Document the high-level architecture, layer responsibilities, and key data flows.
 
@@ -6,7 +6,7 @@
 
 ## Architecture Style
 
-GovMobile is a mobile-first client application built with React Native. The frontend is designed to be backend-agnostic through the Facade pattern, allowing the backend to evolve independently (monolith → microservices) without impacting the UI layer.
+Sorrimobi is a mobile-first client application built with React Native. The frontend is designed to be backend-agnostic through the Facade pattern, allowing the backend to evolve independently (monolith → microservices) without impacting the UI layer.
 
 ```
 ┌─────────────────────────────────────────────┐

@@ -1,4 +1,4 @@
-# GovMobile — DevOps
+# Sorrimobi — DevOps
 
 > **Goal:** Define the CI/CD pipeline, build process, and deployment strategy.
 

@@ -25,7 +25,7 @@ export interface AppHeaderProps {
 }
 
 /**
- * Reusable navigation header using GovMobile theme tokens.
+ * Reusable navigation header using Sorrimobi theme tokens.
  * Renders a back button when `showBack` is true and the stack has a previous route.
  */
 export const AppHeader = ({

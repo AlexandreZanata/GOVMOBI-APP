@@ -3,7 +3,7 @@
  */
 
 /**
- * Message payload variants supported by GovMobile chat.
+ * Message payload variants supported by Sorrimobi chat.
  */
 export type MessageType = 'TEXT' | 'IMAGE' | 'FILE' | 'AUDIO' | 'SYSTEM';
 

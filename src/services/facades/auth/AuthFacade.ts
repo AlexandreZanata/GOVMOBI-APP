@@ -215,7 +215,7 @@ function userFromMe(me: MeResponse, apiBaseUrl: string): User {
 
 const createMockUser = (): User => ({
   id: '123e4567-e89b-12d3-a456-426614174300',
-  fullName: 'GovMobile Officer',
+  fullName: 'Sorrimobi Officer',
   email: 'officer@govmobile.local',
   role: UserRole.OFFICER,
   status: UserStatus.ACTIVE,

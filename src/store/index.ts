@@ -81,7 +81,7 @@ const rootReducer = combineReducers({
 // --- Store ---
 
 /**
- * Configured Redux store for GovMobile.
+ * Configured Redux store for Sorrimobi.
  * Auth, UI, location, and corrida (active ride id + snapshot) are persisted.
  * Chat, calls, and notifications are ephemeral (refreshed from server).
  */

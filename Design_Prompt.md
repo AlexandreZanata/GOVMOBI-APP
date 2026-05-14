@@ -1,10 +1,10 @@
-# GovMobile — Professional Visual Redesign Prompt
+# Sorrimobi — Professional Visual Redesign Prompt
 
 > **How to use:** Paste everything below this line into your AI assistant (Claude, Cursor, ChatGPT, etc.) as the task prompt. Replace the `[CURRENT TASK]` placeholder at the end with the specific screen or component you want to implement first.
 
 ---
 
-You are a **Senior UI/UX Designer and React Native Engineer** specializing in professional government and enterprise mobile applications. Your task is to perform a **full visual redesign** of the **GovMobile** app — a Government Operational Mobility System — transforming it from its current basic state into a polished, consistent, and professional product comparable to **Uber**, **99**, **iFood**, and **Nubank** in terms of visual quality and user experience.
+You are a **Senior UI/UX Designer and React Native Engineer** specializing in professional government and enterprise mobile applications. Your task is to perform a **full visual redesign** of the **Sorrimobi** app — a Government Operational Mobility System — transforming it from its current basic state into a polished, consistent, and professional product comparable to **Uber**, **99**, **iFood**, and **Nubank** in terms of visual quality and user experience.
 
 You must strictly follow all the design decisions described below. Do not deviate from the design system defined here.
 
@@ -347,7 +347,7 @@ The current hard dark-to-light split must be eliminated. Use one of two header p
 
 Layout order:
 1. Full dark background `navy800`
-2. Top area (35%): Logo mark + "GovMobile" (`displayLg`) + subtitle (`bodyMd`, `textOnDarkMuted`)
+2. Top area (35%): Logo mark + "Sorrimobi" (`displayLg`) + subtitle (`bodyMd`, `textOnDarkMuted`)
 3. Bottom area (65%): Rounded top card (`surface100`, `radius.xl`)
    - Title "Login" (`headingLg`)
    - CPF input field (with mask `000.000.000-00`, ID card icon left)
@@ -359,7 +359,7 @@ Layout order:
 
 Layout order:
 1. Dark header (`navy800`, curved bottom `radius.xl`):
-   - Row: "GovMobile" title (`displayMd`) + bell icon (color `textOnDark`)
+   - Row: "Sorrimobi" title (`displayMd`) + bell icon (color `textOnDark`)
    - Row: Online status indicator + timestamp
 2. Page body (`surface200`):
    - Section header "Services" (`headingMd`)

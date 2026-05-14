@@ -1,5 +1,5 @@
 /**
- * @fileoverview GovMobile design system — single source of truth for all tokens.
+ * @fileoverview Sorrimobi design system — single source of truth for all tokens.
  *
  * Extends the original theme with the full Design_Prompt palette, typography
  * scale, spacing, radius, and shadow tokens required by the redesign.
@@ -338,7 +338,7 @@ export type Theme = {
 };
 
 /**
- * Creates the full GovMobile theme object by visual mode.
+ * Creates the full Sorrimobi theme object by visual mode.
  *
  * @param mode - 'light' or 'dark'.
  * @returns Complete theme with all design tokens.
@@ -364,7 +364,7 @@ type ThemeProviderProps = {
 };
 
 /**
- * Provides GovMobile design tokens to descendant components.
+ * Provides Sorrimobi design tokens to descendant components.
  *
  * @param props - Children and optional theme mode.
  * @returns ThemeContext provider element.
@@ -378,7 +378,7 @@ export const ThemeProvider = ({
 };
 
 /**
- * Returns the current GovMobile theme from React context.
+ * Returns the current Sorrimobi theme from React context.
  *
  * @returns Full theme object with all design tokens.
  */

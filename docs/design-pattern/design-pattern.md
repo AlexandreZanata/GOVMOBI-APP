@@ -1,4 +1,4 @@
-# GovMobile — Design Pattern
+# Sorrimobi — Design Pattern
 
 > **Goal:** Standardize UI/UX interaction patterns, transitions, motion, and performance behavior.
 

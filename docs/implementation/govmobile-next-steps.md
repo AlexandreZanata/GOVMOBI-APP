@@ -1,4 +1,4 @@
-# GovMobile App — Next Steps Implementation Guide
+# Sorrimobi App — Next Steps Implementation Guide
 
 > **Audience:** Engineers using AI coding assistants (Kiro, Copilot, Claude, etc.)
 > **Stack:** React Native + Expo ~54, TypeScript 5 strict, Redux Toolkit, React Navigation 6
@@ -8,7 +8,7 @@
 
 ## Overview
 
-This guide covers the next implementation phases for **GovMobile** — the React Native mobile client for the Government Operational Mobility System. The app already has:
+This guide covers the next implementation phases for **Sorrimobi** — the React Native mobile client for the Government Operational Mobility System. The app already has:
 
 - ✅ Auth flow (Login, ForgotPassword) with Redux Persist
 - ✅ Bottom tab navigation (Home, Chat, Calls, Notifications, Profile)
@@ -141,7 +141,7 @@ src/
 ### Template 1-A: Servidor Model
 
 ```
-You are implementing the Servidor domain model for GovMobile (React Native + Expo).
+You are implementing the Servidor domain model for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/models/Servidor.ts
@@ -179,7 +179,7 @@ Response envelope: { success: boolean; data: T; timestamp: string } — unwrap .
 ### Template 1-B: Servidores Facade
 
 ```
-You are implementing the ServidoresFacade for GovMobile (React Native + Expo).
+You are implementing the ServidoresFacade for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/services/facades/ServidoresFacade.ts
@@ -209,7 +209,7 @@ MOCK DATA: create 3-5 Servidor fixtures mixing ativo: true/false and different p
 ### Template 1-C: Servidores List Screen
 
 ```
-You are implementing the ServidoresListScreen for GovMobile (React Native + Expo).
+You are implementing the ServidoresListScreen for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/screens/Servidores/ServidoresListScreen.tsx
@@ -253,7 +253,7 @@ i18n keys needed (servidores namespace):
 ### Template 1-D: POC Test — Servidores List
 
 ```
-You are writing a POC test for ServidoresListScreen in GovMobile.
+You are writing a POC test for ServidoresListScreen in Sorrimobi.
 
 MANDATORY RULES:
 - File: src/screens/Servidores/__tests__/ServidoresListScreen.test.tsx
@@ -350,7 +350,7 @@ src/
 ### Template 2-A: Frota Models
 
 ```
-You are defining the Veiculo and Motorista domain models for GovMobile (React Native + Expo).
+You are defining the Veiculo and Motorista domain models for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/models/Veiculo.ts — export interface Veiculo
@@ -374,7 +374,7 @@ Response envelope: { success: boolean; data: T; timestamp: string } — unwrap .
 ### Template 2-B: Frota Facade
 
 ```
-You are implementing the FrotaFacade for GovMobile (React Native + Expo).
+You are implementing the FrotaFacade for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/services/facades/FrotaFacade.ts
@@ -407,7 +407,7 @@ MOCK DATA: 3-5 Veiculo fixtures and 3-5 Motorista fixtures mixing ativo/statusOp
 ### Template 2-C: Frota Screen
 
 ```
-You are implementing the FrotaScreen for GovMobile (React Native + Expo).
+You are implementing the FrotaScreen for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/screens/Frota/FrotaScreen.tsx
@@ -473,7 +473,7 @@ src/
 ### Template 3-A: Notifications Screen
 
 ```
-You are implementing the NotificationsScreen for GovMobile (React Native + Expo).
+You are implementing the NotificationsScreen for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/screens/Notifications/NotificationsScreen.tsx
@@ -530,7 +530,7 @@ src/
 ### Template 4-A: Profile Screen
 
 ```
-You are implementing the ProfileScreen for GovMobile (React Native + Expo).
+You are implementing the ProfileScreen for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/screens/Profile/ProfileScreen.tsx
@@ -559,7 +559,7 @@ i18n keys needed (profile namespace):
 ### Template 4-B: Settings Screen
 
 ```
-You are implementing the SettingsScreen for GovMobile (React Native + Expo).
+You are implementing the SettingsScreen for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/screens/Profile/SettingsScreen.tsx
@@ -607,7 +607,7 @@ src/
 ### Template 5-A: Offline Queue
 
 ```
-You are implementing the offline mutation queue for GovMobile (React Native + Expo).
+You are implementing the offline mutation queue for Sorrimobi (React Native + Expo).
 
 MANDATORY RULES:
 - File: src/store/slices/offlineQueueSlice.ts

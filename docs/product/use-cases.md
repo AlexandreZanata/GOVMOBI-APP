@@ -1,4 +1,4 @@
-# GovMobile — Use Cases
+# Sorrimobi — Use Cases
 
 > **Goal:** Document the primary user flows and business logic that drive feature decisions.
 

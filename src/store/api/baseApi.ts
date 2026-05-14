@@ -203,7 +203,7 @@ const baseQueryWithReauth: BaseQueryFn<
 // ---------------------------------------------------------------------------
 
 /**
- * RTK Query base API instance for GovMobile.
+ * RTK Query base API instance for Sorrimobi.
  *
  * All feature API slices should inject endpoints into this base using
  * `baseApi.injectEndpoints()` to share the same cache, middleware, and

@@ -8,7 +8,7 @@
 
 ## Context
 
-GovMobile requires communication with a backend that does not yet exist in its final form. The frontend must be built in parallel with (or ahead of) the backend. Additionally, the backend architecture may evolve from a simple REST API toward microservices or a different protocol (GraphQL, gRPC) over time.
+Sorrimobi requires communication with a backend that does not yet exist in its final form. The frontend must be built in parallel with (or ahead of) the backend. Additionally, the backend architecture may evolve from a simple REST API toward microservices or a different protocol (GraphQL, gRPC) over time.
 
 Without an abstraction layer, every screen and hook would directly call HTTP clients, making the codebase tightly coupled to the current backend implementation. Any backend change would require widespread UI-layer changes.
 

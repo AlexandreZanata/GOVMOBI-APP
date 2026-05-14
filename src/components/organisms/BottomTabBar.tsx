@@ -177,7 +177,7 @@ BottomTabBar.displayName = 'BottomTabBar';
 /**
  * Creates BottomTabBar stylesheet values from theme tokens.
  *
- * @param theme Active GovMobile theme.
+ * @param theme Active Sorrimobi theme.
  * @param bottomInset Device bottom inset from safe area.
  * @returns React Native stylesheet for BottomTabBar.
  */

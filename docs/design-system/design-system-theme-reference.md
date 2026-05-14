@@ -1,6 +1,6 @@
 # Design System — Theme Reference (TypeScript)
 
-> **Goal:** Document the runtime theme contract used by GovMobile.
+> **Goal:** Document the runtime theme contract used by Sorrimobi.
 
 ---
 

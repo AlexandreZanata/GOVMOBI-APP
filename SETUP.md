@@ -1,4 +1,4 @@
-# GovMobile Setup Instructions
+# Sorrimobi Setup Instructions
 
 ## Prerequisites
 - Node.js 18+

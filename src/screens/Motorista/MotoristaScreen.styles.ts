@@ -1,7 +1,7 @@
 /**
  * @fileoverview Styles for the MotoristaScreen (driver home + active ride panel).
  *
- * All values use GovMobile design tokens — zero hardcoded colors or pixel values.
+ * All values use Sorrimobi design tokens — zero hardcoded colors or pixel values.
  */
 import {StyleSheet} from 'react-native';
 import {type Theme} from '../../theme';
@@ -57,7 +57,7 @@ export const MotoristaColors = {
 /**
  * Creates the StyleSheet for the MotoristaScreen.
  *
- * @param theme - GovMobile theme object.
+ * @param theme - Sorrimobi theme object.
  * @returns StyleSheet for the driver home screen.
  */
 export const createMotoristaStyles = (theme: Theme) => {

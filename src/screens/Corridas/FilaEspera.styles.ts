@@ -2,7 +2,7 @@
  * @fileoverview Styles for the FilaEsperaCard molecule.
  *
  * Visual language: amber accent card with a progress indicator row,
- * consistent with the GovMobile design system tokens.
+ * consistent with the Sorrimobi design system tokens.
  */
 import {StyleSheet} from 'react-native';
 import {type Theme} from '../../theme';
@@ -10,7 +10,7 @@ import {type Theme} from '../../theme';
 /**
  * Creates the StyleSheet for FilaEsperaCard.
  *
- * @param theme - The current GovMobile theme object.
+ * @param theme - The current Sorrimobi theme object.
  * @returns StyleSheet scoped to the FilaEspera feature.
  */
 export const createFilaEsperaStyles = (theme: Theme) => {

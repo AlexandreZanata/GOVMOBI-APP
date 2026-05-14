@@ -1,4 +1,4 @@
-# GovMobile — Government Operational Mobility System
+# Sorrimobi — Government Operational Mobility System
 
 > **Internal fleet coordination and task dispatch platform for public servants.**
 > This is not a consumer app; it is a controlled operational tool.
@@ -71,7 +71,7 @@ PENDING -> ASSIGNED -> IN_PROGRESS -> COMPLETED
 ## Architecture Overview
 
 ```text
-govmobile/
+sorrimobi/
 ├── src/
 │   ├── components/
 │   │   ├── atoms/
@@ -109,7 +109,7 @@ These steps are aligned with the current project structure and already existing 
 Use this block before every step prompt so implementation always stays connected to the business model and engineering standards:
 
 ```text
-You are implementing GovMobile, a Government Operational Mobility System.
+You are implementing Sorrimobi, a Government Operational Mobility System.
 
 Business context (mandatory):
 - This is an internal fleet coordination and task dispatch platform for public servants.

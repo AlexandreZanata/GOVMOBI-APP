@@ -16,7 +16,7 @@ type UseLanguageResult = {
 };
 
 /**
- * Returns language controls for GovMobile localization.
+ * Returns language controls for Sorrimobi localization.
  */
 export const useLanguage = (): UseLanguageResult => {
   const currentLanguage = (

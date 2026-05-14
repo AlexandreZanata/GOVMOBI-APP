@@ -5,7 +5,7 @@ import {type Theme} from '../../theme';
  * Creates the shared StyleSheet for Chat screens and subcomponents.
  * All values come from theme tokens — no hardcoded colors or sizes.
  *
- * @param theme - The current GovMobile theme object.
+ * @param theme - The current Sorrimobi theme object.
  * @returns A StyleSheet object scoped to the Chat screens.
  */
 // eslint-disable-next-line react-native/no-unused-styles

@@ -2,7 +2,7 @@
  * @fileoverview Module implementation for models/User.
  */
 /**
- * Supported GovMobile roles used for access control.
+ * Supported Sorrimobi roles used for access control.
  */
 export enum UserRole {
   ADMIN = 'ADMIN',
@@ -12,7 +12,7 @@ export enum UserRole {
 }
 
 /**
- * Lifecycle status for a GovMobile user account.
+ * Lifecycle status for a Sorrimobi user account.
  */
 export enum UserStatus {
   ACTIVE = 'ACTIVE',

@@ -9,7 +9,7 @@
 
 ## What This Route Does
 
-The `/auth` group handles the full identity lifecycle for GovMobile:
+The `/auth` group handles the full identity lifecycle for Sorrimobi:
 
 - **Login** — exchanges CPF + senha for an `accessToken` / `refreshToken` pair.
 - **Refresh** — rotates the access token using a valid refresh token (no re-login needed).

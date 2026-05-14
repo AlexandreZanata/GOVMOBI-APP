@@ -1,4 +1,4 @@
-# GovMobile — Testing Strategy
+# Sorrimobi — Testing Strategy
 
 > **Goal:** Define testing levels, tools, coverage targets, and what must be tested at each layer.
 

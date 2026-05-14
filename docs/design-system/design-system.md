@@ -1,4 +1,4 @@
-# GovMobile — Design System
+# Sorrimobi — Design System
 
 > **Goal:** Standardize visual/UI decisions with modular documentation that is easy to maintain.
 

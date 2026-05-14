@@ -1,5 +1,5 @@
 /**
- * @fileoverview Shared WebSocket payload contracts for GovMobile realtime flows.
+ * @fileoverview Shared WebSocket payload contracts for Sorrimobi realtime flows.
  */
 import type {MotoristaStatusOperacional} from '@models/Motorista';
 

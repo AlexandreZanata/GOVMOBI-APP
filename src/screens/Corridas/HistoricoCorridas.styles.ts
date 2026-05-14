@@ -1,7 +1,7 @@
 /**
  * @fileoverview Styles for PassageiroCorridasListScreen (ride history).
  *
- * Design aligned with the GovMobile dashboard and profile pages.
+ * Design aligned with the Sorrimobi dashboard and profile pages.
  * All values use theme design tokens — zero hardcoded colors or pixel values.
  */
 import {StyleSheet} from 'react-native';
@@ -10,7 +10,7 @@ import {type Theme} from '../../theme';
 /**
  * Creates the StyleSheet for the ride history screen.
  *
- * @param theme - The current GovMobile theme object.
+ * @param theme - The current Sorrimobi theme object.
  * @returns StyleSheet scoped to the ride history feature.
  */
 export const createHistoricoStyles = (theme: Theme) => {

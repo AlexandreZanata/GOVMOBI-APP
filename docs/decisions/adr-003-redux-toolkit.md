@@ -8,7 +8,7 @@
 
 ## Context
 
-GovMobile has multiple interconnected state domains: authentication, real-time chat, active calls, notifications, and UI preferences. State must be shared across screens, survive navigation transitions, and in some cases persist across app restarts.
+Sorrimobi has multiple interconnected state domains: authentication, real-time chat, active calls, notifications, and UI preferences. State must be shared across screens, survive navigation transitions, and in some cases persist across app restarts.
 
 A local state-only approach (useState/useReducer per screen) would not scale to cross-screen state like incoming calls or unread counts. A lightweight solution like Zustand was considered but lacks the ecosystem maturity needed for a government-grade application.
 

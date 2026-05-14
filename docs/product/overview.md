@@ -1,6 +1,6 @@
-# GovMobile — Product Overview
+# Sorrimobi — Product Overview
 
-> **Goal:** Define what GovMobile is, who it serves, and how operational field work is coordinated.
+> **Goal:** Define what Sorrimobi is, who it serves, and how operational field work is coordinated.
 
 ---
 

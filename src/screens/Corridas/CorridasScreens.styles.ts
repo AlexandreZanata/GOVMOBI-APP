@@ -7,7 +7,7 @@ import {type Theme} from '../../theme';
 /**
  * Creates shared styles for Corridas screens using design tokens.
  *
- * @param theme - GovMobile theme object.
+ * @param theme - Sorrimobi theme object.
  * @returns StyleSheet for Corridas screens.
  */
 export const createCorridasStyles = (theme: Theme) =>
@@ -205,7 +205,7 @@ export const createCorridasStyles = (theme: Theme) =>
  * Returns the background color for a corrida status badge.
  *
  * @param status - CorridaStatus value.
- * @param theme - GovMobile theme.
+ * @param theme - Sorrimobi theme.
  * @returns Hex color string.
  */
 export const statusColor = (status: string, theme: Theme): string => {

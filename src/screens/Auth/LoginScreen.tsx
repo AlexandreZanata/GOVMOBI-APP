@@ -3,7 +3,7 @@
  *
  * Layout (Design_Prompt §4 Screen 1):
  * - Full dark background (navy800)
- * - Top area (~35%): 4-square logo mark + "GovMobile" (displayLg) + subtitle
+ * - Top area (~35%): 4-square logo mark + "Sorrimobi" (displayLg) + subtitle
  * - Bottom area (~65%): rounded-top white card with CPF + password form
  *
  * Safe-area & keyboard strategy:

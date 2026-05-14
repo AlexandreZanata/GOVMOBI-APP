@@ -1,4 +1,4 @@
-# GovMobile — AI-Assisted Build Guide (Driver + Dispatcher)
+# Sorrimobi — AI-Assisted Build Guide (Driver + Dispatcher)
 
 > Standalone prompts to finish implementation using the new operational model.
 > Each step includes one prompt and one POC file to validate before moving on.
@@ -34,7 +34,7 @@ If a generated solution conflicts with this canon, treat it as a bug and revise.
 ## Master Prompt Block (prepend to every step)
 
 ```text
-You are implementing GovMobile, a React Native + TypeScript Expo app.
+You are implementing Sorrimobi, a React Native + TypeScript Expo app.
 
 BUSINESS MODEL (MANDATORY):
 - Purpose: Internal fleet coordination and task dispatch platform for public servants.
@@ -96,7 +96,7 @@ TECHNICAL ACCEPTANCE:
 
 **Prompt:**
 ```text
-Implement the GovMobile run domain model.
+Implement the Sorrimobi run domain model.
 
 Create/update files:
 - src/models/Run.ts

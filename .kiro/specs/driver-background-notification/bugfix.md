@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Drivers (motoristas) do not receive push notifications for new ride requests (`nova_corrida`) when the GovMobile app is minimized or in the background/killed state. The passenger successfully submits a ride request and receives confirmation, but the driver's device never shows the push notification. As a result, the driver misses the offer entirely and the ride goes unmatched.
+Drivers (motoristas) do not receive push notifications for new ride requests (`nova_corrida`) when the Sorrimobi app is minimized or in the background/killed state. The passenger successfully submits a ride request and receives confirmation, but the driver's device never shows the push notification. As a result, the driver misses the offer entirely and the ride goes unmatched.
 
 The foreground path works correctly — when the app is open, the WebSocket delivers `nova-corrida-disponivel` and the offer modal appears. The failure is isolated to the background/killed delivery path, which relies on OneSignal pushing an FCM message to the driver's device.
 

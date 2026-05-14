@@ -2,7 +2,7 @@
  * @fileoverview Redesigned HomeHeader — dark immersive header (Design_Prompt Pattern A).
  *
  * Contains two rows:
- * - Row 1: "GovMobile" title (displayMd, textOnDark) + notification bell
+ * - Row 1: "Sorrimobi" title (displayMd, textOnDark) + notification bell
  * - Row 2: Online status dot + label + separator + timestamp
  *
  * The curved bottom radius is applied on the outer container so the

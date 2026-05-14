@@ -1,5 +1,5 @@
 /**
- * @fileoverview OneSignal push notification service for GovMobile.
+ * @fileoverview OneSignal push notification service for Sorrimobi.
  *
  * Wraps the `react-native-onesignal` v5 SDK behind a stable interface so the
  * rest of the app never imports OneSignal directly.

@@ -1,6 +1,6 @@
 # Design System — Philosophy
 
-> **Goal:** Keep GovMobile visual language trustworthy, clear, and efficient.
+> **Goal:** Keep Sorrimobi visual language trustworthy, clear, and efficient.
 
 ---
 

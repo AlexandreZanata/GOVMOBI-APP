@@ -1,7 +1,7 @@
 /**
  * @fileoverview Styles for AcompanharCorridaScreen.
  *
- * Design language aligned with the GovMobile dashboard and profile pages:
+ * Design language aligned with the Sorrimobi dashboard and profile pages:
  *   - Dark navy hero header (navy800) with curved bottom radius
  *   - surface200 body background
  *   - White cards with shadow tokens
@@ -15,7 +15,7 @@ import {type Theme} from '../../theme';
 /**
  * Creates the StyleSheet for AcompanharCorridaScreen.
  *
- * @param theme - The current GovMobile theme object.
+ * @param theme - The current Sorrimobi theme object.
  * @returns StyleSheet scoped to the AcompanharCorrida feature.
  */
 export const createAcompanharStyles = (theme: Theme) => {

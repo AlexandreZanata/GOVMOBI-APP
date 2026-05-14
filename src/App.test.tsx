@@ -171,7 +171,7 @@ describe('App bootstrap', () => {
     const probeText = String(probe.props.children);
 
     expect(probeText).toContain('light');
-    expect(probeText).toContain('GovMobile');
+    expect(probeText).toContain('Sorrimobi');
     expect(probeText).toMatch(/i18n-(ready|pending)/);
   });
 });

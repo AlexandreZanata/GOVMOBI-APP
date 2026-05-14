@@ -3,7 +3,7 @@
  */
 
 /**
- * Roles a servidor can hold within the GovMobile system.
+ * Roles a servidor can hold within the Sorrimobi system.
  */
 export type Papel = 'USUARIO' | 'ADMIN' | 'MOTORISTA';
 

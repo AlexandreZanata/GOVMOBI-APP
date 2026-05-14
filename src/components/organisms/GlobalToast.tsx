@@ -93,7 +93,7 @@ GlobalToast.displayName = 'GlobalToast';
 /**
  * Creates GlobalToast stylesheet values from theme tokens.
  *
- * @param theme Active GovMobile theme.
+ * @param theme Active Sorrimobi theme.
  * @param topInset Device top safe area inset.
  * @returns React Native stylesheet for GlobalToast.
  */

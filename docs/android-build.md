@@ -1,6 +1,6 @@
-# Android Build Guide — GovMobile
+# Android Build Guide — Sorrimobi
 
-This guide covers everything you need to build, install, and update the GovMobile Android app on an emulator or physical device.
+This guide covers everything you need to build, install, and update the Sorrimobi Android app on an emulator or physical device.
 
 ---
 

@@ -3,7 +3,7 @@
  */
 
 /**
- * Roles supported by GovMobile operations.
+ * Roles supported by Sorrimobi operations.
  */
 export type UserRole = 'AGENT' | 'DISPATCHER' | 'SUPERVISOR' | 'ADMIN';
 

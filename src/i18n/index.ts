@@ -65,7 +65,7 @@ export const detectLanguage = (): AppLanguage => {
 };
 
 /**
- * Initializes i18next for GovMobile.
+ * Initializes i18next for Sorrimobi.
  */
 export const initI18n = async (): Promise<I18nInstance> => {
   if (i18n.isInitialized) {

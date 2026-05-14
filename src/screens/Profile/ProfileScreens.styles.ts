@@ -22,7 +22,7 @@ const AVATAR_UPLOAD_OVERLAY_BG = 'rgba(0,0,0,0.45)';
 /**
  * Creates the StyleSheet for ProfileScreen and SettingsScreen.
  *
- * @param theme - The current GovMobile theme object.
+ * @param theme - The current Sorrimobi theme object.
  * @returns A StyleSheet object scoped to the Profile feature.
  */
 // eslint-disable-next-line react-native/no-unused-styles

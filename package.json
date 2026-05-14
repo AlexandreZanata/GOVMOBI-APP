@@ -1,5 +1,5 @@
 {
-  "name": "govmobile",
+  "name": "sorrimobi",
   "version": "1.0.0",
   "description": "Public Administration Mobile App",
   "main": "index.js",
@@ -8,10 +8,12 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "emulator": "bash scripts/emulator.sh",
-    "emulator:install": "cd android && ./gradlew assembleDebug && cd .. && adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/aaaaaaaaa.apk && adb -s emulator-5554 reverse tcp:8081 tcp:8081 && adb -s emulator-5554 shell am start -n gov.govmobile.app/.MainActivity",
+    "emulator:install": "bash scripts/emulator.sh",
     "web": "expo start --web",
-    "dev:android": "expo run:android",
-    "dev:android:standalone": "cd android && ./gradlew assembleDebugStandalone",
+    "dev:android": "bash scripts/android-standalone-build.sh",
+    "dev:android:install": "bash scripts/android-install-standalone.sh",
+    "dev:android:metro": "expo run:android",
+    "dev:android:standalone": "bash scripts/android-standalone-build.sh",
     "dev:ios": "expo run:ios",
     "build:dev:android": "eas build --profile development --platform android",
     "build:dev:ios": "eas build --profile development --platform ios",
@@ -111,6 +113,6 @@
     "public-administration",
     "mobile-app"
   ],
-  "author": "GovMobile Team",
+  "author": "Sorrimobi Team",
   "license": "MIT"
 }

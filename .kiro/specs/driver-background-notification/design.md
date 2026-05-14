@@ -2,7 +2,7 @@
 
 ## Overview
 
-Drivers do not receive push notifications for new ride requests (`nova_corrida`) when the GovMobile app is minimized or killed. The foreground path (WebSocket → `nova-corrida-disponivel` → `NovaCorridaModal`) works correctly. The background/killed path relies on OneSignal delivering an FCM message to the device, which requires specific Android native declarations that are currently absent from `AndroidManifest.xml`.
+Drivers do not receive push notifications for new ride requests (`nova_corrida`) when the Sorrimobi app is minimized or killed. The foreground path (WebSocket → `nova-corrida-disponivel` → `NovaCorridaModal`) works correctly. The background/killed path relies on OneSignal delivering an FCM message to the device, which requires specific Android native declarations that are currently absent from `AndroidManifest.xml`.
 
 The fix is entirely in the Android native layer. No JavaScript changes are needed.
 
@@ -251,7 +251,7 @@ After applying the fix, the manifest should look like this:
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="govmobile"/>
+        <data android:scheme="sorrimobi"/>
       </intent-filter>
     </activity>
 

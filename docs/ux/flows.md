@@ -1,4 +1,4 @@
-# GovMobile — UX Flows
+# Sorrimobi — UX Flows
 
 > **Goal:** Document the primary user flows as screen sequences to guide screen and navigation implementation.
 

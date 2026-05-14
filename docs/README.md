@@ -1,4 +1,4 @@
-# GovMobile — Documentation Index
+# Sorrimobi — Documentation Index
 
 > Entry point for all project documentation.
 

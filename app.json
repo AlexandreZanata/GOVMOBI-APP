@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "GovMobile",
-    "slug": "govmobile",
+    "name": "Sorrimobi",
+    "slug": "sorrimobi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -37,7 +37,7 @@
       "expo-av",
       "expo-font"
     ],
-    "scheme": "govmobile",
+    "scheme": "sorrimobi",
     "extra": {
       "apiUrl": "",
       "wsUrl": "",

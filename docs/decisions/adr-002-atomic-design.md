@@ -8,7 +8,7 @@
 
 ## Context
 
-GovMobile needs a scalable component system that can grow from a small set of screens to a full enterprise application without accumulating UI debt. Without a clear component hierarchy, teams tend to duplicate UI code, create inconsistent visual patterns, and produce components that are hard to test or reuse.
+Sorrimobi needs a scalable component system that can grow from a small set of screens to a full enterprise application without accumulating UI debt. Without a clear component hierarchy, teams tend to duplicate UI code, create inconsistent visual patterns, and produce components that are hard to test or reuse.
 
 ---
 

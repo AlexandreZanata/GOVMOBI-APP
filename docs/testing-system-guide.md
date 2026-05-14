@@ -1,4 +1,4 @@
-# GovMobile — Full System Testing Guide
+# Sorrimobi — Full System Testing Guide
 
 > Practical guide to test the whole system locally before opening a PR.
 

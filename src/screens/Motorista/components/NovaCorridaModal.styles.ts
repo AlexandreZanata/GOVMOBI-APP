@@ -7,7 +7,7 @@ import type {Theme} from '@theme/index';
 /**
  * Creates themed styles for NovaCorridaModal.
  *
- * @param theme - Current GovMobile theme.
+ * @param theme - Current Sorrimobi theme.
  * @returns StyleSheet object.
  */
 export const createNovaCorridaModalStyles = (theme: Theme) =>

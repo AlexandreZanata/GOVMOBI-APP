@@ -14,7 +14,7 @@ import {type Theme} from '../../theme';
 /**
  * Creates the StyleSheet for HomeScreen and its subcomponents.
  *
- * @param theme - The current GovMobile theme object.
+ * @param theme - The current Sorrimobi theme object.
  * @returns A StyleSheet object scoped to the Home screen.
  */
 // eslint-disable-next-line react-native/no-unused-styles

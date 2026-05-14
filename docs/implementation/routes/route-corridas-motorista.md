@@ -9,7 +9,7 @@
 
 ## Scope
 
-This guide focuses on the driver lifecycle and state recovery flow used by GovMobile:
+This guide focuses on the driver lifecycle and state recovery flow used by Sorrimobi:
 
 - Driver actions (`aceitar`, `recusar`, `iniciar-deslocamento`, `chegar`, `confirmar-embarque`, `finalizar`, `cancelar`)
 - Shared listing (`GET /corridas`) with role-based visibility

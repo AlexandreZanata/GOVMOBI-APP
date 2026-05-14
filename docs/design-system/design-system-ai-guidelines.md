@@ -1,6 +1,6 @@
 # Design System — AI Prompting Guidelines
 
-> **Goal:** Keep AI-generated code aligned with GovMobile standards.
+> **Goal:** Keep AI-generated code aligned with Sorrimobi standards.
 
 ---
 
@@ -9,7 +9,7 @@
 Use this at the start of feature prompts:
 
 ```text
-You are building a feature for GovMobile, a React Native public administration app.
+You are building a feature for Sorrimobi, a React Native public administration app.
 
 STRICT RULES — violating any of these is a bug:
 1. All colors and sizes come from useTheme(). Zero hardcoded values.
@@ -68,7 +68,7 @@ When you need deterministic code output from AI:
 ## Quality Gate Prompt
 
 ```text
-Review this React Native component for GovMobile standards.
+Review this React Native component for Sorrimobi standards.
 Report: FILE | LINE | ISSUE | FIX
 Checks:
 1) Hardcoded colors/sizes
@@ -81,7 +81,7 @@ Checks:
 8) Touch target below 44px
 9) Missing accessibilityLabel for icon-only buttons
 10) Animations missing useNativeDriver: true
-If no issue: "PASSES all GovMobile standards"
+If no issue: "PASSES all Sorrimobi standards"
 ```
 
 ---

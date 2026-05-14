@@ -1,4 +1,4 @@
-# GovMobile — API Contract
+# Sorrimobi — API Contract
 
 > **Goal:** Define the expected API surface so the frontend can evolve independently of the backend implementation.
 

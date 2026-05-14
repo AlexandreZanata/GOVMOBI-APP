@@ -18,7 +18,7 @@ const baseMessage: Message = {
   senderId: '123e4567-e89b-12d3-a456-426614174212',
   type: MessageType.TEXT,
   status: MessageStatus.SENT,
-  content: 'Hello from GovMobile',
+  content: 'Hello from Sorrimobi',
   createdAt: '2026-01-01T12:00:00.000Z',
   updatedAt: '2026-01-01T12:00:00.000Z',
 };
@@ -44,7 +44,7 @@ describe('MessageBubble', () => {
 
     expect(getByTestId('sent-message')).toBeTruthy();
     expect(getByTestId('received-message')).toBeTruthy();
-    expect(getAllByText('Hello from GovMobile')).toHaveLength(2);
+    expect(getAllByText('Hello from Sorrimobi')).toHaveLength(2);
   });
 
   it('renders text, file, image, and audio content variants', () => {
@@ -92,7 +92,7 @@ describe('MessageBubble', () => {
       </ThemeProvider>,
     );
 
-    expect(getByText('Hello from GovMobile')).toBeTruthy();
+    expect(getByText('Hello from Sorrimobi')).toBeTruthy();
     expect(getByText('File: report.pdf')).toBeTruthy();
     expect(getByText('Image: photo.jpg')).toBeTruthy();
     expect(getByText('Audio: voice-note.m4a')).toBeTruthy();

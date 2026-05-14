@@ -2,7 +2,7 @@
 
 ## Summary
 
-This guide documents a common clean-install / CI failure in GovMobile when `app.config.js` references `onesignal-expo-plugin`, but the package is missing from the installed dependencies.
+This guide documents a common clean-install / CI failure in Sorrimobi when `app.config.js` references `onesignal-expo-plugin`, but the package is missing from the installed dependencies.
 
 When Expo evaluates the config plugin list during build or prebuild, it must be able to resolve both:
 

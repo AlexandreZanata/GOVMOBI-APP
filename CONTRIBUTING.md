@@ -1,4 +1,4 @@
-# Contributing to GovMobile
+# Contributing to Sorrimobi
 
 > Read this before opening a PR.
 

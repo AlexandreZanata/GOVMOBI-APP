@@ -9,7 +9,7 @@ import {type Theme} from '../../theme';
 /**
  * Creates the StyleSheet for the admin avaliacoes screen.
  *
- * @param theme - The current GovMobile theme object.
+ * @param theme - The current Sorrimobi theme object.
  * @returns StyleSheet scoped to the admin avaliacoes feature.
  */
 export const createAdminAvaliacoesStyles = (theme: Theme) => {

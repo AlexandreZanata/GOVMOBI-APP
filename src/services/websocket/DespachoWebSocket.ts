@@ -1,5 +1,5 @@
 /**
- * @fileoverview Socket.io transport client for the GovMobile `/despacho` namespace.
+ * @fileoverview Socket.io transport client for the Sorrimobi `/despacho` namespace.
  *
  * Auth: JWT sent two ways simultaneously —
  *   - `auth.token`  — raw token, no "Bearer" prefix (Socket.io handshake)
