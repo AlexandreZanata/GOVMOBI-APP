@@ -25,7 +25,6 @@ import {
   updateCorridaStatus,
   setPosicaoFila,
 } from '@store/slices/corridaSlice';
-import {addToast} from '@store/slices/uiSlice';
 import type {Corrida, CorridaMensagem} from '@models/Corrida';
 import {podeSerCancelada, normalizeStatus} from '@models/Corrida';
 import type {PosicaoFilaResponse} from '../../types';
@@ -227,9 +226,6 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
     async (id: string, motivo: string): Promise<void> => {
       // Guard: enforce state machine client-side before hitting the API
       if (activeCorrida && !podeSerCancelada(activeCorrida.status)) {
-        const msg = t('corridas.cancel.notAllowed');
-        dispatch(setCorridaError(msg));
-        dispatch(addToast({id: `cancel-err-${Date.now()}`, message: msg, type: 'error'}));
         return;
       }
 
@@ -243,12 +239,13 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
       dispatch(setIsActionLoading(false));
 
       if (result.error) {
-        const msg =
-          result.error.code === 'INVALID_STATE_TRANSITION'
-            ? t('corridas.cancel.notAllowed')
-            : t('corridas.errors.cancelarFailed');
-        dispatch(setCorridaError(msg));
-        dispatch(addToast({id: `cancel-err-${Date.now()}`, message: msg, type: 'error'}));
+        const statusRes = await corridaFacade.getCorridaStatus(id);
+        const status = statusRes.data ? normalizeStatus(statusRes.data.status) : null;
+        if (status === 'cancelada') {
+          dispatch(updateCorridaStatus('cancelada'));
+          dispatch(setPendingCorridaId(null));
+          dispatch(setCorridaError(null));
+        }
         return;
       }
 
@@ -256,8 +253,9 @@ export const usePassageiroCorrida = (corridaId?: string): PassageiroCorridaState
         dispatch(setActiveCorrida(result.data));
       }
       dispatch(setPendingCorridaId(null));
+      dispatch(setCorridaError(null));
     },
-    [activeCorrida, corridaFacade, dispatch, t],
+    [activeCorrida, corridaFacade, dispatch],
   );
 
   return {

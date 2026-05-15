@@ -68,7 +68,27 @@ export async function corridaPostCorrida(
     } else {
       console.log('[CorridaFacade] postCorrida empty body — fetching full corrida', id);
     }
-    return getCorrida(id);
+    const refetchResult = await getCorrida(id);
+    if (!refetchResult.error) {
+      return refetchResult;
+    }
+
+    // Cancel POST often returns an empty body; the server may need a moment before GET works.
+    if (endpoint.endsWith('/cancelar')) {
+      await new Promise(resolve => {
+        setTimeout(resolve, 500);
+      });
+      const retryResult = await getCorrida(id);
+      if (!retryResult.error) {
+        return retryResult;
+      }
+      console.warn(
+        '[CorridaFacade] cancelar POST ok but getCorrida failed after retry',
+        id,
+      );
+    }
+
+    return refetchResult;
   } catch {
     return fail(toError('Network error', 'NETWORK_ERROR'));
   }

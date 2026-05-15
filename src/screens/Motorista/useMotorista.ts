@@ -611,31 +611,24 @@ export const useMotorista = (): MotoristaState => {
    */
   const onCancelar = useCallback(
     async (corridaId: string, motivo: string): Promise<void> => {
-      await withAction(
-        async () => {
-          const r = await corridaFacade.cancelarCorrida(corridaId, {
-            motivo,
-          });
-          if (r.error) {
-            throw new Error(
-              r.error.code === 'INVALID_STATE_TRANSITION'
-                ? t('corridas.cancel.notAllowed')
-                : t('corridas.errors.cancelarFailed'),
-            );
-          }
-          return r.data;
-        },
-        data => {
-          if (data) {
-            dispatch(setActiveCorrida(data));
-            dispatch(addToHistory(data));
-          }
-          dispatch(setPendingCorridaId(null));
-        },
-        'corridas.errors.cancelarFailed',
-      );
+      dispatch(setIsActionLoading(true));
+      dispatch(setCorridaError(null));
+      try {
+        const r = await corridaFacade.cancelarCorrida(corridaId, {motivo});
+        if (r.error) {
+          return;
+        }
+        if (r.data) {
+          dispatch(setActiveCorrida(r.data));
+          dispatch(addToHistory(r.data));
+        }
+        dispatch(setPendingCorridaId(null));
+        dispatch(setCorridaError(null));
+      } finally {
+        dispatch(setIsActionLoading(false));
+      }
     },
-    [corridaFacade, dispatch, t, withAction],
+    [corridaFacade, dispatch],
   );
 
   /**

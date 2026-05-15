@@ -14,7 +14,19 @@ export const requestMediaLibraryPermissionsAsync = jest.fn(async () => ({
   expires: 'never',
 }));
 
+export const requestCameraPermissionsAsync = jest.fn(async () => ({
+  granted: true,
+  status: 'granted',
+  canAskAgain: true,
+  expires: 'never',
+}));
+
 export const launchImageLibraryAsync = jest.fn(async () => ({
+  canceled: true,
+  assets: [],
+}));
+
+export const launchCameraAsync = jest.fn(async () => ({
   canceled: true,
   assets: [],
 }));
@@ -22,5 +34,7 @@ export const launchImageLibraryAsync = jest.fn(async () => ({
 export default {
   MediaTypeOptions,
   requestMediaLibraryPermissionsAsync,
+  requestCameraPermissionsAsync,
   launchImageLibraryAsync,
+  launchCameraAsync,
 };

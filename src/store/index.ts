@@ -64,6 +64,13 @@ const corridaPersistConfig = {
   whitelist: ['activeCorrida', 'pendingCorridaId'],
 };
 
+/** Survives app kill: pending driver offer so the accept modal can show before WS reconnects. */
+const realtimePersistConfig = {
+  key: 'realtime',
+  storage: AsyncStorage,
+  whitelist: ['pendingOffer', 'pendingOfferSetAt'],
+};
+
 // --- Root reducer ---
 
 const rootReducer = combineReducers({
@@ -73,7 +80,7 @@ const rootReducer = combineReducers({
   notifications: notificationsReducer,
   ui: persistReducer(uiPersistConfig, uiReducer),
   corrida: persistReducer(corridaPersistConfig, corridaReducer),
-  realtime: realtimeReducer,
+  realtime: persistReducer(realtimePersistConfig, realtimeReducer),
   location: persistReducer(locationPersistConfig, locationReducer),
   [baseApi.reducerPath]: baseApi.reducer,
 });

@@ -30,6 +30,8 @@ import {TERMINAL_STATUSES} from '@models/Corrida';
 import {getValidToken} from '@utils/tokenUtils';
 import type {ReconexaoConcluida} from '../types/realtime';
 import {logger} from '@utils/logger';
+import {store} from '@store/index';
+import {seedPendingDriverOfferIfNeeded} from '@utils/seedPendingDriverOffer';
 
 const TAG = '[useRideReconnection]';
 const RECONNECTION_TIMEOUT_MS = 3_000;
@@ -134,6 +136,12 @@ export const useRideReconnection = (): void => {
     }
 
     dispatchRef.current(setActiveCorrida(corrida));
+    seedPendingDriverOfferIfNeeded(
+      dispatchRef.current,
+      corrida,
+      motoristaIdRef.current,
+      store.getState().realtime.pendingOffer,
+    );
 
     if (!TERMINAL_STATUSES.has(corrida.status)) {
       console.log(TAG, 'REST fallback — active ride found, re-subscribing →', corrida.id);
@@ -199,6 +207,12 @@ export const useRideReconnection = (): void => {
           if (result.data) {
             dispatchRef.current(setActiveCorrida(result.data));
             dispatchRef.current(setPendingCorridaId(result.data.id));
+            seedPendingDriverOfferIfNeeded(
+              dispatchRef.current,
+              result.data,
+              motoristaIdRef.current,
+              store.getState().realtime.pendingOffer,
+            );
             void realtimeFacadeRef.current.subscribeToCorrida({corridaId: result.data.id});
             dispatchRef.current(addRealtimeSubscription(result.data.id));
           }

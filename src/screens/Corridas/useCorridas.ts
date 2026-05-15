@@ -273,33 +273,23 @@ export const useCorridas = (corridaId?: string): CorridasState => {
     async (id: string, motivo: string): Promise<void> => {
       // Guard: enforce state machine client-side before hitting the API
       if (activeCorrida && !podeSerCancelada(activeCorrida.status)) {
-        const msg = t('corridas.cancel.notAllowed');
-        dispatch(setCorridaError(msg));
-        dispatch(addToast({id: `cancel-err-${Date.now()}`, message: msg, type: 'error'}));
         return;
       }
-      await withAction(
-        async () => {
-          const r = await corridaFacade.cancelarCorrida(id, {
-            motivo,
-          });
-          if (r.error) {
-            const msg =
-              r.error.code === 'INVALID_STATE_TRANSITION'
-                ? t('corridas.cancel.notAllowed')
-                : t('corridas.errors.cancelarFailed');
-            throw new Error(msg);
-          }
-          return r.data;
-        },
-        data => {
-          if (data) dispatch(setActiveCorrida(data));
+
+      dispatch(setIsActionLoading(true));
+      dispatch(setCorridaError(null));
+      try {
+        const r = await corridaFacade.cancelarCorrida(id, {motivo});
+        if (!r.error) {
+          if (r.data) dispatch(setActiveCorrida(r.data));
           dispatch(setPendingCorridaId(null));
-        },
-        'corridas.errors.cancelarFailed',
-      );
+          dispatch(setCorridaError(null));
+        }
+      } finally {
+        dispatch(setIsActionLoading(false));
+      }
     },
-    [activeCorrida, corridaFacade, dispatch, t, withAction],
+    [activeCorrida, corridaFacade, dispatch],
   );
 
   return {

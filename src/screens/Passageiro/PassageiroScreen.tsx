@@ -31,7 +31,6 @@ import {usePassageiro} from './usePassageiro';
 import {usePassageiroRealtime} from '../../hooks/usePassageiroRealtime';
 import {useMapboxToken} from '../../hooks/useMapboxToken';
 import {SolicitarCorridaModal} from './components/SolicitarCorridaModal';
-import {MotoristaInfoModal} from './components/MotoristaInfoModal';
 import {PassageiroSearchBar} from './components/PassageiroSearchBar';
 import type {PassageiroSearchBarHandle} from './components/PassageiroSearchBar';
 import {PassageiroSearchOverlay} from './components/PassageiroSearchOverlay';
@@ -50,7 +49,6 @@ import {
   setPendingCorridaId,
   updateCorridaStatus,
 } from '@store/slices/corridaSlice';
-import {addToast} from '@store/slices/uiSlice';
 import {MapboxGL} from '@components/molecules/MapboxContainer';
 import {TERMINAL_STATUSES as CORRIDA_TERMINAL_STATUSES, normalizeStatus} from '@models/Corrida';
 import {ENV} from '../../config/env';
@@ -252,29 +250,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
     motoristaFotoRest,
   ]);
 
-  // ── MotoristaInfoModal state ────────────────────────────────────────────────
-  const [showMotoristaModal, setShowMotoristaModal] = useState<boolean>(false);
-
-  // Auto-show when driver is assigned (aceita, em_rota, passageiro_a_bordo)
-  // and motoristaId is populated (hydrated by usePassageiroRealtime after fetch).
-  useEffect(() => {
-    const driverAssignedStatuses = new Set(['aceita', 'em_rota', 'passageiro_a_bordo']);
-    if (
-      activeCorrida?.status != null &&
-      driverAssignedStatuses.has(activeCorrida.status) &&
-      activeCorrida.motoristaId != null
-    ) {
-      setShowMotoristaModal(true);
-    }
-  }, [activeCorrida?.id, activeCorrida?.status, activeCorrida?.motoristaId]);
-
-  // Auto-hide when ride reaches a terminal status
-  useEffect(() => {
-    if (activeCorrida?.status != null && TERMINAL_STATUSES.has(activeCorrida.status)) {
-      setShowMotoristaModal(false);
-    }
-  }, [activeCorrida?.status]);
-
   // Navigate to rating screen when ride is concluded
   useEffect(() => {
     if (activeCorrida?.status === 'concluida' && activeCorrida.id) {
@@ -423,25 +398,33 @@ export const PassageiroScreen = (): React.JSX.Element => {
         style: 'destructive',
         onPress: () => {
           dispatch(setIsActionLoading(true));
+          const corridaId = activeCorrida.id;
           void corridaFacade
-            .cancelarCorrida(activeCorrida.id, {
+            .cancelarCorrida(corridaId, {
               motivo: cancelMotivo.trim(),
             })
-            .then(result => {
-              dispatch(setIsActionLoading(false));
+            .then(async result => {
               if (result.error) {
-                const msg =
-                  result.error.code === 'BAD_REQUEST'
-                    ? t('corridas.errors.jaFinalizada')
-                    : t('corridas.errors.cancelarFailed');
-                dispatch(setCorridaError(msg));
-                dispatch(addToast({id: `cancel-err-${Date.now()}`, message: msg, type: 'error'}));
-              } else {
-                if (result.data) dispatch(setActiveCorrida(result.data));
-                dispatch(setPendingCorridaId(null));
-                setCancelMotivo('');
-                setShowCancelInput(false);
+                const statusRes = await corridaFacade.getCorridaStatus(corridaId);
+                const status = statusRes.data
+                  ? normalizeStatus(statusRes.data.status)
+                  : null;
+                if (status === 'cancelada') {
+                  dispatch(updateCorridaStatus('cancelada'));
+                  dispatch(setPendingCorridaId(null));
+                  dispatch(setCorridaError(null));
+                  setCancelMotivo('');
+                  setShowCancelInput(false);
+                }
+                dispatch(setIsActionLoading(false));
+                return;
               }
+              dispatch(setIsActionLoading(false));
+              if (result.data) dispatch(setActiveCorrida(result.data));
+              dispatch(setPendingCorridaId(null));
+              dispatch(setCorridaError(null));
+              setCancelMotivo('');
+              setShowCancelInput(false);
             });
         },
       },
@@ -812,15 +795,6 @@ export const PassageiroScreen = (): React.JSX.Element => {
         visible={isRequestModalOpen}
       />
 
-      <MotoristaInfoModal
-        corridaStatus={activeCorrida?.status ?? null}
-        motoristaFotoUrl={motoristaFotoDisplayUrl}
-        motoristaId={activeCorrida?.motoristaId ?? null}
-        nomeMotorista={motoristaNomeCache}
-        onDismiss={() => setShowMotoristaModal(false)}
-        veiculoId={activeCorrida?.veiculoId ?? null}
-        visible={showMotoristaModal}
-      />
     </View>
   );
 };

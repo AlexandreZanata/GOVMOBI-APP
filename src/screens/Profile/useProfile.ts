@@ -6,10 +6,13 @@
  * Name editing is not supported by the backend — display name is read-only.
  */
 import {useCallback, useState} from 'react';
+import {Alert, Platform} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import {useTranslation} from 'react-i18next';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {logout, setAvatarUrl} from '@store/slices/authSlice';
 import {useFacades} from '@services/facades';
+import {prepareImageForUpload} from '@utils/prepareImageForUpload';
 
 /** Inline feedback for the change-password form. */
 export type PasswordFeedback =
@@ -23,6 +26,15 @@ export type PhotoFeedback =
   | {type: 'error'; messageKey: string}
   | null;
 
+type PhotoSource = 'camera' | 'library';
+
+const IMAGE_PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
+  mediaTypes: ['images'],
+  allowsEditing: true,
+  aspect: [1, 1],
+  quality: 0.85,
+};
+
 export interface ProfileState {
   /** Current display name (read-only, sourced from auth state). */
   displayName: string;
@@ -32,7 +44,7 @@ export interface ProfileState {
   isUploadingPhoto: boolean;
   /** Inline feedback after a photo upload attempt. */
   photoFeedback: PhotoFeedback;
-  /** Opens the system image picker and uploads the selected photo. */
+  /** Opens camera or gallery and uploads the selected photo. */
   pickAndUploadPhoto: () => Promise<void>;
   signOut: () => void;
   /** Change-password form state. */
@@ -50,12 +62,11 @@ export interface ProfileState {
 
 /**
  * Manages profile state, logout action, photo upload, and the change-password flow.
- * Name editing is not supported by the backend — the display name is read-only.
- * All feedback is returned as inline state — no global toast banners are dispatched.
  *
  * @returns {@link ProfileState}
  */
 export const useProfile = (): ProfileState => {
+  const {t} = useTranslation();
   const dispatch = useAppDispatch();
   const {authFacade, servidoresFacade} = useFacades();
   const user = useAppSelector(state => state.auth.user);
@@ -63,78 +74,107 @@ export const useProfile = (): ProfileState => {
   const displayName = user?.fullName ?? '';
   const avatarUrl = user?.avatarUrl ?? null;
 
-  // Photo upload state
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [photoFeedback, setPhotoFeedback] = useState<PhotoFeedback>(null);
 
-  // Change-password form
   const [senhaAntiga, setSenhaAntiga] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordFeedback, setPasswordFeedback] = useState<PasswordFeedback>(null);
 
+  const uploadPickedAsset = useCallback(
+    async (asset: ImagePicker.ImagePickerAsset): Promise<void> => {
+      const mimeType = asset.mimeType ?? 'image/jpeg';
+      const fileName = asset.fileName ?? `foto-${Date.now()}.jpg`;
+      const uploadUri = await prepareImageForUpload(asset.uri, fileName);
+
+      setIsUploadingPhoto(true);
+      const uploadResult = await servidoresFacade.uploadFotoPerfil({
+        uri: uploadUri,
+        mimeType,
+        fileName,
+      });
+      setIsUploadingPhoto(false);
+
+      if (uploadResult.error) {
+        const messageKey =
+          uploadResult.error.code === 'FILE_TOO_LARGE'
+            ? 'profile.photo.tooLarge'
+            : uploadResult.error.code === 'INVALID_FILE'
+              ? 'profile.photo.invalidFile'
+              : 'profile.photo.uploadFailed';
+        setPhotoFeedback({type: 'error', messageKey});
+        return;
+      }
+
+      dispatch(setAvatarUrl(uploadResult.data.fotoPerfilUrl));
+      setPhotoFeedback({type: 'success', messageKey: 'profile.photo.uploadSuccess'});
+      setTimeout(() => setPhotoFeedback(null), 4000);
+    },
+    [dispatch, servidoresFacade],
+  );
+
+  const pickFromSource = useCallback(
+    async (source: PhotoSource): Promise<void> => {
+      setPhotoFeedback(null);
+
+      if (source === 'camera') {
+        const {status} = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          setPhotoFeedback({type: 'error', messageKey: 'profile.photo.cameraPermissionDenied'});
+          return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync(IMAGE_PICKER_OPTIONS);
+        if (result.canceled || result.assets.length === 0) {
+          return;
+        }
+        await uploadPickedAsset(result.assets[0]);
+        return;
+      }
+
+      const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        setPhotoFeedback({type: 'error', messageKey: 'profile.photo.permissionDenied'});
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync(IMAGE_PICKER_OPTIONS);
+      if (result.canceled || result.assets.length === 0) {
+        return;
+      }
+      await uploadPickedAsset(result.assets[0]);
+    },
+    [uploadPickedAsset],
+  );
+
   /**
-   * Requests media library permission, opens the image picker, and uploads
-   * the selected image to PATCH /servidores/me/foto-perfil.
-   * On success, updates the Redux user.avatarUrl immediately.
-   * Auto-clears success feedback after 4 seconds.
+   * Shows camera / gallery chooser (native) and uploads the selected image.
    */
   const pickAndUploadPhoto = useCallback(async (): Promise<void> => {
-    setPhotoFeedback(null);
-
-    // Request permission
-    const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      setPhotoFeedback({type: 'error', messageKey: 'profile.photo.permissionDenied'});
+    if (Platform.OS === 'web') {
+      await pickFromSource('library');
       return;
     }
 
-    // Open picker — allow JPEG, PNG, WebP; no editing to keep it simple
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
+    Alert.alert(t('profile.photo.changeLabel'), undefined, [
+      {text: t('common.cancel'), style: 'cancel'},
+      {
+        text: t('profile.photo.takePhoto'),
+        onPress: () => {
+          void pickFromSource('camera');
+        },
+      },
+      {
+        text: t('profile.photo.chooseFromLibrary'),
+        onPress: () => {
+          void pickFromSource('library');
+        },
+      },
+    ]);
+  }, [pickFromSource, t]);
 
-    if (result.canceled || result.assets.length === 0) return;
-
-    const asset = result.assets[0];
-    const uri = asset.uri;
-    const mimeType = asset.mimeType ?? 'image/jpeg';
-    const fileName = asset.fileName ?? `foto-${Date.now()}.jpg`;
-
-    setIsUploadingPhoto(true);
-
-    const uploadResult = await servidoresFacade.uploadFotoPerfil({uri, mimeType, fileName});
-
-    setIsUploadingPhoto(false);
-
-    if (uploadResult.error) {
-      const messageKey =
-        uploadResult.error.code === 'FILE_TOO_LARGE'
-          ? 'profile.photo.tooLarge'
-          : uploadResult.error.code === 'INVALID_FILE'
-            ? 'profile.photo.invalidFile'
-            : 'profile.photo.uploadFailed';
-      setPhotoFeedback({type: 'error', messageKey});
-      return;
-    }
-
-    // Persist the new URL in Redux (facade rewrites loopback hosts for devices)
-    dispatch(setAvatarUrl(uploadResult.data.fotoPerfilUrl));
-    setPhotoFeedback({type: 'success', messageKey: 'profile.photo.uploadSuccess'});
-    setTimeout(() => setPhotoFeedback(null), 4000);
-  }, [dispatch, servidoresFacade]);
-
-  /**
-   * Calls POST /auth/change-password via the auth facade.
-   * Validates locally before calling the API.
-   * Sets `passwordFeedback` with the result — no global toasts.
-   *
-   * @returns Void.
-   */
   const changePassword = useCallback(async (): Promise<void> => {
     setPasswordFeedback(null);
 
@@ -163,7 +203,6 @@ export const useProfile = (): ProfileState => {
     setNovaSenha('');
     setConfirmarSenha('');
     setPasswordFeedback({type: 'success', messageKey: 'profile.changePassword.success'});
-    // Auto-clear success feedback after 4 s
     setTimeout(() => setPasswordFeedback(null), 4000);
   }, [authFacade, confirmarSenha, novaSenha, senhaAntiga]);
 

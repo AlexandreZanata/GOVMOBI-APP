@@ -24,7 +24,12 @@ export interface RealtimeState {
    * Cleared when the driver accepts, refuses, or the timer expires.
    */
   pendingOffer: NovaCorridaDisponivelPayload | null;
+  /** ISO timestamp when `pendingOffer` was set — used to expire stale offers on rehydrate. */
+  pendingOfferSetAt: string | null;
 }
+
+/** Offers older than this are discarded after a cold start rehydrate. */
+export const PENDING_OFFER_TTL_MS = 60_000;
 
 const initialState: RealtimeState = {
   connectionStatus: 'idle',
@@ -34,6 +39,7 @@ const initialState: RealtimeState = {
   lastEventAt: null,
   availableCorridaIds: [],
   pendingOffer: null,
+  pendingOfferSetAt: null,
 };
 
 /**
@@ -98,6 +104,7 @@ const realtimeSlice = createSlice({
       action: PayloadAction<NovaCorridaDisponivelPayload | null>,
     ) {
       state.pendingOffer = action.payload;
+      state.pendingOfferSetAt = action.payload ? new Date().toISOString() : null;
     },
 
     /**
@@ -116,6 +123,13 @@ const realtimeSlice = createSlice({
     builder.addCase(REHYDRATE, state => {
       state.connectionStatus = 'idle';
       state.lastError = null;
+      if (state.pendingOffer && state.pendingOfferSetAt) {
+        const ageMs = Date.now() - new Date(state.pendingOfferSetAt).getTime();
+        if (ageMs > PENDING_OFFER_TTL_MS) {
+          state.pendingOffer = null;
+          state.pendingOfferSetAt = null;
+        }
+      }
     });
   },
 });

@@ -8,10 +8,12 @@ import {useNotifications} from '../useNotifications';
 
 const mockDispatch = jest.fn();
 const mockGetCorrida = jest.fn().mockResolvedValue({data: null, error: null});
+const mockNavigate = jest.fn();
 
 let mockIsAuthenticated = false;
 let mockServidorId: string | null = null;
 let mockMotoristaId: string | null = null;
+let mockIsHydrating = false;
 
 jest.mock('../../store', () => ({
   useAppDispatch: () => mockDispatch,
@@ -21,9 +23,17 @@ jest.mock('../../store', () => ({
         isAuthenticated: mockIsAuthenticated,
         servidorId: mockServidorId,
         motoristaId: mockMotoristaId,
+        isHydrating: mockIsHydrating,
       },
       corrida: {isChatScreenOpen: false},
     }),
+  store: {
+    getState: () => ({
+      auth: {
+        isHydrating: mockIsHydrating,
+      },
+    }),
+  },
 }));
 
 jest.mock('@services/facades', () => ({
@@ -64,7 +74,7 @@ jest.mock('@services/notifications/OneSignalService', () => {
 jest.mock('@navigation/navigationRef', () => ({
   navigationRef: {
     isReady: (): boolean => true,
-    navigate: jest.fn(),
+    navigate: (...args: unknown[]) => mockNavigate(...args),
   },
 }));
 
@@ -74,10 +84,11 @@ describe('useNotifications — ride push open', () => {
     mockIsAuthenticated = true;
     mockServidorId = 'servidor-1';
     mockMotoristaId = 'motorista-1';
+    mockIsHydrating = false;
     capturedOpenHandler = null;
   });
 
-  it('hydrates driver offer from SOLICITADA status (setPendingOffer)', async () => {
+  it('hydrates driver offer from SOLICITADA status (setPendingOffer + parallel getCorrida)', async () => {
     renderHook(() => useNotifications());
 
     await act(async () => {
@@ -96,6 +107,7 @@ describe('useNotifications — ride push open', () => {
           passageiroNome: 'Maria',
         },
       });
+      await Promise.resolve();
     });
 
     expect(mockDispatch).toHaveBeenCalledWith(
@@ -104,7 +116,7 @@ describe('useNotifications — ride push open', () => {
         payload: {corridaId: 'corrida-push-1', mensagem: 'Maria'},
       }),
     );
-    expect(mockGetCorrida).not.toHaveBeenCalled();
+    expect(mockGetCorrida).toHaveBeenCalledWith('corrida-push-1');
   });
 
   it('queues notification open until servidorId is available, then hydrates', async () => {
@@ -142,12 +154,53 @@ describe('useNotifications — ride push open', () => {
 
     await act(async () => {
       rerender({});
+      await Promise.resolve();
     });
 
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'realtime/setPendingOffer',
         payload: {corridaId: 'corrida-queued', mensagem: 'João'},
+      }),
+    );
+  });
+
+  it('queues notification open while isHydrating, then hydrates after hydration ends', async () => {
+    mockIsHydrating = true;
+
+    const {rerender} = renderHook(() => useNotifications());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      capturedOpenHandler?.({
+        title: 'Corrida',
+        body: 'Nova',
+        data: {
+          corridaId: 'corrida-hydrate',
+          status: 'nova_corrida',
+          passageiroNome: 'Ana',
+        },
+      });
+    });
+
+    expect(mockDispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({type: 'realtime/setPendingOffer'}),
+    );
+
+    mockIsHydrating = false;
+
+    await act(async () => {
+      rerender({});
+      await Promise.resolve();
+    });
+
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'realtime/setPendingOffer',
+        payload: {corridaId: 'corrida-hydrate', mensagem: 'Ana'},
       }),
     );
   });

@@ -33,7 +33,13 @@
       "expo-splash-screen",
       "expo-secure-store",
       "expo-file-system",
-      "expo-image-picker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Sorrimobi to access your photos to set your profile picture.",
+          "cameraPermission": "Allow Sorrimobi to use the camera to take your profile picture."
+        }
+      ],
       "expo-av",
       "expo-font"
     ],

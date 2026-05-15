@@ -274,9 +274,12 @@
     },
     "photo": {
       "changeLabel": "Change profile photo",
+      "takePhoto": "Take photo",
+      "chooseFromLibrary": "Choose from library",
       "uploadSuccess": "Photo updated successfully.",
       "uploadFailed": "Could not upload photo.",
       "permissionDenied": "Gallery access permission denied.",
+      "cameraPermissionDenied": "Camera access denied.",
       "tooLarge": "File too large (max 5MB).",
       "invalidFile": "Invalid format. Use JPEG, PNG or WebP."
     },

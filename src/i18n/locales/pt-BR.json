@@ -274,9 +274,12 @@
     },
     "photo": {
       "changeLabel": "Alterar foto de perfil",
+      "takePhoto": "Tirar foto",
+      "chooseFromLibrary": "Escolher da galeria",
       "uploadSuccess": "Foto atualizada com sucesso.",
       "uploadFailed": "Não foi possível enviar a foto.",
       "permissionDenied": "Permissão de acesso à galeria negada.",
+      "cameraPermissionDenied": "Permissão de acesso à câmera negada.",
       "tooLarge": "Arquivo muito grande (máx. 5MB).",
       "invalidFile": "Formato inválido. Use JPEG, PNG ou WebP."
     },

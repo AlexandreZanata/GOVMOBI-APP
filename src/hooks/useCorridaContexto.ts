@@ -26,6 +26,8 @@ import {
 } from '@store/slices/corridaSlice';
 import {addRealtimeSubscription} from '@store/slices/realtimeSlice';
 import {TERMINAL_STATUSES} from '@models/Corrida';
+import {store} from '../store';
+import {seedPendingDriverOfferIfNeeded} from '@utils/seedPendingDriverOffer';
 
 const TAG = '[useCorridaContexto]';
 
@@ -93,6 +95,12 @@ export const useCorridaContexto = (): void => {
           console.log(TAG, 'seeding active ride from server →', corridaAtiva.id);
           dispatchRef.current(setActiveCorrida(corridaAtiva));
           dispatchRef.current(setPendingCorridaId(corridaAtiva.id));
+          seedPendingDriverOfferIfNeeded(
+            dispatchRef.current,
+            corridaAtiva,
+            motoristaIdRef.current,
+            store.getState().realtime.pendingOffer,
+          );
 
           // Re-subscribe to the ride room if the socket is connected.
           if (isConnected) {
